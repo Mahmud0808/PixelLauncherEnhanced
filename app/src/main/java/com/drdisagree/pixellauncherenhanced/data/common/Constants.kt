@@ -40,6 +40,8 @@ object Constants {
     const val DRAWER_SEARCH_BAR = "xposed_drawersearchbar"
     const val RECENTS_CLEAR_ALL_BUTTON = "xposed_recentsclearallbutton"
     const val FIXED_RECENTS_BUTTONS_WIDTH = "xposed_fixedrecentsbuttonswidth"
+    const val DESKTOP_GRID_COLUMNS = "xposed_desktopgrid_columns"
+    const val DESKTOP_GRID_ROWS = "xposed_desktopgrid_rows"
 
     val PREF_UPDATE_EXCLUSIONS = listOf(
         BootLoopProtector.LOAD_TIME_KEY_KEY,

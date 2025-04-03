@@ -59,4 +59,28 @@
         app:tickInterval="1"
         app:valueFormat="dp" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+        android:key="xposed_desktopgrid_columns"
+        android:title="@string/homescreen_columns_title"
+        app:defaultValue="4"
+        app:iconSpaceReserved="false"
+        app:maxVal="10"
+        app:minVal="1"
+        app:showDefaultIndicator="true"
+        app:showResetButton="true"
+        app:tickInterval="1"
+        app:valueFormat=" columns" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+        android:key="xposed_desktopgrid_rows"
+        android:title="@string/homescreen_rows_title"
+        app:defaultValue="4"
+        app:iconSpaceReserved="false"
+        app:maxVal="10"
+        app:minVal="1"
+        app:showDefaultIndicator="true"
+        app:showResetButton="true"
+        app:tickInterval="1"
+        app:valueFormat=" rows" />
+
 </PreferenceScreen>

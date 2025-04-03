@@ -85,4 +85,6 @@
     <string name="clear_all_button_title">Clear all button</string>
     <string name="fixed_button_width_title">Fixed width for each button</string>
     <string name="recents_clear_all">Clear all</string>
+    <string name="homescreen_columns_title">Homescreen columns</string>
+    <string name="homescreen_rows_title">Homescreen rows</string>
 </resources>
