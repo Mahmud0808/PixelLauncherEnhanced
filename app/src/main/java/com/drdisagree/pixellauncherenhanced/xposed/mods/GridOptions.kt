@@ -4,8 +4,7 @@ import android.content.Context
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_COLUMNS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_ROWS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
@@ -16,7 +15,6 @@ class GridOptions (context: Context) : ModPack(context) {
 
     private var gridRows = 4
     private var gridColumns = 4
-    private var currentContext = context
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -26,33 +24,33 @@ class GridOptions (context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-        val idpClass = XposedHook.findClass("com.android.launcher3.InvariantDeviceProfile")
+        val invariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
 
-        idpClass?.hookMethod("initGrid")?.runAfter { param ->
+        invariantDeviceProfileClass
+            .hookMethod("initGrid")
+            .runAfter { param ->
+                val idp = param.thisObject
 
-            val idp = param.thisObject
-            val cols = Xprefs.getSliderInt(DESKTOP_GRID_COLUMNS, 4)
-            val rows = Xprefs.getSliderInt(DESKTOP_GRID_ROWS, 4)
-
-            if (idp.getField("numColumns") != cols || idp.getField("numRows") != rows) {
-                idp.setField("numColumns", cols)
-                idp.setField("numRows", rows)
+                if (idp.getField("numColumns") != gridColumns || idp.getField("numRows") != gridRows) {
+                    idp.setField("numColumns", gridColumns)
+                    idp.setField("numRows", gridRows)
+                }
             }
 
-        }
+        val deviceProfileClass = findClass("com.android.launcher3.DeviceProfile")
 
-        val dpClass = XposedHook.findClass("com.android.launcher3.DeviceProfile")
+        deviceProfileClass
+            .hookMethod("updateIconSize")
+            .runBefore { param ->
+                val context = param.args[1] as Context
+                val displayMetrics = context.resources.displayMetrics
 
-        dpClass?.hookMethod("updateIconSize")?.runAfter { param ->
+                val iconSizePx = (displayMetrics.widthPixels / gridColumns) * 0.8f
+                val iconSizeDp = iconSizePx / displayMetrics.density
 
-            val dp = param.thisObject
-            val displayMetrics = currentContext.resources.displayMetrics
-            val cols = Xprefs.getSliderInt(DESKTOP_GRID_COLUMNS, 4)
-
-            val iconSizePx = (displayMetrics.widthPixels / cols) * 0.8f
-            val iconSizeDp = iconSizePx / displayMetrics.density
-
-            dp.callMethod("updateIconSize", iconSizeDp, currentContext )
-        }
+                if (param.args[0] != iconSizeDp) {
+                    param.args[0] = iconSizeDp
+                }
+            }
     }
 }
