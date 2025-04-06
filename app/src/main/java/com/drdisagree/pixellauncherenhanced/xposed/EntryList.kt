@@ -40,7 +40,7 @@ object EntryList {
         LockLayout::class.java,
         DrawerSearchbar::class.java,
         ClearAllButton::class.java,
-        GridOptions::class.java
+        GridOptions::class.java,
         HideApps::class.java
     )
 

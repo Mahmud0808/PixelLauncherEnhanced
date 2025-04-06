@@ -4,6 +4,7 @@ import android.content.Context
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_COLUMNS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_ROWS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
@@ -20,6 +21,11 @@ class GridOptions (context: Context) : ModPack(context) {
         Xprefs.apply {
             gridRows = getSliderInt(DESKTOP_GRID_ROWS, 4)
             gridColumns = getSliderInt(DESKTOP_GRID_COLUMNS, 4)
+        }
+
+        when (key.firstOrNull()) {
+            DESKTOP_GRID_ROWS -> restartLauncher(mContext)
+            DESKTOP_GRID_COLUMNS -> restartLauncher(mContext)
         }
     }
 
