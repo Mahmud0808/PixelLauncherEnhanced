@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.google.android.material.button.MaterialButton
 
 class FilePickerPreference : Preference {
@@ -68,6 +69,8 @@ class FilePickerPreference : Preference {
             this.isEnabled = isEnabled
             setOnClickListener { mOnClick.invoke() }
         }
+
+        setFirstAndLastItemMargin(holder)
     }
 
     fun setOnButtonClick(onClick: () -> Unit) {

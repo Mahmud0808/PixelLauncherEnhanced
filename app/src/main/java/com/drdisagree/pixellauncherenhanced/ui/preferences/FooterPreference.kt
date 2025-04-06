@@ -12,6 +12,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 /**
  * A custom preference acting as "footer" of a page. It has a field for icon and text. It is added
@@ -67,6 +68,8 @@ class FooterPreference @JvmOverloads constructor(context: Context, attrs: Attrib
         if (icon != null) {
             icon.visibility = mIconVisibility
         }
+
+        setFirstAndLastItemMargin(holder)
     }
 
     override fun setSummary(summary: CharSequence?) {

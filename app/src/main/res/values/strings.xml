@@ -14,6 +14,7 @@
     <string name="btn_pick_image">Pick image</string>
     <string name="understood">Understood</string>
     <string name="settings_title">Settings</string>
+    <string name="search_hint">Search…</string>
 
     <string name="root_connection_failed_title">Root connection failed</string>
     <string name="root_connection_failed_desc">Unable to connect to root service. Please grant root access and try again.</string>
@@ -46,6 +47,7 @@
     <string name="fragment_miscellaneous_desc">Other useful options</string>
     <string name="fragment_about_title">About</string>
     <string name="fragment_about_desc">About this application</string>
+    <string name="fragment_hidden_apps_title">Hide apps</string>
 
     <string name="force_themed_icons_title">Force themed icons</string>
     <string name="force_themed_icons_desc">Generate monochromatic icons if not provided by the app</string>
@@ -87,4 +89,6 @@
     <string name="recents_clear_all">Clear all</string>
     <string name="homescreen_columns_title">Homescreen columns</string>
     <string name="homescreen_rows_title">Homescreen rows</string>
+    <string name="hide_apps_title">Hide apps from app drawer</string>
+    <string name="search_hidden_apps_title">Allow searching for hidden apps</string>
 </resources>

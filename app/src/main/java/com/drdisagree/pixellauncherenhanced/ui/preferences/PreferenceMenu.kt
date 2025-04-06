@@ -6,6 +6,7 @@ import android.view.View
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 class PreferenceMenu : Preference {
 
@@ -49,11 +50,12 @@ class PreferenceMenu : Preference {
         super.onBindViewHolder(holder)
 
         holder.findViewById(R.id.end_arrow)?.visibility = if (showArrow) View.VISIBLE else View.GONE
+
+        setFirstAndLastItemMargin(holder)
     }
 
     fun setShowArrow(showArrow: Boolean) {
         this.showArrow = showArrow
         notifyChanged()
     }
-
 }

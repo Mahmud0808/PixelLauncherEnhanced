@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import java.util.Locale
@@ -61,6 +62,8 @@ class TimePickerPreference : Preference {
         super.onBindViewHolder(holder)
         val timeTextView = holder.findViewById(R.id.time_stamp) as TextView
         timeTextView.text = timeValue
+
+        setFirstAndLastItemMargin(holder)
     }
 
     override fun onClick() {

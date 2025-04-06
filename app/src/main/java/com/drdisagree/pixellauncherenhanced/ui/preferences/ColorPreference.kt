@@ -9,6 +9,7 @@ import androidx.annotation.ColorInt
 import androidx.fragment.app.FragmentActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.jaredrummler.android.colorpicker.ColorPanelView
 import com.jaredrummler.android.colorpicker.ColorPickerDialog
 import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
@@ -140,6 +141,8 @@ class ColorPreference : Preference, ColorPickerDialogListener {
         val preview: ColorPanelView? =
             holder.itemView.findViewById(R.id.cpv_preference_preview_color_panel)
         preview?.setColor(color)
+
+        setFirstAndLastItemMargin(holder)
     }
 
     override fun onSetInitialValue(defaultValue: Any?) {

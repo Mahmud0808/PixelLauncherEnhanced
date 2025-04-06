@@ -45,6 +45,10 @@ object RPrefs : SharedPreferences {
         editor.putString(key, value).apply()
     }
 
+    fun putStringSet(key: String?, value: Set<String>?) {
+        editor.putStringSet(key, value).apply()
+    }
+
     // Basic get methods
     fun getBoolean(key: String?): Boolean {
         return prefs.getBoolean(key, false)
@@ -64,6 +68,10 @@ object RPrefs : SharedPreferences {
 
     fun getString(key: String?): String? {
         return prefs.getString(key, null)
+    }
+
+    fun getStringSet(key: String?): Set<String>? {
+        return prefs.getStringSet(key, null)
     }
 
     // Custom slider preference methods

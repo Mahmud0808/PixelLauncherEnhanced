@@ -9,6 +9,7 @@ import android.widget.ImageView
 import androidx.preference.CheckBoxPreference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 class SelectorWithWidgetPreference : CheckBoxPreference {
     /**
@@ -134,6 +135,8 @@ class SelectorWithWidgetPreference : CheckBoxPreference {
         mExtraWidgetContainer = holder.findViewById(R.id.selector_extra_widget_container)
 
         setExtraWidgetOnClickListener(mExtraWidgetOnClickListener)
+
+        setFirstAndLastItemMargin(holder)
     }
 
     /**

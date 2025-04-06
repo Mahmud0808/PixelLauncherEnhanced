@@ -6,6 +6,7 @@ import android.view.View
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 /**
  * The Base preference with two target areas divided by a vertical divider
@@ -60,6 +61,8 @@ open class TwoTargetPreference : Preference {
         divider?.visibility = if (shouldHideSecondTarget) View.GONE else View.VISIBLE
         widgetFrame?.visibility = if (shouldHideSecondTarget) View.GONE else View.VISIBLE
         widgetFrame?.isEnabled = isEnabled
+
+        setFirstAndLastItemMargin(holder)
     }
 
     protected open fun shouldHideSecondTarget(): Boolean {

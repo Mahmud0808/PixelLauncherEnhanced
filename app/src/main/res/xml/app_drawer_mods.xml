@@ -21,6 +21,17 @@
         android:title="@string/app_drawer_icon_labels_title"
         app:iconSpaceReserved="false" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+        android:key="launcherHiddenApps"
+        android:title="@string/hide_apps_title"
+        app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.HiddenApps"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:key="xposed_searchhiddenapps"
+        android:title="@string/search_hidden_apps_title"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
         android:key="xposed_appdrawerbackgroundopacity"
         android:title="@string/app_drawer_background_opacity_title"

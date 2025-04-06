@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.LabelFormatter
@@ -222,6 +223,8 @@ class SliderPreference(
         if (showController) updateControllerButtons()
 
         handleResetButton()
+
+        setFirstAndLastItemMargin(holder)
     }
 
     fun setMin(value: Float) {

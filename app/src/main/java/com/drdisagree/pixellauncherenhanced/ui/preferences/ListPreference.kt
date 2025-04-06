@@ -3,7 +3,9 @@ package com.drdisagree.pixellauncherenhanced.ui.preferences
 import android.content.Context
 import android.util.AttributeSet
 import androidx.preference.ListPreference
+import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 class ListPreference : ListPreference {
 
@@ -34,5 +36,11 @@ class ListPreference : ListPreference {
 
     private fun initResource() {
         layoutResource = R.layout.custom_preference_list
+    }
+
+    override fun onBindViewHolder(holder: PreferenceViewHolder) {
+        super.onBindViewHolder(holder)
+
+        setFirstAndLastItemMargin(holder)
     }
 }

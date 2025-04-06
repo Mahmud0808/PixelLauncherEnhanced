@@ -13,6 +13,7 @@ import androidx.annotation.Keep
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.putBoolean
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.google.android.material.materialswitch.MaterialSwitch
 
 
@@ -98,6 +99,8 @@ class TwoTargetSwitchPreference : TwoTargetPreference {
                 }
             }
         }
+
+        setFirstAndLastItemMargin(holder)
     }
 
     val isPreferenceEnabled: Boolean

@@ -8,7 +8,6 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
-import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -101,18 +100,19 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(
-                receiverHooked,
+                hookCheckReceiver,
                 intentFilterHooked,
                 Context.RECEIVER_EXPORTED
             )
         } else {
             context.registerReceiver(
-                receiverHooked,
+                hookCheckReceiver,
                 intentFilterHooked
             )
         }
 
-        handler.post(checkPackageHooked)
+        isHookSuccessful = false
+        handler.post(hookCheckSender)
     }
 
     private val delayedHookCheck: Runnable = Runnable {
@@ -133,18 +133,26 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
         }
     }
 
-    private val checkPackageHooked: Runnable = object : Runnable {
+    private val hookCheckSender: Runnable = object : Runnable {
         override fun run() {
-            checkXposedHooked()
+            if (!isHookSuccessful) {
+                try {
+                    context.sendBroadcast(Intent().setAction(ACTION_HOOK_CHECK_REQUEST))
+                } catch (_: Exception) {
+                }
+
+                handler.postDelayed(this, 1000)
+            }
         }
     }
 
-    private val receiverHooked: BroadcastReceiver = object : BroadcastReceiver() {
+    private val hookCheckReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_HOOK_CHECK_RESULT) {
                 isHookSuccessful = true
 
                 try {
+                    handler.removeCallbacks(hookCheckSender)
                     delayedHandler.removeCallbacks(delayedHookCheck)
                 } catch (_: Exception) {
                 }
@@ -156,44 +164,13 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
         }
     }
 
-    private fun checkXposedHooked() {
-        isHookSuccessful = false
-
-        object : CountDownTimer(1600, 800) {
-            override fun onTick(millisUntilFinished: Long) {
-                if (isHookSuccessful) {
-                    cancel()
-                }
-            }
-
-            override fun onFinish() {
-                if (!isHookSuccessful) {
-                    try {
-                        delayedHandler.removeCallbacks(delayedHookCheck)
-                    } catch (_: Exception) {
-                    }
-
-                    isHooked = false
-
-                    RPrefs.putBoolean(XPOSED_HOOK_CHECK, false)
-                }
-            }
-        }.start()
-
-        Thread {
-            try {
-                context.sendBroadcast(Intent().setAction(ACTION_HOOK_CHECK_REQUEST))
-            } catch (_: Exception) {
-            }
-        }.start()
-    }
-
     override fun onDetached() {
         super.onDetached()
+
         try {
-            handler.removeCallbacks(checkPackageHooked)
+            handler.removeCallbacks(hookCheckSender)
             delayedHandler.removeCallbacks(delayedHookCheck)
-            context.unregisterReceiver(receiverHooked)
+            context.unregisterReceiver(hookCheckReceiver)
         } catch (_: Exception) {
         }
     }

@@ -22,10 +22,10 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 <summary>Icons</summary>
 
 | Feature            | Pixel Launcher | Launcher3 Launcher |
-|--------------------|:-:|:-:|
-| Force themed icons |✅|✅|
-| Icon size          |✅|✅|
-| Text size          |✅|✅|
+|--------------------|:--------------:|:------------------:|
+| Force themed icons |       ✅        |         ✅          |
+| Icon size          |       ✅        |         ✅          |
+| Text size          |       ✅        |         ✅          |
 
 </details>
 
@@ -33,15 +33,15 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 <summary>Home screen</summary>
 
 | Feature                 | Pixel Launcher | Launcher3 Launcher |
-|-------------------------|:-:|:-:|
-| Lock layout             |✅|✅|
-| Double tap to sleep     |✅|✅|
-| Hide statusbar          |✅|✅|
-| Hide top shadow         |✅|✅|
-| Icon labels on desktop  |✅|✅|
-| Hide At A Glance        |✅|✅|
-| Hide desktop search bar |✅|✅|
-| Dock spacing            |✅|✅|
+|-------------------------|:--------------:|:------------------:|
+| Lock layout             |       ✅        |         ✅          |
+| Double tap to sleep     |       ✅        |         ✅          |
+| Hide statusbar          |       ✅        |         ✅          |
+| Hide top shadow         |       ✅        |         ✅          |
+| Icon labels on desktop  |       ✅        |         ✅          |
+| Hide At A Glance        |       ✅        |         ✅          |
+| Hide desktop search bar |       ✅        |         ✅          |
+| Dock spacing            |       ✅        |         ✅          |
 
 </details>
 
@@ -49,11 +49,12 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 <summary>App drawer</summary>
 
 | Feature                       | Pixel Launcher | Launcher3 Launcher |
-|-------------------------------|:-:|:-:|
-| Themed icons                  |✅|✅|
-| Toggle app search bar         |✅|✅|
-| Icon labels in app drawer     |✅|✅|
-| App drawer background opacity |✅|✅|
+|-------------------------------|:--------------:|:------------------:|
+| Themed icons                  |       ✅        |         ✅          |
+| Toggle app search bar         |       ✅        |         ✅          |
+| Icon labels in app drawer     |       ✅        |         ✅          |
+| Hide apps from app drawer     |       ✅        |         ✅          |
+| App drawer background opacity |       ✅        |         ✅          |
 
 </details>
 
@@ -61,21 +62,21 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 <summary>Recents</summary>
 
 | Feature                    | Pixel Launcher | Launcher3 Launcher |
-|----------------------------|:-:|:-:|
-| Clear all button           |✅|✅|
-| Disable recents live tile  |✅|✅|
-| Recents background opacity |✅|✅|
+|----------------------------|:--------------:|:------------------:|
+| Clear all button           |       ✅        |         ✅          |
+| Disable recents live tile  |       ✅        |         ✅          |
+| Recents background opacity |       ✅        |         ✅          |
 
 </details>
 
 <details>
 <summary>Miscellaneous</summary>
 
-| Feature                          | Pixel Launcher | Launcher3 Launcher |
-|----------------------------------|:-:|:-:|
-| Show entry in launcher settings |✅|✅|
-| Developer options                |✅|🚫|
-| Restart                          |✅|✅|
+| Feature                         | Pixel Launcher | Launcher3 Launcher |
+|---------------------------------|:--------------:|:------------------:|
+| Show entry in launcher settings |       ✅        |         ✅          |
+| Developer options               |       ✅        |         🚫         |
+| Restart                         |       ✅        |         ✅          |
 
 </details>
 
