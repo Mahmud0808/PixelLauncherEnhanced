@@ -41,8 +41,10 @@ object Constants {
     const val DRAWER_SEARCH_BAR = "xposed_drawersearchbar"
     const val RECENTS_CLEAR_ALL_BUTTON = "xposed_recentsclearallbutton"
     const val FIXED_RECENTS_BUTTONS_WIDTH = "xposed_fixedrecentsbuttonswidth"
-    const val DESKTOP_GRID_COLUMNS = "xposed_desktopgrid_columns"
-    const val DESKTOP_GRID_ROWS = "xposed_desktopgrid_rows"
+    const val DESKTOP_GRID_ROWS = "xposed_desktopgridrows"
+    const val DESKTOP_GRID_COLUMNS = "xposed_desktopgridcolumns"
+    const val APP_DRAWER_GRID_COLUMNS = "xposed_appdrawergridcolumns"
+    const val APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER = "xposed_appdrawergridrowheightmultiplier"
     const val APP_BLOCK_LIST = "xposed_appblocklist"
     const val SEARCH_HIDDEN_APPS = "xposed_searchhiddenapps"
 

@@ -42,4 +42,30 @@
         app:tickInterval="1"
         app:valueFormat="%" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+        android:key="xposed_appdrawergridcolumns"
+        android:title="@string/app_drawer_columns_title"
+        app:defaultValue="0"
+        app:iconSpaceReserved="false"
+        app:maxVal="15"
+        app:minVal="0"
+        app:showDefaultIndicator="true"
+        app:showResetButton="true"
+        app:tickInterval="1" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+        android:key="xposed_appdrawergridrowheightmultiplier"
+        android:title="@string/app_drawer_row_height_multiplier_title"
+        app:decimalFormat="#.##"
+        app:defaultValue="10"
+        app:iconSpaceReserved="false"
+        app:isDecimalFormat="true"
+        app:maxVal="15"
+        app:minVal="5"
+        app:outputScale="10.0"
+        app:showDefaultIndicator="true"
+        app:showResetButton="true"
+        app:tickInterval="1"
+        app:valueFormat="x" />
+
 </PreferenceScreen>

@@ -1,7 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
-import android.graphics.Rect
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -99,40 +98,6 @@ class IconLabels(context: Context) : ModPack(context) {
                 .runBefore { param -> param.beforeHookedLabel() }
                 .runAfter { param -> param.afterHookedLabel() }
         }
-
-        deviceProfileClass
-            .hookMethod(
-                "updateIconSize",
-                "autoResizeAllAppsCells"
-            )
-            .runAfter { param ->
-                if (showDrawerLabels) return@runAfter
-
-                val cellLayoutPaddingPx = param.thisObject.getField("cellLayoutPaddingPx") as Rect
-                val desiredWorkspaceHorizontalMarginPx =
-                    param.thisObject.getField("desiredWorkspaceHorizontalMarginPx") as Int
-                val availableWidthPx = param.thisObject.getField("availableWidthPx") as Int
-
-                val cellLayoutHorizontalPadding =
-                    (cellLayoutPaddingPx.left + cellLayoutPaddingPx.right) / 2
-                val leftRightPadding =
-                    desiredWorkspaceHorizontalMarginPx + cellLayoutHorizontalPadding
-                val drawerWidth = availableWidthPx - leftRightPadding * 2
-                val invariantDeviceProfile = param.thisObject.getField("inv")
-
-                val allAppsCellHeightPx =
-                    (drawerWidth / invariantDeviceProfile.getField("numAllAppsColumns") as Int)
-                val allAppsIconDrawablePaddingPx = 0
-
-                param.thisObject.setField(
-                    "allAppsCellHeightPx",
-                    allAppsCellHeightPx
-                )
-                param.thisObject.setField(
-                    "allAppsIconDrawablePaddingPx",
-                    allAppsIconDrawablePaddingPx
-                )
-            }
     }
 
     private fun Int.isDesktop(): Boolean {
