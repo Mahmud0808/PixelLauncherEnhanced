@@ -10,7 +10,7 @@
     <string name="btn_pick_image">Chọn hình ảnh</string>
     <string name="understood">Đã hiểu</string>
     <string name="settings_title">Cài đặt</string>
-    <string name="search_hint">Search…</string>
+    <string name="search_hint">Tìm kiếm...</string>
     <string name="root_connection_failed_title">Không thể truy cập quyền root</string>
     <string name="root_connection_failed_desc">Không thể đọc lệnh SU, vui lòng cấp quyền trong trình quản lý root của bạn</string>
     <string name="lsposed_warn">Kích hoạt module này trong lsposed và buộc tắt launcher</string>
@@ -38,10 +38,10 @@
     <string name="fragment_miscellaneous_desc">Một vài cài đặt thú vị khác</string>
     <string name="fragment_about_title">Thông tin</string>
     <string name="fragment_about_desc">Về ứng dụng này</string>
-    <string name="fragment_hidden_apps_title">Hide apps</string>
+    <string name="fragment_hidden_apps_title">Ẩn ứng dụng</string>
     <string name="force_themed_icons_title">Buộc các biểu tượng theo chủ đề</string>
     <string name="force_themed_icons_desc">Tạo sinh ra biểu tượng theo chủ để material</string>
-    <string name="remove_shortcut_badge_title">Remove shortcut icon badge</string>
+    <string name="remove_shortcut_badge_title">Xoá logo phím tắt trên biểu tượng</string>
     <string name="launcher_icon_size_title">Kích cỡ biểu tượng</string>
     <string name="launcher_text_size_title">Kích thước văn bản</string>
     <string name="app_drawer_themed_icons_title">Biểu tượng theo chủ đề material</string>
@@ -78,14 +78,14 @@
     <string name="clear_all_button_title">Nút xóa tất cả</string>
     <string name="fixed_button_width_title">Sửa kích thước cho mỗi nút</string>
     <string name="recents_clear_all">Xóa tất cả</string>
-    <string name="homescreen_columns_title">Homescreen columns</string>
-    <string name="homescreen_rows_title">Homescreen rows</string>
-    <string name="app_drawer_columns_title">App drawer columns</string>
-    <string name="app_drawer_row_height_multiplier_title">Row height multiplier</string>
-    <string name="hide_apps_title">Hide apps from app drawer</string>
-    <string name="search_hidden_apps_title">Allow searching for hidden apps</string>
-    <string name="section_general_title">General</string>
-    <string name="section_interface_title">Interface</string>
-    <string name="section_search_bar_title">Search bar</string>
-    <string name="section_quickspace_title">Quickspace</string>
+    <string name="homescreen_columns_title">Kích cỡ cột trong màn hình chính</string>
+    <string name="homescreen_rows_title">Kích cỡ hàng trong màn hình chính</string>
+    <string name="app_drawer_columns_title">Kích cỡ cột trong ngăn ứng dụng</string>
+    <string name="app_drawer_row_height_multiplier_title">Kích thước chiều cao hàng trong ngăn ứng dụng</string>
+    <string name="hide_apps_title">Ẩn ứng dụng trong ngăn ứng dụng</string>
+    <string name="search_hidden_apps_title">Cho phép tìm kiếm ứng dụng bị ẩn</string>
+    <string name="section_general_title">Chung</string>
+    <string name="section_interface_title">Giao diện</string>
+    <string name="section_search_bar_title">Thanh tìm kiếm</string>
+    <string name="section_quickspace_title">Không gian nhanh</string>
 </resources>

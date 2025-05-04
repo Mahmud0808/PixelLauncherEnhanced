@@ -12,7 +12,6 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -43,7 +42,7 @@ class HideStatusbar(context: Context) : ModPack(context) {
             findClass("com.android.launcher3.uioverrides.QuickstepLauncher")
 
         quickstepLauncherClass
-            .hookConstructor()
+            .hookMethod("onCreate")
             .runAfter { param ->
                 if (!hideStatusbarEnabled) return@runAfter
 
@@ -73,16 +72,10 @@ class HideStatusbar(context: Context) : ModPack(context) {
                     }
                 }
 
-                launcherActivity.setExtraField(
+                param.thisObject.setExtraField(
                     "noStatusBarStateListener",
                     getListener(noStatusBarStateListener)
                 )
-            }
-
-        quickstepLauncherClass
-            .hookMethod("onCreate")
-            .runAfter { param ->
-                if (!hideStatusbarEnabled) return@runAfter
 
                 param.thisObject
                     .callMethod("getStateManager")

@@ -14,9 +14,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.PixelLauncherEnhanced"
-        tools:targetApi="31">
+        tools:targetApi="33">
         <activity
             android:name=".ui.activities.SplashActivity"
             android:exported="true"

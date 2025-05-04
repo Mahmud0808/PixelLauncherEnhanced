@@ -77,7 +77,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
                 if (!clearAllButton) return@runAfter
 
                 val result = param.result as Int
-                param.result = result or CLEAR_ALL_BUTTON
+                param.result = result and CLEAR_ALL_BUTTON.inv()
             }
 
         overviewModalTaskStateClass

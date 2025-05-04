@@ -1,6 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
+import android.graphics.Path
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.REMOVE_ICON_BADGE
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadIcons
@@ -45,17 +46,34 @@ class ShortcutBadge(context: Context) : ModPack(context) {
                 }
             }
 
-        bitmapInfoClass
-            .hookMethod("getBadgeDrawable")
-            .parameters(
-                Context::class.java,
-                Boolean::class.java,
-                Boolean::class.java
-            )
-            .runBefore { param ->
-                if (removeBadge) {
-                    param.result = null
+        try {
+            bitmapInfoClass
+                .hookMethod("getBadgeDrawable")
+                .parameters(
+                    Context::class.java,
+                    Boolean::class.java,
+                    Boolean::class.java
+                )
+                .throwError()
+                .runBefore { param ->
+                    if (removeBadge) {
+                        param.result = null
+                    }
                 }
-            }
+        } catch (_: Throwable) {
+            bitmapInfoClass
+                .hookMethod("getBadgeDrawable")
+                .parameters(
+                    Context::class.java,
+                    Boolean::class.java,
+                    Boolean::class.java,
+                    Path::class.java
+                )
+                .runBefore { param ->
+                    if (removeBadge) {
+                        param.result = null
+                    }
+                }
+        }
     }
 }

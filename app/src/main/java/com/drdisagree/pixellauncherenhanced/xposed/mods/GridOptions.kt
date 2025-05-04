@@ -36,8 +36,7 @@ class GridOptions (context: Context) : ModPack(context) {
             DESKTOP_GRID_ROWS,
             DESKTOP_GRID_COLUMNS,
             APP_DRAWER_GRID_COLUMNS,
-            APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER,
-                -> reloadLauncher(mContext)
+            APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER -> reloadLauncher(mContext)
         }
     }
 
@@ -60,6 +59,13 @@ class GridOptions (context: Context) : ModPack(context) {
 
         invariantDeviceProfileClass
             .hookMethod("initGrid")
+            .runBefore { param ->
+                if (homeScreenGridColumns != 0 && param.args.size >= 3) {
+                    val displayOption = param.args[2]
+                    val closestProfile = displayOption.getField("grid")
+                    closestProfile.setField("numHotseatIcons", homeScreenGridColumns)
+                }
+            }
             .runAfter { param ->
                 param.thisObject.apply {
                     if (homeScreenGridRows != 0) {

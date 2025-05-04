@@ -15,7 +15,6 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MonochromeIconFa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
@@ -31,9 +30,6 @@ class ThemedIcons(context: Context) : ModPack(context) {
 
     private var forceThemedIcons: Boolean = false
     private var appDrawerThemedIcons: Boolean = false
-    private var mIconDb: Any? = null
-    private var mCache: Any? = null
-    private var mModel: Any? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -52,23 +48,6 @@ class ThemedIcons(context: Context) : ModPack(context) {
     @SuppressLint("DiscouragedApi")
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-
-        val baseIconCacheClass = findClass("com.android.launcher3.icons.cache.BaseIconCache")
-
-        baseIconCacheClass
-            .hookConstructor()
-            .runAfter { param ->
-                mIconDb = param.thisObject.getAnyField("mIconDb", "iconDb")
-                mCache = param.thisObject.getAnyField("mCache", "cache")
-            }
-
-        val launcherAppStateClass = findClass("com.android.launcher3.LauncherAppState")
-
-        launcherAppStateClass
-            .hookConstructor()
-            .runAfter { param ->
-                mModel = param.thisObject.getField("mModel")
-            }
 
         try {
             // Only for modified Launcher3

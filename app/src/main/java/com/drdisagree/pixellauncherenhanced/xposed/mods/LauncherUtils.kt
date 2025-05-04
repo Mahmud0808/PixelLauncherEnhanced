@@ -12,7 +12,6 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.resetCounter
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
@@ -28,38 +27,37 @@ class LauncherUtils(context: Context) : ModPack(context) {
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         ThemesClass = findClass("com.android.launcher3.util.Themes")
         GraphicsUtilsClass = findClass("com.android.launcher3.icons.GraphicsUtils")
-        invariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
-        baseIconCacheClass = findClass("com.android.launcher3.icons.cache.BaseIconCache")
-        launcherAppStateClass = findClass("com.android.launcher3.LauncherAppState")
+        InvariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
+        BaseIconCacheClass = findClass("com.android.launcher3.icons.cache.BaseIconCache")
+        LauncherAppStateClass = findClass("com.android.launcher3.LauncherAppState")
 
-        invariantDeviceProfileClass
+        InvariantDeviceProfileClass
             .hookConstructor()
             .runAfter { param ->
                 invariantDeviceProfileInstance = param.thisObject
             }
 
-        baseIconCacheClass
+        BaseIconCacheClass
             .hookConstructor()
             .runAfter { param ->
                 mIconDb = param.thisObject.getAnyField("mIconDb", "iconDb")
                 mCache = param.thisObject.getAnyField("mCache", "cache")
             }
 
-        launcherAppStateClass
+        LauncherAppStateClass
             .hookConstructor()
             .runAfter { param ->
-                mModel = param.thisObject.getField("mModel")
+                mModel = param.thisObject.getAnyField("mModel", "model")
             }
-
     }
 
     companion object {
 
         private var ThemesClass: Class<*>? = null
         private var GraphicsUtilsClass: Class<*>? = null
-        private var invariantDeviceProfileClass: Class<*>? = null
-        private var baseIconCacheClass: Class<*>? = null
-        private var launcherAppStateClass: Class<*>? = null
+        private var InvariantDeviceProfileClass: Class<*>? = null
+        private var BaseIconCacheClass: Class<*>? = null
+        private var LauncherAppStateClass: Class<*>? = null
 
         private var invariantDeviceProfileInstance: Any? = null
         private var mIconDb: Any? = null
