@@ -48,6 +48,8 @@
     <string name="app_drawer_themed_icons_desc">在应用程序抽屉内使用主题色图标</string>
     <string name="double_tap_to_sleep_title">双击息屏</string>
     <string name="double_tap_to_sleep_desc">双击桌面屏幕空白区域关闭屏幕</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">桌面图标标签</string>
     <string name="hide_launcher_statusbar_title">隐藏状态栏</string>
     <string name="hide_launcher_statusbar_desc">如果状态栏没有被隐藏则展开快速设置面板</string>

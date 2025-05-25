@@ -48,6 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Тематические значки в меню приложений</string>
     <string name="double_tap_to_sleep_title">Двойное нажатие</string>
     <string name="double_tap_to_sleep_desc">Дважды нажмите на пустое место на главном экране, чтобы выключить экран</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Подпись иконок на рабочем столе</string>
     <string name="hide_launcher_statusbar_title">Скрыть строку состояния</string>
     <string name="hide_launcher_statusbar_desc">Раскроет панель быстрых настроек, если строка состояния не скрыта</string>

@@ -48,6 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Ativar ícones temáticos na gaveta de aplicativos</string>
     <string name="double_tap_to_sleep_title">Toque duas vezes para desligar a tela</string>
     <string name="double_tap_to_sleep_desc">Toque duas vezes no espaço vazio da tela inicial para desligar a tela</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Rótulos dos ícones no ecrã principal</string>
     <string name="hide_launcher_statusbar_title">Ocultar a barra de estado</string>
     <string name="hide_launcher_statusbar_desc">Expandir o painel de configurações rápidas uma vez se a barra de status não estiver oculta</string>

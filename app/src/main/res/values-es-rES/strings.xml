@@ -48,6 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Activar iconos temáticos en el cajón de aplicaciones</string>
     <string name="double_tap_to_sleep_title">Doble toque para apagar pantalla</string>
     <string name="double_tap_to_sleep_desc">Doble toque en un espacio vacío de la pantalla de inicio para apagar la pantalla</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Etiquetas de iconos en el escritorio</string>
     <string name="hide_launcher_statusbar_title">Ocultar la barra de estado</string>
     <string name="hide_launcher_statusbar_desc">Expandir panel de ajustes rápidos una vez si la barra de estado no está oculta</string>

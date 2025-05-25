@@ -48,6 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Kích hoạt biểu tượng theo chủ đề material trong ngăn kéo ứng dụng</string>
     <string name="double_tap_to_sleep_title">Chạm hai lần để tắt màn hình</string>
     <string name="double_tap_to_sleep_desc">Gõ hai lần vào chỗ trống trên màn hình chính để tắt máy</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Tên biểu tượng trên màn hình chính</string>
     <string name="hide_launcher_statusbar_title">Ẩn thanh trạng thái</string>
     <string name="hide_launcher_statusbar_desc">Mở rộng thanh điều hướng nếu thanh trạng thái không được ẩn</string>

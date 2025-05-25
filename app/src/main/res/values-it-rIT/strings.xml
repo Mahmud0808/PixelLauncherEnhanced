@@ -48,6 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Abilita icone a tema nel menu app</string>
     <string name="double_tap_to_sleep_title">Doppio tocco per spegnere lo schermo</string>
     <string name="double_tap_to_sleep_desc">Doppio tocco sullo spazio vuoto della schermata home per spegnere lo schermo</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Etichette delle icone sul desktop</string>
     <string name="hide_launcher_statusbar_title">Nascondi barra di stato</string>
     <string name="hide_launcher_statusbar_desc">Espandi il pannello delle impostazioni rapide una volta se la barra di stato non è nascosta</string>

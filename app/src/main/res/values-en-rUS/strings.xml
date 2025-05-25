@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Unleash the full potential of your launcher</string>
+    <string name="app_moto"></string>
     <string name="icon">Icon</string>
     <string name="more">More</string>
     <string name="exit">Exit</string>
@@ -48,6 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Enable themed icons on app drawer</string>
     <string name="double_tap_to_sleep_title">Double tap to sleep</string>
     <string name="double_tap_to_sleep_desc">Double tap on home screen empty space to turn off the screen</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Icon labels on desktop</string>
     <string name="hide_launcher_statusbar_title">Hide statusbar</string>
     <string name="hide_launcher_statusbar_desc">Expand quick settings panel once if status bar is not hidden</string>
