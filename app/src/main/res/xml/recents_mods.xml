@@ -18,6 +18,12 @@
         android:title="@string/disable_recents_live_tile_title"
         app:iconSpaceReserved="false" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:key="xposed_recentsbackgroundopacity_enabled"
+        android:title="@string/custom_opacity_enable_title"
+        android:defaultValue="false"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
         android:key="xposed_recentsbackgroundopacity"
         android:title="@string/recents_background_opacity_title"
@@ -29,6 +35,7 @@
         app:showDefaultIndicator="true"
         app:showResetButton="true"
         app:tickInterval="1"
-        app:valueFormat="%" />
+        app:valueFormat="%"
+        android:dependency="xposed_recentsbackgroundopacity_enabled" />
 
 </PreferenceScreen>

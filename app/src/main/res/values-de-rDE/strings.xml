@@ -90,4 +90,5 @@
     <string name="section_interface_title">Benutzeroberfläche</string>
     <string name="section_search_bar_title">Suchleiste</string>
     <string name="section_quickspace_title">Schnellauswahl</string>
+    <string name="custom_opacity_enable_title">Benutzerdefinierte Transparenz aktivieren</string>
 </resources>

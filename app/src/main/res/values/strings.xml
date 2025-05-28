@@ -101,4 +101,5 @@
     <string name="section_interface_title">Interface</string>
     <string name="section_search_bar_title">Search bar</string>
     <string name="section_quickspace_title">Quickspace</string>
+    <string name="custom_opacity_enable_title">Enable custom opacity</string>
 </resources>
