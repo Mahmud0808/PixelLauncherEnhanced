@@ -11,6 +11,13 @@
         android:key="xposed_fixedrecentsbuttonswidth"
         android:title="@string/fixed_button_width_title"
         app:iconSpaceReserved="false" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:key="xposed_recents_clearall_only"
+        android:title="@string/recents_remove_screenshot_title"
+        android:summary="@string/recents_remove_screenshot_summary"
+        android:defaultValue="false"
+        android:dependency="xposed_recentsclearallbutton"
+        app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
         android:key="xposed_disablerecentslivetile"
@@ -37,5 +44,7 @@
         app:tickInterval="1"
         app:valueFormat="%"
         android:dependency="xposed_recentsbackgroundopacity_enabled" />
+
+
 
 </PreferenceScreen>
