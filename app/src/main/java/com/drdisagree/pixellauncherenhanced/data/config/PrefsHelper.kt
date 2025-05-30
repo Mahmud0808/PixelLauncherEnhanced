@@ -25,6 +25,8 @@ object PrefsHelper {
 
             FIXED_RECENTS_BUTTONS_WIDTH -> getBoolean(RECENTS_CLEAR_ALL_BUTTON)
 
+            "xposed_recents_clearall_only" -> getBoolean(RECENTS_CLEAR_ALL_BUTTON)
+
             else -> true
         }
     }

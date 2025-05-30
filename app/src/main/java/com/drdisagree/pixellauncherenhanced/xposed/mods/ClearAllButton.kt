@@ -2,6 +2,8 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
@@ -15,6 +17,7 @@ import androidx.core.view.isVisible
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_ONLY
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
@@ -34,6 +37,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
     private var clearAllButton = false
     private var fixedButtonWidth = false
+    private var clearAllOnly = false
     private var recentsViewInstance: Any? = null
     private var actionClearAllButton: Button? = null
 
@@ -41,12 +45,15 @@ class ClearAllButton(context: Context) : ModPack(context) {
         Xprefs.apply {
             clearAllButton = getBoolean(RECENTS_CLEAR_ALL_BUTTON, false)
             fixedButtonWidth = clearAllButton && getBoolean(FIXED_RECENTS_BUTTONS_WIDTH, false)
+            clearAllOnly = getBoolean(RECENTS_CLEAR_ALL_ONLY, false)
         }
 
         when (key.firstOrNull()) {
             RECENTS_CLEAR_ALL_BUTTON -> updateVisibility()
 
             FIXED_RECENTS_BUTTONS_WIDTH -> restartLauncher(mContext)
+
+            RECENTS_CLEAR_ALL_ONLY -> restartLauncher(mContext)
         }
     }
 
@@ -186,6 +193,29 @@ class ClearAllButton(context: Context) : ModPack(context) {
                 }
 
                 mActionButtons.addView(actionClearAllButton)
+
+                android.util.Log.d("PLEnhanced", "===> handleLoadPackage: clearAllOnly=$clearAllOnly, clearAllButton=$clearAllButton, fixedButtonWidth=$fixedButtonWidth")
+                if (clearAllOnly) {
+                    val handler = Handler(Looper.getMainLooper())
+                    val hideRunnable = object : Runnable {
+                        override fun run() {
+                            fun hideScreenshotButton(view: View) {
+                                val idName = try { view.resources.getResourceEntryName(view.id) } catch (_: Exception) { view.id.toString() }
+                                if (idName == "action_screenshot") {
+                                    view.visibility = View.GONE
+                                }
+                                if (view is ViewGroup) {
+                                    for (i in 0 until view.childCount) {
+                                        hideScreenshotButton(view.getChildAt(i))
+                                    }
+                                }
+                            }
+                            hideScreenshotButton(mActionButtons)
+                            handler.postDelayed(this, 500)
+                        }
+                    }
+                    handler.post(hideRunnable)
+                }
 
                 if (fixedButtonWidth) {
                     mActionButtons.children.forEach { child ->

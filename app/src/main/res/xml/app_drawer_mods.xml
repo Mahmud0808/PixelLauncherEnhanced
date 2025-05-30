@@ -32,6 +32,12 @@
         android:title="@string/search_hidden_apps_title"
         app:iconSpaceReserved="false" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:key="xposed_appdrawerbackgroundopacity_enabled"
+        android:title="@string/custom_opacity_enable_title"
+        android:defaultValue="false"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
         android:key="xposed_appdrawerbackgroundopacity"
         android:title="@string/app_drawer_background_opacity_title"
@@ -43,7 +49,8 @@
         app:maxVal="100"
         app:showResetButton="true"
         app:tickInterval="1"
-        app:valueFormat="%" />
+        app:valueFormat="%"
+        android:dependency="xposed_appdrawerbackgroundopacity_enabled" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
         android:key="xposed_appdrawergridcolumns"

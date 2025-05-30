@@ -90,4 +90,7 @@
     <string name="section_interface_title">Benutzeroberfläche</string>
     <string name="section_search_bar_title">Suchleiste</string>
     <string name="section_quickspace_title">Schnellauswahl</string>
+    <string name="custom_opacity_enable_title">Benutzerdefinierte Transparenz aktivieren</string>
+    <string name="recents_remove_screenshot_title">Screenshot-Button aus Recents entfernen</string>
+    <string name="recents_remove_screenshot_summary">Blendet den Screenshot-Button in der Übersicht der letzten Apps aus</string>
 </resources>
