@@ -16,6 +16,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Modifier
@@ -115,7 +116,7 @@ class SmartSpace(context: Context) : ModPack(context) {
             .runAfter { param ->
                 if (!hideQuickspace) return@runAfter
 
-                param.thisObject.setField("isFirstPagePinnedItemEnabled", false)
+                param.thisObject.setFieldSilently("isFirstPagePinnedItemEnabled", false)
             }
 
         modelCallbacksClass
@@ -129,6 +130,7 @@ class SmartSpace(context: Context) : ModPack(context) {
 
         modelCallbacksClass
             .hookMethod("getIsFirstPagePinnedItemEnabled")
+            .suppressError()
             .runBefore { param ->
                 if (!hideQuickspace) return@runBefore
 
@@ -419,7 +421,7 @@ class SmartSpace(context: Context) : ModPack(context) {
                 if (!hideQuickspace) return@runBefore
 
                 val dataModel = param.args[1]
-                dataModel.setField("isFirstPagePinnedItemEnabled", false)
+                dataModel.setFieldSilently("isFirstPagePinnedItemEnabled", false)
             }
 
         val loaderTask = findClass("com.android.launcher3.model.LoaderTask")
@@ -430,7 +432,7 @@ class SmartSpace(context: Context) : ModPack(context) {
                 if (!hideQuickspace) return@runAfter
 
                 val mBgDataModel = param.thisObject.getField("mBgDataModel")
-                mBgDataModel.setField("isFirstPagePinnedItemEnabled", false)
+                mBgDataModel.setFieldSilently("isFirstPagePinnedItemEnabled", false)
             }
     }
 

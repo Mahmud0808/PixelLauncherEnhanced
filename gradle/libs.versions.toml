@@ -1,7 +1,8 @@
 [versions]
-agp = "8.10.0"
+agp = "8.10.1"
 circleimageview = "3.1.0"
 colorpickerVersion = "1.1.0"
+konfettiXml = "2.0.5"
 kotlin = "2.1.10"
 coreKtx = "1.16.0"
 coreSplashscreen = "1.0.1"
@@ -11,12 +12,12 @@ activity = "1.10.1"
 constraintlayout = "2.2.1"
 kotlinxCoroutinesAndroid = "1.9.0"
 libsuVersion = "6.0.0"
-navigationFragment = "2.8.9"
-navigationFragmentKtx = "2.8.9"
-navigationUiKtx = "2.8.9"
+navigationFragment = "2.9.0"
+navigationFragmentKtx = "2.9.0"
+navigationUiKtx = "2.9.0"
 preferenceKtx = "1.2.1"
 recyclerview = "1.4.0"
-recyclerviewSelection = "1.1.0"
+recyclerviewSelection = "1.2.0"
 remotepreferences = "0.8"
 xposedbridge = "main-SNAPSHOT"
 
@@ -34,6 +35,7 @@ androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version
 androidx-recyclerview-selection = { module = "androidx.recyclerview:recyclerview-selection", version.ref = "recyclerviewSelection" }
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
 jaredrummler-colorpicker = { module = "com.jaredrummler:colorpicker", version.ref = "colorpickerVersion" }
+konfetti-xml = { module = "nl.dionsegijn:konfetti-xml", version.ref = "konfettiXml" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 remotepreferences = { module = "com.crossbowffs.remotepreferences:remotepreferences", version.ref = "remotepreferences" }

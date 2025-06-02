@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Mở hoá tính năng trong trình khởi chạy của bạn</string>
+    <string name="app_motto">Mở hoá tính năng trong trình khởi chạy của bạn</string>
     <string name="icon">Biểu tượng</string>
     <string name="more">Nhiều hơn</string>
     <string name="exit">Thoát</string>

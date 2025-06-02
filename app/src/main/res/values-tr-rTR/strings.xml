@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Başlatıcınızın tüm potansiyelini ortaya çıkarın</string>
+    <string name="app_motto">Başlatıcınızın tüm potansiyelini ortaya çıkarın</string>
     <string name="icon">Simge</string>
     <string name="more">Daha Fazla</string>
     <string name="exit">Çıkış</string>
@@ -48,8 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Uygulama çekmecesinde temalı simgeleri etkinleştir</string>
     <string name="double_tap_to_sleep_title">Çift dokunuşla uyku</string>
     <string name="double_tap_to_sleep_desc">Ana ekranda boş alana çift dokunarak ekranı kapat</string>
-    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
-    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
+    <string name="allow_wallpaper_zooming">Duvar kağıdı yakınlaştırma</string>
+    <string name="allow_wallpaper_zooming_summary">Çekmeceyi veya son uygulamaları kullanırken duvar kağıdını yakınlaştırın veya uzaklaştırın</string>
     <string name="desktop_icon_labels_title">Masaüstündeki simge etiketleri</string>
     <string name="hide_launcher_statusbar_title">Durum çubuğunu gizle</string>
     <string name="hide_launcher_statusbar_desc">Durum çubuğu gizlenmemişse hızlı ayarlar panelini bir kez genişletin</string>

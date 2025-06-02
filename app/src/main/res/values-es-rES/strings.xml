@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Desbloquea todo el potencial de tu launcher</string>
+    <string name="app_motto">Desbloquea todo el potencial de tu launcher</string>
     <string name="icon">Icono</string>
     <string name="more">Más</string>
     <string name="exit">Salir</string>

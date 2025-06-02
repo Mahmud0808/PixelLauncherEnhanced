@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">Pixel Launcher Enhanced</string>
     <string name="app_name_shortened" translatable="false">PLEnhanced</string>
-    <string name="app_moto">Unleash the full potential of your launcher</string>
+    <string name="app_motto">Unleash the full potential of your launcher</string>
 
     <string name="icon">Icon</string>
     <string name="more">More</string>

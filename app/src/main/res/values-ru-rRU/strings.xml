@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Раскройте весь потенциал вашего лаунчера</string>
+    <string name="app_motto">Раскройте весь потенциал вашего лаунчера</string>
     <string name="icon">Иконки</string>
     <string name="more">Еще</string>
     <string name="exit">Выход</string>
@@ -70,7 +70,7 @@
     <string name="restarting_launcher">Перезапуск лаунчера…</string>
     <string name="developer_options_title">Для разработчиков</string>
     <string name="developer_options_desc">Включить скрытые параметры для разработчиков</string>
-    <string name="entry_in_launcher_settings">Показывать PixelLauncher Enchanced в настройках лаунчера</string>
+    <string name="entry_in_launcher_settings">Показывать PLEnhanced в настройках лаунчера</string>
     <string name="lock_layout_title">Блокировать разметку</string>
     <string name="lock_layout_desc_on">Иконки и виджеты нельзя добавлять, удалять или перемещать по рабочему столу</string>
     <string name="lock_layout_desc_off">Иконки и виджеты можно добавлять, удалять и перемещать на главном экране</string>

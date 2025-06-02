@@ -7,12 +7,20 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.drdisagree.pixellauncherenhanced.BuildConfig
+import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentAboutBinding
+import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setToolbarTitle
+import com.drdisagree.pixellauncherenhanced.utils.Presets
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import nl.dionsegijn.konfetti.xml.image.ImageUtil
 
 class About : Fragment() {
 
@@ -43,6 +51,10 @@ class About : Fragment() {
             // Unlikely to happen, but just in case
             binding.appIcon.setImageResource(R.mipmap.ic_launcher)
         }
+        binding.appIcon.setOnClickListener { view ->
+            view.weakVibrate()
+            launchRandomKonfetti()
+        }
         binding.versionCode.text = getString(
             R.string.version_codes,
             BuildConfig.VERSION_NAME,
@@ -67,6 +79,26 @@ class About : Fragment() {
             )
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun launchRandomKonfetti() {
+        val delayDuration = resources.getInteger(android.R.integer.config_mediumAnimTime) + 100
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(delayDuration.toLong())
+
+            val drawable = AppCompatResources.getDrawable(appContext, R.drawable.ic_heart)
+            val drawableShape = ImageUtil.loadDrawable(drawable!!)
+
+            val effects = listOf(
+                { binding.konfettiView.start(Presets.explode()) },
+                { binding.konfettiView.start(Presets.parade()) },
+                { binding.konfettiView.start(Presets.rain()) },
+                { binding.konfettiView.start(Presets.festive(drawableShape)) }
+            )
+
+            effects.random().invoke()
         }
     }
 

@@ -62,4 +62,5 @@ dependencies {
     implementation(libs.jaredrummler.colorpicker)
     implementation(libs.remotepreferences)
     implementation(libs.circleimageview)
+    implementation(libs.konfetti.xml)
 }

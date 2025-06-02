@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Uwolnij pełen potencjał swojego launchera</string>
+    <string name="app_motto">Uwolnij pełen potencjał swojego launchera</string>
     <string name="icon">Ikona</string>
     <string name="more">Więcej</string>
     <string name="exit">Zamknij</string>
@@ -70,7 +70,7 @@
     <string name="restarting_launcher">Ponowne uruchamianie launchera…</string>
     <string name="developer_options_title">Opcje programisty</string>
     <string name="developer_options_desc">Aktywuj ukryte opcje dla programistów</string>
-    <string name="entry_in_launcher_settings">Pokaż PixelLauncher Enhanced w ustawieniach launchera</string>
+    <string name="entry_in_launcher_settings">Pokaż PLEnhanced w ustawieniach launchera</string>
     <string name="lock_layout_title">Zablokuj układ ekranu głównego</string>
     <string name="lock_layout_desc_on">Nie można dodawać, usuwać ani przesuwać elementów na ekranie głównym</string>
     <string name="lock_layout_desc_off">Można dodawać, usuwać i przesuwać elementy na ekranie głównym</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Unleash the full potential of your launcher</string>
+    <string name="app_motto">Unleash the full potential of your launcher</string>
     <string name="icon">Icon</string>
     <string name="more">More</string>
     <string name="exit">Exit</string>

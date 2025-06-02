@@ -5,15 +5,17 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/item_background_material_error"
-    android:clickable="true">
+    android:clickable="true"
+    android:paddingStart="6dp"
+    android:paddingEnd="24dp">
 
     <ImageView
         android:id="@+id/module_icon"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
-        android:layout_marginStart="24dp"
+        android:layout_marginStart="18dp"
         android:contentDescription="@string/icon"
         android:src="@drawable/ic_xposed_disabled"
         app:tint="?colorOnError" />
@@ -53,7 +55,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
-        android:layout_marginEnd="24dp"
         android:backgroundTint="?attr/colorErrorContainer"
         android:minWidth="0dp"
         android:minHeight="0dp"

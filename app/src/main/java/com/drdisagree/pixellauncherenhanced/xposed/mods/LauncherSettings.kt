@@ -119,7 +119,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
 
                 myPreference.callMethod("setKey", BuildConfig.APPLICATION_ID)
                 myPreference.callMethod("setTitle", modRes.getString(R.string.app_name_shortened))
-                myPreference.callMethod("setSummary", modRes.getString(R.string.app_moto))
+                myPreference.callMethod("setSummary", modRes.getString(R.string.app_motto))
 
                 if (mContext.packageName == LAUNCHER3_PACKAGE) {
                     myPreference.callMethod(
