@@ -11,24 +11,18 @@
         android:key="xposed_fixedrecentsbuttonswidth"
         android:title="@string/fixed_button_width_title"
         app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_recents_clearall_only"
+        android:key="xposed_recentsremovescreenshotbutton"
         android:title="@string/recents_remove_screenshot_title"
         android:summary="@string/recents_remove_screenshot_summary"
         android:defaultValue="false"
-        android:dependency="xposed_recentsclearallbutton"
         app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
         android:key="xposed_disablerecentslivetile"
         android:summary="@string/disable_recents_live_tile_desc"
         android:title="@string/disable_recents_live_tile_title"
-        app:iconSpaceReserved="false" />
-
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_recentsbackgroundopacity_enabled"
-        android:title="@string/custom_opacity_enable_title"
-        android:defaultValue="false"
         app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
@@ -42,9 +36,6 @@
         app:showDefaultIndicator="true"
         app:showResetButton="true"
         app:tickInterval="1"
-        app:valueFormat="%"
-        android:dependency="xposed_recentsbackgroundopacity_enabled" />
-
-
+        app:valueFormat="%" />
 
 </PreferenceScreen>

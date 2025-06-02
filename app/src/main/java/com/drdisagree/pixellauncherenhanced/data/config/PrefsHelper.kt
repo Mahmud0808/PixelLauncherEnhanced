@@ -25,8 +25,6 @@ object PrefsHelper {
 
             FIXED_RECENTS_BUTTONS_WIDTH -> getBoolean(RECENTS_CLEAR_ALL_BUTTON)
 
-            "xposed_recents_clearall_only" -> getBoolean(RECENTS_CLEAR_ALL_BUTTON)
-
             else -> true
         }
     }
@@ -38,7 +36,7 @@ object PrefsHelper {
     }
 
     @SuppressLint("DefaultLocale")
-    fun getSummary(fragmentCompat: Context, key: String): String? {
+    fun getSummary(context: Context, key: String): String? {
         when {
             key.endsWith("Slider") -> {
                 val value = String.format("%.2f", getSliderFloat(key, 0f))

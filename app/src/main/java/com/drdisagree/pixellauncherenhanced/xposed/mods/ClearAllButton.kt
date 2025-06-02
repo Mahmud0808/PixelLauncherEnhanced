@@ -2,8 +2,6 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
@@ -17,7 +15,7 @@ import androidx.core.view.isVisible
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_ONLY
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_REMOVE_SCREENSHOT_BUTTON
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
@@ -37,7 +35,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
     private var clearAllButton = false
     private var fixedButtonWidth = false
-    private var clearAllOnly = false
+    private var removeScreenshotButton = false
     private var recentsViewInstance: Any? = null
     private var actionClearAllButton: Button? = null
 
@@ -45,15 +43,14 @@ class ClearAllButton(context: Context) : ModPack(context) {
         Xprefs.apply {
             clearAllButton = getBoolean(RECENTS_CLEAR_ALL_BUTTON, false)
             fixedButtonWidth = clearAllButton && getBoolean(FIXED_RECENTS_BUTTONS_WIDTH, false)
-            clearAllOnly = getBoolean(RECENTS_CLEAR_ALL_ONLY, false)
+            removeScreenshotButton = getBoolean(RECENTS_REMOVE_SCREENSHOT_BUTTON, false)
         }
 
         when (key.firstOrNull()) {
             RECENTS_CLEAR_ALL_BUTTON -> updateVisibility()
 
-            FIXED_RECENTS_BUTTONS_WIDTH -> restartLauncher(mContext)
-
-            RECENTS_CLEAR_ALL_ONLY -> restartLauncher(mContext)
+            FIXED_RECENTS_BUTTONS_WIDTH,
+            RECENTS_REMOVE_SCREENSHOT_BUTTON -> restartLauncher(mContext)
         }
     }
 
@@ -194,29 +191,6 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
                 mActionButtons.addView(actionClearAllButton)
 
-                android.util.Log.d("PLEnhanced", "===> handleLoadPackage: clearAllOnly=$clearAllOnly, clearAllButton=$clearAllButton, fixedButtonWidth=$fixedButtonWidth")
-                if (clearAllOnly) {
-                    val handler = Handler(Looper.getMainLooper())
-                    val hideRunnable = object : Runnable {
-                        override fun run() {
-                            fun hideScreenshotButton(view: View) {
-                                val idName = try { view.resources.getResourceEntryName(view.id) } catch (_: Exception) { view.id.toString() }
-                                if (idName == "action_screenshot") {
-                                    view.visibility = View.GONE
-                                }
-                                if (view is ViewGroup) {
-                                    for (i in 0 until view.childCount) {
-                                        hideScreenshotButton(view.getChildAt(i))
-                                    }
-                                }
-                            }
-                            hideScreenshotButton(mActionButtons)
-                            handler.postDelayed(this, 500)
-                        }
-                    }
-                    handler.post(hideRunnable)
-                }
-
                 if (fixedButtonWidth) {
                     mActionButtons.children.forEach { child ->
                         if (child is Button) {
@@ -236,6 +210,26 @@ class ClearAllButton(context: Context) : ModPack(context) {
             actionClearAllButton?.visibility = View.VISIBLE
         } else {
             actionClearAllButton?.visibility = View.GONE
+        }
+
+        if (removeScreenshotButton) {
+            val parentView = actionClearAllButton?.parent as? ViewGroup
+            val screenshotId = mContext.resources.getIdentifier(
+                "action_screenshot", "id", mContext.packageName
+            )
+
+            if (screenshotId != 0) {
+                val screenshotButton = parentView?.findViewById<View>(screenshotId)
+
+                screenshotButton?.let { view ->
+                    view.setOnVisibilityChangeListener { isVisible ->
+                        if (isVisible) {
+                            view.visibility = View.GONE
+                        }
+                    }
+                    view.visibility = View.GONE
+                }
+            }
         }
 
         if (fixedButtonWidth) {
@@ -270,14 +264,10 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     child.setOnVisibilityChangeListener { isVisible -> updateVisibility(isVisible) }
                     updateVisibility(child.isVisible)
                 } else if (child.tag != containerTag) {
-                    fun updateVisibility() {
-                        child.visibility = View.GONE
-                    }
-
                     child.setOnVisibilityChangeListener { isVisible ->
                         child.visibility = View.GONE
                     }
-                    updateVisibility()
+                    child.visibility = View.GONE
                 }
             }
         }
