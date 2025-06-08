@@ -79,6 +79,8 @@
     <string name="drawer_search_desc">Uygulama çekmecesinin üstündeki arama çubuğu</string>
     <string name="clear_all_button_title">Tümünü temizle düğmesi</string>
     <string name="fixed_button_width_title">Her düğme için sabit genişlik</string>
+    <string name="recents_remove_screenshot_title">Ekran görüntüsü düğmesini kaldır</string>
+    <string name="recents_remove_screenshot_summary">Son uygulamalar genel görünümünde ekran görüntüsü düğmesini gizler</string>
     <string name="recents_clear_all">Tümünü temizle</string>
     <string name="homescreen_columns_title">Ana ekran sütunları</string>
     <string name="homescreen_rows_title">Ana ekran satırları</string>

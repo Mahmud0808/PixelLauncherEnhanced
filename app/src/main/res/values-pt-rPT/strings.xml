@@ -79,6 +79,8 @@
     <string name="drawer_search_desc">Barra de pesquisa no topo da gaveta de apps</string>
     <string name="clear_all_button_title">Botão \"Limpar Tudo\"</string>
     <string name="fixed_button_width_title">Largura fixa para cada botão</string>
+    <string name="recents_remove_screenshot_title">Remove screenshot button</string>
+    <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
     <string name="recents_clear_all">Limpar tudo</string>
     <string name="homescreen_columns_title">Colunas da tela inicial</string>
     <string name="homescreen_rows_title">Linhas da tela inicial</string>
