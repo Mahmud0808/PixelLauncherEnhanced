@@ -79,6 +79,8 @@
     <string name="drawer_search_desc">Pasek wyszukiwania na górze listy aplikacji</string>
     <string name="clear_all_button_title">Przycisk „Wyczyść wszystko”</string>
     <string name="fixed_button_width_title">Stała szerokość każdego przycisku</string>
+    <string name="recents_remove_screenshot_title">Remove screenshot button</string>
+    <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
     <string name="recents_clear_all">Wyczyść</string>
     <string name="homescreen_columns_title">Liczba kolumn ekranu głównego</string>
     <string name="homescreen_rows_title">Liczba wierszy ekranu głównego</string>

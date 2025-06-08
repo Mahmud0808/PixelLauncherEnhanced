@@ -48,8 +48,8 @@
     <string name="app_drawer_themed_icons_desc">Тематические значки в меню приложений</string>
     <string name="double_tap_to_sleep_title">Двойное нажатие</string>
     <string name="double_tap_to_sleep_desc">Дважды нажмите на пустое место на главном экране, чтобы выключить экран</string>
-    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
-    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
+    <string name="allow_wallpaper_zooming">Масштабирование обоев</string>
+    <string name="allow_wallpaper_zooming_summary">Увеличение или уменьшение обоев в меню приложений и в списке недавних приложений</string>
     <string name="desktop_icon_labels_title">Подпись иконок на рабочем столе</string>
     <string name="hide_launcher_statusbar_title">Скрыть строку состояния</string>
     <string name="hide_launcher_statusbar_desc">Раскроет панель быстрых настроек, если строка состояния не скрыта</string>
@@ -79,6 +79,8 @@
     <string name="drawer_search_desc">Строка поиска в меню приложений</string>
     <string name="clear_all_button_title">Кнопка \"Очистить все\"</string>
     <string name="fixed_button_width_title">Фиксированная ширина для каждой кнопки</string>
+    <string name="recents_remove_screenshot_title">Убрать кнопку скриншота</string>
+    <string name="recents_remove_screenshot_summary">Скрывает кнопку скриншота при просмотре недавних приложений</string>
     <string name="recents_clear_all">Очистить</string>
     <string name="homescreen_columns_title">Столбцы на главном экране</string>
     <string name="homescreen_rows_title">Строки на главном экране</string>

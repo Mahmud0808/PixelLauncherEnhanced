@@ -79,6 +79,8 @@
     <string name="drawer_search_desc">应用抽屉顶部的搜索栏</string>
     <string name="clear_all_button_title">“清除所有”按钮</string>
     <string name="fixed_button_width_title">每个按钮的固定宽度</string>
+    <string name="recents_remove_screenshot_title">Remove screenshot button</string>
+    <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
     <string name="recents_clear_all">清除所有</string>
     <string name="homescreen_columns_title">屏幕图标列数</string>
     <string name="homescreen_rows_title">屏幕图标行数</string>

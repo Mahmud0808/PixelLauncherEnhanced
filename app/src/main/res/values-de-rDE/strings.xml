@@ -79,6 +79,8 @@
     <string name="drawer_search_desc">Suchleiste oben in der App-Übersicht</string>
     <string name="clear_all_button_title">\"Alle schließen\" Schaltfläche</string>
     <string name="fixed_button_width_title">Feste Breite für jeden Button</string>
+    <string name="recents_remove_screenshot_title">Remove screenshot button</string>
+    <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
     <string name="recents_clear_all">Alle schließen</string>
     <string name="homescreen_columns_title">Startbildschirm-Spalten</string>
     <string name="homescreen_rows_title">Startbildschirm-Zeilen</string>
@@ -90,7 +92,4 @@
     <string name="section_interface_title">Benutzeroberfläche</string>
     <string name="section_search_bar_title">Suchleiste</string>
     <string name="section_quickspace_title">Schnellauswahl</string>
-    <string name="custom_opacity_enable_title">Benutzerdefinierte Transparenz aktivieren</string>
-    <string name="recents_remove_screenshot_title">Screenshot-Button aus Recents entfernen</string>
-    <string name="recents_remove_screenshot_summary">Blendet den Screenshot-Button in der Übersicht der letzten Apps aus</string>
 </resources>

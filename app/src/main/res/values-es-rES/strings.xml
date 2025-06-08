@@ -79,6 +79,8 @@
     <string name="drawer_search_desc">Barra de búsqueda encima del cajón de aplicaciones</string>
     <string name="clear_all_button_title">Botón \"Borrar todo\"</string>
     <string name="fixed_button_width_title">Ancho fijo de cada botón</string>
+    <string name="recents_remove_screenshot_title">Remove screenshot button</string>
+    <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
     <string name="recents_clear_all">Borrar todo</string>
     <string name="homescreen_columns_title">Columnas de pantalla de inicio</string>
     <string name="homescreen_rows_title">Filas de pantalla de inicio</string>
