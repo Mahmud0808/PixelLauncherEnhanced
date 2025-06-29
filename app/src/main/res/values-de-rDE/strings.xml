@@ -89,7 +89,16 @@
     <string name="hide_apps_title">Apps in der App-Übersicht ausblenden</string>
     <string name="search_hidden_apps_title">Suche nach verborgenen Apps erlauben</string>
     <string name="section_general_title">Allgemein</string>
+    <string name="section_icon_colors_title">Icon colors</string>
     <string name="section_interface_title">Benutzeroberfläche</string>
     <string name="section_search_bar_title">Suchleiste</string>
     <string name="section_quickspace_title">Schnellauswahl</string>
+    <string name="custom_themed_icon_color_title">Custom themed icon color</string>
+    <string name="icon_foreground_color_light_title">Foreground color in light mode</string>
+    <string name="icon_background_color_light_title">Background color in light mode</string>
+    <string name="icon_foreground_color_dark_title">Foreground color in dark mode</string>
+    <string name="icon_background_color_dark_title">Background color in dark mode</string>
+    <string name="folder_color_light_title">Folder color in light mode</string>
+    <string name="folder_color_dark_title">Folder color in dark mode</string>
+    <string name="search_bar_opacity_title">Search bar opacity</string>
 </resources>

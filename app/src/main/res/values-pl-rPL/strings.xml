@@ -89,7 +89,16 @@
     <string name="hide_apps_title">Ukryj aplikacje z listy aplikacji</string>
     <string name="search_hidden_apps_title">Zezwalaj na wyszukiwanie ukrytych aplikacji</string>
     <string name="section_general_title">Ogólne</string>
+    <string name="section_icon_colors_title">Icon colors</string>
     <string name="section_interface_title">Interfejs</string>
     <string name="section_search_bar_title">Pasek wyszukiwania</string>
     <string name="section_quickspace_title">Szybki podgląd</string>
+    <string name="custom_themed_icon_color_title">Custom themed icon color</string>
+    <string name="icon_foreground_color_light_title">Foreground color in light mode</string>
+    <string name="icon_background_color_light_title">Background color in light mode</string>
+    <string name="icon_foreground_color_dark_title">Foreground color in dark mode</string>
+    <string name="icon_background_color_dark_title">Background color in dark mode</string>
+    <string name="folder_color_light_title">Folder color in light mode</string>
+    <string name="folder_color_dark_title">Folder color in dark mode</string>
+    <string name="search_bar_opacity_title">Search bar opacity</string>
 </resources>

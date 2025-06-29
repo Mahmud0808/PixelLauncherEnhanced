@@ -89,7 +89,16 @@
     <string name="hide_apps_title">Uygulamaları çekmeceden gizle</string>
     <string name="search_hidden_apps_title">Gizli uygulamalarda arama yapmaya izin ver</string>
     <string name="section_general_title">Genel</string>
+    <string name="section_icon_colors_title">Simge renkleri</string>
     <string name="section_interface_title">Arayüz</string>
     <string name="section_search_bar_title">Arama çubuğu</string>
     <string name="section_quickspace_title">Hızlı alan</string>
+    <string name="custom_themed_icon_color_title">Özel temalı simge rengi</string>
+    <string name="icon_foreground_color_light_title">Aydınlık modda ön plan rengi</string>
+    <string name="icon_background_color_light_title">Aydınlık modda arka plan rengi</string>
+    <string name="icon_foreground_color_dark_title">Karanlık modda ön plan rengi</string>
+    <string name="icon_background_color_dark_title">Karanlık modda arka plan rengi</string>
+    <string name="folder_color_light_title">Aydınlık modda klasör rengi</string>
+    <string name="folder_color_dark_title">Karanlık modda klasör rengi</string>
+    <string name="search_bar_opacity_title">Arama çubuğu opaklığı</string>
 </resources>
