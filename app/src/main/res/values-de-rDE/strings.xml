@@ -71,6 +71,8 @@
     <string name="developer_options_title">Entwickleroptionen</string>
     <string name="developer_options_desc">Versteckte Entwickleroptionen aktivieren</string>
     <string name="entry_in_launcher_settings">Eintrag in den Launcher-Einstellungen anzeigen</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">Anordnung sperren</string>
     <string name="lock_layout_desc_on">Symbole und Widgets auf dem Startbildschirm können nicht  hinzugefügt, entfernt oder verschoben werden</string>
     <string name="lock_layout_desc_off">Symbole und Widgets auf dem Startbildschirm können hinzugefügt, entfernt und verschoben werden</string>

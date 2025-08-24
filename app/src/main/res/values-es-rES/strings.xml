@@ -71,6 +71,8 @@
     <string name="developer_options_title">Opciones de desarrollador</string>
     <string name="developer_options_desc">Habilitar opciones ocultas de desarrollador</string>
     <string name="entry_in_launcher_settings">Mostrar entrada en la configuración del launcher</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">Bloquear diseño</string>
     <string name="lock_layout_desc_on">Los iconos y widgets no se pueden añadir, eliminar y mover en la Pantalla de inicio</string>
     <string name="lock_layout_desc_off">Los íconos y widgets se pueden añadir, eliminar y mover en la Pantalla de inicio</string>

@@ -71,6 +71,8 @@
     <string name="developer_options_title">Cài đặt nhà phát triển</string>
     <string name="developer_options_desc">Kích hoạt tính năng ẩn (NGUY HIỂM)</string>
     <string name="entry_in_launcher_settings">Hiện thị cài đặt của ứng dụng trong cài đặt của launcher</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">Khóa Bố Cục</string>
     <string name="lock_layout_desc_on">Các biểu tượng và tiện ích con không thể được thêm, xóa và di chuyển trên màn hình chính</string>
     <string name="lock_layout_desc_off">Các biểu tượng và tiện ích con có thể được thêm, xóa và di chuyển trên màn hình chính</string>

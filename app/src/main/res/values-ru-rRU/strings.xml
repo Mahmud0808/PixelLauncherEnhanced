@@ -71,6 +71,8 @@
     <string name="developer_options_title">Для разработчиков</string>
     <string name="developer_options_desc">Включить скрытые параметры для разработчиков</string>
     <string name="entry_in_launcher_settings">Показывать PLEnhanced в настройках лаунчера</string>
+    <string name="hide_gesture_pill_title">Скрыть индикатор жестов</string>
+    <string name="hide_gesture_pill_desc">Может не работать на старых версиях Android</string>
     <string name="lock_layout_title">Блокировать разметку</string>
     <string name="lock_layout_desc_on">Иконки и виджеты нельзя добавлять, удалять или перемещать по рабочему столу</string>
     <string name="lock_layout_desc_off">Иконки и виджеты можно добавлять, удалять и перемещать на главном экране</string>
