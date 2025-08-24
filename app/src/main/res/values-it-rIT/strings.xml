@@ -71,6 +71,8 @@
     <string name="developer_options_title">Developer options</string>
     <string name="developer_options_desc">Enable hidden developer options</string>
     <string name="entry_in_launcher_settings">Show entry in launcher settings</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">Lock layout</string>
     <string name="lock_layout_desc_on">Icons and widgets can\'t be added, removed and moved on the homescreen</string>
     <string name="lock_layout_desc_off">Icons and widgets can be added, removed and moved on the homescreen</string>

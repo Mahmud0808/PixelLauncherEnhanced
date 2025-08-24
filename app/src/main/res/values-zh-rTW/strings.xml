@@ -71,6 +71,8 @@
     <string name="developer_options_title">開發人員選項</string>
     <string name="developer_options_desc">啟用已隱藏的開發人員選項</string>
     <string name="entry_in_launcher_settings">於啟動器設定中顯示項目</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">鎖定配置</string>
     <string name="lock_layout_desc_on">無法在主畫面上新增、刪除和移動圖示與小工具</string>
     <string name="lock_layout_desc_off">可以在主畫面上新增、刪除和移動圖示與小工具</string>

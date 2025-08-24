@@ -71,6 +71,8 @@
     <string name="developer_options_title">Geliştirici seçenekleri</string>
     <string name="developer_options_desc">Gizli geliştirici seçeneklerini etkinleştir</string>
     <string name="entry_in_launcher_settings">Başlatıcı ayarlarında girişi göster</string>
+    <string name="hide_gesture_pill_title">Hareket göstergesini gizle</string>
+    <string name="hide_gesture_pill_desc">Eski Android sürümlerinde çalışmayabilir</string>
     <string name="lock_layout_title">Düzeni kilitle</string>
     <string name="lock_layout_desc_on">Ana ekranda simgeler ve widget’lar eklenemez, kaldırılamaz veya taşınamaz</string>
     <string name="lock_layout_desc_off">Ana ekranda simgeler ve widget’lar eklenebilir, kaldırılabilir veya taşınabilir</string>

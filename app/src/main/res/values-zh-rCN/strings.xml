@@ -71,6 +71,8 @@
     <string name="developer_options_title">开发者选项</string>
     <string name="developer_options_desc">启用隐藏的开发者选项</string>
     <string name="entry_in_launcher_settings">在桌面 launcher 设置中显示入口</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">锁定布局</string>
     <string name="lock_layout_desc_on">图标和小部件无法在桌面屏幕上添加、删除和移动</string>
     <string name="lock_layout_desc_off">图标和小部件可以在桌面屏幕上添加、删除和移动</string>

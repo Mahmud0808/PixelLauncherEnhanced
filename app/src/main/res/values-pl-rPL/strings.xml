@@ -71,6 +71,8 @@
     <string name="developer_options_title">Opcje programisty</string>
     <string name="developer_options_desc">Aktywuj ukryte opcje dla programistów</string>
     <string name="entry_in_launcher_settings">Pokaż PLEnhanced w ustawieniach launchera</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">Zablokuj układ ekranu głównego</string>
     <string name="lock_layout_desc_on">Nie można dodawać, usuwać ani przesuwać elementów na ekranie głównym</string>
     <string name="lock_layout_desc_off">Można dodawać, usuwać i przesuwać elementy na ekranie głównym</string>
