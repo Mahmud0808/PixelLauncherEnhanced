@@ -1,16 +1,16 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
-import android.os.Build
 import android.graphics.Rect
+import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE_PROGRESS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_MODE
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.currentToFreeform
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.startFreeformByIntent
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.startFreeformFromRecents
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.currentToFreeform
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.newInstance
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
@@ -36,13 +36,18 @@ class FreeformMod(context: Context) : ModPack(context) {
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val absSwipeClass = findClass("com.android.quickstep.AbsSwipeUpHandler")
+        val gestureStateClass = findClass("com.android.quickstep.GestureState")
+        val gestureEndTargetClass = findClass("com.android.quickstep.GestureState.GestureEndTarget")
+        val activityManagerWrapperClass =
+            findClass("com.android.systemui.shared.system.ActivityManagerWrapper")
 
         absSwipeClass
             .hookMethod("updateSysUiFlags")
             .runAfter { param ->
                 if (!freeformEnabled) return@runAfter
 
-                val mProgress = param.thisObject.getField("mCurrentShift")
+                val mProgress = param.thisObject
+                    .getField("mCurrentShift")
                     .getField("value") as Float
 
                 if (mProgress > offProgress) {
@@ -55,12 +60,10 @@ class FreeformMod(context: Context) : ModPack(context) {
             .runAfter { param ->
                 if (!freeformEnabled) return@runAfter
 
-                val gestureStateClass = findClass("com.android.quickstep.GestureState")
-                val gestureEndTargetClass =
-                    findClass("com.android.quickstep.GestureState.GestureEndTarget")
-
                 val stateEndTargetSet =
                     gestureStateClass.getStaticField("STATE_END_TARGET_SET") as Int
+
+                @Suppress("unused")
                 val stateRecentsAnimationStarted =
                     gestureStateClass.getStaticField("STATE_RECENTS_ANIMATION_STARTED") as Int
                 val homeTarget = gestureEndTargetClass?.getEnumConstants()?.get(0)
@@ -91,46 +94,58 @@ class FreeformMod(context: Context) : ModPack(context) {
                                             .callMethod("getTask")
                                     }
 
-                                if (freeformMode == FreeformUtils.Variant.AOSP.id) {
-                                    val mSnapshotView = 
-                                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
-                                            (param.thisObject
-                                                .getField("mRecentsView")
-                                                .callMethod("getRunningTaskView")
-                                                .callMethod("getTaskContainers"))
-                                                .callMethod("get", 0)
-                                                .callMethod("getSnapshotView")
-                                        } else {
-                                            param.thisObject
-                                                .getField("mRecentsView")
-                                                .callMethod("getRunningTaskView")
-                                                .callMethod("getThumbnail")
-                                        }
+                                when (freeformMode) {
+                                    FreeformUtils.Variant.AOSP.id -> {
+                                        val mSnapshotView =
+                                            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
+                                                (param.thisObject
+                                                    .getField("mRecentsView")
+                                                    .callMethod("getRunningTaskView")
+                                                    .callMethod("getTaskContainers"))
+                                                    .callMethod("get", 0)
+                                                    .callMethod("getSnapshotView")
+                                            } else {
+                                                param.thisObject
+                                                    .getField("mRecentsView")
+                                                    .callMethod("getRunningTaskView")
+                                                    .callMethod("getThumbnail")
+                                            }
 
-                                    
-                                    val position: IntArray = IntArray(2)
-                                    mSnapshotView.callMethod("getLocationOnScreen", position)
-                                    val w: Int = mSnapshotView.callMethod("getWidth") as Int
-                                    val h: Int = mSnapshotView.callMethod("getHeight") as Int
-                                    val mBound: Rect = Rect(position[0], position[1], position[0] + w, position[1] + h)
-                                    
-                                    val activityManagerWrapperClass =
-                                        findClass("com.android.systemui.shared.system.ActivityManagerWrapper")
+                                        val position = IntArray(2)
+                                        mSnapshotView.callMethod("getLocationOnScreen", position)
+                                        val w = mSnapshotView.callMethod("getWidth") as Int
+                                        val h = mSnapshotView.callMethod("getHeight") as Int
+                                        val mBound = Rect(
+                                            position[0],
+                                            position[1],
+                                            position[0] + w,
+                                            position[1] + h
+                                        )
 
-                                    startFreeformFromRecents(
-                                        mTask,
-                                        activityManagerWrapperClass.newInstance(),
-                                        mBound
-                                    )
-                                } else if (freeformMode == FreeformUtils.Variant.YAMF.id||freeformMode == FreeformUtils.Variant.REYAMF.id) {
-                                    currentToFreeform(mContext, FreeformUtils.Variant.fromId(freeformMode))
-                                } else {
-                                    startFreeformByIntent(
-                                        mContext,
-                                        mTask,
-                                        FreeformUtils.Variant.fromId(freeformMode)
-                                    )
+                                        startFreeformFromRecents(
+                                            mTask,
+                                            activityManagerWrapperClass.newInstance(),
+                                            mBound
+                                        )
+                                    }
+
+                                    FreeformUtils.Variant.YAMF.id,
+                                    FreeformUtils.Variant.REYAMF.id -> {
+                                        currentToFreeform(
+                                            mContext,
+                                            FreeformUtils.Variant.fromId(freeformMode)
+                                        )
+                                    }
+
+                                    else -> {
+                                        startFreeformByIntent(
+                                            mContext,
+                                            mTask,
+                                            FreeformUtils.Variant.fromId(freeformMode)
+                                        )
+                                    }
                                 }
+
                                 param.thisObject
                                     .getField("mGestureState")
                                     .callMethod("setEndTarget", homeTarget)
