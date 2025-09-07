@@ -17,6 +17,13 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
         android:defaultValue="true"
+        android:key="xposed_quicklaunch"
+        android:summary="Launch apps directly from search by pressing enter"
+        android:title="Quick Launch"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:defaultValue="true"
         android:key="xposed_appdrawericonlabels"
         android:title="@string/app_drawer_icon_labels_title"
         app:iconSpaceReserved="false" />
