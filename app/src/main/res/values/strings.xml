@@ -66,6 +66,8 @@
     <string name="hide_launcher_statusbar_desc">Expand quick settings panel once if status bar is not hidden</string>
     <string name="hide_launcher_top_shadow_title">Hide top shadow</string>
     <string name="hide_launcher_top_shadow_desc">Remove top shadow from home screen</string>
+    <string name="quick_launch_title">Quick Launch</string>
+    <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
     <string name="app_drawer_icon_labels_title">Icon labels in app drawer</string>
     <string name="disable_recents_live_tile_title">Disable recents live tile</string>
     <string name="disable_recents_live_tile_desc">Disable live tile if recents screen is buggy</string>

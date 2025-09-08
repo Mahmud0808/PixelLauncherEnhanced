@@ -37,14 +37,14 @@ class QuickLaunch(context: Context) : ModPack(context) {
 
 	private data class CmpUser(val component: ComponentName, val user: UserHandle)
 
-	private var quickLaunch = true
+	private var quickLaunch = false
 
 	private var recyclerRef: WeakReference<RecyclerView>? = null
 	private var containerRef: WeakReference<ViewGroup>? = null
 	private var alphaListRef: WeakReference<Any>? = null // AlphabeticalAppsList instance if discovered
 
 	override fun updatePrefs(vararg key: String) {
-		XPrefs.Xprefs.apply { quickLaunch = getBoolean(QUICK_LAUNCH, true) }
+		XPrefs.Xprefs.apply { quickLaunch = getBoolean(QUICK_LAUNCH, false) }
 	}
 
 	override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {

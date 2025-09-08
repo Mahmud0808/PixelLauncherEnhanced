@@ -16,10 +16,10 @@
         app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="true"
+        android:defaultValue="false"
         android:key="xposed_quicklaunch"
-        android:summary="Launch apps directly from search by pressing enter"
-        android:title="Quick Launch"
+        android:summary="@string/quick_launch_desc"
+        android:title="@string/quick_launch_title"
         app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
