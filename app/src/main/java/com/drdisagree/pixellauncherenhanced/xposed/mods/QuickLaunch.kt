@@ -1,9 +1,10 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
-import android.content.pm.LauncherApps
 import android.content.Intent
+import android.content.pm.LauncherApps
 import android.os.UserHandle
 import android.view.KeyEvent
 import android.view.View
@@ -14,8 +15,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.QUICK_LAUNCH
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.*
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import java.lang.ref.WeakReference
@@ -39,7 +42,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 
 	private var quickLaunch = false
 
-	private var recyclerRef: WeakReference<RecyclerView>? = null
+	private var recyclerRef: WeakReference<View>? = null
 	private var containerRef: WeakReference<ViewGroup>? = null
 	private var alphaListRef: WeakReference<Any>? = null // AlphabeticalAppsList instance if discovered
 
@@ -49,56 +52,65 @@ class QuickLaunch(context: Context) : ModPack(context) {
 
 	override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
 		// Core: hook container inflation & keep lightweight references to list / recycler / search box
-		val candidateClasses = listOf(
+		listOf(
 			"com.google.android.apps.nexuslauncher.allapps.SearchContainerView", // Pixel specific
 			"com.android.launcher3.allapps.SearchContainerView",
 			"com.android.launcher3.allapps.ActivityAllAppsContainerView" // fallback
-		)
-		candidateClasses.forEach { name ->
-			val c = runCatching { XposedHook.findClass(name) }.getOrNull() ?: return@forEach
-			c.hookMethod("onFinishInflate").runAfter { param ->
-				val container = param.thisObject as? ViewGroup ?: return@runAfter
-				containerRef = WeakReference(container)
-				cacheAlphabeticalList(container)
-				cacheFromAllAppsContainer(container)
-				if (recyclerRef?.get() == null) findSearchRecycler(container)?.let { recyclerRef = WeakReference(it) }
-				val searchView = locateSearchEditText(container) ?: return@runAfter
-				if (!quickLaunch) return@runAfter
-				attachEditorListener(searchView)
-			}
+		).forEach { className ->
+			findClass(className, suppressError = true)
+				.hookMethod("onFinishInflate")
+				.runAfter { param ->
+					val container = param.thisObject as? ViewGroup ?: return@runAfter
+					containerRef = WeakReference(container)
+					cacheAlphabeticalList(container)
+					cacheFromAllAppsContainer(container)
+					if (recyclerRef?.get() == null) findSearchRecycler(container)?.let {
+						recyclerRef = WeakReference(it)
+					}
+					val searchView = locateSearchEditText(container) ?: return@runAfter
+					if (!quickLaunch) return@runAfter
+					attachEditorListener(searchView)
+				}
 		}
 
 		// Keep references when initContent is invoked (alternative construction path)
-		runCatching { XposedHook.findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView") }.getOrNull()?.let { klass ->
-			klass.hookMethod("initContent").runAfter { p ->
+		findClass(
+			"com.android.launcher3.allapps.ActivityAllAppsContainerView",
+			suppressError = true
+		)
+			.hookMethod("initContent")
+			.runAfter { p ->
 				val container = p.thisObject as? ViewGroup ?: return@runAfter
 				containerRef = WeakReference(container)
 				runCatching { container.callMethod("getSearchResultList") }.getOrNull()?.let { if (it.javaClass.name.contains("AlphabeticalAppsList")) alphaListRef = WeakReference(it) }
-				runCatching { container.callMethod("getSearchRecyclerView") }.getOrNull()?.let { rv -> recyclerRef = WeakReference(rv as RecyclerView) }
+				runCatching { container.callMethod("getSearchRecyclerView") }.getOrNull()
+					?.let { rv -> recyclerRef = WeakReference(rv as View) }
 				cacheFromAllAppsContainer(container)
 			}
-		}
 
 		// Track recycler attachment (defensive; some builds swap instances)
 		listOf(
 			"com.android.launcher3.allapps.SearchRecyclerView",
 			"com.google.android.apps.nexuslauncher.allapps.SearchRecyclerView",
 			"com.google.android.apps.nexuslauncher.allapps.GSearchRecyclerView"
-		).forEach { rName ->
-			runCatching { XposedHook.findClass(rName) }.getOrNull()?.let { klass ->
-				klass.hookMethod("onAttachedToWindow").runAfter { hook ->
+		).forEach { className ->
+			findClass(className, suppressError = true)
+				.hookMethod("onAttachedToWindow")
+				.runAfter { hook ->
 					val rv = hook.thisObject as? RecyclerView ?: return@runAfter
 					if (recyclerRef?.get() !== rv) recyclerRef = WeakReference(rv)
 				}
-			}
 		}
 
 		// Keep alphaListRef fresh when search results mutate
-		runCatching { XposedHook.findClass("com.android.launcher3.allapps.AlphabeticalAppsList") }.getOrNull()?.let { klass ->
-			klass.hookMethod("setSearchResults").runAfter { param ->
+		findClass(
+			"com.android.launcher3.allapps.AlphabeticalAppsList",
+			suppressError = true
+		)
+			.hookMethod("setSearchResults")
+			.runAfter { param ->
 				if (alphaListRef?.get() !== param.thisObject) alphaListRef = WeakReference(param.thisObject)
 			}
-		}
 	}
 
 	private fun attachEditorListener(edit: EditText) {
@@ -133,6 +145,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 		edit.setOnEditorActionListener(wrapper)
 	}
 
+	@SuppressLint("DiscouragedPrivateApi")
 	private fun getExistingOnEditorActionListener(edit: TextView): TextView.OnEditorActionListener? {
 		return try {
 			val tvClass = TextView::class.java
@@ -226,7 +239,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 
 					if (foundComponent != null && foundUser != null) return CmpUser(foundComponent, foundUser)
 			}
-		} catch (e: Throwable) {
+		} catch (_: Throwable) {
 			// ignore
 		}
 		return null
@@ -246,7 +259,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 				// Manual query of launcher activities
 				val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(packageName)
 				val list = ctx.packageManager.queryIntentActivities(intent, 0)
-				if (!list.isNullOrEmpty()) {
+				if (list.isNotEmpty()) {
 					// Prefer activity whose name equals packageName + ".MainActivity" style or first entry
 					resolved = list.firstOrNull { it.activityInfo?.name?.contains("Main", true) == true }?.activityInfo?.let {
 						ComponentName(it.packageName, it.name)
@@ -269,9 +282,9 @@ class QuickLaunch(context: Context) : ModPack(context) {
 		} catch (_: Throwable) { }
 	}
 
-	private fun Any.isLaunchableApp(): Boolean {
-		val cmp = (this as? Any)?.getComponentName()
-		val user = (this as? Any)?.getFieldSilently("user") as? UserHandle
+	private fun Any?.isLaunchableApp(): Boolean {
+		val cmp = getComponentName()
+		val user = getFieldSilently("user") as? UserHandle
 		return cmp != null && user != null
 	}
 
@@ -307,7 +320,12 @@ class QuickLaunch(context: Context) : ModPack(context) {
 			?: try { callMethod("getTargetComponent") as? ComponentName } catch (_: Throwable) { null }
 	}
 
-	private fun launchDirect(context: Context, cmp: ComponentName, user: UserHandle, @Suppress("UNUSED_PARAMETER") source: String) {
+	private fun launchDirect(
+		context: Context,
+		cmp: ComponentName,
+		user: UserHandle,
+		@Suppress("UNUSED_PARAMETER", "SameParameterValue") source: String
+	) {
 		try {
 			val la = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
 			la.startMainActivity(cmp, user, null, null)
@@ -387,8 +405,8 @@ class QuickLaunch(context: Context) : ModPack(context) {
 				val v = f.get(root) ?: continue
 				val vn = v.javaClass.name
 				if (vn.contains("AppInfo")) return v
-				val cmp = (v as? Any)?.getComponentName()
-				val user = (v as? Any)?.getFieldSilently("user")
+				val cmp = v.getComponentName()
+				val user = v.getFieldSilently("user")
 				if (cmp != null && user != null) return v
 				if (!vn.startsWith("java.") && !vn.startsWith("android.")) {
 					extractAppInfoDynamic(v, depth + 1)?.let { return it }
