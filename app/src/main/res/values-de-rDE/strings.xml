@@ -55,8 +55,10 @@
     <string name="hide_launcher_statusbar_desc">Schnelleinstellungsfeld einmal ausklappen, wenn die Statusleiste nicht ausgeblendet ist</string>
     <string name="hide_launcher_top_shadow_title">Obere Schatten ausblenden</string>
     <string name="hide_launcher_top_shadow_desc">Den oberen Schatten vom Startbildschirm entfernen</string>
-    <string name="quick_launch_title">Quick Launch</string>
-    <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
+    <string name="dark_launcher_statusbar_title">Erzwinge dunkle Statusleiste</string>
+    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
+    <string name="quick_launch_title">Schnellstart</string>
+    <string name="quick_launch_desc">Starte Apps direkt aus der Suchleiste durch Drücken der Enter Taste</string>
     <string name="app_drawer_icon_labels_title">App Icon Beschriftung in der App-Übersicht</string>
     <string name="disable_recents_live_tile_title">Live-Kachel deaktivieren</string>
     <string name="disable_recents_live_tile_desc">Live-Kachel deaktivieren, wenn der Anwendungsverlauf fehlerhaft ist</string>
@@ -73,7 +75,7 @@
     <string name="developer_options_title">Entwickleroptionen</string>
     <string name="developer_options_desc">Versteckte Entwickleroptionen aktivieren</string>
     <string name="entry_in_launcher_settings">Eintrag in den Launcher-Einstellungen anzeigen</string>
-    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_title">Verstecke Gesten Pille</string>
     <string name="hide_gesture_pill_desc">May not work on older android versions</string>
     <string name="lock_layout_title">Anordnung sperren</string>
     <string name="lock_layout_desc_on">Symbole und Widgets auf dem Startbildschirm können nicht  hinzugefügt, entfernt oder verschoben werden</string>

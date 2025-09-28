@@ -55,6 +55,8 @@
     <string name="hide_launcher_statusbar_desc">Mở rộng thanh điều hướng nếu thanh trạng thái không được ẩn</string>
     <string name="hide_launcher_top_shadow_title">Ẩn bóng ở trên cùng</string>
     <string name="hide_launcher_top_shadow_desc">Xoá bóng ở trên cùng trong màn hình chính</string>
+    <string name="dark_launcher_statusbar_title">Force dark statusbar</string>
+    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
     <string name="quick_launch_title">Quick Launch</string>
     <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
     <string name="app_drawer_icon_labels_title">Tên ứng dụng trong ngăn kéo ứng dụng</string>

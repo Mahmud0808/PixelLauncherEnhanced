@@ -55,6 +55,8 @@
     <string name="hide_launcher_statusbar_desc">Expandir painel de opções rápidas uma vez se a barra de status não está escondido</string>
     <string name="hide_launcher_top_shadow_title">Esconder sombra do topo</string>
     <string name="hide_launcher_top_shadow_desc">Remover sombra do topo da tela inicial</string>
+    <string name="dark_launcher_statusbar_title">Force dark statusbar</string>
+    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
     <string name="quick_launch_title">Início rápido</string>
     <string name="quick_launch_desc">Inicie os aplicativos diretamente da pesquisa pressionando Enter</string>
     <string name="app_drawer_icon_labels_title">Nome dos ícones na gaveta de aplicativos</string>

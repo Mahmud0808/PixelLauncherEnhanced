@@ -55,6 +55,8 @@
     <string name="hide_launcher_statusbar_desc">Uwaga: rozwiń (raz) panel powiadomień, aby aktywować to ustawienie po raz pierwszy</string>
     <string name="hide_launcher_top_shadow_title">Ukryj górny cień</string>
     <string name="hide_launcher_top_shadow_desc">Usuń górny cień z ekranu głównego</string>
+    <string name="dark_launcher_statusbar_title">Force dark statusbar</string>
+    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
     <string name="quick_launch_title">Quick Launch</string>
     <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
     <string name="app_drawer_icon_labels_title">Etykiety ikon na liście aplikacji</string>
