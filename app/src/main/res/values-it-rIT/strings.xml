@@ -55,6 +55,8 @@
     <string name="hide_launcher_statusbar_desc">Espandi il pannello delle impostazioni rapide una volta se la barra di stato non è nascosta</string>
     <string name="hide_launcher_top_shadow_title">Nascondi Ombra Superiore</string>
     <string name="hide_launcher_top_shadow_desc">Rimuovi ombra superiore dalla schermata home</string>
+    <string name="dark_launcher_statusbar_title">Force dark statusbar</string>
+    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
     <string name="quick_launch_title">Quick Launch</string>
     <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
     <string name="app_drawer_icon_labels_title">Etichette Icone nel cassetto app</string>
