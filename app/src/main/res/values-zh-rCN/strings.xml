@@ -55,10 +55,10 @@
     <string name="hide_launcher_statusbar_desc">如果状态栏没有被隐藏则展开快速设置面板</string>
     <string name="hide_launcher_top_shadow_title">去除顶部阴影</string>
     <string name="hide_launcher_top_shadow_desc">移除桌面顶部阴影</string>
-    <string name="dark_launcher_statusbar_title">Force dark statusbar</string>
-    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
-    <string name="quick_launch_title">Quick Launch</string>
-    <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
+    <string name="dark_launcher_statusbar_title">强制使用深色状态栏</string>
+    <string name="dark_launcher_page_indicator_title">页面指示器强制使用深色</string>
+    <string name="quick_launch_title">快速启动</string>
+    <string name="quick_launch_desc">按下回车直接从搜索启动应用</string>
     <string name="app_drawer_icon_labels_title">应用程序抽屉中的图标标签</string>
     <string name="disable_recents_live_tile_title">禁用多任务栏中动态 tile</string>
     <string name="disable_recents_live_tile_desc">如果最近任务显示有问题则禁用动态 tile</string>
@@ -75,8 +75,8 @@
     <string name="developer_options_title">开发者选项</string>
     <string name="developer_options_desc">启用隐藏的开发者选项</string>
     <string name="entry_in_launcher_settings">在桌面 launcher 设置中显示入口</string>
-    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
-    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
+    <string name="hide_gesture_pill_title">隐藏导航栏</string>
+    <string name="hide_gesture_pill_desc">可能不适合旧的 Android 版本</string>
     <string name="lock_layout_title">锁定布局</string>
     <string name="lock_layout_desc_on">图标和小部件无法在桌面屏幕上添加、删除和移动</string>
     <string name="lock_layout_desc_off">图标和小部件可以在桌面屏幕上添加、删除和移动</string>
