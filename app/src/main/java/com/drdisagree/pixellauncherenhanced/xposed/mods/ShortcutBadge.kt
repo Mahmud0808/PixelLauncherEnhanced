@@ -34,23 +34,39 @@ class ShortcutBadge(context: Context) : ModPack(context) {
             .hookConstructor()
             .runAfter { param ->
                 if (!removeBadge) return@runAfter
-                    param.thisObject.setField("mHideBadge", true)
+
+                param.thisObject.setField("mHideBadge", true)
             }
 
         bubbleTextViewClass
             .hookMethod("setHideBadge")
-            .runAfter { param ->
-                if (!removeBadge) return@runAfter
-                    param.thisObject.setField("mHideBadge", true)
-            }
-
-        bitmapInfoClass
-            .hookMethod("applyFlags")
+            .suppressError()
             .runAfter { param ->
                 if (!removeBadge) return@runAfter
 
-                val fastBitmapDrawable = param.args[1]
-                fastBitmapDrawable.callMethod("setBadge", null)
+                param.thisObject.setField("mHideBadge", true)
             }
+
+        try {
+            bitmapInfoClass
+                .hookMethod("applyFlags")
+                .throwError()
+                .runAfter { param ->
+                    if (!removeBadge) return@runAfter
+
+                    val fastBitmapDrawable = param.args[1]
+                    fastBitmapDrawable.callMethod("setBadge", null)
+                }
+        } catch (_: Throwable) {
+            bitmapInfoClass
+                .hookMethod("newIcon")
+                .runAfter { param ->
+                    if (!removeBadge) return@runAfter
+
+                    val fastBitmapDrawable = param.result
+                    fastBitmapDrawable.setField("badge", null)
+                    fastBitmapDrawable.callMethod("updateFilter")
+                }
+        }
     }
 }
