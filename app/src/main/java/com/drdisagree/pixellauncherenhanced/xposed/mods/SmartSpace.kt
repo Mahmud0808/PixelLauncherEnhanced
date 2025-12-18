@@ -44,6 +44,7 @@ class SmartSpace(context: Context) : ModPack(context) {
 
         nexusLauncherActivityClass
             .hookMethod("setupViews")
+            .suppressError()
             .runBefore { param ->
                 if (!hideQuickspace) return@runBefore
 
@@ -52,7 +53,7 @@ class SmartSpace(context: Context) : ModPack(context) {
                     val fieldValue = param.thisObject.getFieldSilently(field.name)
                     val isFinal = Modifier.isFinal(field.modifiers)
 
-                    if (fieldValue is Boolean && isFinal && fieldValue == true) {
+                    if (fieldValue is Boolean && isFinal && fieldValue) {
                         param.thisObject.setField(field.name, false)
                     }
                 }
@@ -427,7 +428,7 @@ class SmartSpace(context: Context) : ModPack(context) {
         val loaderTask = findClass("com.android.launcher3.model.LoaderTask")
 
         loaderTask
-            .hookMethod("loadWorkspace")
+            .hookMethod("loadWorkspace", "loadWorkspaceImpl")
             .runAfter { param ->
                 if (!hideQuickspace) return@runAfter
 
