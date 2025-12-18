@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -164,7 +165,7 @@ class HideApps(context: Context) : ModPack(context) {
                 .runBefore { param ->
                     if (searchHiddenApps) return@runBefore
 
-                    var index = if (param.args[0] is Context) 1 else 0
+                    val index = if (param.args[0] is Context) 1 else 0
                     val apps = (param.args[index] as List<*>).toMutableList()
 
                     val iterator = apps.iterator()
@@ -225,15 +226,19 @@ class HideApps(context: Context) : ModPack(context) {
                         removeAppResult(param)
                     }
             } else {
-                val baseModelUpdateTaskClass =
-                    findClass("com.android.launcher3.model.BaseModelUpdateTask")
+                val baseModelUpdateTaskClass = findClass(
+                    "com.android.launcher3.model.BaseModelUpdateTask",
+                    suppressError = Build.VERSION.SDK_INT >= 36
+                )
 
                 launcherModelClass
                     .hookMethod("enqueueModelUpdateTask")
                     .runBefore { param ->
                         val modelUpdateTask = param.args[0]
 
-                        if (modelUpdateTask::class.java.simpleName != baseModelUpdateTaskClass!!.simpleName) return@runBefore
+                        if (baseModelUpdateTaskClass != null &&
+                            modelUpdateTask::class.java.simpleName != baseModelUpdateTaskClass.simpleName
+                        ) return@runBefore
 
                         modelUpdateTask::class.java
                             .hookMethod("execute")
