@@ -29,14 +29,27 @@ class DarkPageIndicator (context: Context) : ModPack(context) {
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val launcherClass = findClass("com.android.launcher3.Launcher")
 
-        launcherClass
-            .hookMethod("setupViews")
-            .runAfter { param ->
-                if (!darkPageIndicatorEnabled) return@runAfter
+        try {
+            launcherClass
+                .hookMethod("setupViews")
+                .throwError()
+                .runAfter { param ->
+                    if (!darkPageIndicatorEnabled) return@runAfter
 
-                param.thisObject.getField("mWorkspace")
-                    .callMethod("getPageIndicator")
-                    .callMethod("setPaintColor", Color.BLACK)
-            }
+                    param.thisObject.getField("mWorkspace")
+                        .callMethod("getPageIndicator")
+                        .callMethod("setPaintColor", Color.BLACK)
+                }
+        } catch (_: Throwable) {
+            launcherClass
+                .hookMethod("onCreate")
+                .runAfter { param ->
+                    if (!darkPageIndicatorEnabled) return@runAfter
+
+                    param.thisObject.getField("mWorkspace")
+                        .callMethod("getPageIndicator")
+                        .callMethod("setPaintColor", Color.BLACK)
+                }
+        }
     }
 }
