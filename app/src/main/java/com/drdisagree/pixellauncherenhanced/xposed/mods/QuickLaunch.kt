@@ -103,14 +103,26 @@ class QuickLaunch(context: Context) : ModPack(context) {
 		}
 
 		// Keep alphaListRef fresh when search results mutate
-		findClass(
-			"com.android.launcher3.allapps.AlphabeticalAppsList",
-			suppressError = true
-		)
-			.hookMethod("setSearchResults")
-			.runAfter { param ->
-				if (alphaListRef?.get() !== param.thisObject) alphaListRef = WeakReference(param.thisObject)
-			}
+        try {
+            findClass(
+                "com.android.launcher3.allapps.AlphabeticalAppsList",
+                suppressError = true
+            )
+                .hookMethod("setSearchResults")
+                .throwError()
+                .runAfter { param ->
+                    if (alphaListRef?.get() !== param.thisObject) alphaListRef =
+                        WeakReference(param.thisObject)
+                }
+        } catch (_: Throwable) {
+            findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView")
+                .hookMethod("getSearchResultList")
+                .runAfter { param ->
+                    val alphabeticalAppsList = param.result
+                    if (alphaListRef?.get() !== alphabeticalAppsList) alphaListRef =
+                        WeakReference(alphabeticalAppsList)
+                }
+        }
 	}
 
 	private fun attachEditorListener(edit: EditText) {
