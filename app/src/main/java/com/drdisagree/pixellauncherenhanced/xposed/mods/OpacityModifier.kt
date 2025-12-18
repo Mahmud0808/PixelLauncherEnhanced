@@ -195,8 +195,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
         scrimColorsClass: Class<*>,
         backgroundOpacity: Int
     ): Any {
-        val backgroundColor = scrimColors.callMethod("getBackgroundColor") as Int
-        val foregroundColor = scrimColors.callMethod("getForegroundColor") as Int
+        val backgroundColor = scrimColors.callMethodSilently("getBackgroundColor") as? Int
+            ?: scrimColors.getField("backgroundColor") as Int
+        val foregroundColor = scrimColors.callMethodSilently("getForegroundColor") as? Int
+            ?: scrimColors.getField("foregroundColor") as Int
 
         return scrimColorsClass
             .getDeclaredConstructor(
