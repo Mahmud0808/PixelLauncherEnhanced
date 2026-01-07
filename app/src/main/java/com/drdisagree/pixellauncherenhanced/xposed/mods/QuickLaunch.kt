@@ -96,6 +96,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 		).forEach { className ->
 			findClass(className, suppressError = true)
 				.hookMethod("onAttachedToWindow")
+                .suppressError()
 				.runAfter { hook ->
 					val rv = hook.thisObject as? RecyclerView ?: return@runAfter
 					if (recyclerRef?.get() !== rv) recyclerRef = WeakReference(rv)
