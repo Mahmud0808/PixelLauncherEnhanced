@@ -101,10 +101,18 @@ class ClearAllButton(context: Context) : ModPack(context) {
                 val launcher = param.args[0]
                 var elements: Int = OVERVIEW_ACTIONS
                 val deviceProfile = launcher.callMethod("getDeviceProfile")
+                val isPhone = deviceProfile.getFieldSilently("isPhone") as? Boolean
+                    ?: deviceProfile
+                        .getField("mDeviceProperties")
+                        .getField("isPhone") as Boolean
+                val isLandscape = deviceProfile.getFieldSilently("isLandscape") as? Boolean
+                    ?: deviceProfile
+                        .getField("mDeviceProperties")
+                        .getField("isLandscape") as Boolean
 
-                val showFloatingSearch = if (deviceProfile.getField("isPhone") as Boolean) {
+                val showFloatingSearch = if (isPhone) {
                     // Only show search in phone overview in portrait mode.
-                    !(deviceProfile.getField("isLandscape") as Boolean)
+                    !isLandscape
                 } else {
                     // Only show search in tablet overview if taskbar is not visible.
                     !(deviceProfile.getField("isTaskbarPresent") as Boolean) ||
