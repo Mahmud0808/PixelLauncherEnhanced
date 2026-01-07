@@ -170,13 +170,14 @@ class ClearAllButton(context: Context) : ModPack(context) {
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        marginStart = mContext.resources.getDimensionPixelSize(
-                            mContext.resources.getIdentifier(
+                        val spacingId = mContext.resources.getIdentifier(
                                 "overview_actions_button_spacing",
                                 "dimen",
                                 mContext.packageName
                             )
-                        )
+                        if (spacingId != 0) {
+                            marginStart = mContext.resources.getDimensionPixelSize(spacingId)
+                        }
                     }
                     setCompoundDrawablesWithIntrinsicBounds(
                         modRes.getDrawable(R.drawable.ic_clear_all),
