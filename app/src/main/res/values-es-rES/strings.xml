@@ -55,10 +55,10 @@
     <string name="hide_launcher_statusbar_desc">Expandir panel de ajustes rápidos una vez si la barra de estado no está oculta</string>
     <string name="hide_launcher_top_shadow_title">Ocultar sombra superior</string>
     <string name="hide_launcher_top_shadow_desc">Eliminar sombra superior de la pantalla de inicio</string>
-    <string name="dark_launcher_statusbar_title">Force dark statusbar</string>
-    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
-    <string name="quick_launch_title">Quick Launch</string>
-    <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
+    <string name="dark_launcher_statusbar_title">Forzar barra de estado oscura</string>
+    <string name="dark_launcher_page_indicator_title">Indicador de página oscura forzada</string>
+    <string name="quick_launch_title">Inicio Rápido</string>
+    <string name="quick_launch_desc">Inicie aplicaciones directamente desde la búsqueda presionando Enter</string>
     <string name="app_drawer_icon_labels_title">Etiquetas de icono en el cajón de aplicaciones</string>
     <string name="disable_recents_live_tile_title">Desactivar mosaico en vivo recientes</string>
     <string name="disable_recents_live_tile_desc">Desactivar desenfoque si la pantalla de recientes es problemática</string>
@@ -75,8 +75,8 @@
     <string name="developer_options_title">Opciones de desarrollador</string>
     <string name="developer_options_desc">Habilitar opciones ocultas de desarrollador</string>
     <string name="entry_in_launcher_settings">Mostrar entrada en la configuración del launcher</string>
-    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
-    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
+    <string name="hide_gesture_pill_title">Ocultar indicador de gestos</string>
+    <string name="hide_gesture_pill_desc">Puede que no funcione en versiones anteriores de Android</string>
     <string name="lock_layout_title">Bloquear diseño</string>
     <string name="lock_layout_desc_on">Los iconos y widgets no se pueden añadir, eliminar y mover en la Pantalla de inicio</string>
     <string name="lock_layout_desc_off">Los íconos y widgets se pueden añadir, eliminar y mover en la Pantalla de inicio</string>
@@ -87,12 +87,12 @@
     <string name="fixed_button_width_title">Ancho fijo de cada botón</string>
     <string name="recents_remove_screenshot_title">Quitar botón de captura de pantalla</string>
     <string name="recents_remove_screenshot_summary">Ocultar el botón de captura de pantalla en la vista de aplicaciones recientes</string>
-    <string name="freeform_gesture_title">Use gesture in recents to start freeform mode</string>
-    <string name="freeform_gesture_summary">Swipe up from the app and release at the top of the recents screen to trigger freeform mode (requires freeform enabled in developer options)</string>
-    <string name="freeform_gesture_progress_title">Freeform swipe threshold</string>
-    <string name="freeform_gesture_progress_summary">Lower values trigger freeform earlier, higher values require swiping closer to the top</string>
-    <string name="freeform_method_title">Select freeform method</string>
-    <string name="freeform_method_summary">Change this if it doesn\'t work on your ROM</string>
+    <string name="freeform_gesture_title">Utilice el gesto en recientes para iniciar el modo de forma libre</string>
+    <string name="freeform_gesture_summary">Deslice el dedo hacia arriba desde la aplicación y suéltelo en la parte superior de la pantalla de recientes para activar el modo de forma libre (requiere que la forma libre esté habilitada en las opciones de desarrollador)</string>
+    <string name="freeform_gesture_progress_title">Umbral de deslizamiento de forma libre</string>
+    <string name="freeform_gesture_progress_summary">Los valores más bajos activan el formato libre antes, los valores más altos requieren deslizar más cerca de la parte superior</string>
+    <string name="freeform_method_title">Seleccionar el método de forma libre</string>
+    <string name="freeform_method_summary">Cambia esto si no funciona en tu ROM</string>
     <string name="recents_clear_all">Borrar todo</string>
     <string name="homescreen_columns_title">Columnas de pantalla de inicio</string>
     <string name="homescreen_rows_title">Filas de pantalla de inicio</string>
@@ -113,5 +113,5 @@
     <string name="folder_color_light_title">Color de carpeta en modo claro</string>
     <string name="folder_color_dark_title">Color de carpeta en modo oscuro</string>
     <string name="search_bar_opacity_title">Opacidad de la barra de búsqueda</string>
-    <string name="value_output">Value: %s</string>
+    <string name="value_output">Valor: %s</string>
 </resources>
