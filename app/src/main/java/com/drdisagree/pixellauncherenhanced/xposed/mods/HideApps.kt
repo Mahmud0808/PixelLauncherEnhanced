@@ -9,6 +9,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
@@ -31,6 +32,7 @@ class HideApps(context: Context) : ModPack(context) {
     private var invariantDeviceProfileInstance: Any? = null
     private var activityAllAppsContainerViewInstance: Any? = null
     private var hotseatPredictionControllerInstance: Any? = null
+    private var hybridHotseatOrganizerClassInstance: Any? = null
     private var predictionRowViewInstance: Any? = null
 
     override fun updatePrefs(vararg key: String) {
@@ -50,6 +52,10 @@ class HideApps(context: Context) : ModPack(context) {
             findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView")
         val hotseatPredictionControllerClass =
             findClass("com.android.launcher3.hybridhotseat.HotseatPredictionController")
+        val hybridHotseatOrganizerClass = findClass(
+            "com.android.launcher3.util.HybridHotseatOrganizer",
+            suppressError = true
+        )
         val predictionRowViewClass =
             findClass("com.android.launcher3.appprediction.PredictionRowView")
         val defaultAppSearchAlgorithmClass = findClass(
@@ -74,6 +80,10 @@ class HideApps(context: Context) : ModPack(context) {
         hotseatPredictionControllerClass
             .hookConstructor()
             .runAfter { param -> hotseatPredictionControllerInstance = param.thisObject }
+
+        hybridHotseatOrganizerClass
+            .hookConstructor()
+            .runAfter { param -> hybridHotseatOrganizerClassInstance = param.thisObject }
 
         predictionRowViewClass
             .hookConstructor()
@@ -144,9 +154,6 @@ class HideApps(context: Context) : ModPack(context) {
                     iterator.removeMatches()
                 }
         } else {
-            val hybridHotseatOrganizerClass =
-                findClass("com.android.launcher3.util.HybridHotseatOrganizer")
-
             hybridHotseatOrganizerClass
                 .hookMethod("fillGapsWithPrediction")
                 .parameters(Boolean::class.java)
@@ -332,7 +339,8 @@ class HideApps(context: Context) : ModPack(context) {
 
     private fun updateLauncherIcons() {
         activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
-        hotseatPredictionControllerInstance.callMethod("fillGapsWithPrediction", true)
+        hotseatPredictionControllerInstance.callMethodSilently("fillGapsWithPrediction", true)
+        hybridHotseatOrganizerClassInstance.callMethodSilently("fillGapsWithPrediction", true)
         predictionRowViewInstance.callMethod("applyPredictionApps")
         reloadLauncher(mContext)
     }
