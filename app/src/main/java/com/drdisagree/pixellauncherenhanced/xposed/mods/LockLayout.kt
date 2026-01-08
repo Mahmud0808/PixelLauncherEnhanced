@@ -13,7 +13,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.isMethodAvailable
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
@@ -111,7 +111,7 @@ class LockLayout(context: Context) : ModPack(context) {
             ).show()
         }
 
-        if (optionsPopupViewClass.isMethodAvailable("openWidgets")) {
+        if (optionsPopupViewClass.hasMethod("openWidgets")) {
             optionsPopupViewClass
                 .hookMethod("openWidgets")
                 .runBefore { param ->
@@ -120,7 +120,7 @@ class LockLayout(context: Context) : ModPack(context) {
                     showLayoutLockedToast()
                     param.result = null
                 }
-        } else if (optionsPopupViewClass.isMethodAvailable("onWidgetsClicked")) {
+        } else if (optionsPopupViewClass.hasMethod("onWidgetsClicked")) {
             optionsPopupViewClass
                 .hookMethod("onWidgetsClicked")
                 .runBefore { param ->
@@ -129,7 +129,7 @@ class LockLayout(context: Context) : ModPack(context) {
                     showLayoutLockedToast()
                     param.result = false
                 }
-        } else if (optionsPopupViewClass.isMethodAvailable("getOptions")) {
+        } else if (optionsPopupViewClass.hasMethod("getOptions")) {
             val optionItemClass =
                 findClass($$"com.android.launcher3.views.OptionsPopupView$OptionItem")
 
