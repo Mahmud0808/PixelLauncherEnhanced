@@ -12,9 +12,12 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
+import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 
 class OpacityModifier(context: Context) : ModPack(context) {
@@ -43,10 +46,36 @@ class OpacityModifier(context: Context) : ModPack(context) {
         )
         val activityAllAppsContainerViewClass =
             findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView")
+        val taskbarAllAppsSlideInViewClass = findClass(
+            "com.android.launcher3.taskbar.allapps.TaskbarAllAppsSlideInView",
+            suppressError = true
+        )
         val scrimColorsClass = findClass(
             "com.android.launcher3.views.ScrimColors",
             suppressError = true
         )
+
+        fun XC_MethodHook.MethodHookParam.updateScrimColorVariable() {
+            val mScrimColor = thisObject.getFieldSilently("mScrimColor") as? Int
+
+            if (mScrimColor != null) {
+                thisObject.setField(
+                    "mScrimColor",
+                    ColorUtils.setAlphaComponent(
+                        result as Int,
+                        appDrawerBackgroundOpacity
+                    )
+                )
+            }
+        }
+
+        activityAllAppsContainerViewClass
+            .hookConstructor()
+            .runAfter { param ->
+                if (appDrawerBackgroundOpacity < 0) return@runAfter
+
+                param.updateScrimColorVariable()
+            }
 
         activityAllAppsContainerViewClass
             .hookMethod("updateHeaderScroll")
@@ -57,6 +86,28 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     param.thisObject.setFieldSilently("mHeaderColor", Color.TRANSPARENT)
                     param.thisObject.callMethodSilently("invalidateHeader")
                 }
+            }
+
+        activityAllAppsContainerViewClass
+            .hookMethod(
+                "getHeaderColor",
+                "getScrimColor",
+                "getBackgroundColor",
+                "getBottomSheetBackgroundColor"
+            )
+            .suppressError()
+            .runBefore { param ->
+                if (appDrawerBackgroundOpacity < 0) return@runBefore
+
+                param.updateScrimColorVariable()
+            }
+            .runAfter { param ->
+                if (appDrawerBackgroundOpacity < 0) return@runAfter
+
+                param.result = ColorUtils.setAlphaComponent(
+                    param.result as Int,
+                    appDrawerBackgroundOpacity
+                )
             }
 
         allAppsStateClass
@@ -82,6 +133,17 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         )
                     }
                 }
+            }
+
+        taskbarAllAppsSlideInViewClass
+            .hookMethod("getScrimColor")
+            .runAfter { param ->
+                if (appDrawerBackgroundOpacity < 0) return@runAfter
+
+                param.result = ColorUtils.setAlphaComponent(
+                    param.result as Int,
+                    appDrawerBackgroundOpacity
+                )
             }
 
         overviewStateClass
