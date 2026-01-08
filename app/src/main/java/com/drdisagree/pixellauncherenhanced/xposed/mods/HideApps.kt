@@ -13,6 +13,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSil
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
@@ -126,37 +127,37 @@ class HideApps(context: Context) : ModPack(context) {
                     (param.thisObject.getField("mPredictedApps") as ArrayList<*>).toMutableList()
 
                 val iterator = mPredictedApps.iterator()
-
-                while (iterator.hasNext()) {
-                    val workspaceItemInfo = iterator.next()
-                    val componentName = workspaceItemInfo.getComponentName()
-
-                    if (matchesBlocklist(componentName)) {
-                        iterator.remove()
-                    }
-                }
+                iterator.removeMatches()
 
                 param.thisObject.setField("mPredictedApps", ArrayList(mPredictedApps))
             }
 
-        hotseatPredictionControllerClass
-            .hookMethod("fillGapsWithPrediction")
-            .parameters(Boolean::class.java)
-            .runBefore { param ->
-                val mPredictedItems =
-                    (param.thisObject.getField("mPredictedItems") as List<*>).toMutableList()
+        if (hotseatPredictionControllerClass.hasMethod("fillGapsWithPrediction")) {
+            hotseatPredictionControllerClass
+                .hookMethod("fillGapsWithPrediction")
+                .parameters(Boolean::class.java)
+                .runBefore { param ->
+                    val mPredictedItems =
+                        (param.thisObject.getField("mPredictedItems") as List<*>).toMutableList()
 
-                val iterator = mPredictedItems.iterator()
-
-                while (iterator.hasNext()) {
-                    val itemInfo = iterator.next()
-                    val componentName = itemInfo.getComponentName()
-
-                    if (matchesBlocklist(componentName)) {
-                        iterator.remove()
-                    }
+                    val iterator = mPredictedItems.iterator()
+                    iterator.removeMatches()
                 }
-            }
+        } else {
+            val hybridHotseatOrganizerClass =
+                findClass("com.android.launcher3.util.HybridHotseatOrganizer")
+
+            hybridHotseatOrganizerClass
+                .hookMethod("fillGapsWithPrediction")
+                .parameters(Boolean::class.java)
+                .runBefore { param ->
+                    val mPredictedItems =
+                        (param.thisObject.getField("predictedItems") as List<*>).toMutableList()
+
+                    val iterator = mPredictedItems.iterator()
+                    iterator.removeMatches()
+                }
+        }
 
         try {
             defaultAppSearchAlgorithmClass
@@ -169,15 +170,7 @@ class HideApps(context: Context) : ModPack(context) {
                     val apps = (param.args[index] as List<*>).toMutableList()
 
                     val iterator = apps.iterator()
-
-                    while (iterator.hasNext()) {
-                        val appInfo = iterator.next()
-                        val componentName = appInfo.getComponentName()
-
-                        if (matchesBlocklist(componentName)) {
-                            iterator.remove()
-                        }
-                    }
+                    iterator.removeMatches()
 
                     param.args[index] = ArrayList(apps)
                 }
@@ -196,15 +189,7 @@ class HideApps(context: Context) : ModPack(context) {
                 val data = apps.getField("data") as ArrayList<*>
 
                 val iterator = data.iterator()
-
-                while (iterator.hasNext()) {
-                    val appInfo = iterator.next()
-                    val componentName = appInfo.getComponentName()
-
-                    if (matchesBlocklist(componentName)) {
-                        iterator.remove()
-                    }
-                }
+                iterator.removeMatches()
 
                 apps.setField("data", ArrayList(data))
                 param.args[appsIndex] = apps
@@ -305,15 +290,7 @@ class HideApps(context: Context) : ModPack(context) {
             }
 
             val iterator = mApps.iterator()
-
-            while (iterator.hasNext()) {
-                val appInfo = iterator.next()
-                val componentName = appInfo.getComponentName()
-
-                if (matchesBlocklist(componentName)) {
-                    iterator.remove()
-                }
-            }
+            iterator.removeMatches()
 
             val appInfoArray = java.lang.reflect.Array.newInstance(
                 appInfoClass,
@@ -322,6 +299,17 @@ class HideApps(context: Context) : ModPack(context) {
             System.arraycopy(mApps.toTypedArray(), 0, appInfoArray, 0, mApps.size)
 
             mAllAppsStore.setField("mApps", appInfoArray)
+        }
+    }
+
+    private fun MutableIterator<Any?>.removeMatches() {
+        while (hasNext()) {
+            val itemInfo = next()
+            val componentName = itemInfo.getComponentName()
+
+            if (matchesBlocklist(componentName)) {
+                remove()
+            }
         }
     }
 
