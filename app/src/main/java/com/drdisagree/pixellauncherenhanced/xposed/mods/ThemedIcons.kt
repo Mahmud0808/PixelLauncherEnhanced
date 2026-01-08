@@ -115,6 +115,10 @@ class ThemedIcons(context: Context) : ModPack(context) {
             "com.android.launcher3.graphics.ThemeManager",
             suppressError = true
         )
+        val themePreferenceClass = findClass(
+            "com.android.launcher3.graphics.theme.ThemePreference",
+            suppressError = true
+        )
         val intArrayClass = findClass(
             "com.android.launcher3.util.IntArray",
             suppressError = true
@@ -130,7 +134,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     param.result = mDisplay.shouldUseTheme(
                         context,
                         themesClass,
-                        themeManagerClass
+                        themeManagerClass,
+                        themePreferenceClass
                     )
                 }
             }
@@ -148,7 +153,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     val shouldUseTheme = mDisplay.shouldUseTheme(
                         context,
                         themesClass,
-                        themeManagerClass
+                        themeManagerClass,
+                        themePreferenceClass
                     )
 
                     var flags = if (shouldUseTheme) FLAG_THEMED else 0
@@ -272,7 +278,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
     private fun Int.shouldUseTheme(
         context: Context,
         themesClass: Class<*>?,
-        themeManagerClass: Class<*>?
+        themeManagerClass: Class<*>?,
+        themePreferenceClass: Class<*>?
     ) = this in setOf(
         DISPLAY_WORKSPACE,
         DISPLAY_ALL_APPS,
@@ -285,10 +292,18 @@ class ThemedIcons(context: Context) : ModPack(context) {
     ) && try {
         themesClass.callStaticMethod("isThemedIconEnabled", context)
     } catch (_: Throwable) {
-        themeManagerClass
-            .getStaticField("INSTANCE")
-            .callMethod("get", context)
-            .callMethod("isMonoThemeEnabled")
+        try {
+            themeManagerClass
+                .getStaticField("INSTANCE")
+                .callMethod("get", context)
+                .callMethod("isMonoThemeEnabled")
+        } catch (_: Throwable) {
+            themePreferenceClass.getStaticField("MONO_THEME_VALUE") == themeManagerClass
+                .getStaticField("INSTANCE")
+                .callMethod("get", context)
+                .getField("themePreference")
+                .callMethod("getValue")
+        }
     } as Boolean
 
     companion object {
