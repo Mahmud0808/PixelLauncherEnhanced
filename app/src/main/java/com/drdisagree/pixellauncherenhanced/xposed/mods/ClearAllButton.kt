@@ -6,7 +6,6 @@ import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.LinearLayout
 import androidx.appcompat.view.ContextThemeWrapper
@@ -36,6 +35,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
     private var clearAllButton = false
     private var fixedButtonWidth = false
     private var removeScreenshotButton = false
+    private var launcherInstance: Any? = null
     private var recentsViewInstance: Any? = null
     private var actionClearAllButton: Button? = null
 
@@ -57,6 +57,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
     @Suppress("DEPRECATION")
     @SuppressLint("DiscouragedApi", "UseCompatLoadingForDrawables")
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        val launcherClass = findClass("com.android.launcher3.Launcher")
         val recentsViewClass = findClass("com.android.quickstep.views.RecentsView")
         val overviewModalTaskStateClass =
             findClass("com.android.launcher3.uioverrides.states.OverviewModalTaskState")
@@ -69,6 +70,12 @@ class ClearAllButton(context: Context) : ModPack(context) {
         val overviewActionsViewClass = findClass("com.android.quickstep.views.OverviewActionsView")
         val dismissAllTasksMethod: Method =
             findMethodBestMatch(recentsViewClass, "dismissAllTasks", View::class.java)
+
+        launcherClass
+            .hookConstructor()
+            .runAfter { param ->
+                launcherInstance = param.thisObject
+            }
 
         recentsViewClass
             .hookConstructor()
@@ -145,7 +152,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val mActionButtons =
                     param.thisObject.getFieldSilently("mActionButtons") as? LinearLayout
-                        ?: (param.thisObject as ViewGroup).findViewById<LinearLayout>(
+                        ?: (param.thisObject as ViewGroup).findViewById(
                             mContext.resources.getIdentifier(
                                 "action_buttons",
                                 "id",
@@ -161,13 +168,23 @@ class ClearAllButton(context: Context) : ModPack(context) {
                         mContext.packageName
                     )
                 )
+                val overviewActionButtonBlurId = mContext.resources.getIdentifier(
+                    "OverviewActionButton_Blur",
+                    "style",
+                    mContext.packageName
+                )
+                val depthController = launcherInstance.getFieldSilently("mDepthController")
+                val shouldUseBlurStyle = overviewActionButtonBlurId != 0
+                        && depthController != null
+                        && depthController.callMethod("isCrossWindowBlursEnabled") as Boolean
 
                 actionClearAllButton = Button(
                     contextThemeWrapper,
                     null,
                     0,
                     mContext.resources.getIdentifier(
-                        "OverviewActionButton",
+                        if (!shouldUseBlurStyle) "OverviewActionButton"
+                        else "OverviewActionButton_Blur",
                         "style",
                         mContext.packageName
                     )
@@ -215,14 +232,30 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
     @SuppressLint("DiscouragedApi")
     private fun updateVisibility() {
+        var childCount: Int
+
         if (clearAllButton) {
             actionClearAllButton?.visibility = View.VISIBLE
+            childCount = 3
         } else {
             actionClearAllButton?.visibility = View.GONE
+            childCount = 2
         }
 
         if (removeScreenshotButton) {
-            val parentView = actionClearAllButton?.parent as? ViewGroup
+            childCount = 2
+        }
+
+        val parentView = actionClearAllButton?.parent as? ViewGroup
+        val displayMetrics = mContext.resources.displayMetrics
+
+        parentView?.children?.forEach { child ->
+            if (child is Button) {
+                child.maxWidth = displayMetrics.widthPixels / childCount
+            }
+        }
+
+        if (removeScreenshotButton) {
             val screenshotId = mContext.resources.getIdentifier(
                 "action_screenshot", "id", mContext.packageName
             )
@@ -283,11 +316,9 @@ class ClearAllButton(context: Context) : ModPack(context) {
     }
 
     private fun View.setOnVisibilityChangeListener(onVisibilityChanged: (Boolean) -> Unit) {
-        viewTreeObserver.addOnGlobalLayoutListener(
-            ViewTreeObserver.OnGlobalLayoutListener {
-                onVisibilityChanged(isVisible)
-            }
-        )
+        viewTreeObserver.addOnGlobalLayoutListener {
+            onVisibilityChanged(isVisible)
+        }
     }
 
     companion object {
