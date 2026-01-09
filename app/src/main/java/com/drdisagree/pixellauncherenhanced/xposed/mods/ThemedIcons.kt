@@ -14,6 +14,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MonochromeIconFactory
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
@@ -21,7 +22,9 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
@@ -144,134 +147,135 @@ class ThemedIcons(context: Context) : ModPack(context) {
             .hookMethod("applyIconAndLabel")
             .parameters("com.android.launcher3.model.data.ItemInfoWithIcon")
             .runBefore { param ->
-                if (appDrawerThemedIcons) {
-                    val info = param.args[0]
-                    val context = param.thisObject.callMethod("getContext") as Context
-                    val mDisplay = param.thisObject.getField("mDisplay") as Int
-                    val mHideBadge = param.thisObject.getField("mHideBadge") as Boolean
-                    val mSkipUserBadge = param.thisObject.getField("mSkipUserBadge") as Boolean
-                    val shouldUseTheme = mDisplay.shouldUseTheme(
-                        context,
-                        themesClass,
-                        themeManagerClass,
-                        themePreferenceClass
-                    )
+                if (!appDrawerThemedIcons) return@runBefore
 
-                    var flags = if (shouldUseTheme) FLAG_THEMED else 0
+                val info = param.args[0]
+                val context = param.thisObject.callMethod("getContext") as Context
+                val mDisplay = param.thisObject.getField("mDisplay") as Int
+                val mHideBadge = param.thisObject.getField("mHideBadge") as Boolean
+                val mSkipUserBadge = param.thisObject.getField("mSkipUserBadge") as Boolean
+                val shouldUseTheme = mDisplay.shouldUseTheme(
+                    context,
+                    themesClass,
+                    themeManagerClass,
+                    themePreferenceClass
+                )
 
-                    // Remove badge on icons smaller than 48dp.
-                    if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) {
-                        flags = flags or FLAG_NO_BADGE
-                    }
-                    if (mSkipUserBadge) {
-                        flags = flags or FLAG_SKIP_USER_BADGE
-                    }
+                var flags = if (shouldUseTheme) FLAG_THEMED else 0
 
-                    val iconDrawable = try {
-                        info.callMethod("newIcon", context, flags)
-                    } catch (_: Throwable) {
-                        info.callMethod("newIcon", flags, context)
-                    }
-                    val mDotParams = param.thisObject.getField("mDotParams")
-
-                    mDotParams.setField(
-                        "appColor",
-                        iconDrawable.callMethod("getIconColor")
-                    )
-                    mDotParams.setField(
-                        "dotColor",
-                        LauncherUtils.getAttrColor(
-                            context,
-                            mContext.resources.getIdentifier(
-                                "notificationDotColor",
-                                "attr",
-                                mContext.packageName
-                            )
-                        )
-                    )
-
-                    param.thisObject.callMethod("setIcon", iconDrawable)
-
-                    try {
-                        param.thisObject.callMethod("applyLabel", info)
-                    } catch (_: Throwable) { // method is nuked by R8 :)
-                        val label = info.getFieldSilently("title") as? CharSequence
-
-                        if (label != null) {
-                            param.thisObject.setField("mLastOriginalText", label)
-                            param.thisObject.setField("mLastModifiedText", label)
-
-                            val stringMatcher = bubbleTextViewClass.getStaticField("MATCHER")
-                            val inputLength = label.length
-                            val listOfBreakPoints = intArrayClass!!
-                                .getDeclaredConstructor()
-                                .newInstance()
-
-                            val mBreakPointsIntArray = if (inputLength > 2 &&
-                                TextUtils.indexOf(label, ' ') == -1
-                            ) {
-                                var prevType =
-                                    Character.getType(Character.codePointAt(label, 0))
-                                var thisType =
-                                    Character.getType(Character.codePointAt(label, 1))
-
-                                for (i in 1 until inputLength) {
-                                    val nextType = if (i < inputLength - 1) {
-                                        Character.getType(Character.codePointAt(label, i + 1))
-                                    } else {
-                                        0
-                                    }
-
-                                    if (stringMatcher.callMethod(
-                                            "isBreak",
-                                            thisType,
-                                            prevType,
-                                            nextType
-                                        ) as Boolean
-                                    ) {
-                                        listOfBreakPoints.callMethod("add", i - 1)
-                                    }
-
-                                    prevType = thisType
-                                    thisType = nextType
-                                }
-
-                                listOfBreakPoints
-                            } else {
-                                val spaceIndices = IntArray(inputLength) { it }
-                                    .filter { label[it] == ' ' }
-
-                                for (index in spaceIndices) {
-                                    listOfBreakPoints.callMethod("add", index)
-                                }
-
-                                listOfBreakPoints
-                            }
-
-                            param.thisObject.setField("mBreakPointsIntArray", mBreakPointsIntArray)
-                            param.thisObject.callMethod("setText", label)
-                        }
-
-                        if (info.getFieldSilently("contentDescription") != null) {
-                            val charSequence = if (info.callMethod("isDisabled") as Boolean) {
-                                context.getString(
-                                    context.resources.getIdentifier(
-                                        "disabled_app_label",
-                                        "string",
-                                        mContext.packageName
-                                    ),
-                                    info.getField("contentDescription")
-                                )
-                            } else {
-                                info.getField("contentDescription")
-                            }
-
-                            param.thisObject.callMethod("setContentDescription", charSequence)
-                        }
-                    }
-
-                    param.result = null
+                // Remove badge on icons smaller than 48dp.
+                if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) {
+                    flags = flags or FLAG_NO_BADGE
                 }
+                if (mSkipUserBadge) {
+                    flags = flags or FLAG_SKIP_USER_BADGE
+                }
+
+                val iconDrawable = try {
+                    info.callMethod("newIcon", context, flags)
+                } catch (_: Throwable) {
+                    info.callMethod("newIcon", flags, context)
+                }
+                val mDotParams = param.thisObject.getField("mDotParams")
+
+                mDotParams.setFieldSilently(
+                    "appColor",
+                    iconDrawable.callMethodSilently("getIconColor")
+                )
+                mDotParams.setAnyField(
+                    LauncherUtils.getAttrColor(
+                        context,
+                        mContext.resources.getIdentifier(
+                            "notificationDotColor",
+                            "attr",
+                            mContext.packageName
+                        )
+                    ),
+                    "dotColor",
+                    "mDotColor"
+                )
+
+                param.thisObject.callMethod("setIcon", iconDrawable)
+
+                try {
+                    param.thisObject.callMethod("applyLabel", info)
+                } catch (_: Throwable) { // method is nuked by R8 :)
+                    val label = info.getFieldSilently("title") as? CharSequence
+
+                    if (label != null) {
+                        param.thisObject.setField("mLastOriginalText", label)
+                        param.thisObject.setField("mLastModifiedText", label)
+
+                        val stringMatcher = bubbleTextViewClass.getStaticField("MATCHER")
+                        val inputLength = label.length
+                        val listOfBreakPoints = intArrayClass!!
+                            .getDeclaredConstructor()
+                            .newInstance()
+
+                        val mBreakPointsIntArray = if (inputLength > 2 &&
+                            TextUtils.indexOf(label, ' ') == -1
+                        ) {
+                            var prevType =
+                                Character.getType(Character.codePointAt(label, 0))
+                            var thisType =
+                                Character.getType(Character.codePointAt(label, 1))
+
+                            for (i in 1 until inputLength) {
+                                val nextType = if (i < inputLength - 1) {
+                                    Character.getType(Character.codePointAt(label, i + 1))
+                                } else {
+                                    0
+                                }
+
+                                if (stringMatcher.callMethod(
+                                        "isBreak",
+                                        thisType,
+                                        prevType,
+                                        nextType
+                                    ) as Boolean
+                                ) {
+                                    listOfBreakPoints.callMethod("add", i - 1)
+                                }
+
+                                prevType = thisType
+                                thisType = nextType
+                            }
+
+                            listOfBreakPoints
+                        } else {
+                            val spaceIndices = IntArray(inputLength) { it }
+                                .filter { label[it] == ' ' }
+
+                            for (index in spaceIndices) {
+                                listOfBreakPoints.callMethod("add", index)
+                            }
+
+                            listOfBreakPoints
+                        }
+
+                        param.thisObject.setField("mBreakPointsIntArray", mBreakPointsIntArray)
+                        param.thisObject.callMethod("setText", label)
+                    }
+
+                    if (info.getFieldSilently("contentDescription") != null) {
+                        val charSequence = if (info.callMethod("isDisabled") as Boolean) {
+                            context.getString(
+                                context.resources.getIdentifier(
+                                    "disabled_app_label",
+                                    "string",
+                                    mContext.packageName
+                                ),
+                                info.getField("contentDescription")
+                            )
+                        } else {
+                            info.getField("contentDescription")
+                        }
+
+                        param.thisObject.callMethod("setContentDescription", charSequence)
+                    }
+                }
+
+                param.result = null
             }
     }
 
