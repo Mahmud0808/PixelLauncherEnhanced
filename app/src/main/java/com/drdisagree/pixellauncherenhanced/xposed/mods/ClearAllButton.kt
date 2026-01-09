@@ -20,6 +20,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
@@ -107,7 +108,10 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
                 val launcher = param.args[0]
                 var elements: Int = OVERVIEW_ACTIONS
-                val deviceProfile = launcher.callMethod("getDeviceProfile")
+                val deviceProfile = launcher.callMethodSilently("getDeviceProfile")
+                    ?: launcher
+                        .getField("deviceProfileRef")
+                        .getField("value")
                 val isPhone = deviceProfile.getFieldSilently("isPhone") as? Boolean
                     ?: deviceProfile
                         .getField("mDeviceProperties")

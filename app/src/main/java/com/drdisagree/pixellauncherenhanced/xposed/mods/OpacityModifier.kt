@@ -115,9 +115,14 @@ class OpacityModifier(context: Context) : ModPack(context) {
             .runAfter { param ->
                 if (appDrawerBackgroundOpacity < 0) return@runAfter
 
-                val isTablet = param.args[0]
+                val launcher = param.args[0]
+                val isTablet = (launcher
                     .callMethodSilently("getDeviceProfile")
-                    .getFieldSilently("isTablet") as? Boolean == true
+                    .getFieldSilently("isTablet") as? Boolean
+                    ?: launcher
+                        .callMethodSilently("getDeviceProfile")
+                        .getFieldSilently("mDeviceProperties")
+                        .getFieldSilently("isTablet") as? Boolean) == true
 
                 if (!isTablet) {
                     if (param.result is Int) {

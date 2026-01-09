@@ -12,7 +12,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.Helpers.toPx
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceHookManager
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -75,7 +75,10 @@ class HotseatMod(context: Context) : ModPack(context) {
             .hookMethod("setInsets")
             .runAfter { param ->
                 val mLauncher = param.thisObject.getField("mLauncher")
-                val grid = mLauncher.callMethod("getDeviceProfile")
+                val grid = mLauncher.callMethodSilently("getDeviceProfile")
+                    ?: mLauncher
+                        .getField("deviceProfileRef")
+                        .getField("value")
                 val padding = grid.getFieldSilently("workspacePadding") as? Rect
                     ?: grid
                         .getField("mWorkspaceProfile")
