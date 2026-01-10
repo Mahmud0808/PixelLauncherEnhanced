@@ -11,9 +11,9 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
@@ -33,8 +33,10 @@ class LockLayout(context: Context) : ModPack(context) {
         val launcherAppWidgetHostViewClass =
             findClass("com.android.launcher3.widget.LauncherAppWidgetHostView")
         val systemShortcutClass = findClass("com.android.launcher3.popup.SystemShortcut")
-        val launcherPopupItemDragHandlerClass =
-            findClass($$"com.android.launcher3.popup.PopupContainerWithArrow$LauncherPopupItemDragHandler")
+        val launcherPopupItemDragHandlerClass = findClass(
+            $$"com.android.launcher3.popup.PopupContainerWithArrow$LauncherPopupItemDragHandler",
+            "com.android.launcher3.popup.LauncherPopupItemDragHandler",
+        )
         val optionsPopupViewClass = findClass("com.android.launcher3.views.OptionsPopupView")
         val taskbarDragControllerClass = findClass(
             "com.android.launcher3.taskbar.TaskbarDragController",
