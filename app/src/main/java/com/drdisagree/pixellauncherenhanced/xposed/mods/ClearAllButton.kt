@@ -24,6 +24,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilent
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -135,7 +136,14 @@ class ClearAllButton(context: Context) : ModPack(context) {
                 }
 
                 if (featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean != false &&
-                    launcher.callMethod("isSplitSelectionActive") as Boolean
+                    if (launcher.hasMethod("isSplitSelectionActive")) {
+                        launcher.callMethod("isSplitSelectionActive") as Boolean
+                    } else {
+                        launcher
+                            .getField("isSplitSelectActiveRef")
+                            .getField("value")
+                            .callMethod("booleanValue") as Boolean
+                    }
                 ) {
                     elements = elements and CLEAR_ALL_BUTTON.inv()
                 }
