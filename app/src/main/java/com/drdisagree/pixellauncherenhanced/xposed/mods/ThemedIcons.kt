@@ -16,6 +16,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
@@ -75,7 +76,10 @@ class ThemedIcons(context: Context) : ModPack(context) {
             baseIconFactoryClass
                 .hookConstructor()
                 .runAfter { param ->
-                    val mIconBitmapSize = param.thisObject.getField("mIconBitmapSize") as Int
+                    val mIconBitmapSize = param.thisObject.getAnyField(
+                        "mIconBitmapSize",
+                        "iconBitmapSize"
+                    ) as Int
                     val monochromeIconFactory = MonochromeIconFactory(mIconBitmapSize, false)
 
                     AdaptiveIconDrawable::class.java
