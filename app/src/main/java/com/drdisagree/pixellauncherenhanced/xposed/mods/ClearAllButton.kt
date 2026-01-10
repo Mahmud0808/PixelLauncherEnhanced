@@ -172,23 +172,13 @@ class ClearAllButton(context: Context) : ModPack(context) {
                         mContext.packageName
                     )
                 )
-                val overviewActionButtonBlurId = mContext.resources.getIdentifier(
-                    "OverviewActionButton_Blur",
-                    "style",
-                    mContext.packageName
-                )
-                val depthController = launcherInstance.getFieldSilently("mDepthController")
-                val shouldUseBlurStyle = overviewActionButtonBlurId != 0
-                        && depthController != null
-                        && depthController.callMethod("isCrossWindowBlursEnabled") as Boolean
 
                 actionClearAllButton = Button(
                     contextThemeWrapper,
                     null,
                     0,
                     mContext.resources.getIdentifier(
-                        if (!shouldUseBlurStyle) "OverviewActionButton"
-                        else "OverviewActionButton_Blur",
+                        "OverviewActionButton",
                         "style",
                         mContext.packageName
                     )
@@ -217,6 +207,13 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     setOnClickListener { view ->
                         dismissAllTasksMethod.invoke(recentsViewInstance, view)
                     }
+                }
+
+                val referenceButton = mActionButtons.children
+                    .filterIsInstance<Button>()
+                    .firstOrNull { it !== actionClearAllButton }
+                referenceButton?.background?.constantState?.newDrawable()?.let { drawable ->
+                    actionClearAllButton?.background = drawable.mutate()
                 }
 
                 mActionButtons.addView(actionClearAllButton)
