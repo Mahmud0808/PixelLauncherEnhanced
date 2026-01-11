@@ -10,6 +10,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -36,6 +37,11 @@ class IconTextSize(context: Context) : ModPack(context) {
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val deviceProfileClass = findClass("com.android.launcher3.DeviceProfile")
+        val deviceProfileBuilderClass = findClass($$"com.android.launcher3.DeviceProfile$Builder")
+        val allAppsProfileClass = findClass(
+            "com.android.launcher3.deviceprofile.AllAppsProfile",
+            suppressError = Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM
+        )
 
         deviceProfileClass
             .hookConstructor()
@@ -135,10 +141,23 @@ class IconTextSize(context: Context) : ModPack(context) {
                 }
             }
 
-        val allAppsProfileClass = findClass(
-            "com.android.launcher3.deviceprofile.AllAppsProfile",
-            suppressError = Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM
-        )
+        deviceProfileBuilderClass
+            .hookMethod("build")
+            .runAfter { param ->
+                val deviceProfile = param.result
+
+                try {
+                    val mWorkspaceProfile = deviceProfile.getField("mWorkspaceProfile")
+                    var iconSizePx = mWorkspaceProfile.getField("iconSizePx") as Int
+
+                    iconSizePx = (iconSizePx * iconSizeModifier).toInt()
+
+                    mWorkspaceProfile.setField("iconSizePx", iconSizePx)
+
+                    param.result = deviceProfile
+                } catch (_: Throwable) {
+                }
+            }
 
         allAppsProfileClass
             .hookConstructor()
