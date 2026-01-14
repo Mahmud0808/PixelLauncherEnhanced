@@ -13,6 +13,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
@@ -62,7 +63,7 @@ class SmartSpace(context: Context) : ModPack(context) {
         val launcherAppStateClass = findClass("com.android.launcher3.LauncherAppState")
         val launcherPrefsClass = findClass("com.android.launcher3.LauncherPrefs")
         val launcherPrefsCompanionClass = findClass(
-            "com.android.launcher3.LauncherPrefs\$Companion",
+            $$"com.android.launcher3.LauncherPrefs$Companion",
             suppressError = true
         )
         var quickspaceListenerRegistered = false
@@ -95,7 +96,6 @@ class SmartSpace(context: Context) : ModPack(context) {
                     "registerOnSharedPreferenceChangeListener",
                     firstPagePinnedItemListener
                 )
-
                 quickspaceListenerRegistered = true
 
                 mOnTerminateCallback.callMethod(
@@ -200,7 +200,7 @@ class SmartSpace(context: Context) : ModPack(context) {
                 val trgX = param.args[4] as Int
                 val trgY = param.args[5] as Int
                 val sortedItemsToPlace = param.args[6] as List<*>
-                val sortedItemsToPlace2 = try {
+                val idsInUse = try {
                     param.args[6] as List<*>
                 } catch (_: Throwable) {
                     null
@@ -215,77 +215,120 @@ class SmartSpace(context: Context) : ModPack(context) {
                 val trg = Point(trgX, trgY)
                 val next = Point(0, 0)
 
-                val existedEntries = destReader
-                    .callMethod("mWorkspaceEntriesByScreenId")
-                    .callMethod("get", screenId) as List<*>?
+                val existedEntries = if (destReader.hasMethod("mWorkspaceEntriesByScreenId")) {
+                    destReader.callMethod("mWorkspaceEntriesByScreenId")
+                } else {
+                    destReader.getField("mWorkspaceEntriesByScreenId")
+                }.callMethod("get", screenId) as? List<*>
+
                 if (existedEntries != null) {
                     for (dbEntry in existedEntries) {
-                        occupied.callMethod("markCells", dbEntry)
+                        if (gridOccupancyClass.hasMethod("markCells", dbEntry!!::class.java)) {
+                            occupied.callMethod("markCells", dbEntry)
+                        } else if (gridOccupancyClass.hasMethod(
+                                "markCells",
+                                dbEntry::class.java,
+                                Boolean::class.java
+                            )
+                        ) {
+                            occupied.callMethod("markCells", dbEntry, true)
+                        } else {
+                            occupied.callMethod(
+                                "markCells",
+                                true,
+                                dbEntry.getField("cellX"),
+                                dbEntry.getField("cellY"),
+                                dbEntry.getField("spanX"),
+                                dbEntry.getField("spanY")
+                            )
+                        }
                     }
                 }
 
                 val iterator = sortedItemsToPlace.iterator()
+
                 while (iterator.hasNext()) {
                     val entry = iterator.next()
 
-                    if (entry.getField("minSpanX") as Int <= trgX && entry.getField("minSpanY") as Int <= trgY) {
-                        for (y in next.y until trg.y) {
-                            for (x in next.x until trg.x) {
-                                val fits = occupied.callMethod(
-                                    "isRegionVacant",
-                                    x,
-                                    y,
-                                    entry.getField("spanX"),
-                                    entry.getField("spanY")
-                                ) as Boolean
-                                val minFits = occupied.callMethod(
-                                    "isRegionVacant",
-                                    x,
-                                    y,
-                                    entry.getField("minSpanX"),
-                                    entry.getField("minSpanY")
-                                ) as Boolean
+                    if (entry.getField("minSpanX") as Int > trgX || entry.getField("minSpanY") as Int > trgY) {
+                        iterator.callMethod("remove")
+                        continue
+                    }
 
-                                if (minFits) {
-                                    entry.setField("spanX", entry.getField("minSpanX"))
-                                    entry.setField("spanY", entry.getField("minSpanY"))
-                                }
+                    for (y in next.y until trg.y) {
+                        for (x in next.x until trg.x) {
+                            val fits = occupied.callMethod(
+                                "isRegionVacant",
+                                x,
+                                y,
+                                entry.getField("spanX"),
+                                entry.getField("spanY")
+                            ) as Boolean
+                            val minFits = occupied.callMethod(
+                                "isRegionVacant",
+                                x,
+                                y,
+                                entry.getField("minSpanX"),
+                                entry.getField("minSpanY")
+                            ) as Boolean
 
-                                if (fits || minFits) {
-                                    entry.setField("screenId", screenId)
-                                    entry.setField("cellX", x)
-                                    entry.setField("cellY", y)
-                                    occupied.callMethod("markCells", entry)
-                                    next.set(x + entry.getField("spanX") as Int, y)
-
-                                    if (sortedItemsToPlace2 != null) {
-                                        param.thisObject.callMethod(
-                                            "insertEntryInDb",
-                                            helper,
-                                            entry,
-                                            srcReader.getField("mTableName"),
-                                            destReader.getField("mTableName"),
-                                            sortedItemsToPlace2
-                                        )
-                                    } else {
-                                        param.thisObject.callMethod(
-                                            "insertEntryInDb",
-                                            helper,
-                                            entry,
-                                            srcReader.getField("mTableName"),
-                                            destReader.getField("mTableName")
-                                        )
-                                    }
-
-                                    iterator.callMethod("remove")
-                                    break
-                                }
+                            if (minFits) {
+                                entry.setField("spanX", entry.getField("minSpanX"))
+                                entry.setField("spanY", entry.getField("minSpanY"))
                             }
 
-                            next.set(0, next.y)
+                            if (fits || minFits) {
+                                entry.setField("screenId", screenId)
+                                entry.setField("cellX", x)
+                                entry.setField("cellY", y)
+
+                                if (gridOccupancyClass.hasMethod("markCells", entry!!::class.java)) {
+                                    occupied.callMethod("markCells", entry)
+                                } else if (gridOccupancyClass.hasMethod(
+                                        "markCells",
+                                        entry::class.java,
+                                        Boolean::class.java
+                                    )
+                                ) {
+                                    occupied.callMethod("markCells", entry, true)
+                                } else {
+                                    occupied.callMethod(
+                                        "markCells",
+                                        true,
+                                        entry.getField("cellX"),
+                                        entry.getField("cellY"),
+                                        entry.getField("spanX"),
+                                        entry.getField("spanY")
+                                    )
+                                }
+
+                                next.set(x + entry.getField("spanX") as Int, y)
+
+                                if (idsInUse != null) {
+                                    param.thisObject.callMethod(
+                                        "insertEntryInDb",
+                                        helper,
+                                        entry,
+                                        srcReader.getField("mTableName"),
+                                        destReader.getField("mTableName"),
+                                        idsInUse
+                                    )
+                                } else {
+                                    param.thisObject.callMethod(
+                                        "insertEntryInDb",
+                                        helper,
+                                        entry,
+                                        srcReader.getField("mTableName"),
+                                        destReader.getField("mTableName")
+                                    )
+                                }
+
+                                iterator.callMethod("remove")
+                                break
+                            }
                         }
-                    } else {
-                        iterator.callMethod("remove")
+
+                        next.set(0, next.y)
                     }
                 }
 
@@ -297,7 +340,7 @@ class SmartSpace(context: Context) : ModPack(context) {
             suppressError = true
         )
         val workspaceItemsToPlaceClass = findClass(
-            "com.android.launcher3.model.GridSizeMigrationLogic\$WorkspaceItemsToPlace",
+            $$"com.android.launcher3.model.GridSizeMigrationLogic$WorkspaceItemsToPlace",
             suppressError = true
         )
         val cellAndSpanClass = findClass("com.android.launcher3.util.CellAndSpan")
@@ -312,7 +355,7 @@ class SmartSpace(context: Context) : ModPack(context) {
                 val trgX = param.args[1] as Int
                 val trgY = param.args[2] as Int
                 val sortedItemsToPlace = param.args[3] as List<*>
-                val sortedItemsToPlace2 = param.args[4] as? List<*>
+                val existedEntries = param.args[4] as? List<*>
 
                 var cellAndSpan: Any? = null
                 val workspaceItemsToPlace = workspaceItemsToPlaceClass!!
@@ -331,83 +374,131 @@ class SmartSpace(context: Context) : ModPack(context) {
                 val trg = Point(trgX, trgY)
                 val next = Point(0, 0)
 
-                if (sortedItemsToPlace2 != null) {
-                    val iterator = sortedItemsToPlace2.iterator()
+                if (existedEntries != null) {
+                    val iterator = existedEntries.iterator()
+
                     while (iterator.hasNext()) {
-                        occupied.callMethod("markCells", iterator.next())
+                        val dbEntry = iterator.next()
+
+                        if (gridOccupancyClass.hasMethod("markCells", dbEntry!!::class.java)) {
+                            occupied.callMethod("markCells", dbEntry)
+                        } else if (gridOccupancyClass.hasMethod(
+                                "markCells",
+                                dbEntry::class.java,
+                                Boolean::class.java
+                            )
+                        ) {
+                            occupied.callMethod("markCells", dbEntry, true)
+                        } else {
+                            occupied.callMethod(
+                                "markCells",
+                                true,
+                                dbEntry.getField("cellX"),
+                                dbEntry.getField("cellY"),
+                                dbEntry.getField("spanX"),
+                                dbEntry.getField("spanY")
+                            )
+                        }
                     }
                 }
 
-                val iterator = workspaceItemsToPlace
-                    .callMethod("getMRemainingItemsToPlace")
-                    .callMethod("iterator") as Iterator<*>
+                val iterator = if (workspaceItemsToPlace.hasMethod("getMRemainingItemsToPlace")) {
+                    workspaceItemsToPlace.callMethod("getMRemainingItemsToPlace")
+                } else {
+                    workspaceItemsToPlace.getField("mRemainingItemsToPlace")
+                }.callMethod("iterator") as Iterator<*>
 
                 while (iterator.hasNext()) {
                     val dbEntry = iterator.next()
 
                     if (dbEntry.getField("minSpanX") as Int > trgX || dbEntry.getField("minSpanY") as Int > trgY) {
                         iterator.callMethod("remove")
-                    } else {
-                        var x = next.x
-                        var y = next.y
-                        val gridHeight = trg.y
+                        continue
+                    }
 
-                        while (true) {
-                            if (y < gridHeight) {
-                                val gridWidth = trg.x
+                    var x = next.x
+                    var y = next.y
+                    val gridHeight = trg.y
 
-                                while (x < gridWidth) {
-                                    if (occupied.callMethod(
-                                            "isRegionVacant",
-                                            x,
-                                            y,
-                                            dbEntry.getField("minSpanX"),
-                                            dbEntry.getField("minSpanY")
-                                        ) as Boolean
-                                    ) {
-                                        cellAndSpan = cellAndSpanClass!!
-                                            .getDeclaredConstructor(
-                                                Int::class.javaPrimitiveType,
-                                                Int::class.javaPrimitiveType,
-                                                Int::class.javaPrimitiveType,
-                                                Int::class.javaPrimitiveType
-                                            )
-                                            .newInstance(
-                                                x,
-                                                y,
-                                                dbEntry.getField("minSpanX"),
-                                                dbEntry.getField("minSpanY")
-                                            )
-                                        break
-                                    }
+                    while (true) {
+                        if (y >= gridHeight) {
+                            cellAndSpan = null
+                            break
+                        }
 
-                                    x++
-                                }
+                        val gridWidth = trg.x
 
-                                y++
-                                x = 0
-                            } else {
-                                cellAndSpan = null
+                        while (x < gridWidth) {
+                            if (occupied.callMethod(
+                                    "isRegionVacant",
+                                    x,
+                                    y,
+                                    dbEntry.getField("minSpanX"),
+                                    dbEntry.getField("minSpanY")
+                                ) as Boolean
+                            ) {
+                                cellAndSpan = cellAndSpanClass!!
+                                    .getDeclaredConstructor(
+                                        Int::class.javaPrimitiveType,
+                                        Int::class.javaPrimitiveType,
+                                        Int::class.javaPrimitiveType,
+                                        Int::class.javaPrimitiveType
+                                    )
+                                    .newInstance(
+                                        x,
+                                        y,
+                                        dbEntry.getField("minSpanX"),
+                                        dbEntry.getField("minSpanY")
+                                    )
                                 break
                             }
+
+                            x++
                         }
 
-                        cellAndSpan?.let {
-                            dbEntry.setField("screenId", screenId)
-                            dbEntry.setField("cellX", cellAndSpan.getField("cellX"))
-                            dbEntry.setField("cellY", cellAndSpan.getField("cellY"))
-                            dbEntry.setField("spanX", cellAndSpan.getField("spanX"))
-                            dbEntry.setField("spanY", cellAndSpan.getField("spanY"))
+                        y++
+                        x = 0
+                    }
+
+                    cellAndSpan?.let {
+                        dbEntry.setField("screenId", screenId)
+                        dbEntry.setField("cellX", it.getField("cellX"))
+                        dbEntry.setField("cellY", it.getField("cellY"))
+                        dbEntry.setField("spanX", it.getField("spanX"))
+                        dbEntry.setField("spanY", it.getField("spanY"))
+
+                        if (gridOccupancyClass.hasMethod("markCells", dbEntry!!::class.java)) {
                             occupied.callMethod("markCells", dbEntry)
-                            next.set(
-                                dbEntry.getField("cellX") as Int + dbEntry.getField("spanX") as Int,
-                                dbEntry.getField("cellY") as Int
+                        } else if (gridOccupancyClass.hasMethod(
+                                "markCells",
+                                dbEntry::class.java,
+                                Boolean::class.java
                             )
-                            workspaceItemsToPlace
-                                .callMethod("getMPlacementSolution")
-                                .callMethod("add", dbEntry)
-                            iterator.callMethod("remove")
+                        ) {
+                            occupied.callMethod("markCells", dbEntry, true)
+                        } else {
+                            occupied.callMethod(
+                                "markCells",
+                                true,
+                                it.getField("cellX"),
+                                it.getField("cellY"),
+                                it.getField("spanX"),
+                                it.getField("spanY")
+                            )
                         }
+
+                        next.set(
+                            dbEntry.getField("cellX") as Int + dbEntry.getField("spanX") as Int,
+                            dbEntry.getField("cellY") as Int
+                        )
+
+                        if (workspaceItemsToPlace.hasMethod("getMPlacementSolution")) {
+                            workspaceItemsToPlace.callMethod("getMPlacementSolution")
+                        } else {
+                            workspaceItemsToPlace.getField("mPlacementSolution")
+                        }.callMethod("add", dbEntry)
+
+                        iterator.callMethod("remove")
                     }
                 }
 
