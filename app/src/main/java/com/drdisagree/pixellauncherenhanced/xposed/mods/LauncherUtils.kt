@@ -12,6 +12,8 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.resetCounter
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
@@ -127,7 +129,18 @@ class LauncherUtils(context: Context) : ModPack(context) {
         fun reloadIcons() {
             Handler(Looper.getMainLooper()).post {
                 mCache.callMethod("clear")
-                mIconDb.callMethod("clear")
+
+                if (mIconDb.hasMethod("clear")) {
+                    mIconDb.callMethod("clear")
+                } else {
+                    mIconDb.getField("mOpenHelper").also { mOpenHelper ->
+                        mOpenHelper.callMethod(
+                            "clearDB",
+                            mOpenHelper.callMethod("getWritableDatabase")
+                        )
+                    }
+                }
+
                 mModel.callMethod("forceReload")
             }
         }
