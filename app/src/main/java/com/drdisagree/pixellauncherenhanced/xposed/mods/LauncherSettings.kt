@@ -19,6 +19,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -117,7 +118,11 @@ class LauncherSettings(context: Context) : ModPack(context) {
                         0
                     )
 
-                myPreference.callMethod("setKey", BuildConfig.APPLICATION_ID)
+                if (myPreference.hasMethod("setKey", String::class.java)) {
+                    myPreference.callMethod("setKey", BuildConfig.APPLICATION_ID)
+                } else {
+                    myPreference.setField("mKey", BuildConfig.APPLICATION_ID)
+                }
                 myPreference.callMethod("setTitle", modRes.getString(R.string.app_name_shortened))
                 myPreference.callMethod("setSummary", modRes.getString(R.string.app_motto))
 
