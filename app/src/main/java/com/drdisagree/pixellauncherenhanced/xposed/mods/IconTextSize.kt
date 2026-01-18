@@ -158,17 +158,6 @@ class IconTextSize(context: Context) : ModPack(context) {
                     mWorkspaceProfile.setField("iconSizePx", iconSizePx)
                     mWorkspaceProfile.setField("iconTextSizePx", iconTextSizePx)
 
-                    val mAllAppsProfile = deviceProfile.getField("mAllAppsProfile")
-
-                    var allAppsIconSizePx = mAllAppsProfile.getField("iconSizePx") as Int
-                    var allAppsIconTextSizePx = mAllAppsProfile.getField("iconTextSizePx") as Int
-
-                    allAppsIconSizePx = (allAppsIconSizePx * iconSizeModifier).toInt()
-                    allAppsIconTextSizePx = (allAppsIconTextSizePx * textSizeModifier).toInt()
-
-                    mAllAppsProfile.setField("iconSizePx", allAppsIconSizePx)
-                    mAllAppsProfile.setField("iconTextSizePx", allAppsIconTextSizePx)
-
                     param.result = deviceProfile
                 } catch (_: Throwable) {
                 }
