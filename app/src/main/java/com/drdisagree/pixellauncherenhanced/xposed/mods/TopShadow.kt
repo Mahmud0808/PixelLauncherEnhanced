@@ -1,6 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
 import android.view.View
@@ -53,6 +54,15 @@ class TopShadow(context: Context) : ModPack(context) {
                 if (!removeTopShadow) return@runAfter
 
                 param.result = null
+            }
+
+        sysUiScrimClass
+            .hookMethod("createDitheredAlphaMask")
+            .runAfter { param ->
+                if (!removeTopShadow) return@runAfter
+
+                val bitmap = param.result as Bitmap
+                bitmap.eraseColor(Color.TRANSPARENT)
             }
     }
 
