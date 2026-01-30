@@ -72,12 +72,14 @@ class TopShadow(context: Context) : ModPack(context) {
         val mRoot = sysUiScrimInstance.getField("mRoot") as View
         val mTopMaskPaint = sysUiScrimInstance.getField("mTopMaskPaint") as Paint
 
-        mTopMaskPaint.setColor(Color.rgb(0x22, 0x22, 0x22))
+        mTopMaskPaint.color = Color.rgb(0x22, 0x22, 0x22)
 
-        sysUiScrimInstance.setField("mHideSysUiScrim", true)
-        sysUiScrimInstance.setField("mTopMaskBitmap", null)
-        sysUiScrimInstance.setField("mBottomMaskBitmap", null)
-        sysUiScrimInstance.setField("mTopMaskPaint", mTopMaskPaint)
+        sysUiScrimInstance.apply {
+            setField("mHideSysUiScrim", true)
+            setField("mTopMaskBitmap", null)
+            setField("mBottomMaskBitmap", null)
+            setField("mTopMaskPaint", mTopMaskPaint)
+        }
 
         mRoot.invalidate()
     }
