@@ -54,3 +54,55 @@ jobs:
           name: "PLEnhanced v${{ env.VERSION_NAME }} Dev${{ github.run_number }}"
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Get Commit Messages
+        id: get_commit_message
+        run: |
+          COMMIT_MESSAGE_HEADER=""
+          COMMIT_MESSAGE_HEADER=$(git log -1 --pretty=%B | head -n 1)
+
+          if [[ "$COMMIT_MESSAGE_HEADER" == *".md"* || "$COMMIT_MESSAGE_HEADER" == *".yml"* ]]; then
+            echo "Skipping build upload."
+            echo "SKIP_BUILD=true" >> $GITHUB_ENV
+          else
+            echo "SKIP_BUILD=false" >> $GITHUB_ENV
+          fi
+
+          if [[ "$COMMIT_MESSAGE_HEADER" =~ ^Merge\ remote-tracking\ branch ]]; then
+            COMMIT_MESSAGE_HEADER="Synced with the latest changes"
+          fi
+
+          if [[ "$COMMIT_MESSAGE_HEADER" =~ Mahmud0808/localization$ ]]; then
+            COMMIT_MESSAGE_HEADER="Updated translation strings"
+          fi
+
+          if [[ -z "$COMMIT_MESSAGE_HEADER" ]]; then
+            echo "No valid changelog found!"
+            COMMIT_MESSAGE_HEADER="No valid changelog found!"
+            echo "SKIP_BUILD=true" >> $GITHUB_ENV
+          fi
+
+          ESCAPED_MESSAGE=$(echo "$COMMIT_MESSAGE_HEADER" | jq -Rsa . | sed 's/^"\(.*\)"$/\1/' | sed "s/'//g")
+          echo "COMMIT_MESSAGE_HEADER=${ESCAPED_MESSAGE}" >> $GITHUB_ENV
+
+      - name: Clean Previous Release Folder
+        run: rm -rf releases && mkdir -p releases
+
+      - name: Zip Artifact for Sending to Telegram
+        if: env.SKIP_BUILD != 'true'
+        run: |
+          cd app/build/outputs/apk/debug/
+          zip "../../../../../releases/PLEnhanced v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.zip" *.apk -r
+
+      - name: Telegram File Attachment
+        if: github.repository == 'Mahmud0808/PixelLauncherEnhanced' && env.SKIP_BUILD != 'true'
+        run: |
+          set -e
+          curl -v "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMediaGroup" \
+            -F chat_id=${{ secrets.TG_CHAT_ID }} \
+            -F message_thread_id=${{ secrets.TG_CHAT_THREAD_ID }} \
+            -F media='[
+              {"type":"document", "media":"attach://file", "caption":"#PLEnhanced: ${{ env.COMMIT_MESSAGE_HEADER }}"}
+            ]' \
+            -F file="@releases/PLEnhanced v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.zip" \
+            -F disable_notification=true || exit 1
