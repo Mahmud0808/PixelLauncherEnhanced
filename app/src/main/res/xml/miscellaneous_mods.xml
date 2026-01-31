@@ -16,6 +16,13 @@
         app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:defaultValue="false"
+        android:key="xposed_preventwallpaperdimmingrestart"
+        android:summary="@string/prevent_wallpaper_dimming_restart_summary"
+        android:title="@string/prevent_wallpaper_dimming_restart_title"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
         android:key="xposed_developeroptions"
         android:summary="@string/developer_options_desc"
         android:title="@string/developer_options_title"
