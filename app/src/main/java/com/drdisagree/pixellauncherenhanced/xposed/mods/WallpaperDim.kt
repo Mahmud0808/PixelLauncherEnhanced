@@ -8,23 +8,27 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 
+class WallpaperDim(context: Context) : ModPack(context) {
 
-class PreventWallpaperDimmingRestart (context: Context) : ModPack(context) {
-
-    private var preventWallpaperDimmingRestartEnabled = false
+    private var preventWallpaperDimmingRestart = false
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
-            preventWallpaperDimmingRestartEnabled = getBoolean(PREVENT_WALLPAPER_DIMMING_RESTART, false)
+            preventWallpaperDimmingRestart = getBoolean(PREVENT_WALLPAPER_DIMMING_RESTART, false)
         }
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
-        val wallpaperColorChangedListener = findClass("com.android.launcher3.util.WallpaperColorHints\$onColorsChangedListener$1")
-        wallpaperColorChangedListener.hookMethod("onColorsChanged").runBefore { param ->
-            if (preventWallpaperDimmingRestartEnabled) {
-                param.setResult(null)
+        val wallpaperColorChangedListener =
+            findClass($$"com.android.launcher3.util.WallpaperColorHints$onColorsChangedListener$1")
+
+        wallpaperColorChangedListener
+            .hookMethod("onColorsChanged")
+            .suppressError() // may not be available on a15
+            .runBefore { param ->
+                if (preventWallpaperDimmingRestart) {
+                    param.setResult(null)
+                }
             }
-        }
     }
 }
