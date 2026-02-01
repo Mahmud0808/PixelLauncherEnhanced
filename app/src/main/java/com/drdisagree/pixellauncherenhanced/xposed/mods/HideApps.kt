@@ -123,8 +123,12 @@ class HideApps(context: Context) : ModPack(context) {
                 }
 
                 val binarySearch = Arrays.binarySearch<Any?>(mApps, appInfo, comparator)
+                val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
 
-                if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist())) {
+                if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist(
+                        unhideAllApps
+                    ))
+                ) {
                     param.result = null
                 } else {
                     param.result = mApps[binarySearch]
@@ -250,6 +254,7 @@ class HideApps(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val mAdapterItems =
                     (param.thisObject.getField("mAdapterItems") as ArrayList<*>).toMutableList()
+                val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
 
                 val iterator = mAdapterItems.iterator()
 
@@ -258,7 +263,7 @@ class HideApps(context: Context) : ModPack(context) {
                     val itemInfo = item.getFieldSilently("itemInfo")
                     val componentName = itemInfo.getComponentName()
 
-                    if (componentName.matchesBlocklist()) {
+                    if (componentName.matchesBlocklist(unhideAllApps)) {
                         iterator.remove()
                     }
                 }
@@ -279,12 +284,13 @@ class HideApps(context: Context) : ModPack(context) {
             } catch (_: Throwable) {
                 throw IllegalStateException("mComponentToAppMap is null")
             }
+            val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
 
             mComponentToAppMap.keys.forEach { key ->
                 val appInfo = mComponentToAppMap[key]
                 val componentName = appInfo.getComponentName()
 
-                if (componentName.matchesBlocklist()) {
+                if (componentName.matchesBlocklist(unhideAllApps)) {
                     mComponentToAppMap.remove(key)
                 }
             }
@@ -311,11 +317,13 @@ class HideApps(context: Context) : ModPack(context) {
     }
 
     private fun MutableIterator<Any?>.removeMatches() {
+        val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
+
         while (hasNext()) {
             val itemInfo = next()
             val componentName = itemInfo.getComponentName()
 
-            if (componentName.matchesBlocklist()) {
+            if (componentName.matchesBlocklist(unhideAllApps)) {
                 remove()
             }
         }
@@ -329,13 +337,12 @@ class HideApps(context: Context) : ModPack(context) {
             ?: callMethod("getTargetComponent") as ComponentName
     }
 
-    private fun ComponentName?.matchesBlocklist(): Boolean {
-        return this?.packageName.matchesBlocklist()
+    private fun ComponentName?.matchesBlocklist(unhideAllApps: Boolean): Boolean {
+        return this?.packageName.matchesBlocklist(unhideAllApps)
     }
 
-    private fun String?.matchesBlocklist(): Boolean {
+    private fun String?.matchesBlocklist(unhideAllApps: Boolean): Boolean {
         if (isNullOrEmpty()) return false
-        val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
         return !unhideAllApps && appBlockList.contains(this)
     }
 
