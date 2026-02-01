@@ -113,5 +113,7 @@
     <string name="folder_color_light_title">浅色模式下的文件夹颜色</string>
     <string name="folder_color_dark_title">深色模式下的文件夹颜色</string>
     <string name="search_bar_opacity_title">搜索栏透明度</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="value_output">值大小: %s</string>
 </resources>

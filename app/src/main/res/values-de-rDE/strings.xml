@@ -113,5 +113,7 @@
     <string name="folder_color_light_title">Ordnerfarbe im hellen Modus</string>
     <string name="folder_color_dark_title">Ordnerfarbe im Dunkelmodus</string>
     <string name="search_bar_opacity_title">Suchleisten Deckkraft</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="value_output">Value: %s</string>
 </resources>
