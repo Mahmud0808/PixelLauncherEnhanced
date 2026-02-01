@@ -113,5 +113,7 @@
     <string name="folder_color_light_title">Aydınlık modda klasör rengi</string>
     <string name="folder_color_dark_title">Karanlık modda klasör rengi</string>
     <string name="search_bar_opacity_title">Arama çubuğu opaklığı</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="value_output">Değer: %s</string>
 </resources>
