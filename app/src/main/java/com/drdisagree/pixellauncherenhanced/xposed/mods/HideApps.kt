@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.UNHIDE_ALL_APPS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
@@ -123,7 +124,7 @@ class HideApps(context: Context) : ModPack(context) {
 
                 val binarySearch = Arrays.binarySearch<Any?>(mApps, appInfo, comparator)
 
-                if (binarySearch < 0 || (!searchHiddenApps && matchesBlocklist(componentName))) {
+                if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist())) {
                     param.result = null
                 } else {
                     param.result = mApps[binarySearch]
@@ -257,7 +258,7 @@ class HideApps(context: Context) : ModPack(context) {
                     val itemInfo = item.getFieldSilently("itemInfo")
                     val componentName = itemInfo.getComponentName()
 
-                    if (matchesBlocklist(componentName)) {
+                    if (componentName.matchesBlocklist()) {
                         iterator.remove()
                     }
                 }
@@ -283,7 +284,7 @@ class HideApps(context: Context) : ModPack(context) {
                 val appInfo = mComponentToAppMap[key]
                 val componentName = appInfo.getComponentName()
 
-                if (matchesBlocklist(componentName)) {
+                if (componentName.matchesBlocklist()) {
                     mComponentToAppMap.remove(key)
                 }
             }
@@ -314,7 +315,7 @@ class HideApps(context: Context) : ModPack(context) {
             val itemInfo = next()
             val componentName = itemInfo.getComponentName()
 
-            if (matchesBlocklist(componentName)) {
+            if (componentName.matchesBlocklist()) {
                 remove()
             }
         }
@@ -328,13 +329,14 @@ class HideApps(context: Context) : ModPack(context) {
             ?: callMethod("getTargetComponent") as ComponentName
     }
 
-    private fun matchesBlocklist(componentName: ComponentName?): Boolean {
-        return matchesBlocklist(componentName?.packageName)
+    private fun ComponentName?.matchesBlocklist(): Boolean {
+        return this?.packageName.matchesBlocklist()
     }
 
-    private fun matchesBlocklist(packageName: String?): Boolean {
-        if (packageName.isNullOrEmpty()) return false
-        return appBlockList.contains(packageName)
+    private fun String?.matchesBlocklist(): Boolean {
+        if (isNullOrEmpty()) return false
+        val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
+        return !unhideAllApps && appBlockList.contains(this)
     }
 
     private fun updateLauncherIcons() {
