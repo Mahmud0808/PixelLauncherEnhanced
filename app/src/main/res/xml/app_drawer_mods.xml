@@ -39,6 +39,11 @@
         android:title="@string/search_hidden_apps_title"
         app:iconSpaceReserved="false" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:key="xposed_togglehideappsinoptionspopup"
+        android:title="@string/toggle_hidden_app_visibility_title"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
         android:key="xposed_appdrawerbackgroundopacity"
         android:title="@string/app_drawer_background_opacity_title"

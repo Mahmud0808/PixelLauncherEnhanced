@@ -3,6 +3,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
@@ -10,31 +11,59 @@ import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ENTRY_IN_LAUNCHER_SETTINGS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ENTRY_IN_OPTIONS_POPUP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.UNHIDE_ALL_APPS
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Proxy
+import java.util.Arrays
 
 class LauncherSettings(context: Context) : ModPack(context) {
 
     private var devOptionsEnabled = false
-    private var entryInLauncher = false
+    private var entryInLauncher = true
+    private var entryInPopup = false
+    private var toggleHideAppsInPopup = false
+    private var unhideAllApps = false
+    private var activityAllAppsContainerViewInstance: Any? = null
+    private var hotseatPredictionControllerInstance: Any? = null
+    private var hybridHotseatOrganizerClassInstance: Any? = null
+    private var predictionRowViewInstance: Any? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             devOptionsEnabled = getBoolean(DEVELOPER_OPTIONS, false)
             entryInLauncher = getBoolean(ENTRY_IN_LAUNCHER_SETTINGS, true)
+            entryInPopup = getBoolean(ENTRY_IN_OPTIONS_POPUP, false)
+            toggleHideAppsInPopup = getBoolean(TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP, false)
+            unhideAllApps = getBoolean(UNHIDE_ALL_APPS, false)
+        }
+
+        when (key.firstOrNull()) {
+            TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP -> {
+                if (!toggleHideAppsInPopup) {
+                    @SuppressLint("ApplySharedPref")
+                    Xprefs.edit()
+                        .putBoolean(UNHIDE_ALL_APPS, false)
+                        .commit()
+                    updateLauncherIcons()
+                }
+            }
         }
     }
 
@@ -42,8 +71,8 @@ class LauncherSettings(context: Context) : ModPack(context) {
     @SuppressLint("DiscouragedApi", "UseCompatLoadingForDrawables")
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val launcherSettingsFragmentClass = findClass(
-            "com.android.launcher3.SettingsActivity\$LauncherSettingsFragment",
-            "com.android.launcher3.settings.SettingsActivity\$LauncherSettingsFragment"
+            $$"com.android.launcher3.SettingsActivity$LauncherSettingsFragment",
+            $$"com.android.launcher3.settings.SettingsActivity$LauncherSettingsFragment"
         )
         val featureFlagsClass = findClass("com.android.launcher3.config.FeatureFlags")
 
@@ -180,5 +209,227 @@ class LauncherSettings(context: Context) : ModPack(context) {
                         }
                     }
             }
+
+        val activityAllAppsContainerViewClass =
+            findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView")
+        val hotseatPredictionControllerClass =
+            findClass("com.android.launcher3.hybridhotseat.HotseatPredictionController")
+        val hybridHotseatOrganizerClass = findClass(
+            "com.android.launcher3.util.HybridHotseatOrganizer",
+            suppressError = true
+        )
+        val predictionRowViewClass =
+            findClass("com.android.launcher3.appprediction.PredictionRowView")
+
+        activityAllAppsContainerViewClass
+            .hookConstructor()
+            .runAfter { param -> activityAllAppsContainerViewInstance = param.thisObject }
+
+        hotseatPredictionControllerClass
+            .hookConstructor()
+            .runAfter { param -> hotseatPredictionControllerInstance = param.thisObject }
+
+        hybridHotseatOrganizerClass
+            .hookConstructor()
+            .runAfter { param -> hybridHotseatOrganizerClassInstance = param.thisObject }
+
+        predictionRowViewClass
+            .hookConstructor()
+            .runAfter { param -> predictionRowViewInstance = param.thisObject }
+
+        val optionsPopupViewClass = findClass("com.android.launcher3.views.OptionsPopupView")
+        val optionItemClass =
+            findClass($$"com.android.launcher3.views.OptionsPopupView$OptionItem")!!
+        val launcherEventEnum =
+            findClass($$"com.android.launcher3.logging.StatsLogManager$LauncherEvent")!!
+        val eventEnum = findClass($$"com.android.launcher3.logging.StatsLogManager$EventEnum")!!
+
+        optionItemClass
+            .hookConstructor()
+            .runBefore { param ->
+                if (!entryInPopup && !toggleHideAppsInPopup) return@runBefore
+
+                if (param.args[0] is Context) {
+                    val context = param.args[0] as Context
+                    val labelRes = param.args[1] as Int
+                    val iconRes = param.args[2] as Int
+                    val eventId = param.args[3]
+                    val clickListener = param.args[4]
+
+                    when (labelRes) {
+                        -1 if iconRes == -1 -> {
+                            param.thisObject.apply {
+                                setField("labelRes", labelRes)
+                                setField("label", modRes.getString(R.string.app_name_shortened))
+                                setField(
+                                    "icon",
+                                    modRes.getDrawable(R.drawable.ic_launcher_foreground)
+                                )
+                                setField("eventId", eventId)
+                                setField("clickListener", clickListener)
+                            }
+                        }
+
+                        -2 if iconRes == -2 -> {
+                            param.thisObject.apply {
+                                setField("labelRes", labelRes)
+                                setField(
+                                    "label", if (unhideAllApps) modRes.getString(R.string.hide_apps)
+                                    else modRes.getString(R.string.unhide_apps)
+                                )
+                                setField(
+                                    "icon",
+                                    if (unhideAllApps) modRes.getDrawable(R.drawable.ic_visibility_lock)
+                                    else modRes.getDrawable(R.drawable.ic_visibility)
+                                )
+                                setField("eventId", eventId)
+                                setField("clickListener", clickListener)
+                            }
+                        }
+
+                        else -> {
+                            param.thisObject.apply {
+                                setField("labelRes", labelRes)
+                                setField("label", context.getString(labelRes))
+                                setField("icon", context.getDrawable(iconRes))
+                                setField("eventId", eventId)
+                                setField("clickListener", clickListener)
+                            }
+                        }
+                    }
+                } else {
+                    val label = param.args[0] as CharSequence
+                    val icon = param.args[1] as Drawable
+                    val eventId = param.args[2]
+                    val clickListener = param.args[3]
+
+                    param.thisObject.apply {
+                        setField("labelRes", 0)
+                        setField("label", label)
+                        setField("icon", icon)
+                        setField("eventId", eventId)
+                        setField("clickListener", clickListener)
+                    }
+                }
+
+                param.result = null
+            }
+
+        @Suppress("UNCHECKED_CAST")
+        optionsPopupViewClass
+            .hookMethod("getOptions")
+            .runAfter { param ->
+                if (!entryInPopup && !toggleHideAppsInPopup) return@runAfter
+
+                val launcher = param.args[0]
+                val options = param.result as ArrayList<Any>
+
+                val eventId = launcherEventEnum.enumConstants?.let {
+                    Arrays.stream(it)
+                        .filter { c: Any -> c.toString() == "LAUNCHER_SETTINGS_BUTTON_TAP_OR_LONGPRESS" }
+                        .findFirst().get()
+                }!!
+
+                if (toggleHideAppsInPopup) {
+                    @SuppressLint("ApplySharedPref")
+                    val clickListener = View.OnLongClickListener {
+                        Xprefs.edit()
+                            .putBoolean(UNHIDE_ALL_APPS, !unhideAllApps)
+                            .commit()
+                        updateLauncherIcons()
+                        true
+                    }
+
+                    val optionItem = try {
+                        optionItemClass
+                            .getDeclaredConstructor(
+                                CharSequence::class.java,
+                                Drawable::class.java,
+                                eventEnum,
+                                View.OnLongClickListener::class.java
+                            )
+                            .newInstance(
+                                if (unhideAllApps) modRes.getString(R.string.hide_apps)
+                                else modRes.getString(R.string.unhide_apps),
+                                if (unhideAllApps) modRes.getDrawable(R.drawable.ic_visibility_lock)
+                                else modRes.getDrawable(R.drawable.ic_visibility),
+                                eventId,
+                                clickListener
+                            )
+                    } catch (_: Throwable) {
+                        optionItemClass
+                            .getDeclaredConstructor(
+                                Context::class.java,
+                                Int::class.javaPrimitiveType,
+                                Int::class.javaPrimitiveType,
+                                eventEnum,
+                                View.OnLongClickListener::class.java
+                            )
+                            .newInstance(
+                                launcher,
+                                -2,
+                                -2,
+                                eventId,
+                                clickListener
+                            )
+                    }
+                    options.add(optionItem)
+                }
+
+                if (entryInPopup) {
+                    val clickListener = object : View.OnLongClickListener {
+                        override fun onLongClick(p0: View?): Boolean {
+                            val launchIntent: Intent = mContext.packageManager
+                                .getLaunchIntentForPackage(BuildConfig.APPLICATION_ID)
+                                ?: return false
+                            mContext.startActivity(launchIntent)
+                            return true
+                        }
+                    }
+
+                    val optionItem = try {
+                        optionItemClass
+                            .getDeclaredConstructor(
+                                CharSequence::class.java,
+                                Drawable::class.java,
+                                eventEnum,
+                                View.OnLongClickListener::class.java
+                            )
+                            .newInstance(
+                                modRes.getString(R.string.app_name_shortened),
+                                modRes.getDrawable(R.drawable.ic_launcher_foreground),
+                                eventId,
+                                clickListener
+                            )
+                    } catch (_: Throwable) {
+                        optionItemClass
+                            .getDeclaredConstructor(
+                                Context::class.java,
+                                Int::class.javaPrimitiveType,
+                                Int::class.javaPrimitiveType,
+                                eventEnum,
+                                View.OnLongClickListener::class.java
+                            )
+                            .newInstance(
+                                launcher,
+                                -1,
+                                -1,
+                                eventId,
+                                clickListener
+                            )
+                    }
+                    options.add(optionItem)
+                }
+
+                param.result = options
+            }
+    }
+
+    private fun updateLauncherIcons() {
+        activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
+        hotseatPredictionControllerInstance.callMethodSilently("fillGapsWithPrediction", true)
+        hybridHotseatOrganizerClassInstance.callMethodSilently("fillGapsWithPrediction", true)
+        predictionRowViewInstance.callMethod("applyPredictionApps")
+        reloadLauncher(mContext)
     }
 }

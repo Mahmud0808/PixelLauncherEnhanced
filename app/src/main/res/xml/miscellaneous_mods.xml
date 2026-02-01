@@ -23,6 +23,12 @@
         app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:defaultValue="false"
+        android:key="xposed_entryinoptionspopup"
+        android:title="@string/entry_in_homescreen_popup"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
         android:key="xposed_developeroptions"
         android:summary="@string/developer_options_desc"
         android:title="@string/developer_options_title"
