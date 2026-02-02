@@ -27,9 +27,14 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.lang.reflect.Proxy
 import java.util.Arrays
 
@@ -39,7 +44,6 @@ class LauncherSettings(context: Context) : ModPack(context) {
     private var entryInLauncher = true
     private var entryInPopup = false
     private var toggleHideAppsInPopup = false
-    private var unhideAllApps = false
     private var activityAllAppsContainerViewInstance: Any? = null
     private var hotseatPredictionControllerInstance: Any? = null
     private var hybridHotseatOrganizerClassInstance: Any? = null
@@ -51,17 +55,16 @@ class LauncherSettings(context: Context) : ModPack(context) {
             entryInLauncher = getBoolean(ENTRY_IN_LAUNCHER_SETTINGS, true)
             entryInPopup = getBoolean(ENTRY_IN_OPTIONS_POPUP, false)
             toggleHideAppsInPopup = getBoolean(TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP, false)
-            unhideAllApps = getBoolean(UNHIDE_ALL_APPS, false)
         }
 
         when (key.firstOrNull()) {
             TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP -> {
                 if (!toggleHideAppsInPopup) {
-                    @SuppressLint("ApplySharedPref")
-                    Xprefs.edit()
-                        .putBoolean(UNHIDE_ALL_APPS, false)
-                        .commit()
-                    updateLauncherIcons()
+                    setUnhideAllApps(false)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        delay(300)
+                        updateLauncherIcons()
+                    }
                 }
             }
         }
@@ -174,7 +177,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 val listener = Proxy.newProxyInstance(
                     preferenceClass.classLoader,
                     arrayOf(preferenceClickListenerClass)
-                ) { _, _, args ->
+                ) { _, _, _ ->
                     mContext.startActivity(launchIntent)
                     true
                 }
@@ -243,6 +246,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
         val launcherEventEnum =
             findClass($$"com.android.launcher3.logging.StatsLogManager$LauncherEvent")!!
         val eventEnum = findClass($$"com.android.launcher3.logging.StatsLogManager$EventEnum")!!
+        val optionItemConstructors = optionItemClass.declaredConstructors
 
         optionItemClass
             .hookConstructor()
@@ -255,6 +259,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     val iconRes = param.args[2] as Int
                     val eventId = param.args[3]
                     val clickListener = param.args[4]
+                    val unhideAllApps = getUnhideAllApps()
 
                     when (labelRes) {
                         -1 if iconRes == -1 -> {
@@ -331,49 +336,80 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 }!!
 
                 if (toggleHideAppsInPopup) {
-                    @SuppressLint("ApplySharedPref")
                     val clickListener = View.OnLongClickListener {
-                        Xprefs.edit()
-                            .putBoolean(UNHIDE_ALL_APPS, !unhideAllApps)
-                            .commit()
-                        updateLauncherIcons()
+                        setUnhideAllApps(!getUnhideAllApps())
+                        CoroutineScope(Dispatchers.Main).launch {
+                            delay(300)
+                            updateLauncherIcons()
+                        }
                         true
                     }
 
-                    val optionItem = try {
-                        optionItemClass
-                            .getDeclaredConstructor(
-                                CharSequence::class.java,
-                                Drawable::class.java,
-                                eventEnum,
-                                View.OnLongClickListener::class.java
+                    val unhideAllApps = getUnhideAllApps()
+                    val optionItem = when {
+                        optionItemConstructors.any {
+                            it.parameterTypes.contentEquals(
+                                arrayOf(
+                                    CharSequence::class.java,
+                                    Drawable::class.java,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
                             )
-                            .newInstance(
-                                if (unhideAllApps) modRes.getString(R.string.hide_apps)
-                                else modRes.getString(R.string.unhide_apps),
-                                if (unhideAllApps) modRes.getDrawable(R.drawable.ic_visibility_lock)
-                                else modRes.getDrawable(R.drawable.ic_visibility),
-                                eventId,
-                                clickListener
+                        } -> {
+                            optionItemClass
+                                .getDeclaredConstructor(
+                                    CharSequence::class.java,
+                                    Drawable::class.java,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
+                                .newInstance(
+                                    if (unhideAllApps) modRes.getString(R.string.hide_apps)
+                                    else modRes.getString(R.string.unhide_apps),
+                                    if (unhideAllApps) modRes.getDrawable(R.drawable.ic_visibility_lock)
+                                    else modRes.getDrawable(R.drawable.ic_visibility),
+                                    eventId,
+                                    clickListener
+                                )
+                        }
+
+                        optionItemConstructors.any {
+                            it.parameterTypes.contentEquals(
+                                arrayOf(
+                                    Context::class.java,
+                                    Int::class.javaPrimitiveType,
+                                    Int::class.javaPrimitiveType,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
                             )
-                    } catch (_: Throwable) {
-                        optionItemClass
-                            .getDeclaredConstructor(
-                                Context::class.java,
-                                Int::class.javaPrimitiveType,
-                                Int::class.javaPrimitiveType,
-                                eventEnum,
-                                View.OnLongClickListener::class.java
-                            )
-                            .newInstance(
-                                launcher,
-                                -2,
-                                -2,
-                                eventId,
-                                clickListener
-                            )
+                        } -> {
+                            optionItemClass
+                                .getDeclaredConstructor(
+                                    Context::class.java,
+                                    Int::class.javaPrimitiveType,
+                                    Int::class.javaPrimitiveType,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
+                                .newInstance(
+                                    launcher,
+                                    -2,
+                                    -2,
+                                    eventId,
+                                    clickListener
+                                )
+                        }
+
+                        else -> {
+                            log("No supported constructor found for optionItemClass.")
+                            null
+                        }
                     }
-                    options.add(optionItem)
+                    if (optionItem != null) {
+                        options.add(optionItem)
+                    }
                 }
 
                 if (entryInPopup) {
@@ -387,42 +423,83 @@ class LauncherSettings(context: Context) : ModPack(context) {
                         }
                     }
 
-                    val optionItem = try {
-                        optionItemClass
-                            .getDeclaredConstructor(
-                                CharSequence::class.java,
-                                Drawable::class.java,
-                                eventEnum,
-                                View.OnLongClickListener::class.java
+                    val optionItem = when {
+                        optionItemConstructors.any {
+                            it.parameterTypes.contentEquals(
+                                arrayOf(
+                                    CharSequence::class.java,
+                                    Drawable::class.java,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
                             )
-                            .newInstance(
-                                modRes.getString(R.string.app_name_shortened),
-                                modRes.getDrawable(R.drawable.ic_launcher_foreground),
-                                eventId,
-                                clickListener
+                        } -> {
+                            optionItemClass
+                                .getDeclaredConstructor(
+                                    CharSequence::class.java,
+                                    Drawable::class.java,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
+                                .newInstance(
+                                    modRes.getString(R.string.app_name_shortened),
+                                    modRes.getDrawable(R.drawable.ic_launcher_foreground),
+                                    eventId,
+                                    clickListener
+                                )
+                        }
+
+                        optionItemConstructors.any {
+                            it.parameterTypes.contentEquals(
+                                arrayOf(
+                                    Context::class.java,
+                                    Int::class.javaPrimitiveType,
+                                    Int::class.javaPrimitiveType,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
                             )
-                    } catch (_: Throwable) {
-                        optionItemClass
-                            .getDeclaredConstructor(
-                                Context::class.java,
-                                Int::class.javaPrimitiveType,
-                                Int::class.javaPrimitiveType,
-                                eventEnum,
-                                View.OnLongClickListener::class.java
-                            )
-                            .newInstance(
-                                launcher,
-                                -1,
-                                -1,
-                                eventId,
-                                clickListener
-                            )
+                        } -> {
+                            optionItemClass
+                                .getDeclaredConstructor(
+                                    Context::class.java,
+                                    Int::class.javaPrimitiveType,
+                                    Int::class.javaPrimitiveType,
+                                    eventEnum,
+                                    View.OnLongClickListener::class.java
+                                )
+                                .newInstance(
+                                    launcher,
+                                    -1,
+                                    -1,
+                                    eventId,
+                                    clickListener
+                                )
+                        }
+
+                        else -> {
+                            log("No supported constructor found for optionItemClass.")
+                            null
+                        }
                     }
-                    options.add(optionItem)
+                    if (optionItem != null) {
+                        options.add(optionItem)
+                    }
                 }
 
                 param.result = options
             }
+    }
+
+    fun getUnhideAllApps(): Boolean {
+        return Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
+    }
+
+    fun setUnhideAllApps(value: Boolean) {
+        @SuppressLint("ApplySharedPref")
+        Xprefs.edit()
+            .putBoolean(UNHIDE_ALL_APPS, value)
+            .commit()
     }
 
     private fun updateLauncherIcons() {

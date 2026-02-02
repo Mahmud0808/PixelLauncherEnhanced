@@ -123,11 +123,10 @@ class HideApps(context: Context) : ModPack(context) {
                 }
 
                 val binarySearch = Arrays.binarySearch<Any?>(mApps, appInfo, comparator)
-                val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
+                val unhideAllApps = getUnhideAllApps()
 
-                if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist(
-                        unhideAllApps
-                    ))
+                if (binarySearch < 0
+                    || (!searchHiddenApps && componentName.matchesBlocklist(unhideAllApps))
                 ) {
                     param.result = null
                 } else {
@@ -254,7 +253,7 @@ class HideApps(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val mAdapterItems =
                     (param.thisObject.getField("mAdapterItems") as ArrayList<*>).toMutableList()
-                val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
+                val unhideAllApps = getUnhideAllApps()
 
                 val iterator = mAdapterItems.iterator()
 
@@ -284,7 +283,7 @@ class HideApps(context: Context) : ModPack(context) {
             } catch (_: Throwable) {
                 throw IllegalStateException("mComponentToAppMap is null")
             }
-            val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
+            val unhideAllApps = getUnhideAllApps()
 
             mComponentToAppMap.keys.forEach { key ->
                 val appInfo = mComponentToAppMap[key]
@@ -317,7 +316,7 @@ class HideApps(context: Context) : ModPack(context) {
     }
 
     private fun MutableIterator<Any?>.removeMatches() {
-        val unhideAllApps = Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
+        val unhideAllApps = getUnhideAllApps()
 
         while (hasNext()) {
             val itemInfo = next()
@@ -344,6 +343,10 @@ class HideApps(context: Context) : ModPack(context) {
     private fun String?.matchesBlocklist(unhideAllApps: Boolean): Boolean {
         if (isNullOrEmpty()) return false
         return !unhideAllApps && appBlockList.contains(this)
+    }
+
+    fun getUnhideAllApps(): Boolean {
+        return Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
     }
 
     private fun updateLauncherIcons() {
