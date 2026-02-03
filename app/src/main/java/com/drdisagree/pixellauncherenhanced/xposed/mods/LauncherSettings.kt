@@ -18,7 +18,6 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_HIDE_AP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.UNHIDE_ALL_APPS
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
@@ -44,10 +43,6 @@ class LauncherSettings(context: Context) : ModPack(context) {
     private var entryInLauncher = true
     private var entryInPopup = false
     private var toggleHideAppsInPopup = false
-    private var activityAllAppsContainerViewInstance: Any? = null
-    private var hotseatPredictionControllerInstance: Any? = null
-    private var hybridHotseatOrganizerClassInstance: Any? = null
-    private var predictionRowViewInstance: Any? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -55,16 +50,13 @@ class LauncherSettings(context: Context) : ModPack(context) {
             entryInLauncher = getBoolean(ENTRY_IN_LAUNCHER_SETTINGS, true)
             entryInPopup = getBoolean(ENTRY_IN_OPTIONS_POPUP, false)
             toggleHideAppsInPopup = getBoolean(TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP, false)
+            HideApps.SHOULD_UNHIDE_ALL_APPS = getBoolean(UNHIDE_ALL_APPS, false)
         }
 
         when (key.firstOrNull()) {
             TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP -> {
                 if (!toggleHideAppsInPopup) {
                     setUnhideAllApps(false)
-                    CoroutineScope(Dispatchers.Main).launch {
-                        delay(300)
-                        updateLauncherIcons()
-                    }
                 }
             }
         }
@@ -213,33 +205,6 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     }
             }
 
-        val activityAllAppsContainerViewClass =
-            findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView")
-        val hotseatPredictionControllerClass =
-            findClass("com.android.launcher3.hybridhotseat.HotseatPredictionController")
-        val hybridHotseatOrganizerClass = findClass(
-            "com.android.launcher3.util.HybridHotseatOrganizer",
-            suppressError = true
-        )
-        val predictionRowViewClass =
-            findClass("com.android.launcher3.appprediction.PredictionRowView")
-
-        activityAllAppsContainerViewClass
-            .hookConstructor()
-            .runAfter { param -> activityAllAppsContainerViewInstance = param.thisObject }
-
-        hotseatPredictionControllerClass
-            .hookConstructor()
-            .runAfter { param -> hotseatPredictionControllerInstance = param.thisObject }
-
-        hybridHotseatOrganizerClass
-            .hookConstructor()
-            .runAfter { param -> hybridHotseatOrganizerClassInstance = param.thisObject }
-
-        predictionRowViewClass
-            .hookConstructor()
-            .runAfter { param -> predictionRowViewInstance = param.thisObject }
-
         val optionsPopupViewClass = findClass("com.android.launcher3.views.OptionsPopupView")
         val optionItemClass =
             findClass($$"com.android.launcher3.views.OptionsPopupView$OptionItem")!!
@@ -259,7 +224,6 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     val iconRes = param.args[2] as Int
                     val eventId = param.args[3]
                     val clickListener = param.args[4]
-                    val unhideAllApps = getUnhideAllApps()
 
                     when (labelRes) {
                         -1 if iconRes == -1 -> {
@@ -279,12 +243,13 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             param.thisObject.apply {
                                 setField("labelRes", labelRes)
                                 setField(
-                                    "label", if (unhideAllApps) modRes.getString(R.string.hide_apps)
+                                    "label",
+                                    if (HideApps.SHOULD_UNHIDE_ALL_APPS) modRes.getString(R.string.hide_apps)
                                     else modRes.getString(R.string.unhide_apps)
                                 )
                                 setField(
                                     "icon",
-                                    if (unhideAllApps) modRes.getDrawable(R.drawable.ic_visibility_lock)
+                                    if (HideApps.SHOULD_UNHIDE_ALL_APPS) modRes.getDrawable(R.drawable.ic_visibility_lock)
                                     else modRes.getDrawable(R.drawable.ic_visibility)
                                 )
                                 setField("eventId", eventId)
@@ -337,15 +302,10 @@ class LauncherSettings(context: Context) : ModPack(context) {
 
                 if (toggleHideAppsInPopup) {
                     val clickListener = View.OnLongClickListener {
-                        setUnhideAllApps(!getUnhideAllApps())
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(300)
-                            updateLauncherIcons()
-                        }
+                        setUnhideAllApps(!HideApps.SHOULD_UNHIDE_ALL_APPS)
                         true
                     }
 
-                    val unhideAllApps = getUnhideAllApps()
                     val optionItem = when {
                         optionItemConstructors.any {
                             it.parameterTypes.contentEquals(
@@ -365,9 +325,9 @@ class LauncherSettings(context: Context) : ModPack(context) {
                                     View.OnLongClickListener::class.java
                                 )
                                 .newInstance(
-                                    if (unhideAllApps) modRes.getString(R.string.hide_apps)
+                                    if (HideApps.SHOULD_UNHIDE_ALL_APPS) modRes.getString(R.string.hide_apps)
                                     else modRes.getString(R.string.unhide_apps),
-                                    if (unhideAllApps) modRes.getDrawable(R.drawable.ic_visibility_lock)
+                                    if (HideApps.SHOULD_UNHIDE_ALL_APPS) modRes.getDrawable(R.drawable.ic_visibility_lock)
                                     else modRes.getDrawable(R.drawable.ic_visibility),
                                     eventId,
                                     clickListener
@@ -491,22 +451,15 @@ class LauncherSettings(context: Context) : ModPack(context) {
             }
     }
 
-    fun getUnhideAllApps(): Boolean {
-        return Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
-    }
-
     fun setUnhideAllApps(value: Boolean) {
+        HideApps.SHOULD_UNHIDE_ALL_APPS = value
         @SuppressLint("ApplySharedPref")
         Xprefs.edit()
             .putBoolean(UNHIDE_ALL_APPS, value)
             .commit()
-    }
-
-    private fun updateLauncherIcons() {
-        activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
-        hotseatPredictionControllerInstance.callMethodSilently("fillGapsWithPrediction", true)
-        hybridHotseatOrganizerClassInstance.callMethodSilently("fillGapsWithPrediction", true)
-        predictionRowViewInstance.callMethod("applyPredictionApps")
-        reloadLauncher(mContext)
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(300)
+            HideApps.updateLauncherIcons(mContext)
+        }
     }
 }

@@ -31,19 +31,32 @@ class HideApps(context: Context) : ModPack(context) {
     private var appBlockList: Set<String> = mutableSetOf()
     private var searchHiddenApps: Boolean = false
     private var invariantDeviceProfileInstance: Any? = null
-    private var activityAllAppsContainerViewInstance: Any? = null
-    private var hotseatPredictionControllerInstance: Any? = null
-    private var hybridHotseatOrganizerClassInstance: Any? = null
-    private var predictionRowViewInstance: Any? = null
+
+    companion object {
+        var SHOULD_UNHIDE_ALL_APPS = false
+        private var activityAllAppsContainerViewInstance: Any? = null
+        private var hotseatPredictionControllerInstance: Any? = null
+        private var hybridHotseatOrganizerClassInstance: Any? = null
+        private var predictionRowViewInstance: Any? = null
+
+        fun updateLauncherIcons(context: Context) {
+            activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
+            hotseatPredictionControllerInstance.callMethodSilently("fillGapsWithPrediction", true)
+            hybridHotseatOrganizerClassInstance.callMethodSilently("fillGapsWithPrediction", true)
+            predictionRowViewInstance.callMethod("applyPredictionApps")
+            reloadLauncher(context)
+        }
+    }
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             appBlockList = getStringSet(APP_BLOCK_LIST, emptySet())!!
             searchHiddenApps = getBoolean(SEARCH_HIDDEN_APPS, false)
+            SHOULD_UNHIDE_ALL_APPS = getBoolean(UNHIDE_ALL_APPS, false)
         }
 
         when (key.firstOrNull()) {
-            APP_BLOCK_LIST -> updateLauncherIcons()
+            APP_BLOCK_LIST -> updateLauncherIcons(mContext)
         }
     }
 
@@ -123,11 +136,8 @@ class HideApps(context: Context) : ModPack(context) {
                 }
 
                 val binarySearch = Arrays.binarySearch<Any?>(mApps, appInfo, comparator)
-                val unhideAllApps = getUnhideAllApps()
 
-                if (binarySearch < 0
-                    || (!searchHiddenApps && componentName.matchesBlocklist(unhideAllApps))
-                ) {
+                if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist())) {
                     param.result = null
                 } else {
                     param.result = mApps[binarySearch]
@@ -253,7 +263,6 @@ class HideApps(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val mAdapterItems =
                     (param.thisObject.getField("mAdapterItems") as ArrayList<*>).toMutableList()
-                val unhideAllApps = getUnhideAllApps()
 
                 val iterator = mAdapterItems.iterator()
 
@@ -262,7 +271,7 @@ class HideApps(context: Context) : ModPack(context) {
                     val itemInfo = item.getFieldSilently("itemInfo")
                     val componentName = itemInfo.getComponentName()
 
-                    if (componentName.matchesBlocklist(unhideAllApps)) {
+                    if (componentName.matchesBlocklist()) {
                         iterator.remove()
                     }
                 }
@@ -283,13 +292,12 @@ class HideApps(context: Context) : ModPack(context) {
             } catch (_: Throwable) {
                 throw IllegalStateException("mComponentToAppMap is null")
             }
-            val unhideAllApps = getUnhideAllApps()
 
             mComponentToAppMap.keys.forEach { key ->
                 val appInfo = mComponentToAppMap[key]
                 val componentName = appInfo.getComponentName()
 
-                if (componentName.matchesBlocklist(unhideAllApps)) {
+                if (componentName.matchesBlocklist()) {
                     mComponentToAppMap.remove(key)
                 }
             }
@@ -316,13 +324,11 @@ class HideApps(context: Context) : ModPack(context) {
     }
 
     private fun MutableIterator<Any?>.removeMatches() {
-        val unhideAllApps = getUnhideAllApps()
-
         while (hasNext()) {
             val itemInfo = next()
             val componentName = itemInfo.getComponentName()
 
-            if (componentName.matchesBlocklist(unhideAllApps)) {
+            if (componentName.matchesBlocklist()) {
                 remove()
             }
         }
@@ -336,24 +342,12 @@ class HideApps(context: Context) : ModPack(context) {
             ?: callMethod("getTargetComponent") as ComponentName
     }
 
-    private fun ComponentName?.matchesBlocklist(unhideAllApps: Boolean): Boolean {
-        return this?.packageName.matchesBlocklist(unhideAllApps)
+    private fun ComponentName?.matchesBlocklist(): Boolean {
+        return this?.packageName.matchesBlocklist()
     }
 
-    private fun String?.matchesBlocklist(unhideAllApps: Boolean): Boolean {
+    private fun String?.matchesBlocklist(): Boolean {
         if (isNullOrEmpty()) return false
-        return !unhideAllApps && appBlockList.contains(this)
-    }
-
-    fun getUnhideAllApps(): Boolean {
-        return Xprefs.getBoolean(UNHIDE_ALL_APPS, false)
-    }
-
-    private fun updateLauncherIcons() {
-        activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
-        hotseatPredictionControllerInstance.callMethodSilently("fillGapsWithPrediction", true)
-        hybridHotseatOrganizerClassInstance.callMethodSilently("fillGapsWithPrediction", true)
-        predictionRowViewInstance.callMethod("applyPredictionApps")
-        reloadLauncher(mContext)
+        return !SHOULD_UNHIDE_ALL_APPS && appBlockList.contains(this)
     }
 }
