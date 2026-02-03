@@ -89,6 +89,8 @@
     <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
     <string name="hide_gesture_pill_title">Hide gesture indicator</string>
     <string name="hide_gesture_pill_desc">May not work on older android versions</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Lock layout</string>
     <string name="lock_layout_desc_on">Icons and widgets can\'t be added, removed and moved on the homescreen</string>
     <string name="lock_layout_desc_off">Icons and widgets can be added, removed and moved on the homescreen</string>

@@ -13,6 +13,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE_PROGRESS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_MODE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_LIGHT
@@ -50,6 +52,8 @@ object PrefsHelper {
             FREEFORM_GESTURE_PROGRESS,
             FREEFORM_MODE -> getBoolean(FREEFORM_GESTURE)
 
+            HIDE_NAVIGATION_SPACE -> getBoolean(HIDE_GESTURE_PILL)
+
             else -> true
         }
     }
@@ -65,7 +69,7 @@ object PrefsHelper {
         when {
             key.endsWith("Slider") -> {
                 val value = String.format("%.2f", getSliderFloat(key, 0f))
-                return if (value.endsWith(".00")) value.substring(0, value.length - 3) else value
+                return if (value.endsWith(".00")) value.dropLast(3) else value
             }
 
             key.endsWith("List") -> {

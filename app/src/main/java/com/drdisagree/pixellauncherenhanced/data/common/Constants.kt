@@ -67,6 +67,7 @@ object Constants {
     const val FREEFORM_MODE = "xposed_freeform_mode"
     const val FREEFORM_GESTURE_PROGRESS = "xposed_startfreeformprogress"
     const val HIDE_GESTURE_PILL = "xposed_hidegesturepill"
+    const val HIDE_NAVIGATION_SPACE = "xposed_hidenavigationspace"
     const val QUICK_LAUNCH = "xposed_quicklaunch"
     const val PREVENT_WALLPAPER_DIMMING_RESTART = "xposed_preventwallpaperdimmingrestart"
 
