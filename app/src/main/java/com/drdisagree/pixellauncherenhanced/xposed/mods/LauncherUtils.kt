@@ -123,7 +123,11 @@ class LauncherUtils(context: Context) : ModPack(context) {
         }
 
         fun reloadLauncher(context: Context) {
-            invariantDeviceProfileInstance.callMethod("onConfigChanged", context)
+            if (invariantDeviceProfileInstance.hasMethod("onConfigChanged", Context::class.java)) {
+                invariantDeviceProfileInstance.callMethod("onConfigChanged", context)
+            } else {
+                invariantDeviceProfileInstance.callMethod("onConfigChanged")
+            }
         }
 
         fun reloadIcons() {
