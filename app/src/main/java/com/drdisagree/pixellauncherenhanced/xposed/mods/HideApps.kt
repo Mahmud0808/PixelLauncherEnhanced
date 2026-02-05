@@ -141,6 +141,11 @@ class HideApps(context: Context) : ModPack(context) {
                     param.result = null
                     return@runBefore
                 }
+
+                if (!searchHiddenApps && componentName.matchesBlocklist())) {
+                    param.result = null
+                    return@runBefore
+                }
                 
                 param.result = mApps[binarySearch]
             }
@@ -349,6 +354,7 @@ class HideApps(context: Context) : ModPack(context) {
 
     private fun String?.matchesBlocklist(): Boolean {
         if (isNullOrEmpty()) return false
+        if (seearchHiddenApps) return false
         return !SHOULD_UNHIDE_ALL_APPS && appBlockList.contains(this)
     }
 }
