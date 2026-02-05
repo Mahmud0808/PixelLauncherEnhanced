@@ -142,11 +142,6 @@ class HideApps(context: Context) : ModPack(context) {
                     return@runBefore
                 }
                 
-                if (componentName.matchesBlocklist() && !searchHiddenApps) {
-                    param.result = null
-                    return@runBefore
-                }
-
                 param.result = mApps[binarySearch]
             }
 
