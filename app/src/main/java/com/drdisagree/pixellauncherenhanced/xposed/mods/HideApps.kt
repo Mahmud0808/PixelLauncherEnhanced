@@ -148,6 +148,7 @@ class HideApps(context: Context) : ModPack(context) {
                 }
 
                 param.result = mApps[binarySearch]
+            }
 
         predictionRowViewClass
             .hookMethod("applyPredictionApps")
