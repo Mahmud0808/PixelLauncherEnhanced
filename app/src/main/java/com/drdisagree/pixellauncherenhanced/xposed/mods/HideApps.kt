@@ -348,6 +348,8 @@ class HideApps(context: Context) : ModPack(context) {
 
     private fun String?.matchesBlocklist(): Boolean {
         if (isNullOrEmpty()) return false
+        
+        if (searchHiddenApps) return false
         return !SHOULD_UNHIDE_ALL_APPS && appBlockList.contains(this)
     }
 }
