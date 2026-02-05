@@ -137,12 +137,17 @@ class HideApps(context: Context) : ModPack(context) {
 
                 val binarySearch = Arrays.binarySearch<Any?>(mApps, appInfo, comparator)
 
-                if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist())) {
+                if (binarySearch < 0) {
                     param.result = null
-                } else {
-                    param.result = mApps[binarySearch]
+                    return@runBefore
                 }
-            }
+                
+                if (componentName.matchesBlocklist() && !searchHiddenApps) {
+                    param.result = null
+                    return@runBefore
+                }
+
+                param.result = mApps[binarySearch]
 
         predictionRowViewClass
             .hookMethod("applyPredictionApps")
@@ -348,8 +353,6 @@ class HideApps(context: Context) : ModPack(context) {
 
     private fun String?.matchesBlocklist(): Boolean {
         if (isNullOrEmpty()) return false
-        
-        if (searchHiddenApps) return false
         return !SHOULD_UNHIDE_ALL_APPS && appBlockList.contains(this)
     }
 }
