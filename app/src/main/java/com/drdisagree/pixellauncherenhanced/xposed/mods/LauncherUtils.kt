@@ -15,6 +15,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.resetCounter
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,12 @@ class LauncherUtils(context: Context) : ModPack(context) {
         GraphicsUtilsClass = findClass("com.android.launcher3.icons.GraphicsUtils")
         InvariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
         BaseIconCacheClass = findClass("com.android.launcher3.icons.cache.BaseIconCache")
+        QuickstepLauncherClass = findClass("com.android.launcher3.uioverrides.QuickstepLauncher")
         LauncherAppStateClass = findClass("com.android.launcher3.LauncherAppState")
+        LauncherAppStateCompanionClass = findClass(
+            $$"com.android.launcher3.LauncherAppState$Companion",
+            suppressError = true
+        )
 
         InvariantDeviceProfileClass
             .hookConstructor()
@@ -50,7 +56,23 @@ class LauncherUtils(context: Context) : ModPack(context) {
             .hookConstructor()
             .runAfter { param ->
                 mModel = param.thisObject.getAnyField("mModel", "model")
+                invariantDeviceProfileInstance = param.thisObject.getAnyField(
+                    "mInvariantDeviceProfile",
+                    "invariantDeviceProfile"
+                )
             }
+
+        if (LauncherAppStateCompanionClass != null) {
+            QuickstepLauncherClass
+                .hookMethod("onCreate")
+                .runAfter { param ->
+                    invariantDeviceProfileInstance =
+                        LauncherAppStateCompanionClass.callStaticMethod(
+                            "getIDP",
+                            param.thisObject
+                        )
+                }
+        }
     }
 
     companion object {
@@ -59,7 +81,9 @@ class LauncherUtils(context: Context) : ModPack(context) {
         private var GraphicsUtilsClass: Class<*>? = null
         private var InvariantDeviceProfileClass: Class<*>? = null
         private var BaseIconCacheClass: Class<*>? = null
+        private var QuickstepLauncherClass: Class<*>? = null
         private var LauncherAppStateClass: Class<*>? = null
+        private var LauncherAppStateCompanionClass: Class<*>? = null
 
         private var invariantDeviceProfileInstance: Any? = null
         private var mIconDb: Any? = null
