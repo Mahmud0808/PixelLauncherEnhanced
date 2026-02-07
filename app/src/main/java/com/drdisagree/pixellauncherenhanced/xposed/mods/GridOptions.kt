@@ -14,6 +14,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import kotlin.math.roundToInt
@@ -43,20 +44,38 @@ class GridOptions (context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-        val invariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
         val deviceProfileClass = findClass("com.android.launcher3.DeviceProfile")
+        val deviceProfileBuilderClass = findClass($$"com.android.launcher3.DeviceProfile$Builder")
+        val invariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
+
+        fun Any.hookDeviceProfile() {
+            val temp = getFieldSilently("iconSizePx") as? Int
+
+            if (homeScreenGridColumns != 0) {
+                setField("numShownHotseatIcons", homeScreenGridColumns)
+            }
+            if (appDrawerGridColumns != 0) {
+                setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
+
+                if (temp == null) {
+                    val mAllAppsProfile = getField("mAllAppsProfile")
+                    mAllAppsProfile.setField("numShownAllAppsColumns", appDrawerGridColumns)
+                }
+            }
+        }
 
         deviceProfileClass
             .hookConstructor()
             .runAfter { param ->
                 param.thisObject.apply {
-                    if (homeScreenGridColumns != 0) {
-                        setField("numShownHotseatIcons", homeScreenGridColumns)
-                    }
-                    if (appDrawerGridColumns != 0) {
-                        setField("numShownAllAppsColumns", appDrawerGridColumns)
-                    }
+                    hookDeviceProfile()
                 }
+            }
+
+        deviceProfileBuilderClass
+            .hookMethod("build")
+            .runAfter { param ->
+                param.result.hookDeviceProfile()
             }
 
         invariantDeviceProfileClass
