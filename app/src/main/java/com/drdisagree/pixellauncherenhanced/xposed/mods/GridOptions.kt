@@ -85,6 +85,7 @@ class GridOptions (context: Context) : ModPack(context) {
                 "updateIconSize",
                 "autoResizeAllAppsCells"
             )
+            .suppressError()
             .runAfter { param ->
                 if (appDrawerGridRowHeightMultiplier == 1f) return@runAfter
 
