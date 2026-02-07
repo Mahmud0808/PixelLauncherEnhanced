@@ -93,10 +93,20 @@ class LauncherSettings(context: Context) : ModPack(context) {
         }
 
         val preferenceClass = findClass("androidx.preference.Preference")!!
+        var preferenceClickListenerFieldName: String? = null
         val preferenceClickListenerClass: Class<*>? = preferenceClass.methods
-            .find { it.name == "setOnPreferenceClickListener" }
+            .firstOrNull { it.name == "setOnPreferenceClickListener" }
             ?.parameterTypes
             ?.firstOrNull()
+            ?: preferenceClass.declaredFields
+                .firstOrNull { field ->
+                    field.name.endsWith("OnClickListener", ignoreCase = true) ||
+                            field.name.endsWith("OnPreferenceClickListener", ignoreCase = true)
+                }
+                ?.also { field ->
+                    preferenceClickListenerFieldName = field.name
+                }
+                ?.type
 
         launcherSettingsFragmentClass
             .hookMethod("onCreatePreferences")
@@ -174,7 +184,17 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     true
                 }
 
-                myPreference.callMethod("setOnPreferenceClickListener", listener)
+                if (myPreference.hasMethod("setOnPreferenceClickListener")) {
+                    myPreference.callMethod("setOnPreferenceClickListener", listener)
+                } else if (preferenceClickListenerFieldName != null) {
+                    myPreference.setField(preferenceClickListenerFieldName, listener)
+                } else {
+                    log(
+                        this@LauncherSettings,
+                        "No supported method found for preferenceClickListener."
+                    )
+                }
+
                 preferenceScreen.callMethod("addPreference", myPreference)
 
                 myPreference.javaClass
