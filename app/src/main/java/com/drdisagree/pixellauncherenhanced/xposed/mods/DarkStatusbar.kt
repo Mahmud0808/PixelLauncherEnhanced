@@ -40,6 +40,13 @@ class DarkStatusbar (context: Context) : ModPack(context) {
             .hookMethod("onCreate")
             .runAfter(::forceDark)
 
+        val quickstepLauncherClass =
+            findClass("com.android.launcher3.uioverrides.QuickstepLauncher")
+
+        quickstepLauncherClass
+            .hookMethod("onCreate")
+            .runAfter(::forceDark)
+
         val recentsActivityClass = findClass("com.android.quickstep.RecentsActivity")
 
         recentsActivityClass
