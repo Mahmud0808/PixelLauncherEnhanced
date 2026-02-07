@@ -21,7 +21,10 @@ class WallpaperZoom(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
-        val baseDepthControllerClass = findClass("com.android.quickstep.util.BaseDepthController")
+        val baseDepthControllerClass = findClass(
+            "com.android.quickstep.util.BaseDepthController",
+            "com.android.quickstep.util.BaseDepthControllerImpl",
+        )
 
         baseDepthControllerClass
             .hookConstructor()
