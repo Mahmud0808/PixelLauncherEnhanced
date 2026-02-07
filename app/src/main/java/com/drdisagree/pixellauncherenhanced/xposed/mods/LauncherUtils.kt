@@ -56,21 +56,25 @@ class LauncherUtils(context: Context) : ModPack(context) {
             .hookConstructor()
             .runAfter { param ->
                 mModel = param.thisObject.getAnyField("mModel", "model")
-                invariantDeviceProfileInstance = param.thisObject.getAnyField(
-                    "mInvariantDeviceProfile",
-                    "invariantDeviceProfile"
-                )
+                if (invariantDeviceProfileInstance == null) {
+                    invariantDeviceProfileInstance = param.thisObject.getAnyField(
+                        "mInvariantDeviceProfile",
+                        "invariantDeviceProfile"
+                    )
+                }
             }
 
         if (LauncherAppStateCompanionClass != null) {
             QuickstepLauncherClass
                 .hookMethod("onCreate")
                 .runAfter { param ->
-                    invariantDeviceProfileInstance =
-                        LauncherAppStateCompanionClass.callStaticMethod(
-                            "getIDP",
-                            param.thisObject
-                        )
+                    if (invariantDeviceProfileInstance == null) {
+                        invariantDeviceProfileInstance =
+                            LauncherAppStateCompanionClass.callStaticMethod(
+                                "getIDP",
+                                param.thisObject
+                            )
+                    }
                 }
         }
     }
