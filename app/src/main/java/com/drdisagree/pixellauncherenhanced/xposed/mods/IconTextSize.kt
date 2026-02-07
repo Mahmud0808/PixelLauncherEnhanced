@@ -1,7 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
-import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_ICON_SIZE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_TEXT_SIZE
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -38,10 +37,6 @@ class IconTextSize(context: Context) : ModPack(context) {
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val deviceProfileClass = findClass("com.android.launcher3.DeviceProfile")
         val deviceProfileBuilderClass = findClass($$"com.android.launcher3.DeviceProfile$Builder")
-        val allAppsProfileClass = findClass(
-            "com.android.launcher3.deviceprofile.AllAppsProfile",
-            suppressError = Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM
-        )
 
         fun Any.hookDeviceProfile() {
             val temp = getFieldSilently("iconSizePx") as? Int
@@ -97,7 +92,7 @@ class IconTextSize(context: Context) : ModPack(context) {
 
                 val mFolderProfile = getField("mFolderProfile")
                 var mFolderProfileFolderIconSizePx =
-                    mFolderProfile.getField("folderIconSizePx") as Int
+                    mFolderProfile.getFieldSilently("folderIconSizePx") as? Int
                 var mFolderProfileLabelTextSizePx =
                     mFolderProfile.getField("labelTextSizePx") as Int
                 var mFolderProfileFolderChildIconSizePx =
@@ -122,8 +117,10 @@ class IconTextSize(context: Context) : ModPack(context) {
                     (mWorkspaceProfileIconSizePx * iconSizeModifier).toInt()
                 mWorkspaceProfileIconTextSizePx =
                     (mWorkspaceProfileIconTextSizePx * textSizeModifier).toInt()
-                mFolderProfileFolderIconSizePx =
-                    (mFolderProfileFolderIconSizePx * iconSizeModifier).toInt()
+                if (mFolderProfileFolderIconSizePx != null) {
+                    mFolderProfileFolderIconSizePx =
+                        (mFolderProfileFolderIconSizePx * iconSizeModifier).toInt()
+                }
                 mFolderProfileLabelTextSizePx =
                     (mFolderProfileLabelTextSizePx * textSizeModifier).toInt()
                 mFolderProfileFolderChildIconSizePx =
@@ -147,7 +144,7 @@ class IconTextSize(context: Context) : ModPack(context) {
 
                 mWorkspaceProfile.setField("iconSizePx", mWorkspaceProfileIconSizePx)
                 mWorkspaceProfile.setField("iconTextSizePx", mWorkspaceProfileIconTextSizePx)
-                mFolderProfile.setField("folderIconSizePx", mFolderProfileFolderIconSizePx)
+                mFolderProfile.setFieldSilently("folderIconSizePx", mFolderProfileFolderIconSizePx)
                 mFolderProfile.setField("labelTextSizePx", mFolderProfileLabelTextSizePx)
                 mFolderProfile.setField("childIconSizePx", mFolderProfileFolderChildIconSizePx)
                 mFolderProfile.setField("childTextSizePx", mFolderProfileFolderChildTextSizePx)
