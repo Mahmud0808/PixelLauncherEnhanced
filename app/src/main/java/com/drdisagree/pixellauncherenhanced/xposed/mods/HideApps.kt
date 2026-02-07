@@ -11,10 +11,8 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
@@ -114,33 +112,31 @@ class HideApps(context: Context) : ModPack(context) {
             }
 
         @Suppress("UNCHECKED_CAST")
-        allAppsStoreClass
-            .hookMethod("getApp")
+        Arrays::class.java
+            .hookMethod("binarySearch")
+            .parameters(
+                Array<Any?>::class.java,
+                Any::class.java,
+                Comparator::class.java,
+            )
             .runBefore { param ->
-                val componentKey = param.args[0]
-                val comparator = if (param.args.size > 1) {
-                    param.args[1]
-                } else {
-                    appInfoClass.getStaticField("COMPONENT_KEY_COMPARATOR")
-                } as Comparator<Any?>
+                val mApps = param.args[0] as? Array<*> ?: return@runBefore
 
-                val mApps = param.thisObject.getExtraFieldSilently("mAppsBackup") as? Array<*>
-                    ?: return@runBefore
+                if (!mApps
+                        .javaClass
+                        .componentType
+                        .simpleName
+                        .equals(appInfoClass!!.simpleName, ignoreCase = true)
+                ) return@runBefore
 
-                val componentName = componentKey.getFieldSilently("componentName") as? ComponentName
-                val user = componentKey.getFieldSilently("user")
+                val appInfo = param.args[1]
+                val comparator = param.args[2] as Comparator<Any?>
+                val componentName = appInfo.getComponentName()
 
-                val appInfo = param.thisObject.getField("mTempInfo").apply {
-                    setField("componentName", componentName)
-                    setField("user", user)
-                }
-
-                val binarySearch = Arrays.binarySearch<Any?>(mApps, appInfo, comparator)
+                val binarySearch = binarySearch(mApps, appInfo, comparator)
 
                 if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist())) {
-                    param.result = null
-                } else {
-                    param.result = mApps[binarySearch]
+                    param.result = -1
                 }
             }
 
@@ -257,9 +253,6 @@ class HideApps(context: Context) : ModPack(context) {
 
         alphabeticalAppsListClass
             .hookMethod("onAppsUpdated")
-            .runBefore { param ->
-                updateAllAppsStore(param, appInfoClass!!)
-            }
             .runAfter { param ->
                 val mAdapterItems =
                     (param.thisObject.getField("mAdapterItems") as ArrayList<*>).toMutableList()
@@ -278,49 +271,6 @@ class HideApps(context: Context) : ModPack(context) {
 
                 param.thisObject.setField("mAdapterItems", ArrayList(mAdapterItems))
             }
-    }
-
-    private fun updateAllAppsStore(
-        param: XC_MethodHook.MethodHookParam,
-        appInfoClass: Class<*>
-    ) {
-        val mAllAppsStore = param.thisObject.getFieldSilently("mAllAppsStore") ?: return
-
-        try {
-            val mComponentToAppMap = try {
-                mAllAppsStore.getField("mComponentToAppMap") as HashMap<*, *>
-            } catch (_: Throwable) {
-                throw IllegalStateException("mComponentToAppMap is null")
-            }
-
-            mComponentToAppMap.keys.forEach { key ->
-                val appInfo = mComponentToAppMap[key]
-                val componentName = appInfo.getComponentName()
-
-                if (componentName.matchesBlocklist()) {
-                    mComponentToAppMap.remove(key)
-                }
-            }
-
-            mAllAppsStore.setField("mComponentToAppMap", mComponentToAppMap)
-        } catch (_: Throwable) {
-            val mApps = try {
-                (mAllAppsStore.getField("mApps") as Array<*>).toMutableList()
-            } catch (_: Throwable) {
-                return
-            }
-
-            val iterator = mApps.iterator()
-            iterator.removeMatches()
-
-            val appInfoArray = java.lang.reflect.Array.newInstance(
-                appInfoClass,
-                mApps.size
-            ) as Array<*>
-            System.arraycopy(mApps.toTypedArray(), 0, appInfoArray, 0, mApps.size)
-
-            mAllAppsStore.setField("mApps", appInfoArray)
-        }
     }
 
     private fun MutableIterator<Any?>.removeMatches() {
@@ -347,7 +297,30 @@ class HideApps(context: Context) : ModPack(context) {
     }
 
     private fun String?.matchesBlocklist(): Boolean {
-        if (isNullOrEmpty()) return false
-        return !SHOULD_UNHIDE_ALL_APPS && appBlockList.contains(this)
+        if (isNullOrEmpty() || SHOULD_UNHIDE_ALL_APPS) return false
+        return appBlockList.contains(this)
+    }
+
+    fun <T> binarySearch(
+        array: Array<out T>,
+        key: T,
+        comparator: Comparator<in T>
+    ): Int {
+        var low = 0
+        var high = array.size - 1
+
+        while (low <= high) {
+            val mid = (low + high) ushr 1
+            val midVal = array[mid]
+            val cmp = comparator.compare(midVal, key)
+
+            when {
+                cmp < 0 -> low = mid + 1
+                cmp > 0 -> high = mid - 1
+                else -> return mid
+            }
+        }
+
+        return -(low + 1)
     }
 }
