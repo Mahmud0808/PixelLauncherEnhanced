@@ -74,6 +74,8 @@ class HideApps(context: Context) : ModPack(context) {
             "com.android.launcher3.allapps.DefaultAppSearchAlgorithm",
             "com.android.launcher3.allapps.search.DefaultAppSearchAlgorithm"
         )
+        val quickstepLauncherClass =
+            findClass("com.android.launcher3.uioverrides.QuickstepLauncher")
         val alphabeticalAppsListClass =
             findClass("com.android.launcher3.allapps.AlphabeticalAppsList")
         val allAppsStoreClass = findClass("com.android.launcher3.allapps.AllAppsStore")
@@ -100,6 +102,19 @@ class HideApps(context: Context) : ModPack(context) {
         predictionRowViewClass
             .hookConstructor()
             .runAfter { param -> predictionRowViewInstance = param.thisObject }
+
+        quickstepLauncherClass
+            .hookMethod("onCreate")
+            .runAfter { param ->
+                if (hotseatPredictionControllerInstance == null) {
+                    hotseatPredictionControllerInstance =
+                        param.thisObject.getField("mHotseatPredictionController")
+                }
+                if (hybridHotseatOrganizerClassInstance == null) {
+                    hybridHotseatOrganizerClassInstance =
+                        hotseatPredictionControllerInstance.getField("mHotseatOrganizer")
+                }
+            }
 
         allAppsStoreClass
             .hookMethod("setApps")
