@@ -75,8 +75,11 @@
     <string name="developer_options_title">Entwickleroptionen</string>
     <string name="developer_options_desc">Versteckte Entwickleroptionen aktivieren</string>
     <string name="entry_in_launcher_settings">Eintrag in den Launcher-Einstellungen anzeigen</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
     <string name="hide_gesture_pill_title">Verstecke Gesten Pille</string>
     <string name="hide_gesture_pill_desc">May not work on older android versions</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Anordnung sperren</string>
     <string name="lock_layout_desc_on">Symbole und Widgets auf dem Startbildschirm können nicht  hinzugefügt, entfernt oder verschoben werden</string>
     <string name="lock_layout_desc_off">Symbole und Widgets auf dem Startbildschirm können hinzugefügt, entfernt und verschoben werden</string>
@@ -100,6 +103,7 @@
     <string name="app_drawer_row_height_multiplier_title">Multiplikator Zeilenhöhe</string>
     <string name="hide_apps_title">Apps in der App-Übersicht ausblenden</string>
     <string name="search_hidden_apps_title">Suche nach verborgenen Apps erlauben</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">Allgemein</string>
     <string name="section_icon_colors_title">App Icon-Farbe</string>
     <string name="section_interface_title">Benutzeroberfläche</string>
@@ -115,5 +119,7 @@
     <string name="search_bar_opacity_title">Suchleisten Deckkraft</string>
     <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Value: %s</string>
 </resources>

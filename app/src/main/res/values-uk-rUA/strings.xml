@@ -75,8 +75,11 @@
     <string name="developer_options_title">Параметри розробника</string>
     <string name="developer_options_desc">Увімкнути приховані параметри розробника</string>
     <string name="entry_in_launcher_settings">Показувати запис у налаштуваннях лаунчера</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
     <string name="hide_gesture_pill_title">Приховати індикатор жестів</string>
     <string name="hide_gesture_pill_desc">Може не працювати на старих версіях Андроїд</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Закріпити композицію</string>
     <string name="lock_layout_desc_on">Іконки та віджети не можуть бути додані, видалені та переміщені на головному екрані</string>
     <string name="lock_layout_desc_off">Іконки та віджети можуть бути додані, видалені та переміщені на головному екрані</string>
@@ -100,6 +103,7 @@
     <string name="app_drawer_row_height_multiplier_title">Множник висоти рядка</string>
     <string name="hide_apps_title">Приховати додатки з меню додатків</string>
     <string name="search_hidden_apps_title">Дозволити пошук прихованих програм</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">Загальні</string>
     <string name="section_icon_colors_title">Колір іконок</string>
     <string name="section_interface_title">Інтерфейс</string>
@@ -115,5 +119,7 @@
     <string name="search_bar_opacity_title">Прозорість рядку пошуку</string>
     <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Значення: %s</string>
 </resources>
