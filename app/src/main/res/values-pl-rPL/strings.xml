@@ -75,8 +75,11 @@
     <string name="developer_options_title">Opcje programisty</string>
     <string name="developer_options_desc">Aktywuj ukryte opcje dla programistów</string>
     <string name="entry_in_launcher_settings">Pokaż PLEnhanced w ustawieniach launchera</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
     <string name="hide_gesture_pill_title">Hide gesture indicator</string>
     <string name="hide_gesture_pill_desc">May not work on older android versions</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Zablokuj układ ekranu głównego</string>
     <string name="lock_layout_desc_on">Nie można dodawać, usuwać ani przesuwać elementów na ekranie głównym</string>
     <string name="lock_layout_desc_off">Można dodawać, usuwać i przesuwać elementy na ekranie głównym</string>
@@ -100,6 +103,7 @@
     <string name="app_drawer_row_height_multiplier_title">Mnożnik wysokości wiersza</string>
     <string name="hide_apps_title">Ukryj aplikacje z listy aplikacji</string>
     <string name="search_hidden_apps_title">Zezwalaj na wyszukiwanie ukrytych aplikacji</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">Ogólne</string>
     <string name="section_icon_colors_title">Icon colors</string>
     <string name="section_interface_title">Interfejs</string>
@@ -115,5 +119,7 @@
     <string name="search_bar_opacity_title">Search bar opacity</string>
     <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Value: %s</string>
 </resources>

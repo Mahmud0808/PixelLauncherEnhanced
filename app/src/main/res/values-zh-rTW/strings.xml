@@ -75,8 +75,11 @@
     <string name="developer_options_title">開發人員選項</string>
     <string name="developer_options_desc">啟用已隱藏的開發人員選項</string>
     <string name="entry_in_launcher_settings">於啟動器設定中顯示項目</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
     <string name="hide_gesture_pill_title">Hide gesture indicator</string>
     <string name="hide_gesture_pill_desc">May not work on older android versions</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">鎖定配置</string>
     <string name="lock_layout_desc_on">無法在主畫面上新增、刪除和移動圖示與小工具</string>
     <string name="lock_layout_desc_off">可以在主畫面上新增、刪除和移動圖示與小工具</string>
@@ -100,6 +103,7 @@
     <string name="app_drawer_row_height_multiplier_title">應用程式抽屜增高器</string>
     <string name="hide_apps_title">於應用程式抽屜中隱藏項目</string>
     <string name="search_hidden_apps_title">允許於搜尋結果中顯示已隱藏應用程式</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">一般</string>
     <string name="section_icon_colors_title">圖示顔色</string>
     <string name="section_interface_title">界面</string>
@@ -115,5 +119,7 @@
     <string name="search_bar_opacity_title">搜尋欄透明度</string>
     <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Value: %s</string>
 </resources>

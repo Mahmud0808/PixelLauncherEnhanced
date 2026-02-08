@@ -75,8 +75,11 @@
     <string name="developer_options_title">Geliştirici seçenekleri</string>
     <string name="developer_options_desc">Gizli geliştirici seçeneklerini etkinleştir</string>
     <string name="entry_in_launcher_settings">Başlatıcı ayarlarında girişi göster</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
     <string name="hide_gesture_pill_title">Hareket göstergesini gizle</string>
     <string name="hide_gesture_pill_desc">Eski Android sürümlerinde çalışmayabilir</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Düzeni kilitle</string>
     <string name="lock_layout_desc_on">Ana ekranda simgeler ve widget’lar eklenemez, kaldırılamaz veya taşınamaz</string>
     <string name="lock_layout_desc_off">Ana ekranda simgeler ve widget’lar eklenebilir, kaldırılabilir veya taşınabilir</string>
@@ -100,6 +103,7 @@
     <string name="app_drawer_row_height_multiplier_title">Satır yüksekliği çarpanı</string>
     <string name="hide_apps_title">Uygulamaları çekmeceden gizle</string>
     <string name="search_hidden_apps_title">Gizli uygulamalarda arama yapmaya izin ver</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">Genel</string>
     <string name="section_icon_colors_title">Simge renkleri</string>
     <string name="section_interface_title">Arayüz</string>
@@ -115,5 +119,7 @@
     <string name="search_bar_opacity_title">Arama çubuğu opaklığı</string>
     <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Değer: %s</string>
 </resources>
