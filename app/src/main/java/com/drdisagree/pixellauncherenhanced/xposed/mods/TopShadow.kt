@@ -50,8 +50,8 @@ class TopShadow(context: Context) : ModPack(context) {
                 "onViewAttachedToWindow",
                 "onViewDetachedFromWindow"
             )
-            .runAfter { param ->
-                if (!removeTopShadow) return@runAfter
+            .runBefore { param ->
+                if (!removeTopShadow) return@runBefore
 
                 param.result = null
             }
@@ -74,10 +74,13 @@ class TopShadow(context: Context) : ModPack(context) {
 
         mTopMaskPaint.color = Color.rgb(0x22, 0x22, 0x22)
 
+        // Use tiny transparent bitmaps to prevent the scrim from regenerating visible masks
+        val transparent = Bitmap.createBitmap(1, 1, Bitmap.Config.ALPHA_8)
+
         sysUiScrimInstance.apply {
             setField("mHideSysUiScrim", true)
-            setField("mTopMaskBitmap", null)
-            setField("mBottomMaskBitmap", null)
+            setField("mTopMaskBitmap", transparent)
+            setField("mBottomMaskBitmap", transparent)
             setField("mTopMaskPaint", mTopMaskPaint)
         }
 
