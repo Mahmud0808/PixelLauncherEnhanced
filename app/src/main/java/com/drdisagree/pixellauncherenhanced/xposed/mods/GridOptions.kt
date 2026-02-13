@@ -99,6 +99,16 @@ class GridOptions (context: Context) : ModPack(context) {
                 }
             }
 
+        invariantDeviceProfileClass
+            .hookMethod("invDistWeightedInterpolate")
+            .runAfter { param ->
+                if (homeScreenGridColumns != 0) {
+                    val displayOption = param.result
+                    val closestProfile = displayOption.getField("grid")
+                    closestProfile.setField("numHotseatIcons", homeScreenGridColumns)
+                }
+            }
+
         deviceProfileClass
             .hookMethod(
                 "updateIconSize",
