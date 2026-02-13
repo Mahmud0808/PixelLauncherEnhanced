@@ -127,7 +127,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     elements = elements or FLOATING_SEARCH_BAR
                 }
 
-                if (featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean != false &&
+                if (featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean == true &&
                     if (launcher.hasMethod("isSplitSelectionActive")) {
                         launcher.callMethod("isSplitSelectionActive") as Boolean
                     } else {
