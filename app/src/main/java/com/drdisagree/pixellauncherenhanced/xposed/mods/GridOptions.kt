@@ -54,12 +54,13 @@ class GridOptions (context: Context) : ModPack(context) {
             if (homeScreenGridColumns != 0) {
                 setField("numShownHotseatIcons", homeScreenGridColumns)
             }
+
             if (appDrawerGridColumns != 0) {
                 setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
 
                 if (temp == null) {
                     val mAllAppsProfile = getField("mAllAppsProfile")
-                    mAllAppsProfile.setField("numShownAllAppsColumns", appDrawerGridColumns)
+                    mAllAppsProfile.setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
                 }
             }
         }
