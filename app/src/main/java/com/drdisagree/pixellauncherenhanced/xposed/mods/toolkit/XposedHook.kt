@@ -837,11 +837,13 @@ fun Any?.setField(fieldName: String, value: Any?) {
     XposedHelpers.setObjectField(this, fieldName, value)
 }
 
-fun Any?.setFieldSilently(fieldName: String, value: Any?) {
+fun Any?.setFieldSilently(fieldName: String, value: Any?): Boolean {
     try {
         XposedHelpers.setObjectField(this, fieldName, value)
+        return true
     } catch (_: Throwable) {
     }
+    return false
 }
 
 fun Class<*>?.getStaticField(fieldName: String): Any {
