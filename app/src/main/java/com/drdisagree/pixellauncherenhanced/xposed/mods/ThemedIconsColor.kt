@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
@@ -14,6 +15,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CU
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.resParams
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadIcons
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 
@@ -55,7 +58,25 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         packageName = loadPackageParam.packageName
-        replaceResources(loadPackageParam.packageName)
+        replaceResources(packageName)
+
+        val sdCardAvailableReceiverClass =
+            findClass("com.android.launcher3.model.SdCardAvailableReceiver")
+
+        sdCardAvailableReceiverClass
+            .hookMethod("onReceive")
+            .parameters(
+                Context::class.java,
+                Intent::class.java
+            )
+            .runAfter { param ->
+                val intent = param.args[1] as Intent
+
+                if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+                    replaceResources(packageName)
+                    reloadIcons()
+                }
+            }
     }
 
     @SuppressLint("DiscouragedApi")
