@@ -5,13 +5,17 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
 import android.view.View
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.toDrawable
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_TOP_SHADOW
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
@@ -58,6 +62,7 @@ class TopShadow(context: Context) : ModPack(context) {
 
         sysUiScrimClass
             .hookMethod("createDitheredAlphaMask")
+            .suppressError()
             .runAfter { param ->
                 if (!removeTopShadow) return@runAfter
 
@@ -70,18 +75,25 @@ class TopShadow(context: Context) : ModPack(context) {
         if (!removeTopShadow || sysUiScrimInstance == null) return
 
         val mRoot = sysUiScrimInstance.getField("mRoot") as View
-        val mTopMaskPaint = sysUiScrimInstance.getField("mTopMaskPaint") as Paint
+        val mTopMaskPaint = sysUiScrimInstance.getAnyField(
+            "mTopMaskPaint",
+            "mWallpaperScrimPaint"
+        ) as Paint
 
         mTopMaskPaint.color = Color.rgb(0x22, 0x22, 0x22)
 
         // Use tiny transparent bitmaps to prevent the scrim from regenerating visible masks
-        val transparent = Bitmap.createBitmap(1, 1, Bitmap.Config.ALPHA_8)
+        val transparent = createBitmap(1, 1, Bitmap.Config.ALPHA_8)
 
         sysUiScrimInstance.apply {
             setField("mHideSysUiScrim", true)
-            setField("mTopMaskBitmap", transparent)
-            setField("mBottomMaskBitmap", transparent)
-            setField("mTopMaskPaint", mTopMaskPaint)
+            try {
+                setField("mTopMaskBitmap", transparent)
+            } catch (_: Throwable) {
+                setField("mTopScrim", transparent.toDrawable(mContext.resources))
+            }
+            setAnyField(transparent, "mBottomMask", "mBottomMaskBitmap")
+            setAnyField(mTopMaskPaint, "mTopMaskPaint", "mWallpaperScrimPaint")
         }
 
         mRoot.invalidate()
