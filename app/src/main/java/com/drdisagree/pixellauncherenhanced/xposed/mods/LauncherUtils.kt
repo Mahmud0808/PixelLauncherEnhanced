@@ -97,27 +97,27 @@ class LauncherUtils(context: Context) : ModPack(context) {
         private var lastRestartTime = 0L
 
         fun getAttrColor(context: Context, resID: Int): Int {
-            return try {
+            return runCatching {
                 ThemesClass.callStaticMethod(
                     "getAttrColor",
                     context,
                     resID
                 )
-            } catch (_: Throwable) {
-                try {
+            }.getOrElse {
+                runCatching {
                     ThemesClass.callStaticMethod(
                         "getAttrColor",
                         resID,
                         context
                     )
-                } catch (_: Throwable) {
-                    try {
+                }.getOrElse {
+                    runCatching {
                         GraphicsUtilsClass.callStaticMethod(
                             "getAttrColor",
                             context,
                             resID
                         )
-                    } catch (_: Throwable) {
+                    }.getOrElse {
                         GraphicsUtilsClass.callStaticMethod(
                             "getAttrColor",
                             resID,
@@ -135,11 +135,13 @@ class LauncherUtils(context: Context) : ModPack(context) {
                 lastRestartTime = currentTime
                 resetCounter(context.packageName)
 
-                Toast.makeText(
-                    context,
-                    modRes.getString(R.string.restarting_launcher),
-                    Toast.LENGTH_SHORT
-                ).show()
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(
+                        context,
+                        modRes.getString(R.string.restarting_launcher),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
 
                 CoroutineScope(Dispatchers.IO).launch {
                     delay(1000)
