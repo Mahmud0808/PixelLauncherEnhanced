@@ -186,7 +186,8 @@ class SmartSpace(context: Context) : ModPack(context) {
 
         val gridSizeMigrationDBControllerClass = findClass(
             "com.android.launcher3.model.GridSizeMigrationDBController",
-            "com.android.launcher3.model.GridSizeMigrationUtil"
+            "com.android.launcher3.model.GridSizeMigrationUtil",
+            "com.android.launcher3.model.ModelUtils",
         )
         val gridOccupancyClass = findClass("com.android.launcher3.util.GridOccupancy")!!
 
@@ -199,15 +200,13 @@ class SmartSpace(context: Context) : ModPack(context) {
                 val helper = param.args[0]
                 val srcReader = param.args[1]
                 val destReader = param.args[2]
-                val screenId = param.args[3] as Int
-                val trgX = param.args[4] as Int
-                val trgY = param.args[5] as Int
-                val sortedItemsToPlace = param.args[6] as List<*>
-                val idsInUse = try {
-                    param.args[6] as List<*>
-                } catch (_: Throwable) {
-                    null
-                }
+                val hasContextParameter = param.args[3] is Context
+                val incrementIndex = if (hasContextParameter) 1 else 0
+                val screenId = param.args[3 + incrementIndex] as Int
+                val trgX = param.args[4 + incrementIndex] as Int
+                val trgY = param.args[5 + incrementIndex] as Int
+                val sortedItemsToPlace = param.args[6 + incrementIndex] as List<*>
+                val idsInUse = runCatching { param.args[7 + incrementIndex] as List<*> }.getOrNull()
 
                 val occupied = gridOccupancyClass
                     .getDeclaredConstructor(
@@ -308,22 +307,45 @@ class SmartSpace(context: Context) : ModPack(context) {
                                 next.set(x + entry.getField("spanX") as Int, y)
 
                                 if (idsInUse != null) {
-                                    param.thisObject.callMethod(
-                                        "insertEntryInDb",
-                                        helper,
-                                        entry,
-                                        srcReader.getField("mTableName"),
-                                        destReader.getField("mTableName"),
-                                        idsInUse
-                                    )
+                                    if (hasContextParameter) {
+                                        param.thisObject.callMethod(
+                                            "insertEntryInDb",
+                                            helper,
+                                            param.args[3],
+                                            entry,
+                                            srcReader.getField("mTableName"),
+                                            destReader.getField("mTableName"),
+                                            idsInUse
+                                        )
+                                    } else {
+                                        param.thisObject.callMethod(
+                                            "insertEntryInDb",
+                                            helper,
+                                            entry,
+                                            srcReader.getField("mTableName"),
+                                            destReader.getField("mTableName"),
+                                            idsInUse
+                                        )
+                                    }
                                 } else {
-                                    param.thisObject.callMethod(
-                                        "insertEntryInDb",
-                                        helper,
-                                        entry,
-                                        srcReader.getField("mTableName"),
-                                        destReader.getField("mTableName")
-                                    )
+                                    if (hasContextParameter) {
+                                        param.thisObject.callMethod(
+                                            "insertEntryInDb",
+                                            helper,
+                                            param.args[3],
+                                            entry,
+                                            srcReader.getField("mTableName"),
+                                            destReader.getField("mTableName")
+                                        )
+                                    } else {
+                                        param.thisObject.callMethod(
+                                            "insertEntryInDb",
+                                            helper,
+                                            entry,
+                                            srcReader.getField("mTableName"),
+                                            destReader.getField("mTableName")
+                                        )
+                                    }
                                 }
 
                                 iterator.callMethod("remove")
