@@ -22,7 +22,6 @@ class IconUpdater(context: Context) : ModPack(context) {
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val launcherModelClass = findClass("com.android.launcher3.LauncherModel")
         val baseActivityClass = findClass("com.android.launcher3.BaseActivity")
-        val modelInitializerClass = findClass("com.android.launcher3.model.ModelInitializer")
         val packageUserKeyClass = findClass("com.android.launcher3.util.PackageUserKey")
         val userManager = mContext.getSystemService(UserManager::class.java) as UserManager
 
@@ -31,13 +30,13 @@ class IconUpdater(context: Context) : ModPack(context) {
                 .hookMethod("onResume")
                 .runAfter {
                     try {
+                        if (paramThisObject == null) return@runAfter
+
                         val myUserId = callStaticMethod(
                             UserHandle::class.java,
                             "getUserId",
                             Process.myUid()
                         ) as Int
-
-                        if (paramThisObject == null) return@runAfter
 
                         when (type) {
                             HookType.LauncherModel -> {
@@ -109,6 +108,9 @@ class IconUpdater(context: Context) : ModPack(context) {
                         HookType.LauncherModel
                     )
                 } else {
+                    val modelInitializerClass =
+                        findClass("com.android.launcher3.model.ModelInitializer")
+
                     modelInitializerClass
                         .hookConstructor()
                         .runAfter { param ->
