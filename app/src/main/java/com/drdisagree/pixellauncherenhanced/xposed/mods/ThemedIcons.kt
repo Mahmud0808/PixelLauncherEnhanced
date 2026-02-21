@@ -21,6 +21,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSil
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setAnyField
@@ -175,9 +176,14 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     flags = flags or FLAG_SKIP_USER_BADGE
                 }
 
-                val iconDrawable = try {
+                val hasNewIconWithContextFirst = info.hasMethod(
+                    "newIcon",
+                    Context::class.java,
+                    Int::class.javaPrimitiveType
+                )
+                val iconDrawable = if (hasNewIconWithContextFirst) {
                     info.callMethod("newIcon", context, flags)
-                } catch (_: Throwable) {
+                } else {
                     info.callMethod("newIcon", flags, context)
                 }
                 val mDotParams = param.thisObject.getField("mDotParams")
@@ -186,15 +192,24 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     "appColor",
                     iconDrawable.callMethodSilently("getIconColor")
                 )
+                val notificationDotColorAttr = context.resources.getIdentifier(
+                    "notificationDotColor",
+                    "attr",
+                    context.packageName
+                )
                 mDotParams.setAnyField(
-                    LauncherUtils.getAttrColor(
-                        context,
-                        mContext.resources.getIdentifier(
-                            "notificationDotColor",
-                            "attr",
-                            mContext.packageName
+                    if (notificationDotColorAttr != 0) {
+                        LauncherUtils.getAttrColor(context, notificationDotColorAttr)
+                    } else {
+                        context.resources.getColor(
+                            context.resources.getIdentifier(
+                                "system_accent3_200",
+                                "color",
+                                context.packageName
+                            ),
+                            context.theme
                         )
-                    ),
+                    },
                     "dotColor",
                     "mDotColor"
                 )
