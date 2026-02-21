@@ -110,7 +110,10 @@ class SmartSpace(context: Context) : ModPack(context) {
                 )
             }
 
-        val modelCallbacksClass = findClass("com.android.launcher3.ModelCallbacks")
+        val modelCallbacksClass = findClass(
+            "com.android.launcher3.ModelCallbacks",
+            suppressError = true
+        )
 
         modelCallbacksClass
             .hookConstructor()
