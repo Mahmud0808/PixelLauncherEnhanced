@@ -2,10 +2,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?android:attr/selectableItemBackground"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:gravity="center_vertical"
-    android:minHeight="?android:attr/listPreferredItemHeightSmall"
-    android:paddingEnd="?android:attr/listPreferredItemPaddingEnd">
+    android:layout_marginHorizontal="@dimen/ui_container_margin_side"
+    android:layout_marginBottom="2dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:selectableItemBackgroundBorderless"
+    android:minHeight="?android:attr/listPreferredItemHeight"
+    android:paddingHorizontal="@dimen/preference_padding_horizontal"
+    android:paddingVertical="@dimen/preference_padding_vertical">
 
     <LinearLayout
         android:id="@android:id/widget_frame"
@@ -29,8 +35,12 @@
 
         <ImageView
             android:id="@android:id/icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="18dp"
+            android:contentDescription="@android:string/untitled"
+            app:tint="?attr/colorOnSurface" />
+
     </LinearLayout>
 
     <LinearLayout

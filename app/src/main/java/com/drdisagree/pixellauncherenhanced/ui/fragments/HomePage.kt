@@ -36,11 +36,9 @@ class HomePage : ControlledPreferenceFragmentCompat() {
             setOnPreferenceClickListener {
                 try {
                     val intent = Intent(Intent.ACTION_MAIN)
-                    intent.setComponent(
-                        ComponentName(
-                            "org.lsposed.manager",
-                            "org.lsposed.manager.ui.activities.MainActivity"
-                        )
+                    intent.component = ComponentName(
+                        "org.lsposed.manager",
+                        "org.lsposed.manager.ui.activities.MainActivity"
                     )
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     startActivity(intent)

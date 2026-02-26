@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
@@ -23,7 +24,7 @@ import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentHiddenAppsBinding
 import com.drdisagree.pixellauncherenhanced.ui.adapters.AppListAdapter
-import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setToolbarTitle
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -69,8 +70,8 @@ class HiddenApps : Fragment() {
     ): View {
         binding = FragmentHiddenAppsBinding.inflate(inflater, container, false)
 
-        setToolbarTitle(
-            requireContext(),
+        setupToolbar(
+            requireContext() as AppCompatActivity,
             R.string.fragment_hidden_apps_title,
             true,
             binding.header.toolbar,

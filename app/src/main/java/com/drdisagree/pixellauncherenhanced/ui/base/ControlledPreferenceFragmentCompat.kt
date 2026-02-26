@@ -14,7 +14,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -28,7 +27,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.SHARED_PREFERE
 import com.drdisagree.pixellauncherenhanced.data.config.PrefsHelper
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
-import com.google.android.material.appbar.CollapsingToolbarLayout
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 
 abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
 
@@ -85,15 +84,13 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val baseContext = context as AppCompatActivity
-        view.findViewById<Toolbar?>(R.id.toolbar)?.let {
-            baseContext.setSupportActionBar(it)
-            it.title = title
-        }
-        view.findViewById<CollapsingToolbarLayout?>(R.id.collapsing_toolbar)?.let {
-            it.title = title
-        }
-        baseContext.supportActionBar?.setDisplayHomeAsUpEnabled(backButtonEnabled)
+        setupToolbar(
+            requireContext() as AppCompatActivity,
+            title,
+            backButtonEnabled,
+            view.findViewById(R.id.toolbar),
+            view.findViewById(R.id.collapsing_toolbar)
+        )
 
         if (hasMenu) {
             val menuHost: MenuHost = requireActivity()

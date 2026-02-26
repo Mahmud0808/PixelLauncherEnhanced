@@ -8,7 +8,7 @@
         app:iconSpaceReserved="false"
         app:isPreferenceVisible="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMainMenu
         android:icon="@drawable/ic_icons"
         android:key="launcherIcons"
         android:summary="@string/fragment_icons_desc"
@@ -16,7 +16,7 @@
         app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.IconsMods"
         app:showArrow="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMainMenu
         android:icon="@drawable/ic_home_screen"
         android:key="launcherHomeScreen"
         android:summary="@string/fragment_home_screen_desc"
@@ -24,7 +24,7 @@
         app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.HomeScreenMods"
         app:showArrow="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMainMenu
         android:icon="@drawable/ic_app_drawer"
         android:key="launcherAppDrawer"
         android:summary="@string/fragment_app_drawer_desc"
@@ -32,7 +32,7 @@
         app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.AppDrawerMods"
         app:showArrow="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMainMenu
         android:icon="@drawable/ic_recents"
         android:key="launcherRecents"
         android:summary="@string/fragment_recents_desc"
@@ -40,7 +40,7 @@
         app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.RecentsMods"
         app:showArrow="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMainMenu
         android:icon="@drawable/ic_miscellaneous"
         android:key="launcherMiscellaneous"
         android:summary="@string/fragment_miscellaneous_desc"
@@ -48,7 +48,7 @@
         app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.MiscellaneousMods"
         app:showArrow="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMainMenu
         android:icon="@drawable/ic_about"
         android:key="launcherAbout"
         android:summary="@string/fragment_about_desc"

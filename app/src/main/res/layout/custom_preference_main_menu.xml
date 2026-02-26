@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="@dimen/ui_container_margin_side"
@@ -9,32 +10,45 @@
     android:baselineAligned="false"
     android:clipToPadding="false"
     android:gravity="center_vertical"
-    android:minHeight="?android:attr/listPreferredItemHeight"
+    android:minHeight="72dp"
     android:orientation="horizontal"
-    android:paddingHorizontal="@dimen/preference_padding_horizontal"
-    android:paddingVertical="@dimen/preference_padding_vertical">
-
-    <ImageView
-        android:id="@android:id/icon"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_marginEnd="18dp"
-        android:contentDescription="@android:string/untitled"
-        app:tint="?attr/colorOnSurface" />
+    android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+    android:paddingEnd="?android:attr/listPreferredItemPaddingEnd">
 
     <LinearLayout
+        android:id="@+id/icon_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:minWidth="40dp"
+        android:minHeight="40dp"
+        android:orientation="horizontal"
+        tools:ignore="RtlSymmetry">
+
+        <ImageView
+            android:id="@android:id/icon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@android:string/untitled"
+            app:tint="?attr/colorPrimary" />
+
+    </LinearLayout>
+
+    <RelativeLayout
         android:id="@+id/text_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp">
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@android:id/title"
             style="@style/Preference.TitleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="viewStart"
             android:textColor="@color/text_color_primary" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -42,19 +56,9 @@
             style="@style/Preference.SummaryText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="viewStart"
+            android:layout_below="@android:id/title"
+            android:layout_alignStart="@android:id/title"
             android:textColor="@color/text_color_secondary" />
 
-    </LinearLayout>
-
-    <ImageView
-        android:id="@+id/end_arrow"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_gravity="center"
-        android:layout_marginStart="18dp"
-        android:contentDescription="@string/icon"
-        android:src="@drawable/ic_arrow_end"
-        app:tint="@color/textColor" />
-
+    </RelativeLayout>
 </LinearLayout>

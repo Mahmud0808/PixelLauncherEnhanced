@@ -6,9 +6,11 @@ import android.content.res.TypedArray
 import android.graphics.Color
 import android.util.AttributeSet
 import androidx.annotation.ColorInt
+import androidx.core.content.withStyledAttributes
 import androidx.fragment.app.FragmentActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.jaredrummler.android.colorpicker.ColorPanelView
 import com.jaredrummler.android.colorpicker.ColorPickerDialog
@@ -55,30 +57,33 @@ class ColorPreference : Preference, ColorPickerDialogListener {
     private fun init(attrs: AttributeSet?) {
         isPersistent = true
 
-        val a: TypedArray = context.obtainStyledAttributes(attrs, R.styleable.ColorPreference)
-        showDialog = a.getBoolean(R.styleable.ColorPreference_cpv_showDialog, true)
-        dialogType =
-            a.getInt(R.styleable.ColorPreference_cpv_dialogType, ColorPickerDialog.TYPE_PRESETS)
-        colorShape = a.getInt(R.styleable.ColorPreference_cpv_colorShape, ColorShape.CIRCLE)
-        allowPresets = a.getBoolean(R.styleable.ColorPreference_cpv_allowPresets, true)
-        allowCustom = a.getBoolean(R.styleable.ColorPreference_cpv_allowCustom, true)
-        showAlphaSlider = a.getBoolean(R.styleable.ColorPreference_cpv_showAlphaSlider, false)
-        showColorShades = a.getBoolean(R.styleable.ColorPreference_cpv_showColorShades, true)
-        previewSize = a.getInt(R.styleable.ColorPreference_cpv_previewSize, SIZE_NORMAL)
-        val presetsResId: Int = a.getResourceId(R.styleable.ColorPreference_cpv_colorPresets, 0)
-        dialogTitle =
-            a.getResourceId(R.styleable.ColorPreference_cpv_dialogTitle, R.string.cpv_default_title)
-        presets = if (presetsResId != 0) {
-            context.resources.getIntArray(presetsResId)
-        } else {
-            ColorPickerDialog.MATERIAL_COLORS
+        context.withStyledAttributes(attrs, R.styleable.ColorPreference) {
+            showDialog = getBoolean(R.styleable.ColorPreference_cpv_showDialog, true)
+            dialogType =
+                getInt(R.styleable.ColorPreference_cpv_dialogType, ColorPickerDialog.TYPE_PRESETS)
+            colorShape = getInt(R.styleable.ColorPreference_cpv_colorShape, ColorShape.CIRCLE)
+            allowPresets = getBoolean(R.styleable.ColorPreference_cpv_allowPresets, true)
+            allowCustom = getBoolean(R.styleable.ColorPreference_cpv_allowCustom, true)
+            showAlphaSlider = getBoolean(R.styleable.ColorPreference_cpv_showAlphaSlider, false)
+            showColorShades = getBoolean(R.styleable.ColorPreference_cpv_showColorShades, true)
+            previewSize = getInt(R.styleable.ColorPreference_cpv_previewSize, SIZE_NORMAL)
+            val presetsResId: Int = getResourceId(R.styleable.ColorPreference_cpv_colorPresets, 0)
+            dialogTitle =
+                getResourceId(
+                    R.styleable.ColorPreference_cpv_dialogTitle,
+                    R.string.cpv_default_title
+                )
+            presets = if (presetsResId != 0) {
+                context.resources.getIntArray(presetsResId)
+            } else {
+                ColorPickerDialog.MATERIAL_COLORS
+            }
+            widgetLayoutResource = if (colorShape == ColorShape.CIRCLE) {
+                if (previewSize == SIZE_LARGE) R.layout.cpv_preference_circle_large else R.layout.cpv_preference_circle
+            } else {
+                if (previewSize == SIZE_LARGE) R.layout.cpv_preference_square_large else R.layout.cpv_preference_square
+            }
         }
-        widgetLayoutResource = if (colorShape == ColorShape.CIRCLE) {
-            if (previewSize == SIZE_LARGE) R.layout.cpv_preference_circle_large else R.layout.cpv_preference_circle
-        } else {
-            if (previewSize == SIZE_LARGE) R.layout.cpv_preference_square_large else R.layout.cpv_preference_square
-        }
-        a.recycle()
 
         initResource()
     }
@@ -143,6 +148,7 @@ class ColorPreference : Preference, ColorPickerDialogListener {
         preview?.setColor(color)
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     override fun onSetInitialValue(defaultValue: Any?) {

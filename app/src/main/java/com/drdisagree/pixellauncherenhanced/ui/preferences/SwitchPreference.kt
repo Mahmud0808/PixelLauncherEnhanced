@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import androidx.preference.PreferenceViewHolder
 import androidx.preference.SwitchPreferenceCompat
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 class SwitchPreference : SwitchPreferenceCompat {
@@ -43,5 +44,6 @@ class SwitchPreference : SwitchPreferenceCompat {
         super.onBindViewHolder(holder)
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 }

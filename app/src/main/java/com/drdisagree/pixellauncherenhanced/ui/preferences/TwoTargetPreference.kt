@@ -6,6 +6,7 @@ import android.view.View
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 /**
@@ -63,6 +64,7 @@ open class TwoTargetPreference : Preference {
         widgetFrame?.isEnabled = isEnabled
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     protected open fun shouldHideSecondTarget(): Boolean {

@@ -133,5 +133,6 @@
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Value: %s</string>
+    <string name="developer">Developer</string>
 
 </resources>

@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -16,7 +17,7 @@ import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentAboutBinding
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
-import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setToolbarTitle
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import com.drdisagree.pixellauncherenhanced.utils.Presets
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -33,8 +34,8 @@ class About : Fragment() {
     ): View {
         binding = FragmentAboutBinding.inflate(inflater, container, false)
 
-        setToolbarTitle(
-            requireContext(),
+        setupToolbar(
+            requireContext() as AppCompatActivity,
             R.string.fragment_about_title,
             true,
             binding.header.toolbar,

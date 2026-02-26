@@ -13,6 +13,7 @@ import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
 import com.google.android.material.button.MaterialButton
@@ -218,6 +219,7 @@ class SliderPreference(
         handleResetButton()
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     private fun getOutputText(): String {

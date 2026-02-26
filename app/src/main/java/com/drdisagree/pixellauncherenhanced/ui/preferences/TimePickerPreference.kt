@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -64,6 +65,7 @@ class TimePickerPreference : Preference {
         timeTextView.text = timeValue
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     override fun onClick() {

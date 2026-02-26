@@ -12,6 +12,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 /**
@@ -70,6 +71,7 @@ class FooterPreference @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     override fun setSummary(summary: CharSequence?) {

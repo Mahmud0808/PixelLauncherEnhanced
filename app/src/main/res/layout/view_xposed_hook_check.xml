@@ -6,6 +6,8 @@
     android:layout_height="wrap_content"
     android:background="@drawable/item_background_material_error"
     android:clickable="true"
+    android:layout_marginHorizontal="@dimen/ui_container_margin_side"
+    android:layout_marginBottom="@dimen/ui_container_margin_side"
     android:paddingStart="6dp"
     android:paddingEnd="24dp">
 

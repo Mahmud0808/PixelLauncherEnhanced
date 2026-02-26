@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
     android:clickable="true"
-    android:paddingStart="6dp"
-    android:paddingEnd="24dp">
+    android:focusable="true"
+    android:layout_marginHorizontal="@dimen/ui_container_margin_side"
+    android:layout_marginBottom="2dp"
+    android:foreground="?android:selectableItemBackgroundBorderless"
+    android:minHeight="?android:attr/listPreferredItemHeight"
+    android:paddingHorizontal="@dimen/preference_padding_horizontal"
+    android:paddingVertical="@dimen/preference_padding_vertical">
 
     <ImageView
         android:id="@android:id/icon"
@@ -15,35 +18,33 @@
         android:layout_height="20dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
-        android:layout_marginStart="18dp"
-        android:contentDescription="@string/icon"
-        app:tint="?attr/colorPrimary" />
+        android:layout_marginEnd="18dp"
+        android:contentDescription="@android:string/untitled"
+        android:visibility="gone"
+        app:tint="?attr/colorOnSurface" />
 
-    <LinearLayout
-        android:id="@+id/text_container"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_marginVertical="16dp"
-        android:layout_marginStart="18dp"
+        android:layout_toStartOf="@android:id/widget_frame"
         android:layout_toEndOf="@android:id/icon"
         android:orientation="vertical">
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@android:id/title"
             style="@style/Preference.TitleText"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="viewStart"
             android:textColor="@color/text_color_primary" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@android:id/summary"
             style="@style/Preference.SummaryText"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="viewStart"
+            android:layout_below="@android:id/title"
             android:textColor="@color/text_color_secondary" />
 
-    </LinearLayout>
+    </RelativeLayout>
 </RelativeLayout>

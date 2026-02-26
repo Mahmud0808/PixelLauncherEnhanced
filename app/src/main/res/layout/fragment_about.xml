@@ -52,11 +52,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginVertical="24dp"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardBackgroundColor="@color/transparent"
                 app:cardMaxElevation="0dp"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
+                    android:background="@drawable/container_single"
+                    android:foreground="?android:selectableItemBackgroundBorderless"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:alpha="0.8"
@@ -73,7 +75,7 @@
                         android:text="@string/news"
                         android:textColor="?attr/colorOnBackground"
                         android:textSize="13sp"
-                        app:cornerRadius="12dp"
+                        app:cornerRadius="14dp"
                         app:iconPadding="2dp"
                         app:iconSize="16dp" />
 
@@ -94,7 +96,7 @@
                         android:text="@string/support"
                         android:textColor="?attr/colorOnBackground"
                         android:textSize="13sp"
-                        app:cornerRadius="12dp"
+                        app:cornerRadius="14dp"
                         app:iconPadding="2dp"
                         app:iconSize="16dp" />
 
@@ -115,7 +117,7 @@
                         android:text="@string/github"
                         android:textColor="?attr/colorOnBackground"
                         android:textSize="13sp"
-                        app:cornerRadius="12dp"
+                        app:cornerRadius="14dp"
                         app:iconPadding="2dp"
                         app:iconSize="16dp" />
 
@@ -128,14 +130,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="16dp"
-                android:text="Developer"
+                android:text="@string/developer"
                 android:textColor="?attr/colorOnSurface" />
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="1dp"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardBackgroundColor="@color/transparent"
                 app:cardCornerRadius="12dp"
                 app:cardMaxElevation="0dp"
                 app:strokeWidth="0dp">
@@ -149,7 +151,8 @@
                         android:id="@+id/developer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
+                        android:background="@drawable/container_top"
+                        android:foreground="?android:selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:orientation="horizontal"
                         android:paddingHorizontal="22dp"
@@ -189,7 +192,7 @@
 
                     <View
                         android:layout_width="match_parent"
-                        android:layout_height="1dp"
+                        android:layout_height="2dp"
                         android:layout_marginHorizontal="16dp"
                         android:background="?attr/colorSurface" />
 
@@ -197,7 +200,8 @@
                         android:id="@+id/buymeacoffee"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
+                        android:background="@drawable/container_bottom"
+                        android:foreground="?android:selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:orientation="horizontal"
                         android:paddingHorizontal="22dp"
