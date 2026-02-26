@@ -16,11 +16,13 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_COLOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_FG_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_FG_COLOR_LIGHT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getBoolean
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getSliderFloat
@@ -53,6 +55,8 @@ object PrefsHelper {
             FREEFORM_MODE -> getBoolean(FREEFORM_GESTURE)
 
             HIDE_NAVIGATION_SPACE -> getBoolean(HIDE_GESTURE_PILL)
+
+            SEARCH_HIDDEN_APPS -> getBoolean(HIDE_APPS_FROM_APP_DRAWER)
 
             else -> true
         }

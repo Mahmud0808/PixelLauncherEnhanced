@@ -12,10 +12,10 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ENTRY_IN_LAUNCHER_SETTINGS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ENTRY_IN_OPTIONS_POPUP
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.UNHIDE_ALL_APPS
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
@@ -50,7 +50,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
             entryInLauncher = getBoolean(ENTRY_IN_LAUNCHER_SETTINGS, true)
             entryInPopup = getBoolean(ENTRY_IN_OPTIONS_POPUP, false)
             toggleHideAppsInPopup = getBoolean(TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP, false)
-            HideApps.SHOULD_UNHIDE_ALL_APPS = getBoolean(UNHIDE_ALL_APPS, false)
+            HideApps.SHOULD_UNHIDE_ALL_APPS = !getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
         }
 
         when (key.firstOrNull()) {
@@ -475,7 +475,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
         HideApps.SHOULD_UNHIDE_ALL_APPS = value
         @SuppressLint("ApplySharedPref")
         Xprefs.edit()
-            .putBoolean(UNHIDE_ALL_APPS, value)
+            .putBoolean(HIDE_APPS_FROM_APP_DRAWER, value)
             .commit()
         CoroutineScope(Dispatchers.Main).launch {
             delay(300)

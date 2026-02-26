@@ -2,69 +2,82 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_recentsclearallbutton"
-        android:title="@string/clear_all_button_title"
-        app:iconSpaceReserved="false" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_recents_general"
+        android:title="@string/section_general_title"
+        app:iconSpaceReserved="false">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_fixedrecentsbuttonswidth"
-        android:title="@string/fixed_button_width_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_disablerecentslivetile"
+            android:summary="@string/disable_recents_live_tile_desc"
+            android:title="@string/disable_recents_live_tile_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_recentsremovescreenshotbutton"
-        android:title="@string/recents_remove_screenshot_title"
-        android:summary="@string/recents_remove_screenshot_summary"
-        android:defaultValue="false"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_startfreeformbygesture"
+            android:summary="@string/freeform_gesture_summary"
+            android:title="@string/freeform_gesture_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_disablerecentslivetile"
-        android:summary="@string/disable_recents_live_tile_desc"
-        android:title="@string/disable_recents_live_tile_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_startfreeformprogress"
+            android:summary="@string/freeform_gesture_progress_summary"
+            android:title="@string/freeform_gesture_progress_title"
+            app:decimalFormat="#.#"
+            app:defaultValue="3"
+            app:iconSpaceReserved="false"
+            app:isDecimalFormat="true"
+            app:maxVal="5"
+            app:minVal="1"
+            app:showResetButton="true"
+            app:tickInterval="0.1" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-        android:key="xposed_recentsbackgroundopacity"
-        android:title="@string/recents_background_opacity_title"
-        app:defaultValue="-1"
-        app:hideValueOnDefault="true"
-        app:iconSpaceReserved="false"
-        app:maxVal="100"
-        app:minVal="-1"
-        app:showDefaultIndicator="true"
-        app:showResetButton="true"
-        app:tickInterval="1"
-        app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="@string/freeform_method_title"
+            android:entries="@array/freeform_mode_str"
+            android:entryValues="@array/freeform_mode_value"
+            android:key="xposed_freeform_mode"
+            android:summary="@string/freeform_method_summary"
+            android:title="@string/freeform_method_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_startfreeformbygesture"
-        android:summary="@string/freeform_gesture_summary"
-        android:title="@string/freeform_gesture_title"
-        app:iconSpaceReserved="false" />
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-        android:key="xposed_startfreeformprogress"
-        android:summary="@string/freeform_gesture_progress_summary"
-        android:title="@string/freeform_gesture_progress_title"
-        app:defaultValue="3"
-        app:iconSpaceReserved="false"
-        app:decimalFormat="#.#"
-        app:isDecimalFormat="true"
-        app:maxVal="5"
-        app:minVal="1"
-        app:showResetButton="true"
-        app:tickInterval="0.1" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_recents_interface"
+        android:title="@string/section_interface_title"
+        app:iconSpaceReserved="false">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
-        android:key="xposed_freeform_mode"
-        android:defaultValue="0"
-        android:dialogTitle="@string/freeform_method_title"
-        android:entries="@array/freeform_mode_str"
-        android:summary="@string/freeform_method_summary"
-        android:entryValues="@array/freeform_mode_value"
-        android:title="@string/freeform_method_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_recentsclearallbutton"
+            android:title="@string/clear_all_button_title"
+            app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_fixedrecentsbuttonswidth"
+            android:title="@string/fixed_button_width_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_recentsremovescreenshotbutton"
+            android:summary="@string/recents_remove_screenshot_summary"
+            android:title="@string/recents_remove_screenshot_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_recentsbackgroundopacity"
+            android:title="@string/recents_background_opacity_title"
+            app:defaultValue="-1"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-1"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 </PreferenceScreen>

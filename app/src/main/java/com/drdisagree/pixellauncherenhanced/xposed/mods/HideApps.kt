@@ -4,8 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.UNHIDE_ALL_APPS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
@@ -50,10 +50,11 @@ class HideApps(context: Context) : ModPack(context) {
         Xprefs.apply {
             appBlockList = getStringSet(APP_BLOCK_LIST, emptySet())!!
             searchHiddenApps = getBoolean(SEARCH_HIDDEN_APPS, false)
-            SHOULD_UNHIDE_ALL_APPS = getBoolean(UNHIDE_ALL_APPS, false)
+            SHOULD_UNHIDE_ALL_APPS = !getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
         }
 
         when (key.firstOrNull()) {
+            HIDE_APPS_FROM_APP_DRAWER,
             APP_BLOCK_LIST -> updateLauncherIcons(mContext)
         }
     }

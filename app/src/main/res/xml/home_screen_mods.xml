@@ -30,7 +30,7 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
+        android:key="xposed_home_screen_interface"
         android:title="@string/section_interface_title"
         app:iconSpaceReserved="false">
 
@@ -93,7 +93,7 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
+        android:key="xposed_home_screen_quickspace"
         android:title="@string/section_quickspace_title"
         app:iconSpaceReserved="false">
 
@@ -106,7 +106,7 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
+        android:key="xposed_home_screen_search_bar"
         android:title="@string/section_search_bar_title"
         app:iconSpaceReserved="false">
 

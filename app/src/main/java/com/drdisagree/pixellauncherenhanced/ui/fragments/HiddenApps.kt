@@ -27,6 +27,7 @@ import com.drdisagree.pixellauncherenhanced.ui.adapters.AppListAdapter
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -97,6 +98,7 @@ class HiddenApps : Fragment() {
         CoroutineScope(Dispatchers.IO).launch {
             appList = getAllLaunchableApps()
             adapter = AppListAdapter(appList!!)
+            delay(300)
 
             withContext(Dispatchers.Main) {
                 try {

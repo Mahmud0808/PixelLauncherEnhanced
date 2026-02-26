@@ -4,22 +4,20 @@
     android:id="@+id/two_target_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:clickable="true"
     android:layout_marginHorizontal="@dimen/ui_container_margin_side"
     android:layout_marginBottom="2dp"
-    android:baselineAligned="false"
-    android:clickable="true"
     android:focusable="true"
-    android:foreground="?android:selectableItemBackgroundBorderless"
     android:gravity="center_vertical"
+    android:foreground="?android:selectableItemBackgroundBorderless"
     android:minHeight="?android:attr/listPreferredItemHeight"
-    android:orientation="horizontal"
-    android:paddingHorizontal="@dimen/preference_padding_horizontal">
+    android:paddingHorizontal="@dimen/preference_padding_horizontal"
+    android:paddingVertical="@dimen/preference_padding_vertical">
 
     <ImageView
         android:id="@android:id/icon"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:layout_marginVertical="@dimen/preference_padding_vertical"
         android:layout_marginEnd="18dp"
         android:contentDescription="@android:string/untitled"
         android:visibility="gone"
@@ -28,10 +26,9 @@
     <RelativeLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/preference_padding_horizontal"
+        android:layout_marginEnd="18dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:paddingVertical="@dimen/preference_padding_vertical">
+        android:orientation="vertical">
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@android:id/title"
@@ -65,7 +62,6 @@
         android:id="@android:id/widget_frame"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginVertical="@dimen/preference_padding_vertical"
         android:layout_marginStart="18dp"
         android:orientation="vertical" />
 
