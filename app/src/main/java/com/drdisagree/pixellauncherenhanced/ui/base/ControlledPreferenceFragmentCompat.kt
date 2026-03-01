@@ -17,7 +17,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
@@ -27,6 +29,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.SHARED_PREFERE
 import com.drdisagree.pixellauncherenhanced.data.config.PrefsHelper
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 
 abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
@@ -114,6 +117,28 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
                 }
             }, viewLifecycleOwner, Lifecycle.State.RESUMED)
         }
+
+        val recyclerView = view.findViewById<RecyclerView>(androidx.preference.R.id.recycler_view)
+            ?: return
+
+        recyclerView.clipToPadding = false
+
+        ViewCompat.setOnApplyWindowInsetsListener(recyclerView) { v, insets ->
+            val navBarInset = insets
+                .getInsets(WindowInsetsCompat.Type.navigationBars())
+                .bottom
+            val baseBottomPadding = dpToPx(16)
+
+            v.setPadding(
+                v.paddingLeft,
+                v.paddingTop,
+                v.paddingRight,
+                baseBottomPadding + navBarInset
+            )
+
+            insets
+        }
+        ViewCompat.requestApplyInsets(recyclerView)
     }
 
     public override fun onCreateAdapter(preferenceScreen: PreferenceScreen): RecyclerView.Adapter<*> {

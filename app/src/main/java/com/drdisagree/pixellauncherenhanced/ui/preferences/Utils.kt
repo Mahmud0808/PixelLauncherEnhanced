@@ -1,9 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
 import android.view.ViewGroup.MarginLayoutParams
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.doOnAttach
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
@@ -31,19 +28,7 @@ object Utils {
 
             itemCount - 1 -> {
                 layoutParams.topMargin = 0
-                layoutParams.bottomMargin = baseBottom
-
-                itemView.doOnAttach {
-                    ViewCompat.setOnApplyWindowInsetsListener(itemView) { view, insets ->
-                        val navBarInset = insets
-                            .getInsets(WindowInsetsCompat.Type.navigationBars())
-                            .bottom
-                        layoutParams.bottomMargin = baseBottom + navBarInset
-                        view.layoutParams = layoutParams
-                        insets
-                    }
-                    ViewCompat.requestApplyInsets(itemView)
-                }
+                layoutParams.bottomMargin = 0
             }
 
             else -> {

@@ -8,9 +8,6 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.doOnAttach
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
@@ -121,20 +118,8 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
 
             position == itemCount - 1 -> {
                 layoutParams.topMargin = 0
-                layoutParams.bottomMargin = baseBottom
+                layoutParams.bottomMargin = 0
                 container.setBackgroundResource(R.drawable.container_bottom)
-
-                holder.itemView.doOnAttach {
-                    ViewCompat.setOnApplyWindowInsetsListener(holder.itemView) { view, insets ->
-                        val navBarInset = insets
-                            .getInsets(WindowInsetsCompat.Type.navigationBars())
-                            .bottom
-                        layoutParams.bottomMargin = baseBottom + navBarInset
-                        view.layoutParams = layoutParams
-                        insets
-                    }
-                    ViewCompat.requestApplyInsets(holder.itemView)
-                }
             }
 
             else -> {
