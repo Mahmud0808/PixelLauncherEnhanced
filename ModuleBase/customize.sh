@@ -66,7 +66,7 @@ grantRootApps() {
 }
 
 activateModuleLSPD() {
-  if [ $(ls $LSPDDBPATH) = $LSPDDBPATH ]; then
+  if [ -f "$LSPDDBPATH" ]; then
     DBPATH=$LSPDDBPATH
     PKGPATH=$(pm path $PKGNAME | cut -d':' -f2)
 
