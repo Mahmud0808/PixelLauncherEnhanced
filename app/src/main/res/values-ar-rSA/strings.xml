@@ -109,6 +109,7 @@
     <string name="section_interface_title">Interface</string>
     <string name="section_search_bar_title">Search bar</string>
     <string name="section_quickspace_title">Quickspace</string>
+    <string name="section_hide_apps_title">Hide apps</string>
     <string name="custom_themed_icon_color_title">Custom themed icon color</string>
     <string name="icon_foreground_color_light_title">Foreground color in light mode</string>
     <string name="icon_background_color_light_title">Background color in light mode</string>
@@ -122,4 +123,5 @@
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Value: %s</string>
+    <string name="developer">Developer</string>
 </resources>
