@@ -109,6 +109,7 @@
     <string name="section_interface_title">界面</string>
     <string name="section_search_bar_title">搜索栏</string>
     <string name="section_quickspace_title">快捷空间</string>
+    <string name="section_hide_apps_title">Hide apps</string>
     <string name="custom_themed_icon_color_title">自定义主题的图标颜色</string>
     <string name="icon_foreground_color_light_title">浅色模式下的前景颜色</string>
     <string name="icon_background_color_light_title">浅色模式下的背景颜色</string>
@@ -122,4 +123,5 @@
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">值大小: %s</string>
+    <string name="developer">Developer</string>
 </resources>

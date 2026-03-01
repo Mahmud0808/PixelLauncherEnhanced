@@ -109,6 +109,7 @@
     <string name="section_interface_title">Інтерфейс</string>
     <string name="section_search_bar_title">Рядок пошуку</string>
     <string name="section_quickspace_title">Швидкий простір</string>
+    <string name="section_hide_apps_title">Hide apps</string>
     <string name="custom_themed_icon_color_title">Користувацький колір іконок</string>
     <string name="icon_foreground_color_light_title">Колір переднього плану в світлому режимі</string>
     <string name="icon_background_color_light_title">Колір тла у світлому режимі</string>
@@ -122,4 +123,5 @@
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Значення: %s</string>
+    <string name="developer">Developer</string>
 </resources>
