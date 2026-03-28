@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_LIGHT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_COLOR
@@ -134,33 +135,35 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             )
         }
 
-        mContext.resources.getIdentifier(
-            "folder_preview_light",
-            "color",
-            packageName
-        ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorLight)
-        }
-        mContext.resources.getIdentifier(
-            "folder_preview_dark",
-            "color",
-            packageName
-        ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorDark)
-        }
-        mContext.resources.getIdentifier(
-            "folder_background_light",
-            "color",
-            packageName
-        ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorLight)
-        }
-        mContext.resources.getIdentifier(
-            "folder_background_dark",
-            "color",
-            packageName
-        ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorDark)
+        if (packageName == PIXEL_LAUNCHER_PACKAGE) {
+            mContext.resources.getIdentifier(
+                "folder_preview_light",
+                "color",
+                packageName
+            ).takeIf { it != 0 }?.let {
+                resParam.res.setReplacement(it, mFolderColorLight)
+            }
+            mContext.resources.getIdentifier(
+                "folder_preview_dark",
+                "color",
+                packageName
+            ).takeIf { it != 0 }?.let {
+                resParam.res.setReplacement(it, mFolderColorDark)
+            }
+            mContext.resources.getIdentifier(
+                "folder_background_light",
+                "color",
+                packageName
+            ).takeIf { it != 0 }?.let {
+                resParam.res.setReplacement(it, mFolderColorLight)
+            }
+            mContext.resources.getIdentifier(
+                "folder_background_dark",
+                "color",
+                packageName
+            ).takeIf { it != 0 }?.let {
+                resParam.res.setReplacement(it, mFolderColorDark)
+            }
         }
     }
 }
