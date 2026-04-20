@@ -8,6 +8,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE_PROGRESS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_MODE
@@ -42,7 +44,9 @@ object PrefsHelper {
             THEMED_ICON_CUSTOM_FG_COLOR_LIGHT,
             THEMED_ICON_CUSTOM_BG_COLOR_LIGHT,
             THEMED_ICON_CUSTOM_FG_COLOR_DARK,
-            THEMED_ICON_CUSTOM_BG_COLOR_DARK -> getBoolean(THEMED_ICON_CUSTOM_COLOR)
+            THEMED_ICON_CUSTOM_BG_COLOR_DARK,
+            FOLDER_CUSTOM_COLOR_LIGHT,
+            FOLDER_CUSTOM_COLOR_DARK -> getBoolean(THEMED_ICON_CUSTOM_COLOR)
 
             DESKTOP_SEARCH_BAR_OPACITY -> isPixelLauncher && !getBoolean(DESKTOP_SEARCH_BAR)
 
