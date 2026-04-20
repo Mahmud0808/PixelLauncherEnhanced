@@ -20,13 +20,47 @@
 -keep class com.drdisagree.pixellauncherenhanced.ui.activities.**
 -keep class com.drdisagree.pixellauncherenhanced.ui.fragments.**
 
-# Xposed
--keep class de.robv.android.xposed.**
--keep class com.drdisagree.pixellauncherenhanced.xposed.InitHook
--keepnames class com.drdisagree.pixellauncherenhanced.xposed.**
+# Xposed framework stubs
+-keep class de.robv.android.xposed.** { *; }
+
+# Xposed entry points (called directly by the framework)
+-keep class com.drdisagree.pixellauncherenhanced.xposed.InitHook {
+    public <init>();
+}
+-keep class * implements de.robv.android.xposed.IXposedHookLoadPackage
+-keep class * implements de.robv.android.xposed.IXposedHookInitPackageResources
+
+# Optimize method bodies, preserve Xposed lifecycle signatures
+-keepclassmembers class * extends com.drdisagree.pixellauncherenhanced.xposed.ModPack {
+    public <init>(android.content.Context);
+}
+-keepclassmembers,allowoptimization,allowobfuscation class com.drdisagree.iconify.xposed.** {
+    public <init>();
+    public <init>(android.content.Context);
+    public void initZygote(de.robv.android.xposed.IXposedHookZygoteInit$StartupParam);
+    public void handleLoadPackage(de.robv.android.xposed.callbacks.XC_LoadPackage$LoadPackageParam);
+    public void handleInitPackageResources(de.robv.android.xposed.callbacks.XC_InitPackageResources$InitPackageResourcesParam);
+}
+
+# Hook callbacks
+-keepclassmembers,allowoptimization,allowobfuscation class * extends de.robv.android.xposed.XC_MethodHook {
+    protected void beforeHookedMethod(de.robv.android.xposed.XC_MethodHook$MethodHookParam);
+    protected void afterHookedMethod(de.robv.android.xposed.XC_MethodHook$MethodHookParam);
+}
+-keepclassmembers,allowoptimization,allowobfuscation class * extends de.robv.android.xposed.XC_MethodReplacement {
+    protected java.lang.Object replaceHookedMethod(de.robv.android.xposed.XC_MethodHook$MethodHookParam);
+}
+
+# XPrefs: name and public API must be stable for cross-process access
 -keepnames class com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs
--keep class com.drdisagree.pixellauncherenhanced.xposed.** {
-    <init>(android.content.Context);
+-keepclassmembers,allowoptimization,allowobfuscation class com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs {
+    public *;
+}
+
+# Xposed logs
+-keep class de.robv.android.xposed.XposedBridge {
+    public static void log(java.lang.String);
+    public static void log(java.lang.Throwable);
 }
 
 # Keep Parcelable Creators
