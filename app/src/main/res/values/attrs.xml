@@ -46,4 +46,9 @@
         <attr name="presetValue" format="string" />
     </declare-styleable>
 
+    <declare-styleable name="SwitchPreference">
+        <attr name="showUnstableBadge" format="boolean" />
+        <attr name="unstableText" format="string" />
+    </declare-styleable>
+
 </resources>
