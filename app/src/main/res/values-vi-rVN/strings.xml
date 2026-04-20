@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Mở hoá tính năng trong trình khởi chạy của bạn</string>
+    <string name="app_motto">Mở hoá tính năng trong trình khởi chạy của bạn</string>
     <string name="icon">Biểu tượng</string>
     <string name="more">Nhiều hơn</string>
     <string name="exit">Thoát</string>
@@ -48,11 +48,17 @@
     <string name="app_drawer_themed_icons_desc">Kích hoạt biểu tượng theo chủ đề material trong ngăn kéo ứng dụng</string>
     <string name="double_tap_to_sleep_title">Chạm hai lần để tắt màn hình</string>
     <string name="double_tap_to_sleep_desc">Gõ hai lần vào chỗ trống trên màn hình chính để tắt máy</string>
+    <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
+    <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Tên biểu tượng trên màn hình chính</string>
     <string name="hide_launcher_statusbar_title">Ẩn thanh trạng thái</string>
     <string name="hide_launcher_statusbar_desc">Mở rộng thanh điều hướng nếu thanh trạng thái không được ẩn</string>
     <string name="hide_launcher_top_shadow_title">Ẩn bóng ở trên cùng</string>
     <string name="hide_launcher_top_shadow_desc">Xoá bóng ở trên cùng trong màn hình chính</string>
+    <string name="dark_launcher_statusbar_title">Force dark statusbar</string>
+    <string name="dark_launcher_page_indicator_title">Force dark page indicator</string>
+    <string name="quick_launch_title">Quick Launch</string>
+    <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
     <string name="app_drawer_icon_labels_title">Tên ứng dụng trong ngăn kéo ứng dụng</string>
     <string name="disable_recents_live_tile_title">Vô hiệu hoá live tile trong phần đa nhiệm</string>
     <string name="disable_recents_live_tile_desc">Vô hiệu hoá live tile trong phần đa nhiệm nếu nó gây ra lỗi</string>
@@ -69,6 +75,11 @@
     <string name="developer_options_title">Cài đặt nhà phát triển</string>
     <string name="developer_options_desc">Kích hoạt tính năng ẩn (NGUY HIỂM)</string>
     <string name="entry_in_launcher_settings">Hiện thị cài đặt của ứng dụng trong cài đặt của launcher</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
+    <string name="hide_gesture_pill_title">Hide gesture indicator</string>
+    <string name="hide_gesture_pill_desc">May not work on older android versions</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Khóa Bố Cục</string>
     <string name="lock_layout_desc_on">Các biểu tượng và tiện ích con không thể được thêm, xóa và di chuyển trên màn hình chính</string>
     <string name="lock_layout_desc_off">Các biểu tượng và tiện ích con có thể được thêm, xóa và di chuyển trên màn hình chính</string>
@@ -77,6 +88,14 @@
     <string name="drawer_search_desc">Thanh tìm kiếm trên đầu ngăn kéo ứng dụng</string>
     <string name="clear_all_button_title">Nút xóa tất cả</string>
     <string name="fixed_button_width_title">Sửa kích thước cho mỗi nút</string>
+    <string name="recents_remove_screenshot_title">Remove screenshot button</string>
+    <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
+    <string name="freeform_gesture_title">Use gesture in recents to start freeform mode</string>
+    <string name="freeform_gesture_summary">Swipe up from the app and release at the top of the recents screen to trigger freeform mode (requires freeform enabled in developer options)</string>
+    <string name="freeform_gesture_progress_title">Freeform swipe threshold</string>
+    <string name="freeform_gesture_progress_summary">Lower values trigger freeform earlier, higher values require swiping closer to the top</string>
+    <string name="freeform_method_title">Select freeform method</string>
+    <string name="freeform_method_summary">Change this if it doesn\'t work on your ROM</string>
     <string name="recents_clear_all">Xóa tất cả</string>
     <string name="homescreen_columns_title">Kích cỡ cột trong màn hình chính</string>
     <string name="homescreen_rows_title">Kích cỡ hàng trong màn hình chính</string>
@@ -84,8 +103,25 @@
     <string name="app_drawer_row_height_multiplier_title">Kích thước chiều cao hàng trong ngăn ứng dụng</string>
     <string name="hide_apps_title">Ẩn ứng dụng trong ngăn ứng dụng</string>
     <string name="search_hidden_apps_title">Cho phép tìm kiếm ứng dụng bị ẩn</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">Chung</string>
+    <string name="section_icon_colors_title">Icon colors</string>
     <string name="section_interface_title">Giao diện</string>
     <string name="section_search_bar_title">Thanh tìm kiếm</string>
     <string name="section_quickspace_title">Không gian nhanh</string>
+    <string name="section_hide_apps_title">Hide apps</string>
+    <string name="custom_themed_icon_color_title">Custom themed icon color</string>
+    <string name="icon_foreground_color_light_title">Foreground color in light mode</string>
+    <string name="icon_background_color_light_title">Background color in light mode</string>
+    <string name="icon_foreground_color_dark_title">Foreground color in dark mode</string>
+    <string name="icon_background_color_dark_title">Background color in dark mode</string>
+    <string name="folder_color_light_title">Folder color in light mode</string>
+    <string name="folder_color_dark_title">Folder color in dark mode</string>
+    <string name="search_bar_opacity_title">Search bar opacity</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
+    <string name="value_output">Value: %s</string>
+    <string name="developer">Developer</string>
 </resources>

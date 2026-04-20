@@ -3,9 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="24dp"
-    android:paddingTop="16dp"
-    android:paddingBottom="8dp">
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:selectableItemBackgroundBorderless"
+    android:minHeight="?android:attr/listPreferredItemHeight"
+    android:paddingHorizontal="@dimen/ui_container_margin_side">
 
     <ImageView
         android:id="@android:id/icon"
@@ -13,6 +16,7 @@
         android:layout_height="20dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
+        android:layout_marginStart="@dimen/preference_padding_horizontal"
         android:layout_marginEnd="18dp"
         android:contentDescription="@android:string/untitled"
         android:visibility="gone"
@@ -21,6 +25,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:layout_toStartOf="@android:id/widget_frame"
         android:layout_toEndOf="@android:id/icon"
         android:orientation="vertical">
@@ -30,7 +35,6 @@
             style="@style/TextAppearance.Material3.TitleSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="viewStart"
             android:textColor="?attr/colorPrimary" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -38,8 +42,9 @@
             style="@style/TextAppearance.Material3.BodySmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="viewStart"
-            android:textColor="@color/text_color_secondary" />
+            android:layout_below="@android:id/title"
+            android:alpha="0.7"
+            android:textColor="?attr/colorOnSurface" />
 
     </RelativeLayout>
 </RelativeLayout>

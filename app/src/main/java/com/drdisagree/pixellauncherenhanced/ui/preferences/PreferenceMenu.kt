@@ -3,9 +3,11 @@ package com.drdisagree.pixellauncherenhanced.ui.preferences
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.withStyledAttributes
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 class PreferenceMenu : Preference {
@@ -39,9 +41,9 @@ class PreferenceMenu : Preference {
 
     private fun init(attrs: AttributeSet?) {
         if (attrs != null) {
-            val a = context.obtainStyledAttributes(attrs, R.styleable.PreferenceMenu)
-            showArrow = a.getBoolean(R.styleable.PreferenceMenu_showArrow, true)
-            a.recycle()
+            context.withStyledAttributes(attrs, R.styleable.PreferenceMenu) {
+                showArrow = getBoolean(R.styleable.PreferenceMenu_showArrow, true)
+            }
         }
         layoutResource = R.layout.custom_preference_menu
     }
@@ -52,6 +54,7 @@ class PreferenceMenu : Preference {
         holder.findViewById(R.id.end_arrow)?.visibility = if (showArrow) View.VISIBLE else View.GONE
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     fun setShowArrow(showArrow: Boolean) {

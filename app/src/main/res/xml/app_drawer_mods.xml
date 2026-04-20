@@ -2,70 +2,114 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_appdrawerthemedicons"
-        android:summary="@string/app_drawer_themed_icons_desc"
-        android:title="@string/app_drawer_themed_icons_title"
-        app:iconSpaceReserved="false" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_drawer_general"
+        android:title="@string/section_general_title"
+        app:iconSpaceReserved="false">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="true"
-        android:key="xposed_drawersearchbar"
-        android:summary="@string/drawer_search_desc"
-        android:title="@string/drawer_search_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_appdrawerthemedicons"
+            android:summary="@string/app_drawer_themed_icons_desc"
+            android:title="@string/app_drawer_themed_icons_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="true"
-        android:key="xposed_appdrawericonlabels"
-        android:title="@string/app_drawer_icon_labels_title"
-        app:iconSpaceReserved="false" />
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
-        android:key="launcherHiddenApps"
-        android:title="@string/hide_apps_title"
-        app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.HiddenApps"
-        app:iconSpaceReserved="false" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_drawer_interface"
+        android:title="@string/section_interface_title"
+        app:iconSpaceReserved="false">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_searchhiddenapps"
-        android:title="@string/search_hidden_apps_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="xposed_appdrawericonlabels"
+            android:title="@string/app_drawer_icon_labels_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-        android:key="xposed_appdrawerbackgroundopacity"
-        android:title="@string/app_drawer_background_opacity_title"
-        app:defaultValue="100"
-        app:iconSpaceReserved="false"
-        app:maxVal="100"
-        app:minVal="0"
-        app:tickInterval="1"
-        app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_appdrawerbackgroundopacity"
+            android:title="@string/app_drawer_background_opacity_title"
+            app:defaultValue="-1"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-1"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-        android:key="xposed_appdrawergridcolumns"
-        android:title="@string/app_drawer_columns_title"
-        app:defaultValue="0"
-        app:iconSpaceReserved="false"
-        app:maxVal="15"
-        app:minVal="0"
-        app:showDefaultIndicator="true"
-        app:showResetButton="true"
-        app:tickInterval="1" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_appdrawergridcolumns"
+            android:title="@string/app_drawer_columns_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="15"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-        android:key="xposed_appdrawergridrowheightmultiplier"
-        android:title="@string/app_drawer_row_height_multiplier_title"
-        app:decimalFormat="#.##"
-        app:defaultValue="10"
-        app:iconSpaceReserved="false"
-        app:isDecimalFormat="true"
-        app:maxVal="15"
-        app:minVal="5"
-        app:outputScale="10.0"
-        app:showDefaultIndicator="true"
-        app:showResetButton="true"
-        app:tickInterval="0.5"
-        app:valueFormat="x" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_appdrawergridrowheightmultiplier"
+            android:title="@string/app_drawer_row_height_multiplier_title"
+            app:decimalFormat="#.##"
+            app:defaultValue="10"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:isDecimalFormat="true"
+            app:maxVal="15"
+            app:minVal="5"
+            app:outputScale="10.0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="0.5"
+            app:valueFormat="x" />
 
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_drawer_search_bar"
+        android:title="@string/section_search_bar_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="xposed_drawersearchbar"
+            android:summary="@string/drawer_search_desc"
+            android:title="@string/drawer_search_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_quicklaunch"
+            android:summary="@string/quick_launch_desc"
+            android:title="@string/quick_launch_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_drawer_hide_apps"
+        android:title="@string/section_hide_apps_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.TwoTargetSwitchPreference
+            android:key="xposed_hideappsfromappdrawer"
+            android:title="@string/hide_apps_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.HiddenApps"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_searchhiddenapps"
+            android:title="@string/search_hidden_apps_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_togglehideappsinoptionspopup"
+            android:title="@string/toggle_hidden_app_visibility_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 </PreferenceScreen>

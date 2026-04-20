@@ -92,17 +92,17 @@ class ListPreferenceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             if (mHasImage) {
                 mEntryDrawables?.let {
-                    holder.binding.batteryIcon.setImageDrawable(
+                    holder.binding.iconImage.setImageDrawable(
                         it[holder.bindingAdapterPosition]
                     )
                 }
-            } else holder.binding.batteryIcon.setVisibility(View.GONE)
+            } else holder.binding.iconImage.visibility = View.GONE
 
             if (mEntryValues[holder.bindingAdapterPosition].toString().contentEquals(mValue)) {
                 prevPos = holder.bindingAdapterPosition
                 val typedValue = TypedValue()
                 val a = appContext.obtainStyledAttributes(
-                    typedValue.data, intArrayOf(com.google.android.material.R.attr.colorPrimary)
+                    typedValue.data, intArrayOf(com.google.android.material.R.attr.colorPrimaryVariant)
                 )
                 val color = a.getColor(0, 0)
                 a.recycle()
@@ -135,7 +135,7 @@ class ListPreferenceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 prevPos = holder.bindingAdapterPosition
                 val typedValue = TypedValue()
                 val a = appContext.obtainStyledAttributes(
-                    typedValue.data, intArrayOf(com.google.android.material.R.attr.colorPrimary)
+                    typedValue.data, intArrayOf(com.google.android.material.R.attr.colorPrimaryVariant)
                 )
                 val color = a.getColor(0, 0)
                 a.recycle()

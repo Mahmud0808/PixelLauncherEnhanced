@@ -1,15 +1,10 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
 import com.drdisagree.pixellauncherenhanced.R
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_DOCK_SPACING
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_COLOR
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
-import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.LOAD_TIME_KEY_KEY
-import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.PACKAGE_STRIKE_KEY_KEY
-import java.util.Calendar
+import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
 
 class IconsMods : ControlledPreferenceFragmentCompat() {
 
@@ -27,4 +22,16 @@ class IconsMods : ControlledPreferenceFragmentCompat() {
 
     override val themeResource: Int
         get() = R.style.PrefsThemeCollapsingToolbar
+
+    override fun updateScreen(key: String?) {
+        super.updateScreen(key)
+
+        when (key) {
+            THEMED_ICON_CUSTOM_COLOR -> {
+                if (!RPrefs.getBoolean(THEMED_ICON_CUSTOM_COLOR)) {
+                    context?.restartLauncher()
+                }
+            }
+        }
+    }
 }

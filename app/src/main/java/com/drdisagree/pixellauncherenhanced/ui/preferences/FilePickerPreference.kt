@@ -4,9 +4,11 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.content.withStyledAttributes
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.google.android.material.button.MaterialButton
 
@@ -45,13 +47,14 @@ class FilePickerPreference : Preference {
         layoutResource = R.layout.custom_preference_filepicker
 
         attrs?.let { it ->
-            val a = context.obtainStyledAttributes(it, R.styleable.FilePickerPreference)
-            val customText: String? = a.getString(R.styleable.FilePickerPreference_buttonText)
-            mButtonText =
-                customText ?: a.getResourceId(R.styleable.FilePickerPreference_buttonText, 0)
-                    .takeIf { it != 0 }
-                    ?.let { context.getString(it) } ?: context.getString(R.string.btn_pick_image)
-            a.recycle()
+            context.withStyledAttributes(it, R.styleable.FilePickerPreference) {
+                val customText: String? = getString(R.styleable.FilePickerPreference_buttonText)
+                mButtonText =
+                    customText ?: getResourceId(R.styleable.FilePickerPreference_buttonText, 0)
+                        .takeIf { it != 0 }
+                        ?.let { context.getString(it) }
+                            ?: context.getString(R.string.btn_pick_image)
+            }
         }
     }
 
@@ -71,6 +74,7 @@ class FilePickerPreference : Preference {
         }
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     fun setOnButtonClick(onClick: () -> Unit) {

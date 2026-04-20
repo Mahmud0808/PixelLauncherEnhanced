@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Раскройте весь потенциал вашего лаунчера</string>
+    <string name="app_motto">Раскройте весь потенциал вашего лаунчера</string>
     <string name="icon">Иконки</string>
     <string name="more">Еще</string>
     <string name="exit">Выход</string>
@@ -48,11 +48,17 @@
     <string name="app_drawer_themed_icons_desc">Тематические значки в меню приложений</string>
     <string name="double_tap_to_sleep_title">Двойное нажатие</string>
     <string name="double_tap_to_sleep_desc">Дважды нажмите на пустое место на главном экране, чтобы выключить экран</string>
+    <string name="allow_wallpaper_zooming">Масштабирование обоев</string>
+    <string name="allow_wallpaper_zooming_summary">Увеличение или уменьшение обоев в меню приложений и в списке недавних приложений</string>
     <string name="desktop_icon_labels_title">Подпись иконок на рабочем столе</string>
     <string name="hide_launcher_statusbar_title">Скрыть строку состояния</string>
     <string name="hide_launcher_statusbar_desc">Раскроет панель быстрых настроек, если строка состояния не скрыта</string>
     <string name="hide_launcher_top_shadow_title">Скрыть тень</string>
     <string name="hide_launcher_top_shadow_desc">Удаляет верхнюю тень с главного экрана</string>
+    <string name="dark_launcher_statusbar_title">Принудительный темный статус бар</string>
+    <string name="dark_launcher_page_indicator_title">Принудительно использовать темный индикатор страницы</string>
+    <string name="quick_launch_title">Быстрый запуск</string>
+    <string name="quick_launch_desc">Запуск приложений прямо из поиска, нажав клавишу enter</string>
     <string name="app_drawer_icon_labels_title">Подпись иконок в меню приложений</string>
     <string name="disable_recents_live_tile_title">Отключить живую плитку в недавних</string>
     <string name="disable_recents_live_tile_desc">Отключите живую плитку, если экран недавних глючит</string>
@@ -68,7 +74,12 @@
     <string name="restarting_launcher">Перезапуск лаунчера…</string>
     <string name="developer_options_title">Для разработчиков</string>
     <string name="developer_options_desc">Включить скрытые параметры для разработчиков</string>
-    <string name="entry_in_launcher_settings">Показывать PixelLauncher Enchanced в настройках лаунчера</string>
+    <string name="entry_in_launcher_settings">Показывать PLEnhanced в настройках лаунчера</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
+    <string name="hide_gesture_pill_title">Скрыть индикатор жестов</string>
+    <string name="hide_gesture_pill_desc">Может не работать на старых версиях Android</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Блокировать разметку</string>
     <string name="lock_layout_desc_on">Иконки и виджеты нельзя добавлять, удалять или перемещать по рабочему столу</string>
     <string name="lock_layout_desc_off">Иконки и виджеты можно добавлять, удалять и перемещать на главном экране</string>
@@ -77,6 +88,14 @@
     <string name="drawer_search_desc">Строка поиска в меню приложений</string>
     <string name="clear_all_button_title">Кнопка \"Очистить все\"</string>
     <string name="fixed_button_width_title">Фиксированная ширина для каждой кнопки</string>
+    <string name="recents_remove_screenshot_title">Убрать кнопку скриншота</string>
+    <string name="recents_remove_screenshot_summary">Скрывает кнопку скриншота при просмотре недавних приложений</string>
+    <string name="freeform_gesture_title">Использовать жест в недавних для запуска режима свободной формы</string>
+    <string name="freeform_gesture_summary">Проведите пальцем вверх по экрану приложения и отпустите его в верхней части экрана недавних, чтобы активировать режим свободной формы (требуется включение режима свободной формы в параметрах разработчика)</string>
+    <string name="freeform_gesture_progress_title">Порог плавного свайпа</string>
+    <string name="freeform_gesture_progress_summary">Более низкие значения активируют функцию Freeform раньше, более высокие значения требуют проведения пальцем ближе к верху</string>
+    <string name="freeform_method_title">Выберите метод свободной формы</string>
+    <string name="freeform_method_summary">Измените это, если не работает на вашей прошивке</string>
     <string name="recents_clear_all">Очистить</string>
     <string name="homescreen_columns_title">Столбцы на главном экране</string>
     <string name="homescreen_rows_title">Строки на главном экране</string>
@@ -84,8 +103,25 @@
     <string name="app_drawer_row_height_multiplier_title">Множитель высоты строки</string>
     <string name="hide_apps_title">Скрыть приложения из меню</string>
     <string name="search_hidden_apps_title">Разрешить поиск скрытых приложений</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">Основные</string>
+    <string name="section_icon_colors_title">Цвет иконок</string>
     <string name="section_interface_title">Интерфейс</string>
     <string name="section_search_bar_title">Строка поиска</string>
     <string name="section_quickspace_title">«Первый взгляд»</string>
+    <string name="section_hide_apps_title">Hide apps</string>
+    <string name="custom_themed_icon_color_title">Пользовательский цвет значков</string>
+    <string name="icon_foreground_color_light_title">Цвет переднего плана в светлом режиме</string>
+    <string name="icon_background_color_light_title">Цвет фона в светлом режиме</string>
+    <string name="icon_foreground_color_dark_title">Цвет переднего плана в темном режиме</string>
+    <string name="icon_background_color_dark_title">Цвет фона в темном режиме</string>
+    <string name="folder_color_light_title">Цвет папки в светлом режиме</string>
+    <string name="folder_color_dark_title">Цвет папки в темном режиме</string>
+    <string name="search_bar_opacity_title">Непрозрачность панели поиска</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
+    <string name="value_output">Значение: %s</string>
+    <string name="developer">Developer</string>
 </resources>

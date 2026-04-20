@@ -78,6 +78,7 @@ class IconLabels(context: Context) : ModPack(context) {
         try {
             bubbleTextViewClass
                 .hookMethod("applyLabel")
+                .parameters("com.android.launcher3.model.data.ItemInfoWithIcon")
                 .throwError()
                 .runBefore { param -> param.beforeHookedLabel() }
                 .runAfter { param -> param.afterHookedLabel() }

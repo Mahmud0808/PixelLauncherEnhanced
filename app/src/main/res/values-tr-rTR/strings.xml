@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Başlatıcınızın tüm potansiyelini ortaya çıkarın</string>
+    <string name="app_motto">Başlatıcınızın tüm potansiyelini ortaya çıkarın</string>
     <string name="icon">Simge</string>
     <string name="more">Daha Fazla</string>
     <string name="exit">Çıkış</string>
@@ -48,11 +48,17 @@
     <string name="app_drawer_themed_icons_desc">Uygulama çekmecesinde temalı simgeleri etkinleştir</string>
     <string name="double_tap_to_sleep_title">Çift dokunuşla uyku</string>
     <string name="double_tap_to_sleep_desc">Ana ekranda boş alana çift dokunarak ekranı kapat</string>
+    <string name="allow_wallpaper_zooming">Duvar kağıdı yakınlaştırma</string>
+    <string name="allow_wallpaper_zooming_summary">Çekmeceyi veya son uygulamaları kullanırken duvar kağıdını yakınlaştırın veya uzaklaştırın</string>
     <string name="desktop_icon_labels_title">Masaüstündeki simge etiketleri</string>
     <string name="hide_launcher_statusbar_title">Durum çubuğunu gizle</string>
     <string name="hide_launcher_statusbar_desc">Durum çubuğu gizlenmemişse hızlı ayarlar panelini bir kez genişletin</string>
     <string name="hide_launcher_top_shadow_title">Üst gölgeyi gizle</string>
     <string name="hide_launcher_top_shadow_desc">Ana ekrandan üst gölgeyi kaldır</string>
+    <string name="dark_launcher_statusbar_title">Durum çubuğunu zorla karanlık yap</string>
+    <string name="dark_launcher_page_indicator_title">Sayfa göstergesini zorla karanlık yap</string>
+    <string name="quick_launch_title">Hızlı Başlat</string>
+    <string name="quick_launch_desc">Enter tuşuna basarak uygulamaları aramadan doğrudan başlatın</string>
     <string name="app_drawer_icon_labels_title">Uygulama çekmecesindeki simge etiketleri</string>
     <string name="disable_recents_live_tile_title">Son kullanılanlar canlı döşemesini devre dışı bırak</string>
     <string name="disable_recents_live_tile_desc">Son kullanılanlar ekranı hatalıysa canlı döşemeyi devre dışı bırak</string>
@@ -69,6 +75,11 @@
     <string name="developer_options_title">Geliştirici seçenekleri</string>
     <string name="developer_options_desc">Gizli geliştirici seçeneklerini etkinleştir</string>
     <string name="entry_in_launcher_settings">Başlatıcı ayarlarında girişi göster</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
+    <string name="hide_gesture_pill_title">Hareket göstergesini gizle</string>
+    <string name="hide_gesture_pill_desc">Eski Android sürümlerinde çalışmayabilir</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Düzeni kilitle</string>
     <string name="lock_layout_desc_on">Ana ekranda simgeler ve widget’lar eklenemez, kaldırılamaz veya taşınamaz</string>
     <string name="lock_layout_desc_off">Ana ekranda simgeler ve widget’lar eklenebilir, kaldırılabilir veya taşınabilir</string>
@@ -77,6 +88,14 @@
     <string name="drawer_search_desc">Uygulama çekmecesinin üstündeki arama çubuğu</string>
     <string name="clear_all_button_title">Tümünü temizle düğmesi</string>
     <string name="fixed_button_width_title">Her düğme için sabit genişlik</string>
+    <string name="recents_remove_screenshot_title">Ekran görüntüsü düğmesini kaldır</string>
+    <string name="recents_remove_screenshot_summary">Son uygulamalar genel görünümünde ekran görüntüsü düğmesini gizler</string>
+    <string name="freeform_gesture_title">Serbest biçim modunu başlatmak için son kullanılanlarda hareketi kullan</string>
+    <string name="freeform_gesture_summary">Uygulamadan yukarı kaydırın ve son kullanılanlar ekranının üstünde bırakın; serbest biçim modu etkinleşir (geliştirici seçeneklerinde serbest biçim etkin olmalıdır)</string>
+    <string name="freeform_gesture_progress_title">Serbest biçim kaydırma eşiği</string>
+    <string name="freeform_gesture_progress_summary">Düşük değerler serbest biçimi daha erken tetikler, yüksek değerler ise yukarıya daha yakın kaydırmayı gerektirir</string>
+    <string name="freeform_method_title">Serbest biçim yöntemini seç</string>
+    <string name="freeform_method_summary">ROM’unuzda çalışmazsa bunu değiştirin</string>
     <string name="recents_clear_all">Tümünü temizle</string>
     <string name="homescreen_columns_title">Ana ekran sütunları</string>
     <string name="homescreen_rows_title">Ana ekran satırları</string>
@@ -84,8 +103,25 @@
     <string name="app_drawer_row_height_multiplier_title">Satır yüksekliği çarpanı</string>
     <string name="hide_apps_title">Uygulamaları çekmeceden gizle</string>
     <string name="search_hidden_apps_title">Gizli uygulamalarda arama yapmaya izin ver</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">Genel</string>
+    <string name="section_icon_colors_title">Simge renkleri</string>
     <string name="section_interface_title">Arayüz</string>
     <string name="section_search_bar_title">Arama çubuğu</string>
     <string name="section_quickspace_title">Hızlı alan</string>
+    <string name="section_hide_apps_title">Hide apps</string>
+    <string name="custom_themed_icon_color_title">Özel temalı simge rengi</string>
+    <string name="icon_foreground_color_light_title">Aydınlık modda ön plan rengi</string>
+    <string name="icon_background_color_light_title">Aydınlık modda arka plan rengi</string>
+    <string name="icon_foreground_color_dark_title">Karanlık modda ön plan rengi</string>
+    <string name="icon_background_color_dark_title">Karanlık modda arka plan rengi</string>
+    <string name="folder_color_light_title">Aydınlık modda klasör rengi</string>
+    <string name="folder_color_dark_title">Karanlık modda klasör rengi</string>
+    <string name="search_bar_opacity_title">Arama çubuğu opaklığı</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
+    <string name="value_output">Değer: %s</string>
+    <string name="developer">Developer</string>
 </resources>

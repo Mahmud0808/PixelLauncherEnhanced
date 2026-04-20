@@ -19,7 +19,7 @@
         app:strokeWidth="3dp">
 
         <ImageView
-            android:id="@+id/battery_icon"
+            android:id="@+id/icon_image"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="20dp"

@@ -13,6 +13,7 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.google.android.material.materialswitch.MaterialSwitch
 
 class AppListAdapter(private val appList: List<AppInfoModel>) :
@@ -69,7 +70,7 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
             RPrefs.putStringSet(APP_BLOCK_LIST, appBlockList.toSet())
         }
 
-        updateMargin(holder)
+        setItemBackground(holder)
     }
 
     override fun onViewAttachedToWindow(holder: ViewHolder) {
@@ -77,7 +78,7 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
 
         holder.switchView.isChecked = appList[holder.getBindingAdapterPosition()].isSelected
 
-        updateMargin(holder)
+        setItemBackground(holder)
     }
 
     override fun getItemCount(): Int {
@@ -92,20 +93,43 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
         var switchView: MaterialSwitch = view.findViewById(R.id.switchView)
     }
 
-    private fun updateMargin(holder: ViewHolder) {
-        if (context == null) return
+    private fun setItemBackground(holder: ViewHolder) {
+        val itemCount = itemCount
+        val position = holder.getBindingAdapterPosition()
+        val container = holder.itemView.findViewById<ViewGroup>(R.id.container)
+        val layoutParams = holder.itemView.layoutParams as MarginLayoutParams
 
-        val (topGap, bottomGap) = if (holder.getBindingAdapterPosition() == 0) {
-            (80 * context!!.resources.displayMetrics.density).toInt() to 0
-        } else if (holder.getBindingAdapterPosition() == itemCount - 1) {
-            0 to (48 * context!!.resources.displayMetrics.density).toInt()
-        } else {
-            0 to 0
+        val baseTop = dpToPx(80)
+        val baseBottom = dpToPx(12)
+        val midBottom = dpToPx(2)
+
+        when {
+            itemCount == 1 -> {
+                layoutParams.topMargin = 0
+                layoutParams.bottomMargin = baseBottom
+                container.setBackgroundResource(R.drawable.container_single)
+            }
+
+            position == 0 -> {
+                layoutParams.topMargin = baseTop
+                layoutParams.bottomMargin = midBottom
+                container.setBackgroundResource(R.drawable.container_top)
+            }
+
+            position == itemCount - 1 -> {
+                layoutParams.topMargin = 0
+                layoutParams.bottomMargin = 0
+                container.setBackgroundResource(R.drawable.container_bottom)
+            }
+
+            else -> {
+                layoutParams.topMargin = 0
+                layoutParams.bottomMargin = midBottom
+                container.setBackgroundResource(R.drawable.container_mid)
+            }
         }
 
-        (holder.container.layoutParams as MarginLayoutParams).apply {
-            topMargin = topGap
-            bottomMargin = bottomGap
-        }
+        holder.itemView.layoutParams = layoutParams
+        holder.container.clipToOutline = true
     }
 }

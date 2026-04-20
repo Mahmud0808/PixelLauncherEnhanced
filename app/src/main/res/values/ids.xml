@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <item name="end_arrow" type="id" />
     <item name="tag_slider_touch_listener_set" type="id" />
     <item name="tag_slider_reset_listener_set" type="id" />
 

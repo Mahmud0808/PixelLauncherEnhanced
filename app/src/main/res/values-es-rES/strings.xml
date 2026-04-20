@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">Desbloquea todo el potencial de tu launcher</string>
+    <string name="app_motto">Desbloquea todo el potencial de tu launcher</string>
     <string name="icon">Icono</string>
     <string name="more">Más</string>
     <string name="exit">Salir</string>
@@ -48,11 +48,17 @@
     <string name="app_drawer_themed_icons_desc">Activar iconos temáticos en el cajón de aplicaciones</string>
     <string name="double_tap_to_sleep_title">Doble toque para apagar pantalla</string>
     <string name="double_tap_to_sleep_desc">Doble toque en un espacio vacío de la pantalla de inicio para apagar la pantalla</string>
+    <string name="allow_wallpaper_zooming">Zoom del fondo de pantalla</string>
+    <string name="allow_wallpaper_zooming_summary">Acercar o alejar el fondo de pantalla al usar el cajón o aplicaciones recientes</string>
     <string name="desktop_icon_labels_title">Etiquetas de iconos en el escritorio</string>
     <string name="hide_launcher_statusbar_title">Ocultar la barra de estado</string>
     <string name="hide_launcher_statusbar_desc">Expandir panel de ajustes rápidos una vez si la barra de estado no está oculta</string>
     <string name="hide_launcher_top_shadow_title">Ocultar sombra superior</string>
     <string name="hide_launcher_top_shadow_desc">Eliminar sombra superior de la pantalla de inicio</string>
+    <string name="dark_launcher_statusbar_title">Forzar barra de estado oscura</string>
+    <string name="dark_launcher_page_indicator_title">Indicador de página oscura forzada</string>
+    <string name="quick_launch_title">Inicio Rápido</string>
+    <string name="quick_launch_desc">Inicie aplicaciones directamente desde la búsqueda presionando Enter</string>
     <string name="app_drawer_icon_labels_title">Etiquetas de icono en el cajón de aplicaciones</string>
     <string name="disable_recents_live_tile_title">Desactivar mosaico en vivo recientes</string>
     <string name="disable_recents_live_tile_desc">Desactivar desenfoque si la pantalla de recientes es problemática</string>
@@ -69,6 +75,11 @@
     <string name="developer_options_title">Opciones de desarrollador</string>
     <string name="developer_options_desc">Habilitar opciones ocultas de desarrollador</string>
     <string name="entry_in_launcher_settings">Mostrar entrada en la configuración del launcher</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
+    <string name="hide_gesture_pill_title">Ocultar indicador de gestos</string>
+    <string name="hide_gesture_pill_desc">Puede que no funcione en versiones anteriores de Android</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Bloquear diseño</string>
     <string name="lock_layout_desc_on">Los iconos y widgets no se pueden añadir, eliminar y mover en la Pantalla de inicio</string>
     <string name="lock_layout_desc_off">Los íconos y widgets se pueden añadir, eliminar y mover en la Pantalla de inicio</string>
@@ -77,6 +88,14 @@
     <string name="drawer_search_desc">Barra de búsqueda encima del cajón de aplicaciones</string>
     <string name="clear_all_button_title">Botón \"Borrar todo\"</string>
     <string name="fixed_button_width_title">Ancho fijo de cada botón</string>
+    <string name="recents_remove_screenshot_title">Quitar botón de captura de pantalla</string>
+    <string name="recents_remove_screenshot_summary">Ocultar el botón de captura de pantalla en la vista de aplicaciones recientes</string>
+    <string name="freeform_gesture_title">Utilice el gesto en recientes para iniciar el modo de forma libre</string>
+    <string name="freeform_gesture_summary">Deslice el dedo hacia arriba desde la aplicación y suéltelo en la parte superior de la pantalla de recientes para activar el modo de forma libre (requiere que la forma libre esté habilitada en las opciones de desarrollador)</string>
+    <string name="freeform_gesture_progress_title">Umbral de deslizamiento de forma libre</string>
+    <string name="freeform_gesture_progress_summary">Los valores más bajos activan el formato libre antes, los valores más altos requieren deslizar más cerca de la parte superior</string>
+    <string name="freeform_method_title">Seleccionar el método de forma libre</string>
+    <string name="freeform_method_summary">Cambia esto si no funciona en tu ROM</string>
     <string name="recents_clear_all">Borrar todo</string>
     <string name="homescreen_columns_title">Columnas de pantalla de inicio</string>
     <string name="homescreen_rows_title">Filas de pantalla de inicio</string>
@@ -84,8 +103,25 @@
     <string name="app_drawer_row_height_multiplier_title">Multiplicador de altura de fila</string>
     <string name="hide_apps_title">Ocultar aplicaciones del cajón de aplicaciones</string>
     <string name="search_hidden_apps_title">Permitir la búsqueda de aplicaciones ocultas</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">General</string>
+    <string name="section_icon_colors_title">Colores de iconos</string>
     <string name="section_interface_title">Interfaz</string>
     <string name="section_search_bar_title">Barra de búsqueda</string>
     <string name="section_quickspace_title">Espacio Rápido</string>
+    <string name="section_hide_apps_title">Hide apps</string>
+    <string name="custom_themed_icon_color_title">Color de icono temático personalizado</string>
+    <string name="icon_foreground_color_light_title">Color de primer plano en modo claro</string>
+    <string name="icon_background_color_light_title">Color de fondo en modo claro</string>
+    <string name="icon_foreground_color_dark_title">Color de primer plano en modo oscuro</string>
+    <string name="icon_background_color_dark_title">Color de fondo en modo oscuro</string>
+    <string name="folder_color_light_title">Color de carpeta en modo claro</string>
+    <string name="folder_color_dark_title">Color de carpeta en modo oscuro</string>
+    <string name="search_bar_opacity_title">Opacidad de la barra de búsqueda</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
+    <string name="value_output">Valor: %s</string>
+    <string name="developer">Developer</string>
 </resources>

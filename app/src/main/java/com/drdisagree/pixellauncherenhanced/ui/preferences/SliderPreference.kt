@@ -7,11 +7,13 @@ import android.util.JsonReader
 import android.util.JsonWriter
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
 import com.google.android.material.button.MaterialButton
@@ -26,6 +28,7 @@ import java.util.Scanner
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /*
 * From Siavash79/rangesliderpreference
@@ -48,6 +51,7 @@ class SliderPreference(
     private var mSlider: RangeSlider? = null
     private var mTitleView: TextView? = null
     private var mSummaryView: TextView? = null
+    private var mOutputView: TextView? = null
     private var mMinusButton: MaterialButton? = null
     private var mPlusButton: MaterialButton? = null
     private var mResetButton: MaterialButton? = null
@@ -59,6 +63,7 @@ class SliderPreference(
     private val outputScale: Float
     private val isDecimalFormat: Boolean
     private val showDefaultIndicator: Boolean
+    private val hideValueOnDefault: Boolean
     private var decimalFormat: String? = "#.#"
 
     var updateConstantly: Boolean
@@ -94,6 +99,8 @@ class SliderPreference(
             outputScale = getFloat(R.styleable.SliderPreference_outputScale, 1f)
             showDefaultIndicator =
                 getBoolean(R.styleable.SliderPreference_showDefaultIndicator, false)
+            hideValueOnDefault =
+                getBoolean(R.styleable.SliderPreference_hideValueOnDefault, false)
             val defaultValStr = getString(androidx.preference.R.styleable.Preference_defaultValue)
 
             if (valueFormat == null) valueFormat = ""
@@ -126,6 +133,7 @@ class SliderPreference(
 
         mTitleView = holder.itemView.findViewById(android.R.id.title)
         mSummaryView = holder.itemView.findViewById(android.R.id.summary)
+        mOutputView = holder.itemView.findViewById(R.id.output)
         mSlider = holder.itemView.findViewById(R.id.slider)
 
         mSlider!!.tag = key
@@ -148,11 +156,7 @@ class SliderPreference(
                 mSlider!!.values = defaultValue
                 mResetButton!!.isEnabled = false
 
-                mSummaryView!!.apply {
-                    text = mSlider!!.values.joinToString(separator = " - ") { sliderValue ->
-                        labelFormatter.getFormattedValue(sliderValue)
-                    }
-                }
+                mOutputView!!.text = getOutputText()
 
                 if (showController) updateControllerButtons()
 
@@ -173,10 +177,7 @@ class SliderPreference(
 
                 val newValue = (currentValue - tickInterval).coerceAtLeast(valueFrom)
                 mSlider!!.values = listOf(newValue)
-                mSummaryView!!.text =
-                    mSlider!!.values.joinToString(separator = " - ") { sliderValue ->
-                        labelFormatter.getFormattedValue(sliderValue)
-                    }
+                mOutputView!!.text = getOutputText()
 
                 updateControllerButtons()
                 handleResetButton()
@@ -190,10 +191,7 @@ class SliderPreference(
 
                 val newValue = (currentValue + tickInterval).coerceAtMost(valueTo)
                 mSlider!!.values = listOf(newValue)
-                mSummaryView!!.text =
-                    mSlider!!.values.joinToString(separator = " - ") { sliderValue ->
-                        labelFormatter.getFormattedValue(sliderValue)
-                    }
+                mOutputView!!.text = getOutputText()
 
                 updateControllerButtons()
                 handleResetButton()
@@ -213,18 +211,24 @@ class SliderPreference(
 
         syncState()
 
-        mSummaryView!!.apply {
-            text = mSlider!!.values.joinToString(separator = " - ") { sliderValue ->
-                labelFormatter.getFormattedValue(sliderValue)
-            }
-            visibility = if (showValueLabel) View.VISIBLE else View.GONE
-        }
+        mOutputView!!.text = getOutputText()
+
 
         if (showController) updateControllerButtons()
 
         handleResetButton()
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
+    }
+
+    private fun getOutputText(): String {
+        val outputValue = mSlider!!.values.joinToString(separator = " - ") { sliderValue ->
+            labelFormatter.getFormattedValue(sliderValue)
+        }
+
+        return if (showValueLabel) context.getString(R.string.value_output, outputValue)
+        else outputValue
     }
 
     fun setMin(value: Float) {
@@ -266,7 +270,7 @@ class SliderPreference(
         val step = BigDecimal(mSlider!!.stepSize.toString())
 
         for (i in values.indices) {
-            val round = BigDecimal(Math.round(values[i] / mSlider!!.stepSize))
+            val round = BigDecimal((values[i] / mSlider!!.stepSize).roundToInt())
             val value = min(
                 max(step.multiply(round).toDouble(), mSlider!!.valueFrom.toDouble()),
                 mSlider!!.valueTo.toDouble()
@@ -297,6 +301,17 @@ class SliderPreference(
         }
     }
 
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+
+        mTitleView?.apply {
+            isEnabled = enabled
+            alpha = if (enabled) 1f else 0.5f
+            setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+        }
+        handleResetButton()
+    }
+
     private fun updateControllerButtons() {
         val currentValue = mSlider?.values?.get(0) ?: valueFrom
         mMinusButton?.isEnabled = isEnabled && currentValue > valueFrom
@@ -324,12 +339,16 @@ class SliderPreference(
             defaultValue.isNotEmpty() &&
             defaultValue.containsAll(mSlider!!.values)
         ) {
-            getContext().getString(
-                R.string.opt_selected3,
-                formattedValues,
-                valueFormat,
-                getContext().getString(R.string.opt_default)
-            )
+            if (!hideValueOnDefault) {
+                getContext().getString(
+                    R.string.opt_selected3,
+                    formattedValues,
+                    valueFormat,
+                    getContext().getString(R.string.opt_default)
+                )
+            } else {
+                getContext().getString(R.string.opt_default).replace("[()]".toRegex(), "")
+            }
         } else {
             getContext().getString(
                 R.string.opt_selected2,
@@ -356,11 +375,7 @@ class SliderPreference(
             override fun onStopTrackingTouch(slider: RangeSlider) {
                 if (key != slider.tag) return
 
-                val summary =
-                    (slider.parent.parent as ViewGroup).findViewById<TextView>(android.R.id.summary)
-                summary.text = labelFormatter.getFormattedValue(slider.values[0])
-                summary.visibility =
-                    if (showValueLabel) View.VISIBLE else View.GONE
+                mOutputView?.text = getOutputText()
 
                 if (showController) updateControllerButtons()
 
@@ -400,7 +415,7 @@ class SliderPreference(
                 jsonWriter.close()
                 val jsonString = writer.toString()
 
-                sharedPreferences.edit().putString(key, jsonString).apply()
+                sharedPreferences.edit { putString(key, jsonString) }
 
                 return true
             } catch (_: Exception) {
@@ -422,11 +437,11 @@ class SliderPreference(
                 try {
                     val value = prefs.getFloat(key, defaultValue)
                     values = mutableListOf(value)
-                } catch (ignored2: Exception) {
+                } catch (_: Exception) {
                     try {
-                        val value = prefs.getInt(key, Math.round(defaultValue))
+                        val value = prefs.getInt(key, defaultValue.roundToInt())
                         values = mutableListOf(value.toFloat())
-                    } catch (ignored3: Exception) {
+                    } catch (_: Exception) {
                         values = mutableListOf(defaultValue)
                     }
                 }
@@ -477,7 +492,7 @@ class SliderPreference(
         }
 
         fun getSingleIntValue(prefs: SharedPreferences, key: String?, defaultValue: Int): Int {
-            return Math.round(getSingleFloatValue(prefs, key, defaultValue.toFloat()))
+            return getSingleFloatValue(prefs, key, defaultValue.toFloat()).roundToInt()
         }
     }
 }

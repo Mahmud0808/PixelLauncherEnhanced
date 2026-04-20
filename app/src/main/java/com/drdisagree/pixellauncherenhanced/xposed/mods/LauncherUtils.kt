@@ -12,7 +12,10 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.resetCounter
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +32,12 @@ class LauncherUtils(context: Context) : ModPack(context) {
         GraphicsUtilsClass = findClass("com.android.launcher3.icons.GraphicsUtils")
         InvariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
         BaseIconCacheClass = findClass("com.android.launcher3.icons.cache.BaseIconCache")
+        QuickstepLauncherClass = findClass("com.android.launcher3.uioverrides.QuickstepLauncher")
         LauncherAppStateClass = findClass("com.android.launcher3.LauncherAppState")
+        LauncherAppStateCompanionClass = findClass(
+            $$"com.android.launcher3.LauncherAppState$Companion",
+            suppressError = true
+        )
 
         InvariantDeviceProfileClass
             .hookConstructor()
@@ -48,7 +56,27 @@ class LauncherUtils(context: Context) : ModPack(context) {
             .hookConstructor()
             .runAfter { param ->
                 mModel = param.thisObject.getAnyField("mModel", "model")
+                if (invariantDeviceProfileInstance == null) {
+                    invariantDeviceProfileInstance = param.thisObject.getAnyField(
+                        "mInvariantDeviceProfile",
+                        "invariantDeviceProfile"
+                    )
+                }
             }
+
+        if (LauncherAppStateCompanionClass != null) {
+            QuickstepLauncherClass
+                .hookMethod("onCreate")
+                .runAfter { param ->
+                    if (invariantDeviceProfileInstance == null) {
+                        invariantDeviceProfileInstance =
+                            LauncherAppStateCompanionClass.callStaticMethod(
+                                "getIDP",
+                                param.thisObject
+                            )
+                    }
+                }
+        }
     }
 
     companion object {
@@ -57,7 +85,9 @@ class LauncherUtils(context: Context) : ModPack(context) {
         private var GraphicsUtilsClass: Class<*>? = null
         private var InvariantDeviceProfileClass: Class<*>? = null
         private var BaseIconCacheClass: Class<*>? = null
+        private var QuickstepLauncherClass: Class<*>? = null
         private var LauncherAppStateClass: Class<*>? = null
+        private var LauncherAppStateCompanionClass: Class<*>? = null
 
         private var invariantDeviceProfileInstance: Any? = null
         private var mIconDb: Any? = null
@@ -67,27 +97,27 @@ class LauncherUtils(context: Context) : ModPack(context) {
         private var lastRestartTime = 0L
 
         fun getAttrColor(context: Context, resID: Int): Int {
-            return try {
+            return runCatching {
                 ThemesClass.callStaticMethod(
                     "getAttrColor",
                     context,
                     resID
                 )
-            } catch (_: Throwable) {
-                try {
+            }.getOrElse {
+                runCatching {
                     ThemesClass.callStaticMethod(
                         "getAttrColor",
                         resID,
                         context
                     )
-                } catch (_: Throwable) {
-                    try {
+                }.getOrElse {
+                    runCatching {
                         GraphicsUtilsClass.callStaticMethod(
                             "getAttrColor",
                             context,
                             resID
                         )
-                    } catch (_: Throwable) {
+                    }.getOrElse {
                         GraphicsUtilsClass.callStaticMethod(
                             "getAttrColor",
                             resID,
@@ -105,11 +135,13 @@ class LauncherUtils(context: Context) : ModPack(context) {
                 lastRestartTime = currentTime
                 resetCounter(context.packageName)
 
-                Toast.makeText(
-                    context,
-                    modRes.getString(R.string.restarting_launcher),
-                    Toast.LENGTH_SHORT
-                ).show()
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(
+                        context,
+                        modRes.getString(R.string.restarting_launcher),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
 
                 CoroutineScope(Dispatchers.IO).launch {
                     delay(1000)
@@ -121,13 +153,28 @@ class LauncherUtils(context: Context) : ModPack(context) {
         }
 
         fun reloadLauncher(context: Context) {
-            invariantDeviceProfileInstance.callMethod("onConfigChanged", context)
+            if (invariantDeviceProfileInstance.hasMethod("onConfigChanged", Context::class.java)) {
+                invariantDeviceProfileInstance.callMethod("onConfigChanged", context)
+            } else {
+                invariantDeviceProfileInstance.callMethod("onConfigChanged")
+            }
         }
 
         fun reloadIcons() {
             Handler(Looper.getMainLooper()).post {
                 mCache.callMethod("clear")
-                mIconDb.callMethod("clear")
+
+                if (mIconDb.hasMethod("clear")) {
+                    mIconDb.callMethod("clear")
+                } else {
+                    mIconDb.getField("mOpenHelper").also { mOpenHelper ->
+                        mOpenHelper.callMethod(
+                            "clearDB",
+                            mOpenHelper.callMethod("getWritableDatabase")
+                        )
+                    }
+                }
+
                 mModel.callMethod("forceReload")
             }
         }

@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <dimen name="ui_container_radius">18dp</dimen>
+    <dimen name="ui_container_margin_side">16dp</dimen>
+    <dimen name="cpv_color_preference_normal">32dp</dimen>
+    <dimen name="cpv_color_preference_large">44dp</dimen>
     <dimen name="about_button_icon_size">22dp</dimen>
     <dimen name="mtrl_slider_track_side_padding" tools:ignore="PrivateResource">4dp</dimen>
+    <dimen name="preference_padding_horizontal">18dp</dimen>
+    <dimen name="preference_padding_vertical">16dp</dimen>
 
 </resources>

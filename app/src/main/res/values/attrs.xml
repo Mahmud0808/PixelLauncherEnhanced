@@ -23,6 +23,7 @@
         <attr name="minVal" format="float" />
         <attr name="maxVal" format="float" />
         <attr name="showResetButton" format="boolean" />
+        <attr name="hideValueOnDefault" format="boolean" />
         <attr name="showValueLabel" format="boolean" />
         <attr name="units" format="string" />
         <attr name="isDecimalFormat" format="boolean" />
@@ -43,6 +44,11 @@
 
     <declare-styleable name="MaterialTimePickerPreference">
         <attr name="presetValue" format="string" />
+    </declare-styleable>
+
+    <declare-styleable name="SwitchPreference">
+        <attr name="showUnstableBadge" format="boolean" />
+        <attr name="unstableText" format="string" />
     </declare-styleable>
 
 </resources>

@@ -4,7 +4,7 @@ import android.util.ArraySet
 import java.lang.reflect.Method
 import java.util.regex.Pattern
 
-fun Any?.isMethodAvailable(methodName: String, vararg parameterTypes: Class<*>?): Boolean {
+fun Any?.hasMethod(methodName: String, vararg parameterTypes: Class<*>?): Boolean {
     if (this == null) return false
 
     if (this is Class<*>) return if (parameterTypes.isEmpty()) {

@@ -6,7 +6,6 @@ import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.LinearLayout
 import androidx.appcompat.view.ContextThemeWrapper
@@ -15,13 +14,17 @@ import androidx.core.view.isVisible
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_REMOVE_SCREENSHOT_BUTTON
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -33,6 +36,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
     private var clearAllButton = false
     private var fixedButtonWidth = false
+    private var removeScreenshotButton = false
     private var recentsViewInstance: Any? = null
     private var actionClearAllButton: Button? = null
 
@@ -40,12 +44,14 @@ class ClearAllButton(context: Context) : ModPack(context) {
         Xprefs.apply {
             clearAllButton = getBoolean(RECENTS_CLEAR_ALL_BUTTON, false)
             fixedButtonWidth = clearAllButton && getBoolean(FIXED_RECENTS_BUTTONS_WIDTH, false)
+            removeScreenshotButton = getBoolean(RECENTS_REMOVE_SCREENSHOT_BUTTON, false)
         }
 
         when (key.firstOrNull()) {
             RECENTS_CLEAR_ALL_BUTTON -> updateVisibility()
 
-            FIXED_RECENTS_BUTTONS_WIDTH -> restartLauncher(mContext)
+            FIXED_RECENTS_BUTTONS_WIDTH,
+            RECENTS_REMOVE_SCREENSHOT_BUTTON -> restartLauncher(mContext)
         }
     }
 
@@ -95,11 +101,22 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
                 val launcher = param.args[0]
                 var elements: Int = OVERVIEW_ACTIONS
-                val deviceProfile = launcher.callMethod("getDeviceProfile")
+                val deviceProfile = launcher.callMethodSilently("getDeviceProfile")
+                    ?: launcher
+                        .getField("deviceProfileRef")
+                        .getField("value")
+                val isPhone = deviceProfile.getFieldSilently("isPhone") as? Boolean
+                    ?: deviceProfile
+                        .getField("mDeviceProperties")
+                        .getField("isPhone") as Boolean
+                val isLandscape = deviceProfile.getFieldSilently("isLandscape") as? Boolean
+                    ?: deviceProfile
+                        .getField("mDeviceProperties")
+                        .getField("isLandscape") as Boolean
 
-                val showFloatingSearch = if (deviceProfile.getField("isPhone") as Boolean) {
+                val showFloatingSearch = if (isPhone) {
                     // Only show search in phone overview in portrait mode.
-                    !(deviceProfile.getField("isLandscape") as Boolean)
+                    !isLandscape
                 } else {
                     // Only show search in tablet overview if taskbar is not visible.
                     !(deviceProfile.getField("isTaskbarPresent") as Boolean) ||
@@ -110,8 +127,15 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     elements = elements or FLOATING_SEARCH_BAR
                 }
 
-                if (featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean != false &&
-                    launcher.callMethod("isSplitSelectionActive") as Boolean
+                if (featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean == true &&
+                    if (launcher.hasMethod("isSplitSelectionActive")) {
+                        launcher.callMethod("isSplitSelectionActive") as Boolean
+                    } else {
+                        launcher
+                            .getField("isSplitSelectActiveRef")
+                            .getField("value")
+                            .callMethod("booleanValue") as Boolean
+                    }
                 ) {
                     elements = elements and CLEAR_ALL_BUTTON.inv()
                 }
@@ -130,7 +154,15 @@ class ClearAllButton(context: Context) : ModPack(context) {
         overviewActionsViewClass
             .hookMethod("onFinishInflate")
             .runAfter { param ->
-                val mActionButtons = param.thisObject.getField("mActionButtons") as LinearLayout
+                val mActionButtons =
+                    param.thisObject.getFieldSilently("mActionButtons") as? LinearLayout
+                        ?: (param.thisObject as ViewGroup).findViewById(
+                            mContext.resources.getIdentifier(
+                                "action_buttons",
+                                "id",
+                                mContext.packageName
+                            )
+                        )
 
                 val contextThemeWrapper = ContextThemeWrapper(
                     mActionButtons.context,
@@ -157,13 +189,14 @@ class ClearAllButton(context: Context) : ModPack(context) {
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        marginStart = mContext.resources.getDimensionPixelSize(
-                            mContext.resources.getIdentifier(
+                        val spacingId = mContext.resources.getIdentifier(
                                 "overview_actions_button_spacing",
                                 "dimen",
                                 mContext.packageName
                             )
-                        )
+                        if (spacingId != 0) {
+                            marginStart = mContext.resources.getDimensionPixelSize(spacingId)
+                        }
                     }
                     setCompoundDrawablesWithIntrinsicBounds(
                         modRes.getDrawable(R.drawable.ic_clear_all),
@@ -174,6 +207,13 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     setOnClickListener { view ->
                         dismissAllTasksMethod.invoke(recentsViewInstance, view)
                     }
+                }
+
+                val referenceButton = mActionButtons.children
+                    .filterIsInstance<Button>()
+                    .firstOrNull { it !== actionClearAllButton }
+                referenceButton?.background?.constantState?.newDrawable()?.let { drawable ->
+                    actionClearAllButton?.background = drawable.mutate()
                 }
 
                 mActionButtons.addView(actionClearAllButton)
@@ -193,10 +233,46 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
     @SuppressLint("DiscouragedApi")
     private fun updateVisibility() {
+        var childCount: Int
+
         if (clearAllButton) {
             actionClearAllButton?.visibility = View.VISIBLE
+            childCount = 3
         } else {
             actionClearAllButton?.visibility = View.GONE
+            childCount = 2
+        }
+
+        if (removeScreenshotButton) {
+            childCount = 2
+        }
+
+        val parentView = actionClearAllButton?.parent as? ViewGroup
+        val displayMetrics = mContext.resources.displayMetrics
+
+        parentView?.children?.forEach { child ->
+            if (child is Button) {
+                child.maxWidth = displayMetrics.widthPixels / childCount
+            }
+        }
+
+        if (removeScreenshotButton) {
+            val screenshotId = mContext.resources.getIdentifier(
+                "action_screenshot", "id", mContext.packageName
+            )
+
+            if (screenshotId != 0) {
+                val screenshotButton = parentView?.findViewById<View>(screenshotId)
+
+                screenshotButton?.let { view ->
+                    view.setOnVisibilityChangeListener { isVisible ->
+                        if (isVisible) {
+                            view.visibility = View.GONE
+                        }
+                    }
+                    view.visibility = View.GONE
+                }
+            }
         }
 
         if (fixedButtonWidth) {
@@ -231,25 +307,19 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     child.setOnVisibilityChangeListener { isVisible -> updateVisibility(isVisible) }
                     updateVisibility(child.isVisible)
                 } else if (child.tag != containerTag) {
-                    fun updateVisibility() {
-                        child.visibility = View.GONE
-                    }
-
                     child.setOnVisibilityChangeListener { isVisible ->
                         child.visibility = View.GONE
                     }
-                    updateVisibility()
+                    child.visibility = View.GONE
                 }
             }
         }
     }
 
     private fun View.setOnVisibilityChangeListener(onVisibilityChanged: (Boolean) -> Unit) {
-        viewTreeObserver.addOnGlobalLayoutListener(
-            ViewTreeObserver.OnGlobalLayoutListener {
-                onVisibilityChanged(isVisible)
-            }
-        )
+        viewTreeObserver.addOnGlobalLayoutListener {
+            onVisibilityChanged(isVisible)
+        }
     }
 
     companion object {

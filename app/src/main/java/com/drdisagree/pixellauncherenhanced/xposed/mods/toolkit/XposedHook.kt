@@ -62,6 +62,12 @@ class XposedHook {
 
             return null
         }
+
+        fun Class<*>?.newInstance(): Any? {
+            if (this == null) return null
+
+            return XposedHelpers.newInstance(this)
+        }
     }
 }
 
@@ -668,25 +674,37 @@ object ResourceHookManager {
 }
 
 fun Any?.callMethod(methodName: String): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callMethod:noArgs", "Object is null, method=$methodName")
+        return null
+    }
 
     return XposedHelpers.callMethod(this, methodName)
 }
 
 fun Any?.callMethod(methodName: String, vararg args: Any?): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callMethod:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return XposedHelpers.callMethod(this, methodName, *args)
 }
 
 fun Any?.callMethod(methodName: String, parameterTypes: Array<Class<*>>, vararg args: Any?): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callMethod:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return XposedHelpers.callMethod(this, methodName, parameterTypes, *args)
 }
 
 fun Any?.callMethodSilently(methodName: String): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callMethodSilently:noArgs", "Object is null, method=$methodName")
+        return null
+    }
 
     return try {
         XposedHelpers.callMethod(this, methodName)
@@ -696,7 +714,10 @@ fun Any?.callMethodSilently(methodName: String): Any? {
 }
 
 fun Any?.callMethodSilently(methodName: String, vararg args: Any?): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return try {
         XposedHelpers.callMethod(this, methodName, *args)
@@ -710,7 +731,10 @@ fun Any?.callMethodSilently(
     parameterTypes: Array<Class<*>>,
     vararg args: Any?
 ): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return try {
         XposedHelpers.callMethod(this, methodName, parameterTypes, *args)
@@ -720,13 +744,19 @@ fun Any?.callMethodSilently(
 }
 
 fun Class<*>?.callStaticMethod(methodName: String): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callStaticMethod:noArgs", "Object is null, method=$methodName")
+        return null
+    }
 
     return XposedHelpers.callStaticMethod(this, methodName)
 }
 
 fun Class<*>?.callStaticMethod(methodName: String, vararg args: Any?): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callStaticMethod:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return XposedHelpers.callStaticMethod(this, methodName, *args)
 }
@@ -736,13 +766,19 @@ fun Class<*>?.callStaticMethod(
     parameterTypes: Array<Class<*>>,
     vararg args: Any?
 ): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callStaticMethod:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return XposedHelpers.callStaticMethod(this, methodName, parameterTypes, *args)
 }
 
 fun Class<*>?.callStaticMethodSilently(methodName: String): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callStaticMethodSilently:noArgs", "Object is null, method=$methodName")
+        return null
+    }
 
     return try {
         XposedHelpers.callStaticMethod(this, methodName)
@@ -752,7 +788,10 @@ fun Class<*>?.callStaticMethodSilently(methodName: String): Any? {
 }
 
 fun Class<*>?.callStaticMethodSilently(methodName: String, vararg args: Any?): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callStaticMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return try {
         XposedHelpers.callStaticMethod(this, methodName, *args)
@@ -766,7 +805,10 @@ fun Class<*>?.callStaticMethodSilently(
     parameterTypes: Array<Class<*>>,
     vararg args: Any?
 ): Any? {
-    if (this == null) return null
+    if (this == null) {
+        log("callStaticMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        return null
+    }
 
     return try {
         XposedHelpers.callStaticMethod(this, methodName, parameterTypes, *args)
@@ -795,11 +837,13 @@ fun Any?.setField(fieldName: String, value: Any?) {
     XposedHelpers.setObjectField(this, fieldName, value)
 }
 
-fun Any?.setFieldSilently(fieldName: String, value: Any?) {
+fun Any?.setFieldSilently(fieldName: String, value: Any?): Boolean {
     try {
         XposedHelpers.setObjectField(this, fieldName, value)
+        return true
     } catch (_: Throwable) {
     }
+    return false
 }
 
 fun Class<*>?.getStaticField(fieldName: String): Any {

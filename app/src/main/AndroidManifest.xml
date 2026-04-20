@@ -12,7 +12,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="@string/app_name_shortened"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
@@ -45,7 +45,7 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="@string/app_moto" />
+            android:value="@string/app_motto" />
         <meta-data
             android:name="xposedminversion"
             android:value="82" />

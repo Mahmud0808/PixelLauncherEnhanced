@@ -1,24 +1,62 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 android {
     namespace = "com.drdisagree.pixellauncherenhanced"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.drdisagree.pixellauncherenhanced"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.3"
-        setProperty("archivesBaseName", "PLEnhanced v${defaultConfig.versionName}")
+        targetSdk = 36
+        versionCode = 5
+        versionName = "1.1.0"
+        base.archivesName = "PLEnhanced v${defaultConfig.versionName}"
+    }
+
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    var releaseSigning = signingConfigs.getByName("debug")
+
+    try {
+        val keystoreProperties = Properties()
+        FileInputStream(keystorePropertiesFile).use { inputStream ->
+            keystoreProperties.load(inputStream)
+        }
+
+        releaseSigning = signingConfigs.create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+        }
+    } catch (_: Exception) {
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = releaseSigning
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = releaseSigning
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -29,10 +67,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
+    
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -62,4 +97,9 @@ dependencies {
     implementation(libs.jaredrummler.colorpicker)
     implementation(libs.remotepreferences)
     implementation(libs.circleimageview)
+    implementation(libs.konfetti.xml)
+}
+
+tasks.register("printVersionName") {
+    println(android.defaultConfig.versionName)
 }

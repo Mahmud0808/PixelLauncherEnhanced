@@ -35,4 +35,8 @@ class ExtendedRemotePreferences : RemotePreferences {
     fun getSliderValues(key: String?, defaultValue: Float): List<Float> {
         return SliderPreference.getValues(this, key, defaultValue)
     }
+
+    fun getListString(key: String?, defaultValue: String): String? {
+        return getString(key, defaultValue)
+    }
 }

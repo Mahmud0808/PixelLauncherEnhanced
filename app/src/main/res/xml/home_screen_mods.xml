@@ -20,10 +20,17 @@
             android:title="@string/double_tap_to_sleep_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="xposed_allowwallpaperzooming"
+            android:summary="@string/allow_wallpaper_zooming_summary"
+            android:title="@string/allow_wallpaper_zooming"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
+        android:key="xposed_home_screen_interface"
         android:title="@string/section_interface_title"
         app:iconSpaceReserved="false">
 
@@ -42,6 +49,18 @@
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_launcherdarkstatusbar"
+            android:title="@string/dark_launcher_statusbar_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_launcherdarkpageindicator"
+            android:title="@string/dark_launcher_page_indicator_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="true"
             android:key="xposed_desktopiconlabels"
             android:title="@string/desktop_icon_labels_title"
@@ -55,6 +74,7 @@
             app:maxVal="10"
             app:minVal="0"
             app:showDefaultIndicator="true"
+            app:hideValueOnDefault="true"
             app:showResetButton="true"
             app:tickInterval="1" />
 
@@ -66,13 +86,14 @@
             app:maxVal="10"
             app:minVal="0"
             app:showDefaultIndicator="true"
+            app:hideValueOnDefault="true"
             app:showResetButton="true"
             app:tickInterval="1" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
+        android:key="xposed_home_screen_quickspace"
         android:title="@string/section_quickspace_title"
         app:iconSpaceReserved="false">
 
@@ -80,12 +101,13 @@
             android:key="xposed_hideataglance"
             android:summary="@string/hide_at_a_glance_desc"
             android:title="@string/hide_at_a_glance_title"
+            app:showUnstableBadge="true"
             app:iconSpaceReserved="false" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
+        android:key="xposed_home_screen_search_bar"
         android:title="@string/section_search_bar_title"
         app:iconSpaceReserved="false">
 
@@ -96,9 +118,23 @@
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_desktopsearchbaropacity"
+            android:title="@string/search_bar_opacity_title"
+            app:defaultValue="100"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_desktopdockspacing"
             android:title="@string/dock_spacing_title"
             app:defaultValue="-1"
+            app:hideValueOnDefault="true"
             app:iconSpaceReserved="false"
             app:maxVal="260"
             app:minVal="-1"

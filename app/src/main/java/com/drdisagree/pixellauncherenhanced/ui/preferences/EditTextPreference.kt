@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 
 class EditTextPreference : EditTextPreference {
@@ -42,5 +43,6 @@ class EditTextPreference : EditTextPreference {
         super.onBindViewHolder(holder)
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 }

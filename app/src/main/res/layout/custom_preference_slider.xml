@@ -3,10 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
     android:clickable="true"
+    android:layout_marginHorizontal="@dimen/ui_container_margin_side"
+    android:layout_marginBottom="2dp"
     android:focusable="true"
-    android:paddingHorizontal="24dp">
+    android:foreground="?android:selectableItemBackgroundBorderless"
+    android:minHeight="?android:attr/listPreferredItemHeight"
+    android:paddingHorizontal="@dimen/preference_padding_horizontal"
+    android:paddingVertical="@dimen/preference_padding_vertical">
 
     <ImageView
         android:id="@android:id/icon"
@@ -23,8 +27,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="4dp"
         android:layout_toEndOf="@android:id/icon"
         android:orientation="vertical">
 
@@ -38,6 +40,14 @@
 
         <TextView
             android:id="@android:id/summary"
+            style="@style/Preference.SummaryText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="viewStart"
+            android:textColor="@color/text_color_secondary" />
+
+        <TextView
+            android:id="@+id/output"
             style="@style/Preference.SummaryText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -2,39 +2,120 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_forcethemedicons"
-        android:summary="@string/force_themed_icons_desc"
-        android:title="@string/force_themed_icons_title"
-        app:iconSpaceReserved="false" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_home_screen_general"
+        android:title="@string/section_general_title"
+        app:iconSpaceReserved="false">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_removeiconbadge"
-        android:title="@string/remove_shortcut_badge_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_forcethemedicons"
+            android:summary="@string/force_themed_icons_desc"
+            android:title="@string/force_themed_icons_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-        android:key="xposed_launchericonsize"
-        android:title="@string/launcher_icon_size_title"
-        app:defaultValue="100"
-        app:iconSpaceReserved="false"
-        app:maxVal="150"
-        app:minVal="50"
-        app:showDefaultIndicator="true"
-        app:showResetButton="true"
-        app:tickInterval="1"
-        app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_removeiconbadge"
+            android:title="@string/remove_shortcut_badge_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-        android:key="xposed_launchertextsize"
-        android:title="@string/launcher_text_size_title"
-        app:defaultValue="100"
-        app:iconSpaceReserved="false"
-        app:maxVal="150"
-        app:minVal="50"
-        app:showDefaultIndicator="true"
-        app:showResetButton="true"
-        app:tickInterval="1"
-        app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_launchericonsize"
+            android:title="@string/launcher_icon_size_title"
+            app:defaultValue="100"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="150"
+            app:minVal="50"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_launchertextsize"
+            android:title="@string/launcher_text_size_title"
+            app:defaultValue="100"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="150"
+            app:minVal="50"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_home_screen_general"
+        android:title="@string/section_icon_colors_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_themediconcustomcolor"
+            android:title="@string/custom_themed_icon_color_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xff000000"
+            android:dependency="xposed_themediconcustomcolor"
+            android:key="xposed_themediconcustomfgcolorlight"
+            android:title="@string/icon_foreground_color_light_title"
+            app:cpv_allowPresets="false"
+            app:cpv_dialogType="custom"
+            app:cpv_showAlphaSlider="true"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:dependency="xposed_themediconcustomcolor"
+            android:key="xposed_themediconcustombgcolorlight"
+            android:title="@string/icon_background_color_light_title"
+            app:cpv_allowPresets="false"
+            app:cpv_dialogType="custom"
+            app:cpv_showAlphaSlider="true"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:dependency="xposed_themediconcustomcolor"
+            android:key="xposed_foldercustomcolorlight"
+            android:title="@string/folder_color_light_title"
+            app:cpv_allowPresets="false"
+            app:cpv_dialogType="custom"
+            app:cpv_showAlphaSlider="true"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:dependency="xposed_themediconcustomcolor"
+            android:key="xposed_themediconcustomfgcolordark"
+            android:title="@string/icon_foreground_color_dark_title"
+            app:cpv_allowPresets="false"
+            app:cpv_dialogType="custom"
+            app:cpv_showAlphaSlider="true"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xff000000"
+            android:dependency="xposed_themediconcustomcolor"
+            android:key="xposed_themediconcustombgcolordark"
+            android:title="@string/icon_background_color_dark_title"
+            app:cpv_allowPresets="false"
+            app:cpv_dialogType="custom"
+            app:cpv_showAlphaSlider="true"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xff000000"
+            android:dependency="xposed_themediconcustomcolor"
+            android:key="xposed_foldercustomcolordark"
+            android:title="@string/folder_color_dark_title"
+            app:cpv_allowPresets="false"
+            app:cpv_dialogType="custom"
+            app:cpv_showAlphaSlider="true"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
 </PreferenceScreen>

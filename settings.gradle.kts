@@ -12,6 +12,9 @@ pluginManagement {
         maven { setUrl("https://jitpack.io") }
     }
 }
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
 @Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -22,6 +25,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "PixelLauncher Enhanced"
+rootProject.name = "PLEnhanced"
 include(":app")
  

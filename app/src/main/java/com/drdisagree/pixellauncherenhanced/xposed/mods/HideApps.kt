@@ -2,18 +2,20 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -27,18 +29,33 @@ class HideApps(context: Context) : ModPack(context) {
     private var appBlockList: Set<String> = mutableSetOf()
     private var searchHiddenApps: Boolean = false
     private var invariantDeviceProfileInstance: Any? = null
-    private var activityAllAppsContainerViewInstance: Any? = null
-    private var hotseatPredictionControllerInstance: Any? = null
-    private var predictionRowViewInstance: Any? = null
+
+    companion object {
+        var SHOULD_UNHIDE_ALL_APPS = false
+        private var activityAllAppsContainerViewInstance: Any? = null
+        private var hotseatPredictionControllerInstance: Any? = null
+        private var hybridHotseatOrganizerClassInstance: Any? = null
+        private var predictionRowViewInstance: Any? = null
+
+        fun updateLauncherIcons(context: Context) {
+            activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
+            hotseatPredictionControllerInstance.callMethodSilently("fillGapsWithPrediction", true)
+            hybridHotseatOrganizerClassInstance.callMethodSilently("fillGapsWithPrediction", true)
+            predictionRowViewInstance.callMethod("applyPredictionApps")
+            reloadLauncher(context)
+        }
+    }
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             appBlockList = getStringSet(APP_BLOCK_LIST, emptySet())!!
             searchHiddenApps = getBoolean(SEARCH_HIDDEN_APPS, false)
+            SHOULD_UNHIDE_ALL_APPS = !getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
         }
 
         when (key.firstOrNull()) {
-            APP_BLOCK_LIST -> updateLauncherIcons()
+            HIDE_APPS_FROM_APP_DRAWER,
+            APP_BLOCK_LIST -> updateLauncherIcons(mContext)
         }
     }
 
@@ -48,17 +65,24 @@ class HideApps(context: Context) : ModPack(context) {
             findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView")
         val hotseatPredictionControllerClass =
             findClass("com.android.launcher3.hybridhotseat.HotseatPredictionController")
+        val hybridHotseatOrganizerClass = findClass(
+            "com.android.launcher3.util.HybridHotseatOrganizer",
+            suppressError = true
+        )
         val predictionRowViewClass =
             findClass("com.android.launcher3.appprediction.PredictionRowView")
         val defaultAppSearchAlgorithmClass = findClass(
             "com.android.launcher3.allapps.DefaultAppSearchAlgorithm",
             "com.android.launcher3.allapps.search.DefaultAppSearchAlgorithm"
         )
+        val quickstepLauncherClass =
+            findClass("com.android.launcher3.uioverrides.QuickstepLauncher")
         val alphabeticalAppsListClass =
             findClass("com.android.launcher3.allapps.AlphabeticalAppsList")
         val allAppsStoreClass = findClass("com.android.launcher3.allapps.AllAppsStore")
         val appInfoClass = findClass("com.android.launcher3.model.data.AppInfo")
         val allAppsListClass = findClass("com.android.launcher3.model.AllAppsList")
+        val launcherModelClass = findClass("com.android.launcher3.LauncherModel")
 
         invariantDeviceProfileClass
             .hookConstructor()
@@ -72,9 +96,26 @@ class HideApps(context: Context) : ModPack(context) {
             .hookConstructor()
             .runAfter { param -> hotseatPredictionControllerInstance = param.thisObject }
 
+        hybridHotseatOrganizerClass
+            .hookConstructor()
+            .runAfter { param -> hybridHotseatOrganizerClassInstance = param.thisObject }
+
         predictionRowViewClass
             .hookConstructor()
             .runAfter { param -> predictionRowViewInstance = param.thisObject }
+
+        quickstepLauncherClass
+            .hookMethod("onCreate")
+            .runAfter { param ->
+                if (hotseatPredictionControllerInstance == null) {
+                    hotseatPredictionControllerInstance =
+                        param.thisObject.getField("mHotseatPredictionController")
+                }
+                if (hybridHotseatOrganizerClassInstance == null) {
+                    hybridHotseatOrganizerClassInstance =
+                        hotseatPredictionControllerInstance.getField("mHotseatOrganizer")
+                }
+            }
 
         allAppsStoreClass
             .hookMethod("setApps")
@@ -87,29 +128,31 @@ class HideApps(context: Context) : ModPack(context) {
             }
 
         @Suppress("UNCHECKED_CAST")
-        allAppsStoreClass
-            .hookMethod("getApp")
+        Arrays::class.java
+            .hookMethod("binarySearch")
+            .parameters(
+                Array<Any?>::class.java,
+                Any::class.java,
+                Comparator::class.java,
+            )
             .runBefore { param ->
-                val componentKey = param.args[0]
-                val comparator = param.args[1] as Comparator<Any?>
+                val mApps = param.args[0] as? Array<*> ?: return@runBefore
 
-                val mApps = param.thisObject.getExtraFieldSilently("mAppsBackup") as? Array<*>
-                    ?: return@runBefore
+                if (!mApps
+                        .javaClass
+                        .componentType
+                        .simpleName
+                        .equals(appInfoClass!!.simpleName, ignoreCase = true)
+                ) return@runBefore
 
-                val componentName = componentKey.getFieldSilently("componentName") as? ComponentName
-                val user = componentKey.getFieldSilently("user")
+                val appInfo = param.args[1]
+                val comparator = param.args[2] as Comparator<Any?>
+                val componentName = appInfo.getComponentName()
 
-                val appInfo = param.thisObject.getField("mTempInfo").apply {
-                    setField("componentName", componentName)
-                    setField("user", user)
-                }
+                val binarySearch = binarySearch(mApps, appInfo, comparator)
 
-                val binarySearch = Arrays.binarySearch<Any?>(mApps, appInfo, comparator)
-
-                if (binarySearch < 0 || (!searchHiddenApps && matchesBlocklist(componentName))) {
-                    param.result = null
-                } else {
-                    param.result = mApps[binarySearch]
+                if (binarySearch < 0 || (!searchHiddenApps && componentName.matchesBlocklist())) {
+                    param.result = -1
                 }
             }
 
@@ -120,37 +163,34 @@ class HideApps(context: Context) : ModPack(context) {
                     (param.thisObject.getField("mPredictedApps") as ArrayList<*>).toMutableList()
 
                 val iterator = mPredictedApps.iterator()
-
-                while (iterator.hasNext()) {
-                    val workspaceItemInfo = iterator.next()
-                    val componentName = workspaceItemInfo.getComponentName()
-
-                    if (matchesBlocklist(componentName)) {
-                        iterator.remove()
-                    }
-                }
+                iterator.removeMatches()
 
                 param.thisObject.setField("mPredictedApps", ArrayList(mPredictedApps))
             }
 
-        hotseatPredictionControllerClass
-            .hookMethod("fillGapsWithPrediction")
-            .parameters(Boolean::class.java)
-            .runBefore { param ->
-                val mPredictedItems =
-                    (param.thisObject.getField("mPredictedItems") as List<*>).toMutableList()
+        if (hotseatPredictionControllerClass.hasMethod("fillGapsWithPrediction")) {
+            hotseatPredictionControllerClass
+                .hookMethod("fillGapsWithPrediction")
+                .parameters(Boolean::class.java)
+                .runBefore { param ->
+                    val mPredictedItems =
+                        (param.thisObject.getField("mPredictedItems") as List<*>).toMutableList()
 
-                val iterator = mPredictedItems.iterator()
-
-                while (iterator.hasNext()) {
-                    val itemInfo = iterator.next()
-                    val componentName = itemInfo.getComponentName()
-
-                    if (matchesBlocklist(componentName)) {
-                        iterator.remove()
-                    }
+                    val iterator = mPredictedItems.iterator()
+                    iterator.removeMatches()
                 }
-            }
+        } else {
+            hybridHotseatOrganizerClass
+                .hookMethod("fillGapsWithPrediction")
+                .parameters(Boolean::class.java)
+                .runBefore { param ->
+                    val mPredictedItems =
+                        (param.thisObject.getField("predictedItems") as List<*>).toMutableList()
+
+                    val iterator = mPredictedItems.iterator()
+                    iterator.removeMatches()
+                }
+        }
 
         try {
             defaultAppSearchAlgorithmClass
@@ -159,25 +199,34 @@ class HideApps(context: Context) : ModPack(context) {
                 .runBefore { param ->
                     if (searchHiddenApps) return@runBefore
 
-                    var index = if (param.args[0] is Context) 1 else 0
+                    val index = if (param.args[0] is Context) 1 else 0
                     val apps = (param.args[index] as List<*>).toMutableList()
 
                     val iterator = apps.iterator()
-
-                    while (iterator.hasNext()) {
-                        val appInfo = iterator.next()
-                        val componentName = appInfo.getComponentName()
-
-                        if (matchesBlocklist(componentName)) {
-                            iterator.remove()
-                        }
-                    }
+                    iterator.removeMatches()
 
                     param.args[index] = ArrayList(apps)
                 }
         } catch (_: Throwable) {
             // Method seems to be unused on newer versions of pixel launcher
             // But still hook it just in case
+
+            fun removeAppResult(param: XC_MethodHook.MethodHookParam) {
+                if (searchHiddenApps) return
+
+                val appsIndex = param.args.indexOfFirst {
+                    it::class.java.simpleName == allAppsListClass!!.simpleName
+                }
+
+                val apps = param.args[appsIndex]
+                val data = apps.getField("data") as ArrayList<*>
+
+                val iterator = data.iterator()
+                iterator.removeMatches()
+
+                apps.setField("data", ArrayList(data))
+                param.args[appsIndex] = apps
+            }
 
             val methodName = (defaultAppSearchAlgorithmClass!!.declaredMethods.toList()
                 .union(defaultAppSearchAlgorithmClass.methods.toList()))
@@ -188,44 +237,38 @@ class HideApps(context: Context) : ModPack(context) {
                             method.parameterCount >= 2
                 }?.name
 
-            if (methodName == null) {
-                log(this@HideApps, "Failed to find getTitleMatchResult method")
-                return
+            if (methodName != null) {
+                defaultAppSearchAlgorithmClass
+                    .hookMethod(methodName)
+                    .runBefore { param ->
+                        removeAppResult(param)
+                    }
+            } else {
+                val baseModelUpdateTaskClass = findClass(
+                    "com.android.launcher3.model.BaseModelUpdateTask",
+                    suppressError = Build.VERSION.SDK_INT >= 36
+                )
+
+                launcherModelClass
+                    .hookMethod("enqueueModelUpdateTask")
+                    .runBefore { param ->
+                        val modelUpdateTask = param.args[0]
+
+                        if (baseModelUpdateTaskClass != null &&
+                            modelUpdateTask::class.java.simpleName != baseModelUpdateTaskClass.simpleName
+                        ) return@runBefore
+
+                        modelUpdateTask::class.java
+                            .hookMethod("execute")
+                            .runBefore { param2 ->
+                                removeAppResult(param2)
+                            }
+                    }
             }
-
-            defaultAppSearchAlgorithmClass
-                .hookMethod(methodName)
-                .runBefore { param ->
-                    if (searchHiddenApps) return@runBefore
-
-                    val appsIndex = param.args.indexOfFirst {
-                        it::class.java.simpleName == allAppsListClass!!.simpleName
-                    }
-
-                    val apps = param.args[appsIndex]
-                    val data = apps.getField("data") as ArrayList<*>
-
-                    val iterator = data.iterator()
-
-                    while (iterator.hasNext()) {
-                        val appInfo = iterator.next()
-                        val componentName = appInfo.getComponentName()
-
-                        if (matchesBlocklist(componentName)) {
-                            iterator.remove()
-                        }
-                    }
-
-                    apps.setField("data", ArrayList(data))
-                    param.args[appsIndex] = apps
-                }
         }
 
         alphabeticalAppsListClass
             .hookMethod("onAppsUpdated")
-            .runBefore { param ->
-                updateAllAppsStore(param, appInfoClass!!)
-            }
             .runAfter { param ->
                 val mAdapterItems =
                     (param.thisObject.getField("mAdapterItems") as ArrayList<*>).toMutableList()
@@ -237,7 +280,7 @@ class HideApps(context: Context) : ModPack(context) {
                     val itemInfo = item.getFieldSilently("itemInfo")
                     val componentName = itemInfo.getComponentName()
 
-                    if (matchesBlocklist(componentName)) {
+                    if (componentName.matchesBlocklist()) {
                         iterator.remove()
                     }
                 }
@@ -246,54 +289,14 @@ class HideApps(context: Context) : ModPack(context) {
             }
     }
 
-    private fun updateAllAppsStore(
-        param: XC_MethodHook.MethodHookParam,
-        appInfoClass: Class<*>
-    ) {
-        val mAllAppsStore = param.thisObject.getFieldSilently("mAllAppsStore") ?: return
+    private fun MutableIterator<Any?>.removeMatches() {
+        while (hasNext()) {
+            val itemInfo = next()
+            val componentName = itemInfo.getComponentName()
 
-        try {
-            val mComponentToAppMap = try {
-                mAllAppsStore.getField("mComponentToAppMap") as HashMap<*, *>
-            } catch (_: Throwable) {
-                throw IllegalStateException("mComponentToAppMap is null")
+            if (componentName.matchesBlocklist()) {
+                remove()
             }
-
-            mComponentToAppMap.keys.forEach { key ->
-                val appInfo = mComponentToAppMap[key]
-                val componentName = appInfo.getComponentName()
-
-                if (matchesBlocklist(componentName)) {
-                    mComponentToAppMap.remove(key)
-                }
-            }
-
-            mAllAppsStore.setField("mComponentToAppMap", mComponentToAppMap)
-        } catch (_: Throwable) {
-            val mApps = try {
-                (mAllAppsStore.getField("mApps") as Array<*>).toMutableList()
-            } catch (_: Throwable) {
-                return
-            }
-
-            val iterator = mApps.iterator()
-
-            while (iterator.hasNext()) {
-                val appInfo = iterator.next()
-                val componentName = appInfo.getComponentName()
-
-                if (matchesBlocklist(componentName)) {
-                    iterator.remove()
-                }
-            }
-
-            val appInfoArray = java.lang.reflect.Array.newInstance(
-                appInfoClass,
-                mApps.size
-            ) as Array<*>
-            System.arraycopy(mApps.toTypedArray(), 0, appInfoArray, 0, mApps.size)
-
-            mAllAppsStore.setField("mApps", appInfoArray)
         }
     }
 
@@ -305,19 +308,35 @@ class HideApps(context: Context) : ModPack(context) {
             ?: callMethod("getTargetComponent") as ComponentName
     }
 
-    private fun matchesBlocklist(componentName: ComponentName?): Boolean {
-        return matchesBlocklist(componentName?.packageName)
+    private fun ComponentName?.matchesBlocklist(): Boolean {
+        return this?.packageName.matchesBlocklist()
     }
 
-    private fun matchesBlocklist(packageName: String?): Boolean {
-        if (packageName.isNullOrEmpty()) return false
-        return appBlockList.contains(packageName)
+    private fun String?.matchesBlocklist(): Boolean {
+        if (isNullOrEmpty() || SHOULD_UNHIDE_ALL_APPS) return false
+        return appBlockList.contains(this)
     }
 
-    private fun updateLauncherIcons() {
-        activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
-        hotseatPredictionControllerInstance.callMethod("fillGapsWithPrediction", true)
-        predictionRowViewInstance.callMethod("applyPredictionApps")
-        reloadLauncher(mContext)
+    fun <T> binarySearch(
+        array: Array<out T>,
+        key: T,
+        comparator: Comparator<in T>
+    ): Int {
+        var low = 0
+        var high = array.size - 1
+
+        while (low <= high) {
+            val mid = (low + high) ushr 1
+            val midVal = array[mid]
+            val cmp = comparator.compare(midVal, key)
+
+            when {
+                cmp < 0 -> low = mid + 1
+                cmp > 0 -> high = mid - 1
+                else -> return mid
+            }
+        }
+
+        return -(low + 1)
     }
 }

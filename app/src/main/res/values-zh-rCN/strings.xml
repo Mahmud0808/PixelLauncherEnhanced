@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_moto">激发您桌面 launcher 的所有潜力</string>
+    <string name="app_motto">激发您桌面 launcher 的所有潜力</string>
     <string name="icon">图标</string>
     <string name="more">更多</string>
     <string name="exit">退出</string>
@@ -48,11 +48,17 @@
     <string name="app_drawer_themed_icons_desc">在应用程序抽屉内使用主题色图标</string>
     <string name="double_tap_to_sleep_title">双击息屏</string>
     <string name="double_tap_to_sleep_desc">双击桌面屏幕空白区域关闭屏幕</string>
+    <string name="allow_wallpaper_zooming">壁纸缩放</string>
+    <string name="allow_wallpaper_zooming_summary">在使用抽屉或在最近任务界面的应用时放大或缩小壁纸</string>
     <string name="desktop_icon_labels_title">桌面图标标签</string>
     <string name="hide_launcher_statusbar_title">隐藏状态栏</string>
     <string name="hide_launcher_statusbar_desc">如果状态栏没有被隐藏则展开快速设置面板</string>
     <string name="hide_launcher_top_shadow_title">去除顶部阴影</string>
     <string name="hide_launcher_top_shadow_desc">移除桌面顶部阴影</string>
+    <string name="dark_launcher_statusbar_title">强制使用深色状态栏</string>
+    <string name="dark_launcher_page_indicator_title">页面指示器强制使用深色</string>
+    <string name="quick_launch_title">快速启动</string>
+    <string name="quick_launch_desc">按下回车直接从搜索启动应用</string>
     <string name="app_drawer_icon_labels_title">应用程序抽屉中的图标标签</string>
     <string name="disable_recents_live_tile_title">禁用多任务栏中动态 tile</string>
     <string name="disable_recents_live_tile_desc">如果最近任务显示有问题则禁用动态 tile</string>
@@ -69,6 +75,11 @@
     <string name="developer_options_title">开发者选项</string>
     <string name="developer_options_desc">启用隐藏的开发者选项</string>
     <string name="entry_in_launcher_settings">在桌面 launcher 设置中显示入口</string>
+    <string name="entry_in_homescreen_popup">Show entry in homescreen popup</string>
+    <string name="hide_gesture_pill_title">隐藏导航栏</string>
+    <string name="hide_gesture_pill_desc">可能不适合旧的 Android 版本</string>
+    <string name="hide_navigation_space_title">Hide navigation bar space</string>
+    <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">锁定布局</string>
     <string name="lock_layout_desc_on">图标和小部件无法在桌面屏幕上添加、删除和移动</string>
     <string name="lock_layout_desc_off">图标和小部件可以在桌面屏幕上添加、删除和移动</string>
@@ -77,6 +88,14 @@
     <string name="drawer_search_desc">应用抽屉顶部的搜索栏</string>
     <string name="clear_all_button_title">“清除所有”按钮</string>
     <string name="fixed_button_width_title">每个按钮的固定宽度</string>
+    <string name="recents_remove_screenshot_title">删除屏幕截图按钮</string>
+    <string name="recents_remove_screenshot_summary">隐藏在最近任务中的屏幕截图按钮</string>
+    <string name="freeform_gesture_title">在最近任务中使用手势启动可自由调整的窗口模式</string>
+    <string name="freeform_gesture_summary">从应用程序向上滑动并在屏幕顶部显示可自由调整的窗口模式（需要在开发者选项中启用可自由调整的窗口的开关）</string>
+    <string name="freeform_gesture_progress_title">自由窗口滑动阈值</string>
+    <string name="freeform_gesture_progress_summary">较低的值会在更早的时候触发自由窗口，较高的值需要滑动到屏幕顶部区域</string>
+    <string name="freeform_method_title">选择启动自由窗口的模式</string>
+    <string name="freeform_method_summary">如果在您的 ROM 上不起作用，请更改这个选项</string>
     <string name="recents_clear_all">清除所有</string>
     <string name="homescreen_columns_title">屏幕图标列数</string>
     <string name="homescreen_rows_title">屏幕图标行数</string>
@@ -84,8 +103,25 @@
     <string name="app_drawer_row_height_multiplier_title">行高倍数</string>
     <string name="hide_apps_title">从应用抽屉隐藏应用程序</string>
     <string name="search_hidden_apps_title">允许搜索隐藏的应用</string>
+    <string name="toggle_hidden_app_visibility_title">Toggle hidden app visibility from homescreen popup</string>
     <string name="section_general_title">通用</string>
+    <string name="section_icon_colors_title">图标颜色</string>
     <string name="section_interface_title">界面</string>
     <string name="section_search_bar_title">搜索栏</string>
     <string name="section_quickspace_title">快捷空间</string>
+    <string name="section_hide_apps_title">Hide apps</string>
+    <string name="custom_themed_icon_color_title">自定义主题的图标颜色</string>
+    <string name="icon_foreground_color_light_title">浅色模式下的前景颜色</string>
+    <string name="icon_background_color_light_title">浅色模式下的背景颜色</string>
+    <string name="icon_foreground_color_dark_title">深色模式下的前景颜色</string>
+    <string name="icon_background_color_dark_title">深色模式下的背景颜色</string>
+    <string name="folder_color_light_title">浅色模式下的文件夹颜色</string>
+    <string name="folder_color_dark_title">深色模式下的文件夹颜色</string>
+    <string name="search_bar_opacity_title">搜索栏透明度</string>
+    <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
+    <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="hide_apps">Hide apps</string>
+    <string name="unhide_apps">Show hidden apps</string>
+    <string name="value_output">值大小: %s</string>
+    <string name="developer">Developer</string>
 </resources>

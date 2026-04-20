@@ -8,11 +8,11 @@ import android.os.Parcelable
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import androidx.annotation.Keep
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.putBoolean
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -85,22 +85,14 @@ class TwoTargetSwitchPreference : TwoTargetPreference {
             holder.itemView.performClick()
         }
 
-        holder.itemView.findViewById<View?>(R.id.widget_frame)?.apply {
-            viewTreeObserver.addOnGlobalLayoutListener(object : OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    setMinimumHeight((parent as View).height)
-                    viewTreeObserver.removeOnGlobalLayoutListener(this)
-                }
-            })
-
-            setOnClickListener {
-                if (isEnabled) {
-                    mSwitch?.performClick()
-                }
+        holder.itemView.findViewById<View?>(android.R.id.widget_frame)?.setOnClickListener {
+            if (isEnabled) {
+                mSwitch?.performClick()
             }
         }
 
         setFirstAndLastItemMargin(holder)
+        setBackgroundResource(holder)
     }
 
     val isPreferenceEnabled: Boolean

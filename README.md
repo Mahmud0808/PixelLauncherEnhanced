@@ -1,7 +1,7 @@
 ![HEAD](https://socialify.git.ci/Mahmud0808/PixelLauncherEnhanced/image?description=1&font=Jost&forks=1&issues=1&logo=https%3A%2F%2Fi.postimg.cc%2FmgfNTCbc%2Fpixel-launcher-enhanced.png&name=1&owner=1&pattern=Formal+Invitation&pulls=1&stargazers=1&theme=Auto)
 
 <p align="center">
-PixelLauncher Enhanced is an Xposed module designed to unlock a variety of exciting features for your launcher. Even though the name suggests it's for Pixel Launcher, it also fully supports Launcher3. From customizing the look to adding more functionality, this module enhances your launcher experience with minimal effort.
+Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exciting features for your launcher. Even though the name suggests it's for Pixel Launcher, it also fully supports Launcher3. From customizing the look to adding more functionality, this module enhances your launcher experience with minimal effort.
 </p>
 <br>
 <p align="center">
@@ -14,6 +14,10 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 
 # 🌟 Feature List
 
+> ✅ Fully supported
+> ⚠️ Partially supported
+> 🚫 Not supported
+
 <details>
 <summary>Icons</summary>
 
@@ -23,6 +27,7 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 | Remove shortcut icon badge |       ✅        |         ✅          |
 | Icon size                  |       ✅        |         ✅          |
 | Text size                  |       ✅        |         ✅          |
+| Custom themed icon color   |       ✅        |         ⚠️         |
 
 </details>
 
@@ -33,13 +38,17 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 |-------------------------|:--------------:|:------------------:|
 | Lock layout             |       ✅        |         ✅          |
 | Double tap to sleep     |       ✅        |         ✅          |
+| Wallpaper zooming       |       ✅        |         ✅          |
 | Hide statusbar          |       ✅        |         ✅          |
 | Hide top shadow         |       ✅        |         ✅          |
+| Dark statusbar icon     |       ✅        |         ✅          |
+| Dark page indicator     |       ✅        |         ✅          |
 | Icon labels on desktop  |       ✅        |         ✅          |
 | Homescreen columns      |       ✅        |         ✅          |
 | Homescreen rows         |       ✅        |         ✅          |
 | Hide At A Glance        |       ✅        |         ✅          |
 | Hide desktop search bar |       ✅        |         ✅          |
+| Search bar opacity      |       ✅        |         🚫         |
 | Dock spacing            |       ✅        |         ✅          |
 
 </details>
@@ -66,19 +75,24 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 | Feature                    | Pixel Launcher | Launcher3 Launcher |
 |----------------------------|:--------------:|:------------------:|
 | Clear all button           |       ✅        |         ✅          |
+| Remove screenshot button   |       ✅        |         ✅          |
 | Disable recents live tile  |       ✅        |         ✅          |
 | Recents background opacity |       ✅        |         ✅          |
+| Freeform mode gesture      |       ✅        |         ✅          |
 
 </details>
 
 <details>
 <summary>Miscellaneous</summary>
 
-| Feature                         | Pixel Launcher | Launcher3 Launcher |
-|---------------------------------|:--------------:|:------------------:|
-| Show entry in launcher settings |       ✅        |         ✅          |
-| Developer options               |       ✅        |         🚫         |
-| Restart                         |       ✅        |         ✅          |
+| Feature                                  | Pixel Launcher | Launcher3 Launcher |
+|------------------------------------------|:--------------:|:------------------:|
+| Hide gesture indicator                   |       ✅        |         ✅          |
+| Hide navigation bar space                |       ✅        |         ✅          |
+| Show entry in launcher settings          |       ✅        |         ✅          |
+| Prevent wallpaper dimming caused restart |       ✅        |         ✅          |
+| Developer options                        |       ✅        |         🚫         |
+| Restart                                  |       ✅        |         ✅          |
 
 </details>
 
@@ -90,9 +104,9 @@ PixelLauncher Enhanced is an Xposed module designed to unlock a variety of excit
 
 # 🔧 Installation
 
-1. Download and install [PixelLauncher Enhanced APK](https://github.com/Mahmud0808/PixelLauncherEnhanced/releases).
+1. Download and install [Pixel Launcher Enhanced APK](https://github.com/Mahmud0808/PixelLauncherEnhanced/releases).
 
-2. Grant root access for PixelLauncher Enhanced app.
+2. Grant root access for Pixel Launcher Enhanced app.
 
 3. Enable the module from Xposed manager application.
 
@@ -116,5 +130,5 @@ Root access is a requirement for the following features:
 
 # 🌍 Translations
 
-Want to help translate PixelLauncher Enhanced into your language? You can contribute translations on
+Want to help translate Pixel Launcher Enhanced into your language? You can contribute translations on
 our [Crowdin platform](https://crowdin.com/project/pixellauncher-enhanced).
