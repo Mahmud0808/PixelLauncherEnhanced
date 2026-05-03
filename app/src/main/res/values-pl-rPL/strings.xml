@@ -67,8 +67,8 @@
     <string name="hide_desktop_search_bar_title">Ukryj pasek wyszukiwania na ekranie głównym</string>
     <string name="hide_desktop_search_bar_desc">Ukryj pasek wyszukiwania z dolnego paska ekranu głównego</string>
     <string name="dock_spacing_title">Odstęp dolnego paska</string>
-    <string name="app_drawer_background_opacity_title">Nieprzezroczystość tła listy aplikacji</string>
-    <string name="recents_background_opacity_title">Nieprzezroczystość tła ostatnich aplikacji</string>
+    <string name="app_drawer_background_opacity_title">Krycie tła listy aplikacji</string>
+    <string name="recents_background_opacity_title">Krycie tła ostatnich aplikacji</string>
     <string name="restart_launcher_title">Uruchom ponownie</string>
     <string name="restart_launcher_desc">Uruchom ponownie launcher, aby zastosować ustawienia</string>
     <string name="restarting_launcher">Ponowne uruchamianie launchera…</string>
@@ -117,11 +117,14 @@
     <string name="icon_background_color_dark_title">Kolor tła w trybie ciemnym</string>
     <string name="folder_color_light_title">Kolor folderu w trybie jasnym</string>
     <string name="folder_color_dark_title">Kolor folderu w trybie ciemnym</string>
-    <string name="search_bar_opacity_title">Nieprzezroczystość paska wyszukiwania</string>
+    <string name="search_bar_opacity_title">Krycie paska wyszukiwania</string>
     <string name="prevent_wallpaper_dimming_restart_title">Zapobiegaj przyciemnianiu tapety wywołanym ponownym uruchomieniem</string>
     <string name="prevent_wallpaper_dimming_restart_summary">Może być konieczne ręczne ponowne uruchomienie launchera w celu pobrania aktualizacji kolorów tapety na żywo</string>
     <string name="hide_apps">Ukryj aplikacje</string>
     <string name="unhide_apps">Pokaż ukryte aplikacje</string>
     <string name="value_output">Wartość: %s</string>
     <string name="developer">Programista</string>
+    <string name="unstable">Niestabilne</string>
+    <string name="unstable_dialog_title">Funkcja niestabilna</string>
+    <string name="unstable_dialog_desc">Ta funkcja jest eksperymentalna i może powodować awarie lub nieoczekiwane zachowanie.</string>
 </resources>
