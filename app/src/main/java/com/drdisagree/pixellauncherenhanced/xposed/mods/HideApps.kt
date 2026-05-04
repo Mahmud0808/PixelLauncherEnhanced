@@ -141,7 +141,7 @@ class HideApps(context: Context) : ModPack(context) {
                 if (!mApps
                         .javaClass
                         .componentType
-                        .simpleName
+                        ?.simpleName
                         .equals(appInfoClass!!.simpleName, ignoreCase = true)
                 ) return@runBefore
 

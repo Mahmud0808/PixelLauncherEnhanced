@@ -207,6 +207,7 @@ class SliderPreference(
         mSlider!!.valueFrom = valueFrom
         mSlider!!.valueTo = valueTo
         mSlider!!.stepSize = tickInterval
+        @Suppress("deprecation")
         mSlider!!.isTickVisible = tickVisible
 
         syncState()

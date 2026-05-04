@@ -7,8 +7,6 @@ import android.graphics.Rect
 
 object FreeformUtils {
 
-    private const val TAG = "Free Launcher"
-
     enum class Variant(val id: Int) {
         AOSP(0),
         SUNSHINE(1),
@@ -52,9 +50,9 @@ object FreeformUtils {
             mContext.callMethod("sendBroadcast", this)
         }
     }
-    
-    fun startFreeformFromRecents(task: Any?, Iamw: Any?, r: Rect) {
-        Iamw.callMethod(
+
+    fun startFreeformFromRecents(task: Any?, iamw: Any?, r: Rect) {
+        iamw.callMethod(
             "startActivityFromRecents",
             task.getFieldSilently("key"),
             freeformOpt?.setLaunchBounds(r)

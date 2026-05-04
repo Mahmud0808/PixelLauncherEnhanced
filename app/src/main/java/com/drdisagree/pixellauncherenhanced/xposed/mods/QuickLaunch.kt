@@ -235,7 +235,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 					}
 
 					// If component still missing, try to synthesize it
-					val ctx = (containerRef?.get() as? View)?.context ?: (recyclerRef?.get() as? View)?.context
+					val ctx = (containerRef?.get() as? View)?.context ?: recyclerRef?.get()?.context
 					if (foundComponent == null && ctx != null && pkg != null) {
 						// If extras exposes explicit class (matches Pixel pattern for certain result types, e.g. 32768)
 						val explicitClass = extras?.let { b ->
