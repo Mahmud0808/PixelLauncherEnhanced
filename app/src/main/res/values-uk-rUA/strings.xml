@@ -124,4 +124,7 @@
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Значення: %s</string>
     <string name="developer">Developer</string>
+    <string name="unstable">Unstable</string>
+    <string name="unstable_dialog_title">Unstable feature</string>
+    <string name="unstable_dialog_desc">This feature is experimental and may cause crashes or unexpected behavior.</string>
 </resources>
