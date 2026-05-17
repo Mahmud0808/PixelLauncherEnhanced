@@ -11,7 +11,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
@@ -256,7 +256,7 @@ class HideApps(context: Context) : ModPack(context) {
                         val modelUpdateTask = param.args[0]
 
                         if ((baseModelUpdateTaskClass != null && modelUpdateTask::class.java.simpleName != baseModelUpdateTaskClass.simpleName) ||
-                            modelUpdateTask.getExtraField("hooked") == true
+                            modelUpdateTask.getExtraFieldSilently("hooked") == true
                         ) return@runBefore
 
                         modelUpdateTask.setExtraField("hooked", true)
