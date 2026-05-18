@@ -21,6 +21,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Modifier
 import java.util.Arrays
@@ -254,18 +255,30 @@ class HideApps(context: Context) : ModPack(context) {
                     .hookMethod("enqueueModelUpdateTask")
                     .runBefore { param ->
                         val modelUpdateTask = param.args[0]
+                        val taskClass = modelUpdateTask::class.java
 
-                        if ((baseModelUpdateTaskClass != null && modelUpdateTask::class.java.simpleName != baseModelUpdateTaskClass.simpleName) ||
-                            modelUpdateTask.getExtraFieldSilently("hooked") == true
+                        if (baseModelUpdateTaskClass != null &&
+                            taskClass.simpleName != baseModelUpdateTaskClass.simpleName
                         ) return@runBefore
 
-                        modelUpdateTask.setExtraField("hooked", true)
-
-                        modelUpdateTask::class.java
-                            .hookMethod("execute")
-                            .runBefore { param2 ->
-                                removeAppResult(param2)
+                        val unhookTokens = XposedBridge.hookAllMethods(
+                            taskClass,
+                            "execute",
+                            object : XC_MethodHook() {
+                                override fun beforeHookedMethod(param2: MethodHookParam) {
+                                    removeAppResult(param2)
+                                }
                             }
+                        )
+
+                        param.setExtraField("unhook_tokens", unhookTokens)
+                    }
+                    .runAfter { param ->
+                        @Suppress("UNCHECKED_CAST")
+                        val unhookTokens =
+                            param.getExtraFieldSilently("unhook_tokens") as? Set<XC_MethodHook.Unhook>
+
+                        unhookTokens?.forEach { it.unhook() }
                     }
             }
         }
