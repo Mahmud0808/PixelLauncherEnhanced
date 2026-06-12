@@ -11,7 +11,6 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
@@ -21,10 +20,10 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Modifier
 import java.util.Arrays
+import java.util.Collections
 
 class HideApps(context: Context) : ModPack(context) {
 
@@ -38,6 +37,8 @@ class HideApps(context: Context) : ModPack(context) {
         private var hotseatPredictionControllerInstance: Any? = null
         private var hybridHotseatOrganizerClassInstance: Any? = null
         private var predictionRowViewInstance: Any? = null
+        private val hookedModelUpdateTaskClasses =
+            Collections.synchronizedSet(mutableSetOf<String>())
 
         fun updateLauncherIcons(context: Context) {
             activityAllAppsContainerViewInstance.callMethod("onAppsUpdated")
@@ -220,6 +221,8 @@ class HideApps(context: Context) : ModPack(context) {
                     it::class.java.simpleName == allAppsListClass!!.simpleName
                 }
 
+                if (appsIndex < 0) return
+
                 val apps = param.args[appsIndex]
                 val data = apps.getField("data") as ArrayList<*>
 
@@ -261,24 +264,13 @@ class HideApps(context: Context) : ModPack(context) {
                             taskClass.simpleName != baseModelUpdateTaskClass.simpleName
                         ) return@runBefore
 
-                        val unhookTokens = XposedBridge.hookAllMethods(
-                            taskClass,
-                            "execute",
-                            object : XC_MethodHook() {
-                                override fun beforeHookedMethod(param2: MethodHookParam) {
-                                    removeAppResult(param2)
-                                }
+                        if (!hookedModelUpdateTaskClasses.add(taskClass.name)) return@runBefore
+
+                        taskClass
+                            .hookMethod("execute")
+                            .runBefore { param2 ->
+                                removeAppResult(param2)
                             }
-                        )
-
-                        param.setExtraField("unhook_tokens", unhookTokens)
-                    }
-                    .runAfter { param ->
-                        @Suppress("UNCHECKED_CAST")
-                        val unhookTokens =
-                            param.getExtraFieldSilently("unhook_tokens") as? Set<XC_MethodHook.Unhook>
-
-                        unhookTokens?.forEach { it.unhook() }
                     }
             }
         }
