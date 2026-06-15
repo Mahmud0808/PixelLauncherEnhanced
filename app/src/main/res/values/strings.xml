@@ -138,5 +138,7 @@
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>
     <string name="unstable_dialog_desc">This feature is experimental and may cause crashes or unexpected behavior.</string>
+    <string name="force_stop_app_in_popup_title">Force stop in app popup</string>
+    <string name="force_stop_app">Force Stop</string>
 
 </resources>
