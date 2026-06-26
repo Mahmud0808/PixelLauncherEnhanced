@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
 import android.view.View
 import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.R
@@ -17,6 +18,8 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.reflect.Constructor
+import java.lang.reflect.Proxy
 
 class LockLayout(context: Context) : ModPack(context) {
 
@@ -161,8 +164,61 @@ class LockLayout(context: Context) : ModPack(context) {
                         }
                     }
                 }
+        } else if (Build.VERSION.SDK_INT >= 37) {
+            val workspaceLongPressOptionsClass =
+                findClass("com.android.launcher3.popup.WorkspaceLongPressOptions")
+
+            if (workspaceLongPressOptionsClass.hasMethod("openWidgetPicker")) {
+                workspaceLongPressOptionsClass
+                    .hookMethod("openWidgetPicker")
+                    .runBefore { param ->
+                        if (!lockLayout) return@runBefore
+
+                        showLayoutLockedToast()
+                        param.result = null
+                    }
+            } else {
+                val popupDataClass = findClass("com.android.launcher3.popup.PopupData")
+
+                @SuppressLint("DiscouragedApi")
+                val widgetButtonTextId = mContext.resources.getIdentifier(
+                    "widget_button_text",
+                    "string",
+                    mContext.packageName
+                )
+
+                popupDataClass
+                    .hookConstructor()
+                    .runBefore { param ->
+                        if (!lockLayout) return@runBefore
+
+                        val shouldReplace = param.args[1] as Int == widgetButtonTextId
+
+                        if (shouldReplace) {
+                            val popupActionType =
+                                (param.method as Constructor<*>).parameterTypes.last()
+
+                            param.args[param.args.size - 1] = Proxy.newProxyInstance(
+                                popupActionType.classLoader,
+                                arrayOf(popupActionType)
+                            ) { proxy, method, args ->
+                                when (method.name) {
+                                    "invoke" -> {
+                                        showLayoutLockedToast()
+                                        Unit
+                                    }
+
+                                    "equals" -> proxy === args?.getOrNull(0)
+                                    "hashCode" -> System.identityHashCode(proxy)
+                                    "toString" -> "LockLayoutPopupAction"
+                                    else -> null
+                                }
+                            }
+                        }
+                    }
+            }
         } else {
-            log("Suitable method not found in OptionsPopupView class.")
+            log(this@LockLayout, "Suitable method not found for blocking widget picker.")
         }
     }
 }
