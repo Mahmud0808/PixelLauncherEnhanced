@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Point
+import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_AT_A_GLANCE
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
@@ -159,6 +160,7 @@ class SmartSpace(context: Context) : ModPack(context) {
 
         workspaceClass
             .hookMethod("bindAndInitFirstWorkspaceScreen")
+            .also { if (Build.VERSION.SDK_INT >= 36) it.suppressError() }
             .runBefore { param ->
                 if (!hideQuickspace) return@runBefore
 
