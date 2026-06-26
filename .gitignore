@@ -9,6 +9,15 @@
 /.idea/assetWizardSettings.xml
 /.idea/deviceManager.xml
 /.idea/copilot.*
+/.idea/.name
+/.idea/studiobot.xml
+/.idea/appInsightsSettings.xml
+/.idea/AndroidProjectSystem.xml
+/.idea/compiler.xml
+/.idea/kotlinc.xml
+/.idea/migrations.xml
+/.idea/misc.xml
+/.idea/gradle.xml
 .DS_Store
 /build
 /captures
