@@ -50,9 +50,12 @@ class GridOptions (context: Context) : ModPack(context) {
 
         fun Any.hookDeviceProfile() {
             val temp = getFieldSilently("iconSizePx") as? Int
+            val mHotseatProfile = getFieldSilently("mHotseatProfile")
+            val mDisplayOptionSpec = getFieldSilently("mDisplayOptionSpec")
 
             if (homeScreenGridColumns != 0) {
-                setField("numShownHotseatIcons", homeScreenGridColumns)
+                setFieldSilently("numShownHotseatIcons", homeScreenGridColumns)
+                mHotseatProfile?.setField("numShownIcons", homeScreenGridColumns)
             }
 
             if (appDrawerGridColumns != 0) {
@@ -63,14 +66,21 @@ class GridOptions (context: Context) : ModPack(context) {
                     mAllAppsProfile.setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
                 }
             }
+
+            mDisplayOptionSpec?.apply {
+                if (homeScreenGridColumns != 0) {
+                    setField("numShownHotseatIcons", homeScreenGridColumns)
+                }
+                if (appDrawerGridColumns != 0) {
+                    setField("numAllAppsColumns", appDrawerGridColumns)
+                }
+            }
         }
 
         deviceProfileClass
             .hookConstructor()
             .runAfter { param ->
-                param.thisObject.apply {
-                    hookDeviceProfile()
-                }
+                param.thisObject.hookDeviceProfile()
             }
 
         deviceProfileBuilderClass
@@ -85,6 +95,7 @@ class GridOptions (context: Context) : ModPack(context) {
                 if (homeScreenGridColumns != 0 && param.args.size >= 3) {
                     val displayOption = param.args[2]
                     val closestProfile = displayOption.getField("grid")
+
                     closestProfile.setField("numHotseatIcons", homeScreenGridColumns)
                 }
             }
@@ -103,10 +114,20 @@ class GridOptions (context: Context) : ModPack(context) {
         invariantDeviceProfileClass
             .hookMethod("invDistWeightedInterpolate")
             .runAfter { param ->
+                val displayOption = param.result
+                val closestProfile = displayOption.getField("grid")
+
+                if (homeScreenGridRows != 0) {
+                    closestProfile.setFieldSilently("numRows", homeScreenGridRows)
+                }
                 if (homeScreenGridColumns != 0) {
-                    val displayOption = param.result
-                    val closestProfile = displayOption.getField("grid")
-                    closestProfile.setField("numHotseatIcons", homeScreenGridColumns)
+                    closestProfile.setFieldSilently("numColumns", homeScreenGridColumns)
+                    closestProfile.setFieldSilently("numHotseatIcons", homeScreenGridColumns)
+                    closestProfile.setFieldSilently("numDatabaseHotseatIcons", homeScreenGridColumns)
+                }
+                if (appDrawerGridColumns != 0) {
+                    closestProfile.setFieldSilently("numAllAppsColumns", homeScreenGridColumns)
+                    closestProfile.setFieldSilently("numDatabaseAllAppsColumns", homeScreenGridColumns)
                 }
             }
 
