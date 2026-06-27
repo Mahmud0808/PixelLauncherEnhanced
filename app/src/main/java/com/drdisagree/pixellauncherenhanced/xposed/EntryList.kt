@@ -28,6 +28,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIcons
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIconsColor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.TopShadow
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperZoom
+import com.drdisagree.pixellauncherenhanced.xposed.mods.ForceStopShortcut
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BroadcastHook
 
 object EntryList {
@@ -60,6 +61,7 @@ object EntryList {
         DarkStatusbar::class.java,
         DarkPageIndicator::class.java,
         WallpaperDim::class.java,
+        ForceStopShortcut::class.java,
     )
 
     fun getEntries(packageName: String): ArrayList<Class<out ModPack>> {

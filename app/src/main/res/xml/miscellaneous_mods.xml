@@ -41,6 +41,12 @@
         android:title="@string/developer_options_title"
         app:iconSpaceReserved="false" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+        android:defaultValue="false"
+        android:key="xposed_forcestopappinpopup"
+        android:title="@string/force_stop_app_in_popup_title"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
         android:key="xposed_restartlauncher"
         android:summary="@string/restart_launcher_desc"

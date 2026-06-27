@@ -70,6 +70,7 @@ object Constants {
     const val HIDE_NAVIGATION_SPACE = "xposed_hidenavigationspace"
     const val QUICK_LAUNCH = "xposed_quicklaunch"
     const val PREVENT_WALLPAPER_DIMMING_RESTART = "xposed_preventwallpaperdimmingrestart"
+    const val FORCE_STOP_APP_IN_POPUP = "xposed_forcestopappinpopup"
 
     val PREF_UPDATE_EXCLUSIONS = listOf(
         BootLoopProtector.LOAD_TIME_KEY_KEY,
