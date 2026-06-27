@@ -12,6 +12,7 @@ object Constants {
     const val FRAMEWORK_PACKAGE = "android"
     const val PIXEL_LAUNCHER_PACKAGE = "com.google.android.apps.nexuslauncher"
     const val LAUNCHER3_PACKAGE = "com.android.launcher3"
+    const val SYSTEMUI_PACKAGE = "com.android.systemui"
 
     // Preferences
     const val VIBRATE_UI = "vibrate_ui"
@@ -70,6 +71,8 @@ object Constants {
     const val HIDE_NAVIGATION_SPACE = "xposed_hidenavigationspace"
     const val QUICK_LAUNCH = "xposed_quicklaunch"
     const val PREVENT_WALLPAPER_DIMMING_RESTART = "xposed_preventwallpaperdimmingrestart"
+    const val HIDE_FINGERPRINT_CIRCLE = "xposed_hidefingerprintcircle"
+    const val HIDE_FINGERPRINT_ICON = "xposed_hidefingerprinticon"
 
     val PREF_UPDATE_EXCLUSIONS = listOf(
         BootLoopProtector.LOAD_TIME_KEY_KEY,

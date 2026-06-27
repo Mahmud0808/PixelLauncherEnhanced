@@ -4,6 +4,7 @@
     <string-array name="module_scope" translatable="false">
         <item>com.google.android.apps.nexuslauncher</item>
         <item>com.android.launcher3</item>
+        <item>com.android.systemui</item>
     </string-array>
 
     <string-array name="root_requirement" translatable="false">

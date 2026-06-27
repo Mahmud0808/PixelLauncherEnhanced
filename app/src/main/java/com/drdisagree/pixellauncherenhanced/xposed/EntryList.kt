@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.xposed
 
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SYSTEMUI_PACKAGE
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DarkPageIndicator
@@ -27,6 +28,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.TaskbarHandle
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIcons
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIconsColor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.TopShadow
+import com.drdisagree.pixellauncherenhanced.xposed.mods.UdfpsManager
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperZoom
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BroadcastHook
 
@@ -62,6 +64,10 @@ object EntryList {
         WallpaperDim::class.java,
     )
 
+    private val systemUiModPacks: List<Class<out ModPack>> = listOf(
+        UdfpsManager::class.java,
+    )
+
     fun getEntries(packageName: String): ArrayList<Class<out ModPack>> {
         val modPacks = ArrayList<Class<out ModPack>>()
 
@@ -69,6 +75,9 @@ object EntryList {
             PIXEL_LAUNCHER_PACKAGE,
             LAUNCHER3_PACKAGE -> {
                 modPacks.addAll(launcherModPacks)
+            }
+            SYSTEMUI_PACKAGE -> {
+                modPacks.addAll(systemUiModPacks)
             }
         }
 

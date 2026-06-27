@@ -139,4 +139,10 @@
     <string name="unstable_dialog_title">Unstable feature</string>
     <string name="unstable_dialog_desc">This feature is experimental and may cause crashes or unexpected behavior.</string>
 
+    <string name="hide_fingerprint_circle_title">Hide fingerprint circle</string>
+    <string name="hide_fingerprint_circle_summary">Remove background circle from under-display fingerprint on lockscreen</string>
+
+    <string name="hide_fingerprint_icon_title">Hide fingerprint icon</string>
+    <string name="hide_fingerprint_icon_summary">Remove foreground icon from under-display fingerprint on lockscreen</string>
+
 </resources>
