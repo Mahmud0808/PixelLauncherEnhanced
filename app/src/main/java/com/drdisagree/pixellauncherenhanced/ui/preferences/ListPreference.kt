@@ -2,6 +2,8 @@ package com.drdisagree.pixellauncherenhanced.ui.preferences
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
+import android.widget.TextView
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
@@ -41,6 +43,16 @@ class ListPreference : ListPreference {
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
+
+        (holder.findViewById(R.id.output) as? TextView)?.apply {
+            val selectedEntry = entry
+            if (selectedEntry.isNullOrEmpty()) {
+                visibility = View.GONE
+            } else {
+                visibility = View.VISIBLE
+                text = context.getString(R.string.selected_output, selectedEntry)
+            }
+        }
 
         setFirstAndLastItemMargin(holder)
         setBackgroundResource(holder)

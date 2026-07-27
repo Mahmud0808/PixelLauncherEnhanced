@@ -47,5 +47,13 @@
             android:textAlignment="viewStart"
             android:textColor="@color/text_color_secondary" />
 
+        <TextView
+            android:id="@+id/output"
+            style="@style/Preference.SummaryText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="viewStart"
+            android:textColor="@color/text_color_secondary" />
+
     </LinearLayout>
 </RelativeLayout>
