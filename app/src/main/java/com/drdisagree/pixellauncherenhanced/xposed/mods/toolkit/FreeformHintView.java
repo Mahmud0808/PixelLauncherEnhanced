@@ -17,6 +17,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -27,6 +28,7 @@ import android.widget.ImageView;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -40,8 +42,6 @@ import static android.view.Surface.ROTATION_270;
  * A hint view for freeform gesture, owned by DragLayer as a permanent child.
  * Lifecycle is bound to DragLayer — created once, never removed.
  * Callers use setPhase()/setTaskBounds()/setDisplayRotation() to control state.
- *
- * Adapted from AviumUI's FreeformHintView for cross-ROM Xposed use.
  */
 public class FreeformHintView extends FrameLayout {
 
@@ -77,12 +77,15 @@ public class FreeformHintView extends FrameLayout {
     private AnimatorSet mVisibilityAnimator;
     private final int[] mPosTmp = new int[2];
 
-    private ImageView mIconView;
+    /** Active release animation (shrink + fade), null when idle. */
+    private AnimatorSet mReleaseAnimator;
+
+    private final ImageView mIconView;
 
     /**
      * @param context     Context (launcher process)
      * @param moduleRes   Module's own Resources for i18n string loading (can be null)
-     * @param packageName Module's package name for resource lookup
+     * @param modulePackageName Module's package name for resource lookup
      */
     public FreeformHintView(@NonNull Context context,
                             @Nullable Resources moduleRes,
@@ -93,11 +96,11 @@ public class FreeformHintView extends FrameLayout {
         float density = context.getResources().getDisplayMetrics().density;
 
         mCardHeight = CARD_HEIGHT_DP * density;
-        mCornerRadius = getSystemCornerRadius(context);
         mIconSize = ICON_SIZE_DP * density;
         mIconPadding = ICON_PADDING_DP * density;
         mCardMargin = (int) (CARD_MARGIN_DP * density);
-        mInnerPadding = 12 * density;
+        mInnerPadding = 4 * density;
+        mCornerRadius = getSystemCornerRadius(context) + mInnerPadding / 2;
 
         // Accent color: try Monet dynamic color, fallback #39FFCC
         mBgPaint.setColor(getDynamicAccentColor(context));
@@ -121,7 +124,7 @@ public class FreeformHintView extends FrameLayout {
         mIconView.setColorFilter(getDynamicTextColor(context));
         int iconSizePx = (int) mIconSize;
         int topMargin = (int) ((mCardHeight - mIconSize) / 2);
-        FrameLayout.LayoutParams iconLp = new FrameLayout.LayoutParams(iconSizePx, iconSizePx);
+        LayoutParams iconLp = new LayoutParams(iconSizePx, iconSizePx);
         iconLp.leftMargin = (int) mIconPadding;
         iconLp.topMargin = topMargin;
         iconLp.gravity = Gravity.TOP | Gravity.START;
@@ -187,7 +190,7 @@ public class FreeformHintView extends FrameLayout {
                 if (id != 0) return moduleRes.getString(id);
             } catch (Exception ignored) {}
         }
-        return "\u4e0a\u6ed1\u8fdb\u5165\u81ea\u7531\u7a97\u53e3";
+        return "Swipe up to enter Freeform";
     }
 
     @Nullable
@@ -205,29 +208,42 @@ public class FreeformHintView extends FrameLayout {
     }
 
     private static Drawable createFallbackIcon() {
-        android.graphics.drawable.GradientDrawable d =
-                new android.graphics.drawable.GradientDrawable();
-        d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        GradientDrawable d =
+                new GradientDrawable();
+        d.setShape(GradientDrawable.OVAL);
         d.setColor(Color.WHITE);
         return d;
     }
 
     // ── Phase control ──
+    public HintPhase getPhase() {
+        return mPhase;
+    }
 
     public void setPhase(@NonNull HintPhase phase) {
         if (mPhase == phase) return;
         HintPhase prev = mPhase;
         mPhase = phase;
 
-        // Cancel any external ViewPropertyAnimator (from release animation)
+        // Cancel ALL running animations (visibility, progress, release)
         // and restore View-level properties. The release animation sets
         // View.setAlpha(0) + setScaleX/Y(0.5) which pollutes the View;
         // reset them here. Internal transparency is controlled via
         // mHintAlpha/mIconView/onDraw, so View alpha should always be 1.
+        cancelAnimators();
         animate().cancel();
         setAlpha(1f);
         setScaleX(mScale);
         setScaleY(mScale);
+
+        // Restore position before starting new animation. After a cancelled
+        // release animation the LayoutParams may be left at the collapsed-ball
+        // position; adjustVisibilityAnimation(true) only animates alpha+scale
+        // without calling updatePositionAndSize(), so the card would appear
+        // at the stale position. Force-reposition here for visible phases.
+        if (phase != HintPhase.HIDDEN) {
+            updatePositionAndSize();
+        }
 
         switch (phase) {
             case HIDDEN:
@@ -292,8 +308,8 @@ public class FreeformHintView extends FrameLayout {
                     lpClass.getConstructor(int.class, int.class)
                             .newInstance(ViewGroup.LayoutParams.WRAP_CONTENT,
                                     ViewGroup.LayoutParams.WRAP_CONTENT);
-            if (lp instanceof android.widget.FrameLayout.LayoutParams) {
-                ((android.widget.FrameLayout.LayoutParams) lp).gravity =
+            if (lp instanceof LayoutParams) {
+                ((LayoutParams) lp).gravity =
                         Gravity.TOP | Gravity.START;
             }
             setLayoutParams(lp);
@@ -320,7 +336,7 @@ public class FreeformHintView extends FrameLayout {
         // Step 1: collapse card width to just the icon ball
         final float startScale = getScaleX();
         final Rect startLp = new Rect();
-        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
+        LayoutParams lp = (LayoutParams) getLayoutParams();
         if (lp != null) {
             startLp.set(lp.leftMargin, lp.topMargin, lp.width, lp.height);
         }
@@ -333,7 +349,7 @@ public class FreeformHintView extends FrameLayout {
 
         ValueAnimator collapse = ValueAnimator.ofFloat(0f, 1f);
         collapse.setDuration(150L);
-        collapse.setInterpolator(new android.view.animation.AccelerateInterpolator());
+        collapse.setInterpolator(new FastOutSlowInInterpolator());
         collapse.addUpdateListener(a -> {
             float p = a.getAnimatedFraction();
             if (lp != null) {
@@ -346,10 +362,10 @@ public class FreeformHintView extends FrameLayout {
         });
 
         // Step 2: scale down + fade out
+        final boolean[] wasCancelled = new boolean[1];
         ValueAnimator fadeOut = ValueAnimator.ofFloat(1f, 0f);
         fadeOut.setDuration(150L);
-        fadeOut.setStartDelay(50L); // slight overlap with collapse
-        fadeOut.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        fadeOut.setInterpolator(new FastOutSlowInInterpolator());
         fadeOut.addUpdateListener(a -> {
             float p = a.getAnimatedFraction();
             setScaleX(1f - p * 0.7f);
@@ -358,16 +374,29 @@ public class FreeformHintView extends FrameLayout {
         });
         fadeOut.addListener(new AnimatorListenerAdapter() {
             @Override
+            public void onAnimationCancel(Animator animation) {
+                wasCancelled[0] = true;
+            }
+            @Override
             public void onAnimationEnd(Animator animation) {
-                mHintAlpha = 0f;
-                mIsVisible = false;
-                requestLayout();
-                if (onComplete != null) onComplete.run();
+                if (!wasCancelled[0]) {
+                    mHintAlpha = 0f;
+                    mIsVisible = false;
+                    requestLayout();
+                    if (onComplete != null) onComplete.run();
+                }
             }
         });
 
         AnimatorSet set = new AnimatorSet();
         set.playTogether(collapse, fadeOut);
+        set.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mReleaseAnimator = null;
+            }
+        });
+        mReleaseAnimator = set;
         set.start();
     }
 
@@ -377,7 +406,7 @@ public class FreeformHintView extends FrameLayout {
         if (mProgressAnimator != null) mProgressAnimator.cancel();
 
         mProgressAnimator = ValueAnimator.ofFloat(mExpandProgress, target);
-        mProgressAnimator.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        mProgressAnimator.setInterpolator(new FastOutSlowInInterpolator());
         mProgressAnimator.addUpdateListener(a -> {
             mExpandProgress = (float) a.getAnimatedValue();
             updatePositionAndSize();
@@ -416,13 +445,18 @@ public class FreeformHintView extends FrameLayout {
 
         AnimatorSet set = new AnimatorSet();
         set.playTogether(alpha, scale);
-        set.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        set.setInterpolator(new FastOutSlowInInterpolator());
         set.setDuration(ANIM_DURATION_MS);
         set.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 mIsVisible = visible;
-                mExpandProgress = 0f;
+                // Only reset expand progress when hiding; during show transitions
+                // the progress animator may still be running to collapse from EXPAND
+                // or expand to EXPAND — let it own mExpandProgress.
+                if (!visible) {
+                    mExpandProgress = 0f;
+                }
                 mHintAlpha = visible ? 1f : 0f;
                 applyContentAlpha();
                 invalidate();
@@ -436,9 +470,7 @@ public class FreeformHintView extends FrameLayout {
     }
 
     private void applyContentAlpha() {
-        float contentAlpha = (mPhase == HintPhase.EXPAND)
-                ? Math.max(0f, 1f - mExpandProgress * 2f)
-                : 1f;
+        float contentAlpha = Math.max(0f, 1f - mExpandProgress * 2f);
         if (mIconView != null) {
             int iconAlpha = (int) (255 * mHintAlpha * contentAlpha);
             mIconView.setAlpha(iconAlpha / 255f);
@@ -454,6 +486,10 @@ public class FreeformHintView extends FrameLayout {
         if (mVisibilityAnimator != null) {
             mVisibilityAnimator.cancel();
             mVisibilityAnimator = null;
+        }
+        if (mReleaseAnimator != null) {
+            mReleaseAnimator.cancel();
+            mReleaseAnimator = null;
         }
     }
 
@@ -531,7 +567,7 @@ public class FreeformHintView extends FrameLayout {
         l = Math.max(0, Math.min(l, pw - cw));
         t = Math.max(0, Math.min(t, ph - ch));
 
-        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
+        LayoutParams lp = (LayoutParams) getLayoutParams();
         if (lp != null) {
             if (lp.leftMargin != l || lp.topMargin != t || lp.width != cw || lp.height != ch) {
                 lp.gravity = Gravity.TOP | Gravity.START;
@@ -565,10 +601,6 @@ public class FreeformHintView extends FrameLayout {
                 out[0] = mCardMargin;
                 out[1] = mCardMargin + sbH;
                 break;
-            case ROTATION_270:
-                out[0] = pw - cw - mCardMargin;
-                out[1] = mCardMargin + sbH;
-                break;
             case ROTATION_180:
                 out[0] = mCardMargin;
                 out[1] = mCardMargin + nbH;
@@ -593,9 +625,7 @@ public class FreeformHintView extends FrameLayout {
         mCardRect.set(0, 0, w, h);
         canvas.drawRoundRect(mCardRect, mCornerRadius, mCornerRadius, mBgPaint);
 
-        float contentAlpha = (mPhase == HintPhase.EXPAND)
-                ? Math.max(0f, 1f - mExpandProgress * 2f)
-                : (mPhase == HintPhase.SWIPE_UP_HINT ? 1f : 0f);
+        float contentAlpha = Math.max(0f, 1f - mExpandProgress * 2f);
 
         if (contentAlpha > 0f && mDisplayText != null) {
             int textAlpha = (int) (255 * mHintAlpha * contentAlpha);

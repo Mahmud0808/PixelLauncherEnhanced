@@ -24,6 +24,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
+import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 
 class FreeformMod(context: Context) : ModPack(context) {
@@ -31,9 +32,6 @@ class FreeformMod(context: Context) : ModPack(context) {
     private var freeformEnabled: Boolean = false
     private var offProgress: Float = 3f
     private var freeformMode: Int = 0
-
-    companion object {
-    }
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -68,25 +66,6 @@ class FreeformMod(context: Context) : ModPack(context) {
                 }
             }
 
-        // ── updateSysUiFlags: haptic + hint view phase ──
-        absSwipeClass
-            .hookMethod("updateSysUiFlags")
-            .runAfter { param ->
-                if (!freeformEnabled) return@runAfter
-
-                val mProgress = param.thisObject
-                    .getField("mCurrentShift")
-                    .getField("value") as Float
-
-                // Haptic at trigger threshold
-                if (mProgress > offProgress) {
-                    param.thisObject.callMethod("performHapticFeedback")
-                }
-
-                // Update FreeformHintView based on shift progress
-                updateHintView(param.thisObject, mProgress)
-            }
-
         // ── onCurrentShiftUpdated: hint view updates during gesture ──
         absSwipeClass
             .hookMethod("onCurrentShiftUpdated")
@@ -95,7 +74,7 @@ class FreeformMod(context: Context) : ModPack(context) {
                 val mProgress = param.thisObject
                     .getField("mCurrentShift")
                     .getField("value") as Float
-                updateHintView(param.thisObject, mProgress)
+                updateHintView(param.thisObject, mProgress, param)
             }
 
         // ── Gesture end (setEndTarget / onGestureEnd): reset hint view ──
@@ -183,10 +162,6 @@ class FreeformMod(context: Context) : ModPack(context) {
                                     FreeformUtils.Variant.BUBBLE.id -> {
                                         // Launch bubble immediately, with release shrink animation
                                         startAppBubble(mContext, mTask)
-                                        val hintView = FreeformHintViewController.getHintView()
-                                        if (hintView != null) {
-                                            hintView.playReleaseAnimation(null)
-                                        }
                                     }
 
                                     FreeformUtils.Variant.YAMF.id,
@@ -206,6 +181,10 @@ class FreeformMod(context: Context) : ModPack(context) {
                                     }
                                 }
 
+                                val hintView = FreeformHintViewController.getHintView()
+                                if (hintView != null) {
+                                    hintView.playReleaseAnimation(null)
+                                }
                                 param.thisObject
                                     .getField("mGestureState")
                                     .callMethod("setEndTarget", homeTarget)
@@ -256,11 +235,11 @@ class FreeformMod(context: Context) : ModPack(context) {
         } catch (e: Exception) { null }
     }
 
-    private fun updateHintView(handler: Any, shift: Float) {
+    private fun updateHintView(handler: Any, shift: Float, param:  XC_MethodHook.MethodHookParam) {
         if (!freeformEnabled) return
 
-        // Hint starts at (trigger threshold - 0.5)
-        val hintStart = offProgress - 0.5f
+        // Hint starts at (trigger threshold - 0.7)
+        val hintStart = offProgress - 0.7f
 
         val phase = when {
             shift < hintStart -> FreeformHintView.HintPhase.HIDDEN
@@ -269,6 +248,11 @@ class FreeformMod(context: Context) : ModPack(context) {
         }
 
         val hintView = FreeformHintViewController.getHintView() ?: return
+
+        // Haptic at trigger threshold
+        if (phase != hintView.phase) {
+            param.thisObject.callMethod("performHapticFeedback")
+        }
 
         hintView.setDisplayRotation(getDisplayRotation(handler))
         hintView.setPhase(phase)

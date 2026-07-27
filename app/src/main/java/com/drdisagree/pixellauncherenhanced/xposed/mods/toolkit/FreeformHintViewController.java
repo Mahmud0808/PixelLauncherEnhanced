@@ -35,6 +35,23 @@ public class FreeformHintViewController {
         sHintView.initLayout();
     }
 
+    /**
+     * Ensures FreeformHintView exists and is attached to DragLayer.
+     * If DragLayer was cleared (e.g. removeAllViews during recents cleanup),
+     * re-creates the view. Safe to call on every gesture start.
+     */
+    public static void ensureFreeformHintView(ViewGroup dragLayer, Context context,
+                                               Resources moduleResources, String modulePackage) {
+        if (sHintView != null && sHintView.getParent() != null
+                && sHintView.isAttachedToWindow()) {
+            return; // already alive
+        }
+        // Stale reference: clear and re-init
+        sHintView = null;
+        sDragLayer = null;
+        init(dragLayer, context, moduleResources, modulePackage);
+    }
+
     private static ViewGroup.LayoutParams createLayoutParams(ViewGroup parent) {
         try {
             Class<?> lpClass = parent.getClass().getClassLoader().loadClass(
