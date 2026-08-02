@@ -96,6 +96,7 @@
     <string name="freeform_gesture_progress_summary">Более низкие значения активируют функцию Freeform раньше, более высокие значения требуют проведения пальцем ближе к верху</string>
     <string name="freeform_method_title">Выберите метод свободной формы</string>
     <string name="freeform_method_summary">Измените это, если не работает на вашей прошивке</string>
+    <string name="freeform_gesture_swipe_up_hint">Swipe up to enter freeform</string>
     <string name="recents_clear_all">Очистить</string>
     <string name="homescreen_columns_title">Столбцы на главном экране</string>
     <string name="homescreen_rows_title">Строки на главном экране</string>
@@ -123,6 +124,7 @@
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Значение: %s</string>
+    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>

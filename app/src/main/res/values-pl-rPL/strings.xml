@@ -96,6 +96,7 @@
     <string name="freeform_gesture_progress_summary">Niższe wartości uruchamiają tryb swobodnego okna szybciej, wyższe wymagają przesunięcia bliżej górnej krawędzi</string>
     <string name="freeform_method_title">Wybierz metodę trybu swobodnego okna</string>
     <string name="freeform_method_summary">Zmień to, jeśli nie działa na twoim ROM-ie</string>
+    <string name="freeform_gesture_swipe_up_hint">Swipe up to enter freeform</string>
     <string name="recents_clear_all">Wyczyść wszystko</string>
     <string name="homescreen_columns_title">Liczba kolumn ekranu głównego</string>
     <string name="homescreen_rows_title">Liczba wierszy ekranu głównego</string>
@@ -123,6 +124,7 @@
     <string name="hide_apps">Ukryj aplikacje</string>
     <string name="unhide_apps">Pokaż ukryte aplikacje</string>
     <string name="value_output">Wartość: %s</string>
+    <string name="selected_output">Selected: %s</string>
     <string name="developer">Programista</string>
     <string name="unstable">Niestabilne</string>
     <string name="unstable_dialog_title">Funkcja niestabilna</string>

@@ -96,6 +96,7 @@
     <string name="freeform_gesture_progress_summary">Düşük değerler serbest biçimi daha erken tetikler, yüksek değerler ise en üste daha yakın kaydırmayı gerektirir</string>
     <string name="freeform_method_title">Serbest biçim yöntemini seç</string>
     <string name="freeform_method_summary">Kullandığınız ROM\'da çalışmıyorsa bunu değiştirin</string>
+    <string name="freeform_gesture_swipe_up_hint">Swipe up to enter freeform</string>
     <string name="recents_clear_all">Tümünü temizle</string>
     <string name="homescreen_columns_title">Ana ekran sütunları</string>
     <string name="homescreen_rows_title">Ana ekran satırları</string>
@@ -123,6 +124,7 @@
     <string name="hide_apps">Uygulamaları gizle</string>
     <string name="unhide_apps">Gizli uygulamaları göster</string>
     <string name="value_output">Değer: %s</string>
+    <string name="selected_output">Selected: %s</string>
     <string name="developer">Geliştirici</string>
     <string name="unstable">Kararsız</string>
     <string name="unstable_dialog_title">Kararsız özellik</string>

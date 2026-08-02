@@ -96,6 +96,7 @@
     <string name="freeform_gesture_progress_summary">较低的值会在更早的时候触发自由窗口，较高的值需要滑动到屏幕顶部区域</string>
     <string name="freeform_method_title">选择启动自由窗口的模式</string>
     <string name="freeform_method_summary">如果在您的 ROM 上不起作用，请更改这个选项</string>
+    <string name="freeform_gesture_swipe_up_hint">Swipe up to enter freeform</string>
     <string name="recents_clear_all">清除所有</string>
     <string name="homescreen_columns_title">屏幕图标列数</string>
     <string name="homescreen_rows_title">屏幕图标行数</string>
@@ -123,6 +124,7 @@
     <string name="hide_apps">隐藏app</string>
     <string name="unhide_apps">显示隐藏app</string>
     <string name="value_output">值大小: %s</string>
+    <string name="selected_output">Selected: %s</string>
     <string name="developer">开发者</string>
     <string name="unstable">不稳定</string>
     <string name="unstable_dialog_title">不稳定的功能</string>
