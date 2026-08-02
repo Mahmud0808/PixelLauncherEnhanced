@@ -96,6 +96,7 @@
     <string name="freeform_gesture_progress_summary">Los valores más bajos activan el formato libre antes, los valores más altos requieren deslizar más cerca de la parte superior</string>
     <string name="freeform_method_title">Seleccionar el método de forma libre</string>
     <string name="freeform_method_summary">Cambia esto si no funciona en tu ROM</string>
+    <string name="freeform_gesture_swipe_up_hint">Swipe up to enter freeform</string>
     <string name="recents_clear_all">Borrar todo</string>
     <string name="homescreen_columns_title">Columnas de pantalla de inicio</string>
     <string name="homescreen_rows_title">Filas de pantalla de inicio</string>
@@ -123,6 +124,7 @@
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Valor: %s</string>
+    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>

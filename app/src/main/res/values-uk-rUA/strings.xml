@@ -96,6 +96,7 @@
     <string name="freeform_gesture_progress_summary">Низькі значення увімкнення плаваючого вікна, більші значення вимагають проводити рух ближче вгорі</string>
     <string name="freeform_method_title">Оберіть метод плаваючого вікна</string>
     <string name="freeform_method_summary">Змініть це, якщо воно не працює на вашій прошивці</string>
+    <string name="freeform_gesture_swipe_up_hint">Swipe up to enter freeform</string>
     <string name="recents_clear_all">Очистити все</string>
     <string name="homescreen_columns_title">Стовпці на головному екрані</string>
     <string name="homescreen_rows_title">Рядки на головному екрані</string>
@@ -123,6 +124,7 @@
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="value_output">Значення: %s</string>
+    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>
