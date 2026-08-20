@@ -47,6 +47,7 @@ object Constants {
     const val FIXED_RECENTS_BUTTONS_WIDTH = "xposed_fixedrecentsbuttonswidth"
     const val DESKTOP_GRID_ROWS = "xposed_desktopgridrows"
     const val DESKTOP_GRID_COLUMNS = "xposed_desktopgridcolumns"
+    const val DESKTOP_DOCK_COLUMNS = "xposed_desktopdockcolumns"
     const val APP_DRAWER_GRID_COLUMNS = "xposed_appdrawergridcolumns"
     const val APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER = "xposed_appdrawergridrowheightmultiplier"
     const val APP_BLOCK_LIST = "xposed_appblocklist"

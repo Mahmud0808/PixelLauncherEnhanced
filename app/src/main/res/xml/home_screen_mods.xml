@@ -90,6 +90,18 @@
             app:showResetButton="true"
             app:tickInterval="1" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_desktopdockcolumns"
+            android:title="@string/dock_columns_title"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:maxVal="10"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:hideValueOnDefault="true"
+            app:showResetButton="true"
+            app:tickInterval="1" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory

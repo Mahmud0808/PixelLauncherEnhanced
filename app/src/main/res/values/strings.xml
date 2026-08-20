@@ -111,6 +111,7 @@
     <string name="recents_clear_all">Clear all</string>
     <string name="homescreen_columns_title">Homescreen columns</string>
     <string name="homescreen_rows_title">Homescreen rows</string>
+    <string name="dock_columns_title">Dock columns</string>
     <string name="app_drawer_columns_title">App drawer columns</string>
     <string name="app_drawer_row_height_multiplier_title">Row height multiplier</string>
     <string name="hide_apps_title">Hide apps from app drawer</string>
