@@ -4,22 +4,28 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Point
+import android.net.Uri
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_AT_A_GLANCE
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethodMatchPattern
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
+import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Modifier
 
@@ -90,19 +96,19 @@ class SmartSpace(context: Context) : ModPack(context) {
                 val launcherPrefs = try {
                     launcherPrefsClass.callStaticMethod("getPrefs", context)
                 } catch (_: Throwable) {
-                    launcherPrefsCompanionClass.callStaticMethod("getPrefs", context)
-                }
+                    launcherPrefsCompanionClass.callStaticMethodSilently("getPrefs", context)
+                } ?: return@runAfter
 
-                launcherPrefs.callMethod(
+                launcherPrefs.callMethodSilently(
                     "registerOnSharedPreferenceChangeListener",
                     firstPagePinnedItemListener
                 )
                 quickspaceListenerRegistered = true
 
-                mOnTerminateCallback.callMethod(
+                mOnTerminateCallback?.callMethodSilently(
                     "add",
                     Runnable {
-                        launcherPrefs.callMethod(
+                        launcherPrefs.callMethodSilently(
                             "unregisterOnSharedPreferenceChangeListener",
                             firstPagePinnedItemListener
                         )
@@ -192,6 +198,180 @@ class SmartSpace(context: Context) : ModPack(context) {
             "com.android.launcher3.model.ModelUtils",
         )
         val gridOccupancyClass = findClass("com.android.launcher3.util.GridOccupancy")!!
+
+        val itemInfoClass = findClass(
+            "com.android.launcher3.model.data.ItemInfo",
+            suppressError = true
+        )
+        val bgDataModelClass = findClass(
+            "com.android.launcher3.model.BgDataModel",
+            suppressError = true
+        )
+        val settingsCacheClass = findClass(
+            "com.android.launcher3.util.SettingsCache",
+            suppressError = true
+        )
+        val launcherModelClass = findClass(
+            "com.android.launcher3.LauncherModel",
+            suppressError = true
+        )
+        val invariantDeviceProfileClass = findClass(
+            "com.android.launcher3.InvariantDeviceProfile",
+            suppressError = true
+        )
+        val mutableListenableRefClass = findClass(
+            "com.android.launcher3.util.MutableListenableRef",
+            suppressError = true
+        )
+
+        val isLegacySmartspaceModel = utilitiesClass.hasMethod("showQuickspace") ||
+                workspaceClass.hasMethod("bindAndInitFirstWorkspaceScreen") ||
+                modelCallbacksClass.hasMethod("setIsFirstPagePinnedItemEnabled") ||
+                modelCallbacksClass?.declaredFields?.any { it.name == "isFirstPagePinnedItemEnabled" } == true ||
+                bgDataModelClass?.declaredFields?.any { it.name == "isFirstPagePinnedItemEnabled" } == true
+        val isNewSmartspaceModel = !isLegacySmartspaceModel
+        val searchContainerWorkspaceId = runCatching {
+            mContext.resources.getIdentifier(
+                "search_container_workspace",
+                "id",
+                loadPackageParam.packageName
+            )
+        }.getOrDefault(0)
+
+        fun Any?.isSmartspaceItem(): Boolean {
+            if (!isNewSmartspaceModel || this == null) return false
+            if (itemInfoClass?.isInstance(this) != true) return false
+
+            val clazz = this::class.java
+
+            if (clazz.superclass == itemInfoClass &&
+                clazz.declaredFields.isEmpty() &&
+                clazz.declaredMethods.isEmpty()
+            ) return true
+
+            if (getFieldSilently("container") != -100 || getFieldSilently("screenId") != 0) {
+                return false
+            }
+
+            if (searchContainerWorkspaceId != 0 && getFieldSilently("id") == searchContainerWorkspaceId) {
+                return true
+            }
+
+            if (clazz.name.startsWith("com.android.launcher3.")) return false
+
+            val searchContainerColumns = invariantDeviceProfileClass
+                ?.let { runCatching { XposedHelpers.getStaticObjectField(it, "INSTANCE") }.getOrNull() }
+                ?.callMethodSilently("get", mContext)
+                ?.getFieldSilently("numSearchContainerColumns") as? Int
+
+            return getFieldSilently("cellX") == 0 &&
+                    getFieldSilently("cellY") == 0 &&
+                    getFieldSilently("spanY") == 1 &&
+                    searchContainerColumns != null &&
+                    getFieldSilently("spanX") == searchContainerColumns
+        }
+
+        fun Any?.isSmartspaceToggleTask(): Boolean {
+            if (this == null || invariantDeviceProfileClass == null || mutableListenableRefClass == null) {
+                return false
+            }
+
+            val fields = this::class.java.declaredFields
+
+            return fields.any { it.type == Boolean::class.javaPrimitiveType } &&
+                    fields.any { Context::class.java.isAssignableFrom(it.type) } &&
+                    fields.any { it.type == invariantDeviceProfileClass } &&
+                    fields.any { field ->
+                        runCatching {
+                            field.type.declaredFields.let { refs ->
+                                refs.isNotEmpty() && refs.all { it.type == mutableListenableRefClass }
+                            }
+                        }.getOrDefault(false)
+                    }
+        }
+
+        settingsCacheClass
+            ?.declaredMethods
+            ?.filter { method ->
+                method.returnType == Boolean::class.javaPrimitiveType &&
+                        method.parameterTypes.any { it == Uri::class.java }
+            }
+            ?.forEach { method ->
+                MethodHookHelper(method).runBefore { param ->
+                    if (!hideQuickspace) return@runBefore
+
+                    val uri = param.args.firstOrNull { it is Uri } as? Uri ?: return@runBefore
+
+                    if (uri.lastPathSegment == SMARTSPACE_SHOW_ON_HOME_SCREEN) {
+                        param.result = false
+                    }
+                }
+            }
+
+        settingsCacheClass
+            ?.declaredMethods
+            ?.filter { method ->
+                method.name == "onChange" && method.parameterTypes.any { it == Uri::class.java }
+            }
+            ?.forEach { method ->
+                MethodHookHelper(method).runBefore { param ->
+                    if (!hideQuickspace) return@runBefore
+
+                    val uri = param.args.firstOrNull { it is Uri } as? Uri ?: return@runBefore
+
+                    if (uri.lastPathSegment == SMARTSPACE_SHOW_ON_HOME_SCREEN) {
+                        param.result = null
+                    }
+                }
+            }
+
+        if (isNewSmartspaceModel) {
+            gridOccupancyClass
+                .hookMethodMatchPattern("markCells")
+                .runBefore { param ->
+                    if (!hideQuickspace) return@runBefore
+
+                    if (param.args.any { it.isSmartspaceItem() }) {
+                        param.result = null
+                    }
+                }
+
+            bgDataModelClass
+                .hookMethodMatchPattern("addItems")
+                .runBefore { param ->
+                    if (!hideQuickspace) return@runBefore
+
+                    val index = param.args.indexOfFirst { it is List<*> }
+                    if (index == -1) return@runBefore
+
+                    val items = param.args[index] as List<*>
+                    if (items.none { it.isSmartspaceItem() }) return@runBefore
+
+                    val filtered = items.filterNot { it.isSmartspaceItem() }
+
+                    if (filtered.isEmpty()) {
+                        param.result = null
+                    } else {
+                        param.args[index] = ArrayList(filtered)
+                    }
+                }
+
+            launcherModelClass
+                .hookMethodMatchPattern("enqueueModelUpdateTask")
+                .runBefore { param ->
+                    if (!hideQuickspace) return@runBefore
+
+                    val task = param.args.firstOrNull() ?: return@runBefore
+                    if (!task.isSmartspaceToggleTask()) return@runBefore
+
+                    task::class.java.declaredFields
+                        .filter { it.type == Boolean::class.javaPrimitiveType }
+                        .forEach { field ->
+                            field.isAccessible = true
+                            field.setBoolean(task, false)
+                        }
+                }
+        }
 
         gridSizeMigrationDBControllerClass
             .hookMethod("solveGridPlacement")
@@ -376,7 +556,7 @@ class SmartSpace(context: Context) : ModPack(context) {
             .hookMethod("solveGridPlacement")
             .suppressError()
             .runBefore { param ->
-                if (!hideQuickspace) return@runBefore
+                if (!hideQuickspace || isNewSmartspaceModel) return@runBefore
 
                 val screenId = param.args[0] as Int
                 val trgX = param.args[1] as Int
@@ -539,6 +719,11 @@ class SmartSpace(context: Context) : ModPack(context) {
             .runBefore { param ->
                 if (!hideQuickspace) return@runBefore
 
+                if (param.args[0].isSmartspaceItem()) {
+                    param.result = null
+                    return@runBefore
+                }
+
                 val dataModel = param.args[1]
                 dataModel.setFieldSilently("isFirstPagePinnedItemEnabled", false)
             }
@@ -557,5 +742,6 @@ class SmartSpace(context: Context) : ModPack(context) {
 
     companion object {
         private const val SMARTSPACE_ON_HOME_SCREEN = "pref_smartspace_home_screen"
+        private const val SMARTSPACE_SHOW_ON_HOME_SCREEN = "smartspace_show_on_home_screen"
     }
 }
