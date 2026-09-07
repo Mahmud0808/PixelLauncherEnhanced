@@ -2,7 +2,6 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
 import android.graphics.Rect
-import android.util.AttributeSet
 import android.view.View
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_DOCK_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
@@ -13,6 +12,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.Helpers.toPx
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceHookManager
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -52,11 +52,6 @@ class HotseatMod(context: Context) : ModPack(context) {
 
         hotseatClass
             .hookConstructor()
-            .parameters(
-                Context::class.java,
-                AttributeSet::class.java,
-                Int::class.javaPrimitiveType
-            )
             .runAfter { param ->
                 mQuickSearchBar = param.thisObject.getField("mQsb") as View
                 triggerSearchBarVisibility()
@@ -81,7 +76,7 @@ class HotseatMod(context: Context) : ModPack(context) {
                         .getField("value")
                 val padding = grid.getFieldSilently("workspacePadding") as? Rect
                     ?: grid
-                        .getField("mWorkspaceProfile")
+                        .getAnyField("mWorkspaceProfile", "workspaceProfile")
                         .getField("workspacePadding") as Rect
                 val workspace = param.thisObject as View
 

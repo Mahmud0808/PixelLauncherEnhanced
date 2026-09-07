@@ -9,6 +9,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_R
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -19,7 +20,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import kotlin.math.roundToInt
 
-class GridOptions (context: Context) : ModPack(context) {
+class GridOptions(context: Context) : ModPack(context) {
 
     private var homeScreenGridRows = 0
     private var homeScreenGridColumns = 0
@@ -50,8 +51,8 @@ class GridOptions (context: Context) : ModPack(context) {
 
         fun Any.hookDeviceProfile() {
             val temp = getFieldSilently("iconSizePx") as? Int
-            val mHotseatProfile = getFieldSilently("mHotseatProfile")
-            val mDisplayOptionSpec = getFieldSilently("mDisplayOptionSpec")
+            val mHotseatProfile = getAnyField("mHotseatProfile", "hotseatProfile")
+            val mDisplayOptionSpec = getAnyField("mDisplayOptionSpec", "displayOptionSpec")
 
             if (homeScreenGridColumns != 0) {
                 setFieldSilently("numShownHotseatIcons", homeScreenGridColumns)
@@ -62,7 +63,7 @@ class GridOptions (context: Context) : ModPack(context) {
                 setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
 
                 if (temp == null) {
-                    val mAllAppsProfile = getField("mAllAppsProfile")
+                    val mAllAppsProfile = getAnyField("mAllAppsProfile", "allAppsProfile")
                     mAllAppsProfile.setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
                 }
             }

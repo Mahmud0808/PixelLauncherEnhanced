@@ -6,6 +6,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_TEXT_
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -84,13 +85,13 @@ class IconTextSize(context: Context) : ModPack(context) {
                 setField("folderCellWidthPx", folderCellWidthPx)
                 setField("folderCellHeightPx", folderCellHeightPx)
             } else {
-                val mWorkspaceProfile = getField("mWorkspaceProfile")
+                val mWorkspaceProfile = getAnyField("mWorkspaceProfile", "workspaceProfile")
                 var mWorkspaceProfileIconSizePx =
                     mWorkspaceProfile.getField("iconSizePx") as Int
                 var mWorkspaceProfileIconTextSizePx =
                     mWorkspaceProfile.getField("iconTextSizePx") as Int
 
-                val mFolderProfile = getField("mFolderProfile")
+                val mFolderProfile = getAnyField("mFolderProfile", "folderProfile")
                 var mFolderProfileFolderIconSizePx =
                     mFolderProfile.getFieldSilently("folderIconSizePx") as? Int
                 var mFolderProfileLabelTextSizePx =
@@ -104,7 +105,7 @@ class IconTextSize(context: Context) : ModPack(context) {
                 var mFolderProfileFolderCellHeightPx =
                     mFolderProfile.getField("cellHeightPx") as Int
 
-                val mAllAppsProfile = getField("mAllAppsProfile")
+                val mAllAppsProfile = getAnyField("mAllAppsProfile", "allAppsProfile")
                 var mAllAppsProfileAllAppsIconSizePx =
                     mAllAppsProfile.getField("iconSizePx") as Int
                 var mAllAppsProfileAllAppsIconTextSizePx =
