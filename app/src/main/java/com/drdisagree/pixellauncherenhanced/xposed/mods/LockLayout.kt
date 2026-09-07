@@ -2,7 +2,6 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import android.view.View
 import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.R
@@ -40,7 +39,14 @@ class LockLayout(context: Context) : ModPack(context) {
             $$"com.android.launcher3.popup.PopupContainerWithArrow$LauncherPopupItemDragHandler",
             "com.android.launcher3.popup.LauncherPopupItemDragHandler",
         )
-        val optionsPopupViewClass = findClass("com.android.launcher3.views.OptionsPopupView")
+        val optionsPopupViewClass = findClass(
+            "com.android.launcher3.views.OptionsPopupView",
+            suppressError = true
+        )
+        val workspaceLongPressOptionsClass = findClass(
+            "com.android.launcher3.popup.WorkspaceLongPressOptions",
+            suppressError = true
+        )
         val taskbarDragControllerClass = findClass(
             "com.android.launcher3.taskbar.TaskbarDragController",
             suppressError = true
@@ -135,8 +141,10 @@ class LockLayout(context: Context) : ModPack(context) {
                     param.result = false
                 }
         } else if (optionsPopupViewClass.hasMethod("getOptions")) {
-            val optionItemClass =
-                findClass($$"com.android.launcher3.views.OptionsPopupView$OptionItem")
+            val optionItemClass = findClass(
+                $$"com.android.launcher3.views.OptionsPopupView$OptionItem",
+                suppressError = true
+            )
 
             @SuppressLint("DiscouragedApi")
             val widgetButtonTextId = mContext.resources.getIdentifier(
@@ -164,10 +172,7 @@ class LockLayout(context: Context) : ModPack(context) {
                         }
                     }
                 }
-        } else if (Build.VERSION.SDK_INT >= 37) {
-            val workspaceLongPressOptionsClass =
-                findClass("com.android.launcher3.popup.WorkspaceLongPressOptions")
-
+        } else if (workspaceLongPressOptionsClass != null) {
             if (workspaceLongPressOptionsClass.hasMethod("openWidgetPicker")) {
                 workspaceLongPressOptionsClass
                     .hookMethod("openWidgetPicker")
