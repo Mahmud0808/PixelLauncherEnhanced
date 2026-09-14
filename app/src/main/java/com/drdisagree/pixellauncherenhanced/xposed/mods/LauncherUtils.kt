@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class LauncherUtils(context: Context) : ModPack(context) {
 
@@ -144,7 +145,7 @@ class LauncherUtils(context: Context) : ModPack(context) {
                 }
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    delay(1000)
+                    delay(1000.milliseconds)
                     enqueueProxyCommand { proxy ->
                         proxy.runCommand("killall ${context.packageName}")
                     }
@@ -175,7 +176,11 @@ class LauncherUtils(context: Context) : ModPack(context) {
                     }
                 }
 
-                mModel.callMethod("forceReload")
+                try {
+                    mModel.callMethod("forceReload")
+                } catch (_: Throwable) {
+                    mModel.callMethod("forceReload", "reloadIcons")
+                }
             }
         }
     }

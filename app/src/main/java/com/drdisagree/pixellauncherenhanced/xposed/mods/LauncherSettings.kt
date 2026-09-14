@@ -30,11 +30,14 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
+import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.lang.reflect.Proxy
 import java.util.Arrays
 import kotlin.time.Duration.Companion.milliseconds
@@ -591,16 +594,79 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     .getOrNull()
             }
 
-            fun mutableCopyOf(original: List<*>): MutableList<Any?> {
-                return runCatching {
-                    @Suppress("UNCHECKED_CAST")
-                    val copy = original::class.java
-                        .getDeclaredConstructor()
-                        .apply { isAccessible = true }
-                        .newInstance() as MutableList<Any?>
-                    copy.addAll(original)
-                    copy
-                }.getOrElse { ArrayList(original) }
+            val collectionTypes = listOf<Class<*>>(
+                Collection::class.java,
+                List::class.java,
+                Iterable::class.java
+            )
+
+            fun XC_MethodHook.MethodHookParam.setListResult(
+                original: List<*>,
+                additions: List<Any?>
+            ) {
+                val expected = original + additions
+                val returnType = (method as? Method)?.returnType
+
+                if (returnType == null || returnType.isInstance(expected)) {
+                    result = expected
+                    return
+                }
+
+                fun Any?.isUsableResult(): Boolean {
+                    return returnType.isInstance(this) &&
+                            (this as? Collection<*>)?.size == expected.size
+                }
+
+                val converted = returnType.methods
+                    .asSequence()
+                    .filter { factory ->
+                        Modifier.isStatic(factory.modifiers) &&
+                                factory.parameterTypes.size == 1 &&
+                                factory.parameterTypes[0] in collectionTypes &&
+                                returnType.isAssignableFrom(factory.returnType)
+                    }
+                    .sortedBy { collectionTypes.indexOf(it.parameterTypes[0]) }
+                    .map { factory ->
+                        runCatching {
+                            factory.isAccessible = true
+                            factory.invoke(null, ArrayList(expected))
+                        }.getOrNull()
+                    }
+                    .firstOrNull { it.isUsableResult() }
+                    ?: original::class.java.methods
+                        .asSequence()
+                        .filter { copier ->
+                            !Modifier.isStatic(copier.modifiers) &&
+                                    copier.parameterTypes.size == 1 &&
+                                    copier.parameterTypes[0] in collectionTypes &&
+                                    returnType.isAssignableFrom(copier.returnType)
+                        }
+                        .map { copier ->
+                            runCatching {
+                                copier.isAccessible = true
+                                copier.invoke(original, ArrayList(additions))
+                            }.getOrNull()
+                        }
+                        .firstOrNull { it.isUsableResult() }
+                    ?: returnType.declaredConstructors
+                        .asSequence()
+                        .filter { constructor ->
+                            constructor.parameterTypes.size == 1 &&
+                                    constructor.parameterTypes[0] in collectionTypes
+                        }
+                        .map { constructor ->
+                            runCatching {
+                                constructor.isAccessible = true
+                                constructor.newInstance(ArrayList(expected))
+                            }.getOrNull()
+                        }
+                        .firstOrNull { it.isUsableResult() }
+
+                if (converted != null) {
+                    result = converted
+                } else {
+                    log("Cannot add options popup entries to a ${returnType.name} result.")
+                }
             }
 
             if (workspaceLongPressOptionsClass != null && popupDataConstructor != null) {
@@ -616,7 +682,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             .firstOrNull { it.toString() == "LAUNCHER_SETTINGS_BUTTON_TAP_OR_LONGPRESS" }
                             ?: eventConstants.firstOrNull { it.toString() == "IGNORE" }
                             ?: return@runAfter
-                        val options = mutableCopyOf(original)
+                        val addedOptions = mutableListOf<Any?>()
 
                         if (toggleHideAppsInPopup) {
                             val hidden = HideApps.SHOULD_UNHIDE_ALL_APPS
@@ -637,7 +703,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                                 eventId = eventId
                             ) {
                                 setUnhideAllApps(!HideApps.SHOULD_UNHIDE_ALL_APPS)
-                            }?.let { options.add(it) }
+                            }?.let { addedOptions.add(it) }
                         }
 
                         if (entryInPopup) {
@@ -653,10 +719,12 @@ class LauncherSettings(context: Context) : ModPack(context) {
                                 mContext.packageManager
                                     .getLaunchIntentForPackage(BuildConfig.APPLICATION_ID)
                                     ?.let { mContext.startActivity(it) }
-                            }?.let { options.add(it) }
+                            }?.let { addedOptions.add(it) }
                         }
 
-                        param.result = options
+                        if (addedOptions.isNotEmpty()) {
+                            param.setListResult(original, addedOptions)
+                        }
                     }
             } else {
                 log("Suitable method not found for options popup entries.")
