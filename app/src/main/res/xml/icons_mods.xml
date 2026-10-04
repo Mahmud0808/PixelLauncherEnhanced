@@ -47,6 +47,25 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_popup_menu"
+        android:title="@string/section_app_popup_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_popupkillapp"
+            android:summary="@string/popup_kill_app_desc"
+            android:title="@string/popup_kill_app_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_popupuninstallapp"
+            android:summary="@string/popup_uninstall_app_desc"
+            android:title="@string/popup_uninstall_app_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_home_screen_general"
         android:title="@string/section_icon_colors_title"
         app:iconSpaceReserved="false">

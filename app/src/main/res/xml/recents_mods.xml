@@ -14,6 +14,18 @@
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_recentskillapp"
+            android:summary="@string/recents_kill_app_desc"
+            android:title="@string/recents_kill_app_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_recentsuninstallapp"
+            android:summary="@string/recents_uninstall_app_desc"
+            android:title="@string/recents_uninstall_app_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_startfreeformbygesture"
             android:summary="@string/freeform_gesture_summary"
             android:title="@string/freeform_gesture_title"

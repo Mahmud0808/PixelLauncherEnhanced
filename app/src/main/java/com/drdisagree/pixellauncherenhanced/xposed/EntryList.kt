@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.xposed
 
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
+import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DarkPageIndicator
@@ -60,6 +61,7 @@ object EntryList {
         DarkStatusbar::class.java,
         DarkPageIndicator::class.java,
         WallpaperDim::class.java,
+        AppShortcuts::class.java,
     )
 
     fun getEntries(packageName: String): ArrayList<Class<out ModPack>> {

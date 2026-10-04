@@ -140,5 +140,17 @@
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>
     <string name="unstable_dialog_desc">This feature is experimental and may cause crashes or unexpected behavior.</string>
+    <string name="section_app_popup_title">App popup menu</string>
+    <string name="kill_app">Kill app</string>
+    <string name="uninstall_app">Uninstall</string>
+    <string name="app_killed">%1$s killed</string>
+    <string name="popup_kill_app_title">Kill app option</string>
+    <string name="popup_kill_app_desc">Add a Kill app option to the app icon long press menu</string>
+    <string name="popup_uninstall_app_title">Uninstall option</string>
+    <string name="popup_uninstall_app_desc">Add an Uninstall option to the app icon long press menu</string>
+    <string name="recents_kill_app_title">Kill app option</string>
+    <string name="recents_kill_app_desc">Add a Kill app option to the app menu in recents</string>
+    <string name="recents_uninstall_app_title">Uninstall option</string>
+    <string name="recents_uninstall_app_desc">Add an Uninstall option to the app menu in recents</string>
 
 </resources>
