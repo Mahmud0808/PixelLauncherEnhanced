@@ -3,7 +3,6 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.util.TypedValue
@@ -20,6 +19,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_HIDE_AP
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.InjectedResources
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
@@ -512,35 +512,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     ?.maxByOrNull { it.parameterTypes.size })
                     ?.apply { isAccessible = true }
 
-            val injectedResIds = listOf(
-                R.string.app_name_shortened,
-                R.string.hide_apps,
-                R.string.unhide_apps,
-                R.drawable.ic_launcher_foreground,
-                R.drawable.ic_visibility_lock,
-                R.drawable.ic_visibility
-            ).associateBy { 0x7D000000 or (it and 0x00FFFFFF) }
-
-            fun injectedResId(modResId: Int): Int =
-                injectedResIds.entries.first { it.value == modResId }.key
-
-            if (usesLabelResId && popupDataConstructor != null) {
-                Resources::class.java
-                    .hookMethod("getText")
-                    .parameters(Int::class.javaPrimitiveType)
-                    .runBefore { param ->
-                        val modResId = injectedResIds[param.args[0] as Int] ?: return@runBefore
-                        param.result = modRes.getText(modResId)
-                    }
-
-                Resources::class.java
-                    .hookMethod("getDrawable")
-                    .parameters(Int::class.javaPrimitiveType, Resources.Theme::class.java)
-                    .runBefore { param ->
-                        val modResId = injectedResIds[param.args[0] as Int] ?: return@runBefore
-                        param.result = modRes.getDrawable(modResId, null)
-                    }
-            }
+            fun injectedResId(modResId: Int): Int = InjectedResources.idFor(modResId)
 
             val launcherDrawableIds = HashMap<Int, Int>()
 
