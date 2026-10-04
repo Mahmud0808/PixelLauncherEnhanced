@@ -56,13 +56,13 @@ class LauncherSettings(context: Context) : ModPack(context) {
             entryInLauncher = getBoolean(ENTRY_IN_LAUNCHER_SETTINGS, true)
             entryInPopup = getBoolean(ENTRY_IN_OPTIONS_POPUP, false)
             toggleHideAppsInPopup = getBoolean(TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP, false)
-            HideApps.SHOULD_UNHIDE_ALL_APPS = !getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
+            HideApps.HIDE_APPS_ENABLED = getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
         }
 
         when (key.firstOrNull()) {
             TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP -> {
-                if (!toggleHideAppsInPopup) {
-                    setUnhideAllApps(false)
+                if (!toggleHideAppsInPopup && HideApps.REVEAL_HIDDEN_APPS) {
+                    setRevealHiddenApps(false)
                 }
             }
         }
@@ -332,9 +332,9 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             .findFirst().get()
                     }!!
 
-                    if (toggleHideAppsInPopup) {
+                    if (toggleHideAppsInPopup && HideApps.HIDE_APPS_ENABLED) {
                         val clickListener = View.OnLongClickListener {
-                            setUnhideAllApps(!HideApps.SHOULD_UNHIDE_ALL_APPS)
+                            setRevealHiddenApps(!HideApps.REVEAL_HIDDEN_APPS)
                             true
                         }
 
@@ -743,7 +743,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             ?: return@runAfter
                         val addedOptions = mutableListOf<Any?>()
 
-                        if (toggleHideAppsInPopup) {
+                        if (toggleHideAppsInPopup && HideApps.HIDE_APPS_ENABLED) {
                             val hidden = HideApps.SHOULD_UNHIDE_ALL_APPS
                             val labelRes = if (hidden) R.string.hide_apps else R.string.unhide_apps
                             val iconRes =
@@ -769,7 +769,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                                 eventId = eventId,
                                 labelResId = if (usesLabelResId) injectedResId(labelRes) else 0
                             ) {
-                                setUnhideAllApps(!HideApps.SHOULD_UNHIDE_ALL_APPS)
+                                setRevealHiddenApps(!HideApps.REVEAL_HIDDEN_APPS)
                             }?.let { addedOptions.add(it) }
                         }
 
@@ -806,12 +806,8 @@ class LauncherSettings(context: Context) : ModPack(context) {
         }
     }
 
-    fun setUnhideAllApps(value: Boolean) {
-        HideApps.SHOULD_UNHIDE_ALL_APPS = value
-        @SuppressLint("ApplySharedPref")
-        Xprefs.edit()
-            .putBoolean(HIDE_APPS_FROM_APP_DRAWER, value)
-            .commit()
+    fun setRevealHiddenApps(value: Boolean) {
+        HideApps.REVEAL_HIDDEN_APPS = value
         CoroutineScope(Dispatchers.Main).launch {
             delay(300.milliseconds)
             HideApps.updateLauncherIcons(mContext)

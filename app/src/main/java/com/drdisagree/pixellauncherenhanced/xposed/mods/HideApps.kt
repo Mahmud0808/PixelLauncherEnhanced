@@ -32,7 +32,10 @@ class HideApps(context: Context) : ModPack(context) {
     private var invariantDeviceProfileInstance: Any? = null
 
     companion object {
-        var SHOULD_UNHIDE_ALL_APPS = false
+        var HIDE_APPS_ENABLED = false
+        var REVEAL_HIDDEN_APPS = false
+        val SHOULD_UNHIDE_ALL_APPS: Boolean
+            get() = !HIDE_APPS_ENABLED || REVEAL_HIDDEN_APPS
         private var activityAllAppsContainerViewInstance: Any? = null
         private var hotseatPredictionControllerInstance: Any? = null
         private var hybridHotseatOrganizerClassInstance: Any? = null
@@ -53,11 +56,15 @@ class HideApps(context: Context) : ModPack(context) {
         Xprefs.apply {
             appBlockList = getStringSet(APP_BLOCK_LIST, emptySet())!!
             searchHiddenApps = getBoolean(SEARCH_HIDDEN_APPS, false)
-            SHOULD_UNHIDE_ALL_APPS = !getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
+            HIDE_APPS_ENABLED = getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
         }
 
         when (key.firstOrNull()) {
-            HIDE_APPS_FROM_APP_DRAWER,
+            HIDE_APPS_FROM_APP_DRAWER -> {
+                REVEAL_HIDDEN_APPS = false
+                updateLauncherIcons(mContext)
+            }
+
             APP_BLOCK_LIST -> updateLauncherIcons(mContext)
         }
     }
@@ -321,8 +328,7 @@ class HideApps(context: Context) : ModPack(context) {
     }
 
     private fun String?.matchesBlocklist(): Boolean {
-        if (isNullOrEmpty() || SHOULD_UNHIDE_ALL_APPS) return false
-        return appBlockList.contains(this)
+        return !(isNullOrEmpty() || SHOULD_UNHIDE_ALL_APPS) && appBlockList.contains(this)
     }
 
     fun <T> binarySearch(
