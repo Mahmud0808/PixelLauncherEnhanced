@@ -30,6 +30,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ThemedIcons(context: Context) : ModPack(context) {
 
@@ -74,9 +75,13 @@ class ThemedIcons(context: Context) : ModPack(context) {
         } catch (_: Throwable) {
             val baseIconFactoryClass = findClass("com.android.launcher3.icons.BaseIconFactory")
 
+            val monochromeHookInstalled = AtomicBoolean(false)
+
             baseIconFactoryClass
                 .hookConstructor()
                 .runAfter { param ->
+                    if (!monochromeHookInstalled.compareAndSet(false, true)) return@runAfter
+
                     val mIconBitmapSize = param.thisObject.getAnyField(
                         "mIconBitmapSize",
                         "iconBitmapSize"
@@ -206,9 +211,10 @@ class ThemedIcons(context: Context) : ModPack(context) {
             cacheLookupFlagClass
                 .hookMethod("updateMask")
                 .runBefore { param ->
-                    if (!appDrawerThemedIcons) return@runBefore
+                    if (!appDrawerThemedIcons || param.args[0] != 8) return@runBefore
 
                     val addMask = verifyHighResThemeOverride.get() ?: return@runBefore
+                    verifyHighResThemeOverride.remove()
                     param.args[1] = addMask
                 }
 
