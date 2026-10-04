@@ -3,6 +3,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.util.TypedValue
@@ -501,10 +502,45 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     ?.takeIf { isAssignableFrom(it) }
             }
 
-            val popupDataConstructor = popupDataClass?.declaredConstructors
+            val fixedStringConstructor = popupDataClass?.declaredConstructors
                 ?.filter { ctor -> ctor.parameterTypes.any { it.fixedStringClass() != null } }
                 ?.maxByOrNull { it.parameterTypes.size }
-                ?.apply { isAccessible = true }
+            val usesLabelResId = fixedStringConstructor == null
+            val popupDataConstructor =
+                (fixedStringConstructor ?: popupDataClass?.declaredConstructors
+                    ?.filter { ctor -> ctor.parameterTypes.count { it == Int::class.javaPrimitiveType } == 2 }
+                    ?.maxByOrNull { it.parameterTypes.size })
+                    ?.apply { isAccessible = true }
+
+            val injectedResIds = listOf(
+                R.string.app_name_shortened,
+                R.string.hide_apps,
+                R.string.unhide_apps,
+                R.drawable.ic_launcher_foreground,
+                R.drawable.ic_visibility_lock,
+                R.drawable.ic_visibility
+            ).associateBy { 0x7D000000 or (it and 0x00FFFFFF) }
+
+            fun injectedResId(modResId: Int): Int =
+                injectedResIds.entries.first { it.value == modResId }.key
+
+            if (usesLabelResId && popupDataConstructor != null) {
+                Resources::class.java
+                    .hookMethod("getText")
+                    .parameters(Int::class.javaPrimitiveType)
+                    .runBefore { param ->
+                        val modResId = injectedResIds[param.args[0] as Int] ?: return@runBefore
+                        param.result = modRes.getText(modResId)
+                    }
+
+                Resources::class.java
+                    .hookMethod("getDrawable")
+                    .parameters(Int::class.javaPrimitiveType, Resources.Theme::class.java)
+                    .runBefore { param ->
+                        val modResId = injectedResIds[param.args[0] as Int] ?: return@runBefore
+                        param.result = modRes.getDrawable(modResId, null)
+                    }
+            }
 
             val launcherDrawableIds = HashMap<Int, Int>()
 
@@ -546,10 +582,12 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 label: String,
                 iconResId: Int,
                 eventId: Any,
+                labelResId: Int = 0,
                 action: () -> Unit
             ): Any? {
                 val constructor = popupDataConstructor ?: return null
-                val ints = intArrayOf(label.hashCode(), iconResId)
+                val ints = if (usesLabelResId) intArrayOf(iconResId, labelResId)
+                else intArrayOf(label.hashCode(), iconResId)
                 var intIndex = 0
 
                 val args = constructor.parameterTypes.map { type ->
@@ -661,6 +699,27 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             }.getOrNull()
                         }
                         .firstOrNull { it.isUsableResult() }
+                    ?: returnType.declaredConstructors
+                        .asSequence()
+                        .filter { constructor ->
+                            constructor.parameterTypes.isEmpty() ||
+                                    constructor.parameterTypes.contentEquals(
+                                        arrayOf(Int::class.javaPrimitiveType)
+                                    )
+                        }
+                        .map { constructor ->
+                            runCatching {
+                                constructor.isAccessible = true
+                                val instance = if (constructor.parameterTypes.isEmpty()) {
+                                    constructor.newInstance()
+                                } else {
+                                    constructor.newInstance(expected.size)
+                                }
+                                @Suppress("UNCHECKED_CAST")
+                                (instance as MutableCollection<Any?>).apply { addAll(expected) }
+                            }.getOrNull()
+                        }
+                        .firstOrNull { it.isUsableResult() }
 
                 if (converted != null) {
                     result = converted
@@ -686,21 +745,29 @@ class LauncherSettings(context: Context) : ModPack(context) {
 
                         if (toggleHideAppsInPopup) {
                             val hidden = HideApps.SHOULD_UNHIDE_ALL_APPS
+                            val labelRes = if (hidden) R.string.hide_apps else R.string.unhide_apps
+                            val iconRes =
+                                if (hidden) R.drawable.ic_visibility_lock else R.drawable.ic_visibility
 
                             createPopupData(
-                                label = if (hidden) modRes.getString(R.string.hide_apps)
-                                else modRes.getString(R.string.unhide_apps),
-                                iconResId = if (hidden) launcherDrawableId(
-                                    R.drawable.ic_visibility_lock,
-                                    "ic_lock",
-                                    "ic_visibility",
-                                    "ic_apps"
-                                ) else launcherDrawableId(
-                                    R.drawable.ic_visibility,
-                                    "ic_visibility",
-                                    "ic_apps"
-                                ),
-                                eventId = eventId
+                                label = modRes.getString(labelRes),
+                                iconResId = when {
+                                    usesLabelResId -> injectedResId(iconRes)
+                                    hidden -> launcherDrawableId(
+                                        iconRes,
+                                        "ic_lock",
+                                        "ic_visibility",
+                                        "ic_apps"
+                                    )
+
+                                    else -> launcherDrawableId(
+                                        iconRes,
+                                        "ic_visibility",
+                                        "ic_apps"
+                                    )
+                                },
+                                eventId = eventId,
+                                labelResId = if (usesLabelResId) injectedResId(labelRes) else 0
                             ) {
                                 setUnhideAllApps(!HideApps.SHOULD_UNHIDE_ALL_APPS)
                             }?.let { addedOptions.add(it) }
@@ -709,12 +776,19 @@ class LauncherSettings(context: Context) : ModPack(context) {
                         if (entryInPopup) {
                             createPopupData(
                                 label = modRes.getString(R.string.app_name_shortened),
-                                iconResId = launcherDrawableId(
-                                    R.drawable.ic_launcher_foreground,
-                                    "ic_launcher_home_foreground",
-                                    "ic_setting"
-                                ),
-                                eventId = eventId
+                                iconResId = if (usesLabelResId) {
+                                    injectedResId(R.drawable.ic_launcher_foreground)
+                                } else {
+                                    launcherDrawableId(
+                                        R.drawable.ic_launcher_foreground,
+                                        "ic_launcher_home_foreground",
+                                        "ic_setting"
+                                    )
+                                },
+                                eventId = eventId,
+                                labelResId = if (usesLabelResId) {
+                                    injectedResId(R.string.app_name_shortened)
+                                } else 0
                             ) {
                                 mContext.packageManager
                                     .getLaunchIntentForPackage(BuildConfig.APPLICATION_ID)
