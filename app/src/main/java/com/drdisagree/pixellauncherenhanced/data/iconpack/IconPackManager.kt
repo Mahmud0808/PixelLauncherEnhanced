@@ -52,6 +52,7 @@ object IconPackManager {
 
     private const val THEMED_ICON_PACK_ACTION = "app.lawnchair.icons.THEMED_ICON"
     private const val THEMED_ICON_INSET = 0.28f
+    private const val SHORTCUT_PREFIX = "shortcut:"
     private const val SIGNATURE_VERSION = 7
 
     const val OVERRIDE_ORIGINAL = "original"
@@ -219,6 +220,39 @@ object IconPackManager {
     fun withoutMissingPacks(overrides: Map<String, String>, isInstalled: (String) -> Boolean): Map<String, String> {
         return overrides.filterValues { value -> overridePackage(value)?.let(isInstalled) ?: true }
     }
+
+    data class PinnedShortcut(val packageName: String, val id: String, val label: String, val icon: String?) {
+        val component: ComponentName
+            get() = shortcutComponent(packageName, id)
+    }
+
+    fun shortcutComponent(packageName: String, id: String) = ComponentName(packageName, SHORTCUT_PREFIX + id)
+
+    fun isShortcut(component: ComponentName) = component.className.startsWith(SHORTCUT_PREFIX)
+
+    fun serializeShortcuts(shortcuts: List<PinnedShortcut>): String = JSONArray().apply {
+        shortcuts.forEach { shortcut ->
+            put(JSONObject().apply {
+                put("package", shortcut.packageName)
+                put("id", shortcut.id)
+                put("label", shortcut.label)
+                shortcut.icon?.let { put("icon", it) }
+            })
+        }
+    }.toString()
+
+    fun parseShortcuts(json: String?): List<PinnedShortcut> = runCatching {
+        val array = JSONArray(json ?: "[]")
+        (0 until array.length()).map { index ->
+            val obj = array.getJSONObject(index)
+            PinnedShortcut(
+                packageName = obj.getString("package"),
+                id = obj.getString("id"),
+                label = obj.optString("label"),
+                icon = obj.optString("icon").takeIf { it.isNotEmpty() }
+            )
+        }
+    }.getOrDefault(emptyList())
 
     fun customIconKey(component: String) = "xposed_customicon_" + hash(component).take(16)
 

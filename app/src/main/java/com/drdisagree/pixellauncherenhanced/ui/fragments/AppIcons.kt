@@ -1,6 +1,8 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -18,6 +20,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS
+import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
+import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentAppIconsBinding
 import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.utils.IconApplyDialog
@@ -34,12 +39,16 @@ class AppIcons : Fragment() {
     private sealed class Item {
         data class Section(val title: Int) : Item()
         data class App(val app: IconPackStore.LauncherApp, val icon: Drawable, val customized: Boolean) : Item()
+        data class Shortcut(val shortcut: IconPackManager.PinnedShortcut, val icon: Drawable?, val customized: Boolean) : Item()
     }
 
     private lateinit var binding: FragmentAppIconsBinding
     private var items: List<Item> = emptyList()
     private var loadJob: Job? = null
     private val adapter = ItemAdapter()
+    private val shortcutsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == PINNED_SHORTCUTS) load()
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentAppIconsBinding.inflate(inflater, container, false)
@@ -87,10 +96,13 @@ class AppIcons : Fragment() {
         IconFlow.navigating = false
         updateApplyButton()
         load()
+        RPrefs.registerOnSharedPreferenceChangeListener(shortcutsListener)
+        IconPackStore.requestPinnedShortcuts()
     }
 
     override fun onStop() {
         super.onStop()
+        RPrefs.unregisterOnSharedPreferenceChangeListener(shortcutsListener)
         if (!IconFlow.navigating && !isRemoving) IconPackStore.applyIfChanged()
     }
 
@@ -112,11 +124,24 @@ class AppIcons : Fragment() {
                     Item.App(app, IconPackStore.previewIcon(context, app, config), app.component.flattenToString() in config.overrides)
                 }
                 val customized = apps.filter { it.customized }
+                val shortcuts = IconPackStore.pinnedShortcuts().map { shortcut ->
+                    Item.Shortcut(
+                        shortcut,
+                        IconPackStore.previewShortcutIcon(context, shortcut, config),
+                        shortcut.component.flattenToString() in config.overrides
+                    )
+                }
 
                 buildList {
+                    if (shortcuts.isNotEmpty()) {
+                        add(Item.Section(R.string.per_app_icons_shortcuts))
+                        addAll(shortcuts)
+                    }
                     if (customized.isNotEmpty()) {
                         add(Item.Section(R.string.per_app_icons_customized))
                         addAll(customized)
+                        add(Item.Section(R.string.per_app_icons_all))
+                    } else if (shortcuts.isNotEmpty()) {
                         add(Item.Section(R.string.per_app_icons_all))
                     }
                     addAll(apps)
@@ -131,14 +156,14 @@ class AppIcons : Fragment() {
         }
     }
 
-    private fun openPicker(app: IconPackStore.LauncherApp) {
+    private fun openPicker(component: ComponentName, label: String) {
         IconFlow.navigating = true
         MainActivity.replaceFragment(
             parentFragmentManager,
             IconPicker().apply {
                 arguments = Bundle().apply {
-                    putString(IconPicker.ARG_COMPONENT, app.component.flattenToString())
-                    putString(IconPicker.ARG_LABEL, app.label)
+                    putString(IconPicker.ARG_COMPONENT, component.flattenToString())
+                    putString(IconPicker.ARG_LABEL, label)
                 }
             }
         )
@@ -183,7 +208,15 @@ class AppIcons : Fragment() {
                     holder.itemView.findViewById<ImageView>(R.id.badge).visibility =
                         if (item.customized) View.VISIBLE else View.GONE
                     holder.itemView.findViewById<TextView>(R.id.label).text = item.app.label
-                    holder.itemView.setOnClickListener { openPicker(item.app) }
+                    holder.itemView.setOnClickListener { openPicker(item.app.component, item.app.label) }
+                }
+
+                is Item.Shortcut -> {
+                    holder.itemView.findViewById<ImageView>(R.id.icon).setImageDrawable(item.icon)
+                    holder.itemView.findViewById<ImageView>(R.id.badge).visibility =
+                        if (item.customized) View.VISIBLE else View.GONE
+                    holder.itemView.findViewById<TextView>(R.id.label).text = item.shortcut.label
+                    holder.itemView.setOnClickListener { openPicker(item.shortcut.component, item.shortcut.label) }
                 }
             }
         }

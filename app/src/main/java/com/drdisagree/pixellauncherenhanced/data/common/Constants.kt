@@ -77,6 +77,8 @@ object Constants {
     const val ICON_OVERRIDES = "xposed_iconoverrides"
     const val ICON_PACK_APPLY = "xposed_iconpackapply"
     const val ICON_PACK_APPLIED = "xposed_iconpackapplied"
+    const val PINNED_SHORTCUTS = "xposed_pinnedshortcuts"
+    const val PINNED_SHORTCUTS_REQUEST = "xposed_pinnedshortcutsrequest"
     const val DRAWER_TABS = "xposed_drawertablist"
     const val NO_DRAWER_SWIPE_ACTION = "xposed_nodrawerswipeaction"
     const val NO_DRAWER_ARRANGEMENT = "xposed_nodrawerarrangement"

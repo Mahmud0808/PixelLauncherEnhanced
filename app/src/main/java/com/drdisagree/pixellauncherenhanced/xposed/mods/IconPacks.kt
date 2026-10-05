@@ -17,6 +17,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.content.pm.ActivityInfo
 import android.content.pm.LauncherActivityInfo
+import android.content.pm.ShortcutInfo
+import android.graphics.Canvas
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -29,6 +31,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS_ENA
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLIED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_MASK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackIconDrawable
@@ -66,9 +70,16 @@ class IconPacks(context: Context) : ModPack(context) {
     private var restoreScrollUntil = 0L
     private val mainHandler = Handler(Looper.getMainLooper())
     private val taskComponent = ThreadLocal<ComponentName?>()
+    private val exportingShortcuts = ThreadLocal<Boolean>()
     private val skippedWrap = ThreadLocal<Any?>()
 
     override fun updatePrefs(vararg key: String) {
+        if (key.firstOrNull() == PINNED_SHORTCUTS_REQUEST) {
+            Thread { exportPinnedShortcuts() }.start()
+            return
+        }
+        if (key.firstOrNull() == PINNED_SHORTCUTS) return
+
         Xprefs.apply {
             pendingApply = getLong(ICON_PACK_APPLY, 0L).takeIf { it != getLong(ICON_PACK_APPLIED, 0L) } ?: 0L
             themedMode = getBoolean(HOME_THEMED_ICONS, false)
@@ -142,9 +153,24 @@ class IconPacks(context: Context) : ModPack(context) {
             .hookMethod("run")
             .suppressError()
             .runAfter {
+                exportPinnedShortcuts()
                 val token = pendingApply.takeIf { it != 0L } ?: return@runAfter
                 pendingApply = 0L
                 runCatching { Xprefs.edit().putLong(ICON_PACK_APPLIED, token).apply() }
+            }
+
+        LauncherApps::class.java
+            .hookMethod("getShortcutIconDrawable")
+            .suppressError()
+            .runAfter { param ->
+                if (exportingShortcuts.get() == true || !config.isActive) return@runAfter
+                val shortcut = param.args.getOrNull(0) as? ShortcutInfo ?: return@runAfter
+                val component = IconPackManager.shortcutComponent(shortcut.`package`, shortcut.id)
+                if (component.flattenToString() !in config.overrides) return@runAfter
+
+                val density = param.args.getOrNull(1) as? Int ?: mContext.resources.configuration.densityDpi
+                val original = param.result as? Drawable
+                param.result = replaceIcon(component, original, density) ?: return@runAfter
             }
 
         val iconProviderClass = findClass("com.android.launcher3.icons.IconProvider", suppressError = true) ?: return
@@ -475,6 +501,45 @@ class IconPacks(context: Context) : ModPack(context) {
         return regular
     }
 
+    private fun exportPinnedShortcuts() {
+        val launcherApps = mContext.getSystemService(LauncherApps::class.java) ?: return
+        if (!runCatching { launcherApps.hasShortcutHostPermission() }.getOrDefault(false)) return
+
+        val users = runCatching {
+            mContext.getSystemService(UserManager::class.java).userProfiles
+        }.getOrNull() ?: listOf(Process.myUserHandle())
+        val query = LauncherApps.ShortcutQuery().setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
+        val size = (mContext.resources.displayMetrics.density * SHORTCUT_PREVIEW_DP).toInt()
+
+        exportingShortcuts.set(true)
+        val shortcuts = try {
+            users.flatMap { user ->
+                runCatching { launcherApps.getShortcuts(query, user) }.getOrNull().orEmpty()
+            }.map { shortcut ->
+                val icon = runCatching {
+                    launcherApps.getShortcutIconDrawable(shortcut, mContext.resources.configuration.densityDpi)
+                }.getOrNull()?.let { drawable ->
+                    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+                    drawable.setBounds(0, 0, size, size)
+                    drawable.draw(Canvas(bitmap))
+                    IconPackManager.encodeBitmap(bitmap)
+                }
+                IconPackManager.PinnedShortcut(
+                    packageName = shortcut.`package`,
+                    id = shortcut.id,
+                    label = (shortcut.shortLabel ?: shortcut.longLabel ?: shortcut.id).toString(),
+                    icon = icon
+                )
+            }.distinctBy { it.component }.sortedBy { it.label.lowercase() }
+        } finally {
+            exportingShortcuts.remove()
+        }
+
+        val serialized = IconPackManager.serializeShortcuts(shortcuts)
+        if (Xprefs.getString(PINNED_SHORTCUTS, null) == serialized) return
+        runCatching { Xprefs.edit().putString(PINNED_SHORTCUTS, serialized).apply() }
+    }
+
     private fun hasStockMonochrome(icon: Drawable): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || icon !is AdaptiveIconDrawable) return false
         val monochrome = icon.monochrome ?: return false
@@ -530,6 +595,7 @@ class IconPacks(context: Context) : ModPack(context) {
         private const val ICON_CACHE_DB = "app_icons.db"
         private const val SCROLL_RESTORE_WINDOW_MS = 4_000L
         private const val FOLDER_REFRESH_DELAY_MS = 1_500L
+        private const val SHORTCUT_PREVIEW_DP = 60
         private val THEMED_FIELD = Regex("mono|whiteshadow|themed", RegexOption.IGNORE_CASE)
         private val OPTION_FIELDS = listOf("wrapNonAdaptiveIcon", "isFullBleed", "drawFullBleed", "addShadows", "mAddShadows")
     }

@@ -56,6 +56,8 @@ class IconPicker : Fragment() {
 
     private lateinit var binding: FragmentIconPickerBinding
     private lateinit var component: ComponentName
+    private val isShortcut: Boolean
+        get() = IconPackManager.isShortcut(component)
     private var appIcon: Drawable? = null
     private var followIcon: Drawable? = null
     private var packIcons: List<PackIcons> = emptyList()
@@ -132,11 +134,20 @@ class IconPicker : Fragment() {
             withContext(Dispatchers.IO) {
                 IconPackStore.pruneMissingPackOverrides(context)
                 val packageManager = context.packageManager
-                val app = IconPackStore.launcherApps(context).firstOrNull { it.component == component }
-                appIcon = app?.icon ?: runCatching { packageManager.getActivityIcon(component) }.getOrNull()
 
-                val followConfig = IconPackStore.config().let { it.copy(overrides = it.overrides - component.flattenToString()) }
-                followIcon = app?.let { IconPackStore.previewIcon(context, it, followConfig) } ?: appIcon
+                if (isShortcut) {
+                    appIcon = IconPackStore.pinnedShortcuts()
+                        .firstOrNull { it.component == component }
+                        ?.let { IconPackStore.shortcutIcon(context, it) }
+                        ?: runCatching { packageManager.getApplicationIcon(component.packageName) }.getOrNull()
+                    followIcon = appIcon
+                } else {
+                    val app = IconPackStore.launcherApps(context).firstOrNull { it.component == component }
+                    appIcon = app?.icon ?: runCatching { packageManager.getActivityIcon(component) }.getOrNull()
+
+                    val followConfig = IconPackStore.config().let { it.copy(overrides = it.overrides - component.flattenToString()) }
+                    followIcon = app?.let { IconPackStore.previewIcon(context, it, followConfig) } ?: appIcon
+                }
 
                 packIcons = IconPackManager.installedIconPacks(context).mapNotNull { info ->
                     val pack = IconPackManager.pack(context, info.packageName) ?: return@mapNotNull null
@@ -209,6 +220,7 @@ class IconPicker : Fragment() {
         val customIcon = IconPackStore.customIcon(component.flattenToString())
             ?.let { IconPackManager.adaptiveFromImage(requireContext(), it) }
 
+        binding.choices.choiceFollow.root.visibility = if (isShortcut) View.GONE else View.VISIBLE
         bindChoice(binding.choices.choiceFollow.root, followIcon, R.string.icon_choice_pack, override == null) {
             choose(null)
         }
@@ -216,8 +228,8 @@ class IconPicker : Fragment() {
             binding.choices.choiceOriginal.root,
             appIcon,
             R.string.icon_choice_original,
-            override == IconPackManager.OVERRIDE_ORIGINAL
-        ) { choose(IconPackManager.OVERRIDE_ORIGINAL) }
+            override == IconPackManager.OVERRIDE_ORIGINAL || (isShortcut && override == null)
+        ) { choose(if (isShortcut) null else IconPackManager.OVERRIDE_ORIGINAL) }
         bindChoice(
             binding.choices.choiceCustom.root,
             customIcon,

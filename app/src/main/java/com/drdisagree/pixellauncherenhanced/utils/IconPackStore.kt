@@ -8,6 +8,7 @@ import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
@@ -22,6 +23,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_OVERRIDES
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_MASK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
@@ -120,6 +123,34 @@ object IconPackStore {
             }
             .distinctBy { it.component }
             .sortedBy { it.label.lowercase() }
+    }
+
+    fun pinnedShortcuts(): List<IconPackManager.PinnedShortcut> =
+        IconPackManager.parseShortcuts(RPrefs.getString(PINNED_SHORTCUTS, null))
+
+    fun requestPinnedShortcuts() {
+        RPrefs.putLong(PINNED_SHORTCUTS_REQUEST, System.currentTimeMillis())
+    }
+
+    fun shortcutIcon(context: Context, shortcut: IconPackManager.PinnedShortcut): Drawable? {
+        IconPackManager.decodeBitmap(shortcut.icon)?.let { return BitmapDrawable(context.resources, it) }
+        return runCatching { context.packageManager.getApplicationIcon(shortcut.packageName) }.getOrNull()
+    }
+
+    fun previewShortcutIcon(context: Context, shortcut: IconPackManager.PinnedShortcut, config: IconPackManager.Config): Drawable? {
+        val original = shortcutIcon(context, shortcut)
+        if (shortcut.component.flattenToString() !in config.overrides) return original
+
+        return runCatching {
+            IconPackManager.resolve(
+                context = context,
+                component = shortcut.component,
+                config = config,
+                density = context.resources.displayMetrics.densityDpi,
+                customIcon = { customIcon(it) },
+                original = { original }
+            )?.drawable
+        }.getOrNull() ?: original
     }
 
     fun previewIcon(context: Context, app: LauncherApp, config: IconPackManager.Config): Drawable {
