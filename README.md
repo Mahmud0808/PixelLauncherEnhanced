@@ -101,9 +101,11 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Show entry in launcher settings          |       ✅        |         ✅          |
 | Show entry in homescreen popup           |       ✅        |         ✅          |
 | Developer options                        |       ✅        |         🚫         |
+| Restart                                  |       ✅        |         ✅          |
 | Back up home screen layout               |       ✅        |         ✅          |
 | Restore home screen layout               |       ✅        |         ✅          |
-| Restart                                  |       ✅        |         ✅          |
+| Back up settings                         |       ✅        |         ✅          |
+| Restore settings                         |       ✅        |         ✅          |
 
 </details>
 

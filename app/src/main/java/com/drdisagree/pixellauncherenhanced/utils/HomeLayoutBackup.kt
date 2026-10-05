@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Process
 import android.os.UserManager
 import android.provider.DocumentsContract
-import androidx.annotation.StringRes
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_SCREENS
@@ -32,11 +31,6 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 object HomeLayoutBackup {
-
-    class LayoutBackupException(
-        @StringRes val messageRes: Int,
-        vararg val formatArgs: Any
-    ) : Exception()
 
     private class LauncherTarget(val packageName: String) {
         val dataDir = "/data/user/${Process.myUid() / 100000}/$packageName"
@@ -69,7 +63,7 @@ object HomeLayoutBackup {
             }
 
             val output = context.contentResolver.openOutputStream(uri, "wt")
-                ?: throw LayoutBackupException(R.string.home_layout_failed)
+                ?: throw BackupException(R.string.home_layout_failed)
 
             ZipOutputStream(output).use { zip ->
                 zip.putNextEntry(ZipEntry(METADATA_ENTRY))
@@ -99,7 +93,7 @@ object HomeLayoutBackup {
             val backupDbName = metadata.getString(KEY_DB_NAME)
 
             if (backupDbName != dbName) {
-                throw LayoutBackupException(
+                throw BackupException(
                     R.string.home_layout_grid_mismatch,
                     gridLabel(backupDbName),
                     gridLabel(dbName)
@@ -122,7 +116,7 @@ object HomeLayoutBackup {
 
             openDatabase(staged).use { db ->
                 if (db.version > currentVersion) {
-                    throw LayoutBackupException(R.string.home_layout_newer_launcher)
+                    throw BackupException(R.string.home_layout_newer_launcher)
                 }
 
                 sanitizeLayout(
@@ -233,7 +227,7 @@ object HomeLayoutBackup {
         var metadata: JSONObject? = null
 
         val input = context.contentResolver.openInputStream(uri)
-            ?: throw LayoutBackupException(R.string.home_layout_invalid_file)
+            ?: throw BackupException(R.string.home_layout_invalid_file)
 
         runCatching {
             ZipInputStream(input).use { zip ->
@@ -247,13 +241,17 @@ object HomeLayoutBackup {
         }
 
         val result = metadata
+        if (result == null && SettingsBackup.isSettingsBackup(context, uri)) {
+            throw BackupException(R.string.home_layout_restore_got_settings_backup)
+        }
+
         if (result == null ||
             !result.has(KEY_DB_NAME) ||
             result.optInt(KEY_FORMAT_VERSION) > FORMAT_VERSION ||
             !staged.isFile ||
             staged.length() == 0L
         ) {
-            throw LayoutBackupException(R.string.home_layout_invalid_file)
+            throw BackupException(R.string.home_layout_invalid_file)
         }
 
         return result
@@ -263,7 +261,7 @@ object HomeLayoutBackup {
         return when {
             isPixelLauncher -> LauncherTarget(PIXEL_LAUNCHER_PACKAGE)
             isLauncher3 -> LauncherTarget(LAUNCHER3_PACKAGE)
-            else -> throw LayoutBackupException(R.string.home_layout_no_launcher)
+            else -> throw BackupException(R.string.home_layout_no_launcher)
         }
     }
 
@@ -278,7 +276,7 @@ object HomeLayoutBackup {
 
         return fromPrefs?.takeIf { it in databases }
             ?: databases.firstOrNull { LAYOUT_DB_REGEX.matches(it) }
-            ?: throw LayoutBackupException(R.string.home_layout_failed)
+            ?: throw BackupException(R.string.home_layout_failed)
     }
 
     private fun pullDatabase(launcher: LauncherTarget, dbName: String, target: File): File {
@@ -293,7 +291,7 @@ object HomeLayoutBackup {
         ).exec()
 
         if (wal.length() == 0L) wal.delete()
-        if (target.length() == 0L) throw LayoutBackupException(R.string.home_layout_failed)
+        if (target.length() == 0L) throw BackupException(R.string.home_layout_failed)
 
         return target
     }
@@ -306,7 +304,7 @@ object HomeLayoutBackup {
             "cat '${staged.path}' > '$target'"
         ).exec()
 
-        if (!result.isSuccess) throw LayoutBackupException(R.string.home_layout_failed)
+        if (!result.isSuccess) throw BackupException(R.string.home_layout_failed)
     }
 
     private fun openDatabase(file: File): SQLiteDatabase {
