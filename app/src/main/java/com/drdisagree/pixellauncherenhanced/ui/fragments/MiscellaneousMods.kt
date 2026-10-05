@@ -1,17 +1,43 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_HOME_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RESTART_LAUNCHER
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RESTORE_HOME_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
 import com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+import com.drdisagree.pixellauncherenhanced.utils.HomeLayoutBackup
+import com.drdisagree.pixellauncherenhanced.utils.HomeLayoutBackup.LayoutBackupException
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.launch
 
 class MiscellaneousMods : ControlledPreferenceFragmentCompat() {
+
+    private val backupLayoutLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+            if (uri != null) {
+                runLayoutTask(R.string.home_layout_backup_success) {
+                    HomeLayoutBackup.backup(it, uri)
+                }
+            }
+        }
+
+    private val restoreLayoutLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) confirmRestoreLayout(uri)
+        }
 
     override val title: String
         get() = getString(R.string.fragment_miscellaneous_title)
@@ -40,10 +66,60 @@ class MiscellaneousMods : ControlledPreferenceFragmentCompat() {
                 true
             }
 
+        findPreference<Preference>(BACKUP_HOME_LAYOUT)?.onPreferenceClickListener =
+            Preference.OnPreferenceClickListener {
+                backupLayoutLauncher.launch(HomeLayoutBackup.defaultFileName)
+                true
+            }
+
+        findPreference<Preference>(RESTORE_HOME_LAYOUT)?.onPreferenceClickListener =
+            Preference.OnPreferenceClickListener {
+                restoreLayoutLauncher.launch(BACKUP_MIME_TYPES)
+                true
+            }
+
         findPreference<Preference>(RESTART_LAUNCHER)?.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
                 context?.restartLauncher()
                 true
             }
+    }
+
+    private fun confirmRestoreLayout(uri: Uri) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.restore_home_layout_title)
+            .setMessage(R.string.restore_home_layout_confirm_desc)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.restore_home_layout_button) { _, _ ->
+                runLayoutTask(R.string.home_layout_restore_success) {
+                    HomeLayoutBackup.restore(it, uri)
+                }
+            }
+            .show()
+    }
+
+    private fun runLayoutTask(@StringRes successRes: Int, task: suspend (Context) -> Unit) {
+        val context = requireContext().applicationContext
+
+        lifecycleScope.launch {
+            val message = try {
+                task(context)
+                context.getString(successRes)
+            } catch (e: LayoutBackupException) {
+                context.getString(e.messageRes, *e.formatArgs)
+            } catch (e: Exception) {
+                context.getString(R.string.home_layout_failed)
+            }
+
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    companion object {
+        private val BACKUP_MIME_TYPES = arrayOf(
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/octet-stream"
+        )
     }
 }

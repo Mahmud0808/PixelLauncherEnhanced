@@ -38,6 +38,8 @@ object Constants {
     const val LAUNCHER_ICON_SIZE = "xposed_launchericonsize"
     const val LAUNCHER_TEXT_SIZE = "xposed_launchertextsize"
     const val RESTART_LAUNCHER = "xposed_restartlauncher"
+    const val BACKUP_HOME_LAYOUT = "xposed_backuphomelayout"
+    const val RESTORE_HOME_LAYOUT = "xposed_restorehomelayout"
     const val DEVELOPER_OPTIONS = "xposed_developeroptions"
     const val ENTRY_IN_LAUNCHER_SETTINGS = "xposed_entryinlaunchersettings"
     const val ENTRY_IN_OPTIONS_POPUP = "xposed_entryinoptionspopup"

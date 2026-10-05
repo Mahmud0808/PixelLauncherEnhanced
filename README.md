@@ -101,6 +101,8 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Show entry in launcher settings          |       ✅        |         ✅          |
 | Show entry in homescreen popup           |       ✅        |         ✅          |
 | Developer options                        |       ✅        |         🚫         |
+| Back up home screen layout               |       ✅        |         ✅          |
+| Restore home screen layout               |       ✅        |         ✅          |
 | Restart                                  |       ✅        |         ✅          |
 
 </details>
@@ -136,6 +138,8 @@ Root access is a requirement for the following features:
 - Double tap to sleep
 
 - Kill app
+
+- Home screen layout backup and restore
 
 - Restart launcher
 

@@ -42,6 +42,20 @@
         app:iconSpaceReserved="false" />
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+        android:key="xposed_backuphomelayout"
+        android:summary="@string/backup_home_layout_desc"
+        android:title="@string/backup_home_layout_title"
+        app:iconSpaceReserved="false"
+        app:showArrow="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+        android:key="xposed_restorehomelayout"
+        android:summary="@string/restore_home_layout_desc"
+        android:title="@string/restore_home_layout_title"
+        app:iconSpaceReserved="false"
+        app:showArrow="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
         android:key="xposed_restartlauncher"
         android:summary="@string/restart_launcher_desc"
         android:title="@string/restart_launcher_title"

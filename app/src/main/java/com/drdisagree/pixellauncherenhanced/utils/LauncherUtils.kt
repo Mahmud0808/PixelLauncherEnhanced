@@ -35,7 +35,7 @@ object LauncherUtils {
         }, 300)
     }
 
-    private fun resetBootloopProtectorForPackage(packageName: String) {
+    fun resetBootloopProtectorForPackage(packageName: String) {
         val loadTimeKey = String.format("%s%s", LOAD_TIME_KEY_KEY, packageName)
         val strikeKey = String.format("%s%s", PACKAGE_STRIKE_KEY_KEY, packageName)
         val currentTime = Calendar.getInstance().time.time
