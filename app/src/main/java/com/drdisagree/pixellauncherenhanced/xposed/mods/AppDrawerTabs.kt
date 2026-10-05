@@ -6,7 +6,11 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.DrawableContainer
+import android.graphics.drawable.DrawableWrapper
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -477,6 +481,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
 
             clipToOutline = true
             addView(scroller, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> matchTabRadius() }
         }
         private var currentIds: List<String> = emptyList()
         private var currentSelected: String? = null
@@ -508,6 +513,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     )
                 }
                 currentIds = ids
+                trackFrame.post { matchTabRadius() }
             }
 
             if (rebuild || selectedId != currentSelected) {
@@ -529,6 +535,26 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             }
 
             visibility = if (visible.size > 1) visibility.takeIf { it != GONE } ?: VISIBLE else GONE
+        }
+
+        private fun matchTabRadius() {
+            val height = trackFrame.height
+            if (height == 0) return
+
+            var outerRadius = height / 2f
+            trackFrame.background?.forEachGradient { gradient ->
+                val radius = gradient.cornerRadii?.firstOrNull() ?: gradient.cornerRadius
+                outerRadius = minOf(radius, height / 2f)
+            }
+
+            val innerHeight = height - trackFrame.paddingTop - trackFrame.paddingBottom
+            val innerRadius = (outerRadius - trackFrame.paddingTop)
+                .coerceAtLeast(context.dp(MIN_TAB_RADIUS_DP).toFloat())
+                .coerceAtMost(innerHeight / 2f)
+
+            for (i in 0 until track.childCount) {
+                track.getChildAt(i).background?.forEachGradient { it.cornerRadius = innerRadius }
+            }
         }
 
         private fun createTab(tab: DrawerTab): TextView {
@@ -616,6 +642,17 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         }
     }
 
+    private fun Drawable.forEachGradient(action: (GradientDrawable) -> Unit) {
+        when (this) {
+            is GradientDrawable -> action(this)
+            is LayerDrawable -> for (i in 0 until numberOfLayers) getDrawable(i)?.forEachGradient(action)
+            is DrawableWrapper -> drawable?.forEachGradient(action)
+            is DrawableContainer -> (constantState as? DrawableContainer.DrawableContainerState)
+                ?.children
+                ?.forEach { it?.forEachGradient(action) }
+        }
+    }
+
     private fun Context.dp(value: Int): Int {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -627,6 +664,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     companion object {
         private const val BAR_BOTTOM_GAP_DP = 8
         private const val CHIP_HEIGHT_DP = 36
+        private const val MIN_TAB_RADIUS_DP = 4
         private const val ORIGINAL_FILTER_KEY = "plenhanced_drawer_tab_filter"
         private val NO_FILTER = Any()
     }
