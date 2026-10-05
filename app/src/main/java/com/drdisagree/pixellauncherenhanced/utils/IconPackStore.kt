@@ -3,7 +3,10 @@ package com.drdisagree.pixellauncherenhanced.utils
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Color
@@ -31,11 +34,20 @@ import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 
 object IconPackStore {
 
-    data class LauncherApp(
+    class LauncherApp(
         val component: ComponentName,
         val label: String,
-        val icon: Drawable
-    )
+        private val activityInfo: ActivityInfo,
+        private val packageManager: PackageManager
+    ) {
+        val icon: Drawable by lazy { activityInfo.loadIcon(packageManager) }
+    }
+
+    @Volatile
+    private var cachedApps: List<LauncherApp>? = null
+
+    val launcherAppsSnapshot: List<LauncherApp>?
+        get() = cachedApps
 
     private var dirty = false
 
@@ -118,11 +130,21 @@ object IconPackStore {
                 LauncherApp(
                     component = ComponentName(info.activityInfo.packageName, info.activityInfo.name),
                     label = info.loadLabel(packageManager).toString(),
-                    icon = info.activityInfo.loadIcon(packageManager)
+                    activityInfo = info.activityInfo,
+                    packageManager = packageManager
                 )
             }
             .distinctBy { it.component }
             .sortedBy { it.label.lowercase() }
+            .also { cachedApps = it }
+    }
+
+    fun renderPreview(drawable: Drawable, size: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val copy = drawable.constantState?.newDrawable()?.mutate() ?: drawable
+        copy.setBounds(0, 0, size, size)
+        copy.draw(Canvas(bitmap))
+        return bitmap
     }
 
     fun pinnedShortcuts(): List<IconPackManager.PinnedShortcut> =

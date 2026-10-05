@@ -35,6 +35,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.min
@@ -65,7 +66,8 @@ class IconPicker : Fragment() {
     private var selectedPack = 0
     private var visibleItems: List<GridItem> = emptyList()
     private val adapter = IconAdapter()
-    private val drawableCache = LruCache<String, Drawable>(400)
+    private val drawableCache = LruCache<String, Bitmap>(ICON_CACHE_SIZE)
+    private val renderDispatcher = Dispatchers.Default.limitedParallelism(RENDER_THREADS)
 
     private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) saveCustomImage(uri)
@@ -95,6 +97,8 @@ class IconPicker : Fragment() {
                     if (visibleItems.getOrNull(position) is GridItem.Header) COLUMNS else 1
             }
         }
+        binding.recyclerView.setHasFixedSize(true)
+        binding.recyclerView.setItemViewCacheSize(COLUMNS * 4)
         binding.recyclerView.adapter = adapter
 
         binding.tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -142,7 +146,7 @@ class IconPicker : Fragment() {
                         ?: runCatching { packageManager.getApplicationIcon(component.packageName) }.getOrNull()
                     followIcon = appIcon
                 } else {
-                    val app = IconPackStore.launcherApps(context).firstOrNull { it.component == component }
+                    val app = (IconPackStore.launcherAppsSnapshot ?: IconPackStore.launcherApps(context)).firstOrNull { it.component == component }
                     appIcon = app?.icon ?: runCatching { packageManager.getActivityIcon(component) }.getOrNull()
 
                     val followConfig = IconPackStore.config().let { it.copy(overrides = it.overrides - component.flattenToString()) }
@@ -305,21 +309,30 @@ class IconPicker : Fragment() {
         return super.onOptionsItemSelected(item)
     }
 
-    private inner class IconAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private class Holder(view: View) : RecyclerView.ViewHolder(view) {
+        var job: Job? = null
+    }
+
+    private inner class IconAdapter : RecyclerView.Adapter<Holder>() {
 
         override fun getItemCount() = visibleItems.size
 
         override fun getItemViewType(position: Int) = if (visibleItems[position] is GridItem.Header) TYPE_HEADER else TYPE_ICON
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
             val layout = if (viewType == TYPE_HEADER) R.layout.view_drawer_tab_section else R.layout.view_icon_preview
-            val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
-            return object : RecyclerView.ViewHolder(view) {}
+            return Holder(LayoutInflater.from(parent.context).inflate(layout, parent, false))
         }
 
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        override fun onViewRecycled(holder: Holder) {
+            holder.job?.cancel()
+            holder.job = null
+        }
+
+        override fun onBindViewHolder(holder: Holder, position: Int) {
             val pack = packIcons.getOrNull(selectedPack) ?: return
             val item = visibleItems[position]
+            holder.job?.cancel()
 
             if (item is GridItem.Header) {
                 holder.itemView.findViewById<TextView>(R.id.title).text = item.title
@@ -334,16 +347,23 @@ class IconPicker : Fragment() {
             val imageView = view.findViewById<ImageView>(R.id.icon)
 
             view.findViewById<TextView>(R.id.label).text = name.replace('_', ' ')
+            val cached = drawableCache.get(key)
             imageView.tag = key
-            imageView.setImageDrawable(drawableCache.get(key))
+            imageView.setImageBitmap(cached)
 
-            if (drawableCache.get(key) == null) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val drawable = withContext(Dispatchers.IO) {
-                        IconPackManager.pack(requireContext().applicationContext, pack.info.packageName)?.loadDrawable(name)
+            if (cached == null) {
+                val context = requireContext().applicationContext
+                val size = dpToPx(ICON_SIZE_DP)
+                holder.job = viewLifecycleOwner.lifecycleScope.launch {
+                    val bitmap = withContext(renderDispatcher) {
+                        runCatching {
+                            IconPackManager.pack(context, pack.info.packageName)
+                                ?.loadDrawable(name)
+                                ?.let { IconPackStore.renderPreview(it, size) }
+                        }.getOrNull()
                     } ?: return@launch
-                    drawableCache.put(key, drawable)
-                    if (imageView.tag == key) imageView.setImageDrawable(drawable)
+                    drawableCache.put(key, bitmap)
+                    if (imageView.tag == key) imageView.setImageBitmap(bitmap)
                 }
             }
 
@@ -358,5 +378,8 @@ class IconPicker : Fragment() {
         private const val CUSTOM_ICON_SIZE = 256
         private const val TYPE_HEADER = 0
         private const val TYPE_ICON = 1
+        private const val ICON_SIZE_DP = 56
+        private const val ICON_CACHE_SIZE = 600
+        private const val RENDER_THREADS = 3
     }
 }
