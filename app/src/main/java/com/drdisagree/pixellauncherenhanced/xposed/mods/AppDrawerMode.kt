@@ -267,20 +267,22 @@ class AppDrawerMode(context: Context) : ModPack(context) {
         val normalState = launcherStateClass.getStaticFieldSilently("NORMAL")
         val allAppsState = launcherStateClass.getStaticFieldSilently("ALL_APPS")
 
-        findClass(
+        listOf(
             "com.android.launcher3.uioverrides.touchcontrollers.PortraitStatesTouchController",
-            suppressError = true
-        )
-            .hookMethod("getTargetState")
-            .suppressError()
-            .runAfter { param ->
-                if (!noDrawerMode || swipeUpAction != SWIPE_UP_NOTHING) return@runAfter
-                if (normalState == null || allAppsState == null) return@runAfter
+            "com.android.launcher3.uioverrides.touchcontrollers.NoButtonNavbarToOverviewTouchController"
+        ).forEach { className ->
+            findClass(className, suppressError = true)
+                .hookMethod("getTargetState")
+                .suppressError()
+                .runAfter { param ->
+                    if (!noDrawerMode || swipeUpAction != SWIPE_UP_NOTHING) return@runAfter
+                    if (normalState == null || allAppsState == null) return@runAfter
 
-                if (param.args.firstOrNull() === normalState && param.result === allAppsState) {
-                    param.result = normalState
+                    if (param.args.firstOrNull() === normalState && param.result === allAppsState) {
+                        param.result = normalState
+                    }
                 }
-            }
+        }
 
         findClass("com.android.launcher3.uioverrides.QuickstepLauncher", suppressError = true)
             .hookMethod("onStateSetEnd")
