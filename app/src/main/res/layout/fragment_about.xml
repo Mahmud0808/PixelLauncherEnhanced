@@ -138,7 +138,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="1dp"
                 app:cardBackgroundColor="@color/transparent"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="16dp"
                 app:cardMaxElevation="0dp"
                 app:strokeWidth="0dp">
 
