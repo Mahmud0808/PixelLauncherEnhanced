@@ -6,7 +6,9 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR_OPACITY
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_DOCK_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_DARK_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
@@ -55,7 +57,12 @@ object PrefsHelper {
             FOLDER_CUSTOM_COLOR_LIGHT,
             FOLDER_CUSTOM_COLOR_DARK -> getBoolean(THEMED_ICON_CUSTOM_COLOR)
 
-            DESKTOP_SEARCH_BAR_OPACITY -> isPixelLauncher && !getBoolean(DESKTOP_SEARCH_BAR)
+            DESKTOP_SEARCH_BAR_OPACITY -> isPixelLauncher &&
+                    !getBoolean(DESKTOP_SEARCH_BAR) &&
+                    !getBoolean(DISABLE_DOCK)
+
+            DESKTOP_SEARCH_BAR,
+            DESKTOP_DOCK_SPACING -> !getBoolean(DISABLE_DOCK)
 
             FREEFORM_GESTURE_PROGRESS,
             FREEFORM_MODE -> getBoolean(FREEFORM_GESTURE)

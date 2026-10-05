@@ -114,8 +114,14 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_home_screen_search_bar"
-        android:title="@string/section_search_bar_title"
+        android:title="@string/section_dock_title"
         app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_disabledock"
+            android:summary="@string/disable_dock_desc"
+            android:title="@string/disable_dock_title"
+            app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_desktopsearchbar"

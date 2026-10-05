@@ -79,6 +79,9 @@
     <string name="hide_desktop_search_bar_title">Hide desktop search bar</string>
     <string name="hide_desktop_search_bar_desc">Hide search bar from desktop dock</string>
     <string name="dock_spacing_title">Dock spacing</string>
+    <string name="section_dock_title">Dock</string>
+    <string name="disable_dock_title">Disable dock</string>
+    <string name="disable_dock_desc">Hide the dock and its search bar. Dock icons move to the home screen</string>
     <string name="app_drawer_background_opacity_title">App drawer background opacity</string>
     <string name="recents_background_opacity_title">Recents background opacity</string>
     <string name="restart_launcher_title">Restart</string>

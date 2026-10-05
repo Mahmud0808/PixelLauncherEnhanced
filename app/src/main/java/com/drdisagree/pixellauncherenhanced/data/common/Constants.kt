@@ -68,6 +68,7 @@ object Constants {
     const val POPUP_UNINSTALL_APP = "xposed_popupuninstallapp"
     const val NO_DRAWER_MODE = "xposed_nodrawermode"
     const val DRAWER_TABS_ENABLED = "xposed_drawertabs"
+    const val DISABLE_DOCK = "xposed_disabledock"
     const val DRAWER_TABS = "xposed_drawertablist"
     const val NO_DRAWER_SWIPE_ACTION = "xposed_nodrawerswipeaction"
     const val NO_DRAWER_ARRANGEMENT = "xposed_nodrawerarrangement"
