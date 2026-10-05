@@ -44,8 +44,7 @@ class SplashActivity : AppCompatActivity() {
             if (Shell.getCachedShell() == null) {
                 Shell.setDefaultBuilder(
                     Shell.Builder.create()
-                        .setFlags(Shell.FLAG_MOUNT_MASTER)
-                        .setFlags(Shell.FLAG_REDIRECT_STDERR)
+                        .setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR)
                         .setTimeout(20)
                 )
             }
