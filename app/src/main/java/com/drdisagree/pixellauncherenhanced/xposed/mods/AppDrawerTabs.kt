@@ -25,6 +25,7 @@ import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -574,6 +575,10 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         }
         private var currentIds: List<String> = emptyList()
         private var currentSelected: String? = null
+        private var dragging = false
+        private var downX = 0f
+        private var previewId: String? = null
+        private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
         init {
             addView(trackFrame, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -607,12 +612,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
 
             if (rebuild || selectedId != currentSelected) {
                 currentSelected = selectedId
-
-                for (i in 0 until track.childCount) {
-                    val tab = track.getChildAt(i) as TextView
-                    tab.isSelected = tab.tag == selectedId
-                    if (template == null) styleFallback(tab, tab.isSelected)
-                }
+                highlight(selectedId)
 
                 (0 until track.childCount).map { track.getChildAt(it) }
                     .firstOrNull { it.tag == selectedId }
@@ -622,6 +622,81 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                         }
                     }
             }
+        }
+
+        private fun highlight(id: String?) {
+            for (i in 0 until track.childCount) {
+                val tab = track.getChildAt(i) as TextView
+                tab.isSelected = tab.tag == id
+                if (template == null) styleFallback(tab, tab.isSelected)
+            }
+        }
+
+        override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = event.x
+                    dragging = false
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    if (!dragging && abs(event.x - downX) > touchSlop) {
+                        dragging = true
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                    }
+                }
+            }
+
+            return dragging
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_MOVE -> previewTab(event.x)
+
+                MotionEvent.ACTION_UP -> {
+                    previewTab(event.x)
+                    previewId
+                        ?.let { id -> visibleTabs().firstOrNull { it.id == id } }
+                        ?.let { selectTab(it) }
+                    endDrag()
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    highlight(currentSelected)
+                    endDrag()
+                }
+            }
+
+            return true
+        }
+
+        private fun endDrag() {
+            dragging = false
+            previewId = null
+        }
+
+        /** Follows the finger without filtering the list, which only happens on release. */
+        private fun previewTab(x: Float) {
+            val id = tabAt(x)?.tag as? String ?: return
+            if (id == previewId) return
+
+            previewId = id
+            highlight(id)
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+
+        /** The tab under [x], or the nearest end when the finger runs past the strip. */
+        private fun tabAt(x: Float): TextView? {
+            val local = x - trackFrame.left - scroller.left + scroller.scrollX
+
+            for (i in 0 until track.childCount) {
+                val tab = track.getChildAt(i) as TextView
+                if (local < tab.right || i == track.childCount - 1) return tab
+            }
+
+            return null
         }
 
         private fun matchTabRadius() {
