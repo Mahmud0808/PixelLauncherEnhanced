@@ -6,10 +6,15 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_ICON_L
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -20,6 +25,7 @@ class IconLabels(context: Context) : ModPack(context) {
 
     private var showDesktopLabels = true
     private var showDrawerLabels = true
+    private var nativeLabelHiddenItem: Any? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -28,15 +34,21 @@ class IconLabels(context: Context) : ModPack(context) {
         }
 
         when (key.firstOrNull()) {
-            in setOf(
-                DESKTOP_ICON_LABELS,
-                APP_DRAWER_ICON_LABELS
-            ) -> reloadLauncher(mContext)
+            DESKTOP_ICON_LABELS -> {
+                if (nativeLabelHiddenItem == null || !setNativeLabelsHidden(!showDesktopLabels)) {
+                    reloadLauncher(mContext)
+                }
+            }
+
+            APP_DRAWER_ICON_LABELS -> reloadLauncher(mContext)
         }
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val bubbleTextViewClass = findClass("com.android.launcher3.BubbleTextView")
+
+        nativeLabelHiddenItem = findClass("com.android.launcher3.LauncherPrefs", suppressError = true)
+            .getStaticFieldSilently("WORKSPACE_ITEMS_LABEL_HIDDEN")
 
         fun XC_MethodHook.MethodHookParam.beforeHookedLabel() {
             val mDisplay = thisObject.getField("mDisplay") as Int
@@ -50,7 +62,7 @@ class IconLabels(context: Context) : ModPack(context) {
                 itemInfo.setField("title", null)
             }
 
-            if (mDisplay.isDesktop() && !showDesktopLabels) {
+            if (mDisplay.isDesktop() && !showDesktopLabels && !mDisplay.isNativelyHandled()) {
                 removeLabel()
             } else if (mDisplay.isDrawer() && !showDrawerLabels) {
                 removeLabel()
@@ -68,7 +80,7 @@ class IconLabels(context: Context) : ModPack(context) {
                 }
             }
 
-            if (mDisplay.isDesktop() && !showDesktopLabels) {
+            if (mDisplay.isDesktop() && !showDesktopLabels && !mDisplay.isNativelyHandled()) {
                 reAddLabel()
             } else if (mDisplay.isDrawer() && !showDrawerLabels) {
                 reAddLabel()
@@ -89,6 +101,23 @@ class IconLabels(context: Context) : ModPack(context) {
                 .runBefore { param -> param.beforeHookedLabel() }
                 .runAfter { param -> param.afterHookedLabel() }
         }
+    }
+
+    private fun setNativeLabelsHidden(hidden: Boolean): Boolean {
+        val launcherPrefs = runCatching {
+            findClass("com.android.launcher3.LauncherPrefs").callStaticMethod("get", mContext)
+        }.getOrNull() ?: findClass(
+            $$"com.android.launcher3.LauncherPrefs$Companion",
+            suppressError = true
+        ).callStaticMethodSilently("get", mContext)
+
+        return runCatching { launcherPrefs.callMethod("put", nativeLabelHiddenItem, hidden) }
+            .onFailure { log(this@IconLabels, it) }
+            .isSuccess
+    }
+
+    private fun Int.isNativelyHandled(): Boolean {
+        return nativeLabelHiddenItem != null && this == DISPLAY_WORKSPACE
     }
 
     private fun Int.isDesktop(): Boolean {
