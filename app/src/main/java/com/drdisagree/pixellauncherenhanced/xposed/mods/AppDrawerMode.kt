@@ -38,6 +38,7 @@ import java.text.Collator
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executor
 import java.util.function.Predicate
 import java.util.stream.Stream
 import kotlin.math.min
@@ -102,7 +103,10 @@ class AppDrawerMode(context: Context) : ModPack(context) {
             .hookMethod("run")
             .suppressError()
             .runAfter { param ->
-                rememberLauncherModel(param.thisObject.getFieldSilently("mModel"))
+                rememberLauncherModel(
+                    param.thisObject.getFieldSilently("mModel")
+                        ?: param.thisObject.getFieldSilently("mApp").callMethodSilently("getModel")
+                )
                 enqueueWorkspaceSync()
             }
 
@@ -309,11 +313,32 @@ class AppDrawerMode(context: Context) : ModPack(context) {
 
         val model = launcherModelRef?.get() ?: return
         val taskClass = modelUpdateTaskClass ?: return
+        var legacyArgs: Array<Any?>? = null
         val task = Proxy.newProxyInstance(taskClass.classLoader, arrayOf(taskClass)) { proxy, method, args ->
             when (method.name) {
                 "execute" -> {
                     runCatching { syncWorkspace(args[0], args[1], args[2]) }
                         .onFailure { log(this@AppDrawerMode, it) }
+                    null
+                }
+
+                "init" -> {
+                    legacyArgs = args
+                    null
+                }
+
+                "run" -> {
+                    val initArgs = legacyArgs
+                    if (initArgs != null && model.callMethodSilently("isModelLoaded") != false) {
+                        runCatching {
+                            val controller = LegacyTaskController(
+                                context = initArgs[0].callMethodSilently("getContext") as? Context ?: mContext,
+                                model = initArgs[1] ?: model,
+                                uiExecutor = initArgs[4] as Executor
+                            )
+                            syncWorkspace(controller, initArgs[2]!!, initArgs[3]!!)
+                        }.onFailure { log(this@AppDrawerMode, it) }
+                    }
                     null
                 }
 
@@ -348,7 +373,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     }
 
     private fun syncAutoPages(controller: Any, items: List<Any>, allAppsList: Any) {
-        val context = controller.getFieldSilently("context") as? Context ?: mContext
+        val context = controller.taskContext()
         val blockList = if (HideApps.HIDE_APPS_ENABLED) {
             Xprefs.getStringSet(APP_BLOCK_LIST, emptySet()).orEmpty()
         } else {
@@ -410,7 +435,9 @@ class AppDrawerMode(context: Context) : ModPack(context) {
             .distinctBy { it.appKey() }
             .sortedWith(byTitle)
             .mapNotNull { app ->
-                val item = app.callMethodSilently("makeWorkspaceItem", context) ?: return@mapNotNull null
+                val item = app.callMethodSilently("makeWorkspaceItem", context)
+                    ?: app.callMethodSilently("makeWorkspaceItem")
+                    ?: return@mapNotNull null
                 val intent = item.getFieldSilently("intent") as? Intent ?: return@mapNotNull null
                 item.apply {
                     setField("intent", Intent(intent).putExtra(AUTO_ADDED_EXTRA, true))
@@ -534,10 +561,26 @@ class AppDrawerMode(context: Context) : ModPack(context) {
         targets: Map<Any, Triple<Int, Int, Int>>,
         removed: List<Any>
     ) {
-        val modelWriter = controller.callMethod("getModelWriter")!!
+        val modelWriter = controller.modelWriter()
+        val bulkAdd = modelWriter.javaClass.methods.any { it.name == "addItemsToDatabase" }
 
         fun writeTo(target: Any) {
-            if (added.isNotEmpty()) target.callMethod("addItemsToDatabase", ArrayList(added))
+            if (added.isNotEmpty()) {
+                if (bulkAdd) {
+                    target.callMethod("addItemsToDatabase", ArrayList(added))
+                } else {
+                    added.forEach { item ->
+                        target.callMethod(
+                            "addItemToDatabase",
+                            item,
+                            CONTAINER_DESKTOP,
+                            item.intField("screenId"),
+                            item.intField("cellX"),
+                            item.intField("cellY")
+                        )
+                    }
+                }
+            }
 
             moved.forEach { item ->
                 val (screenId, cellX, cellY) = targets[item] ?: return@forEach
@@ -592,6 +635,11 @@ class AppDrawerMode(context: Context) : ModPack(context) {
 
             if (removed.isNotEmpty()) {
                 deleteItems(modelWriter, removed)
+                return
+            }
+
+            if (!bulkAdd) {
+                reloadModel()
                 return
             }
         }
@@ -660,7 +708,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
             return
         }
 
-        runCatching { deleteItems(controller.callMethod("getModelWriter")!!, removed) }
+        runCatching { deleteItems(controller.modelWriter(), removed) }
             .onSuccess { saveFirstModScreen(null) }
             .onFailure { log(this@AppDrawerMode, it) }
     }
@@ -704,6 +752,17 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     }
 
     private fun scheduleCallbacks(controller: Any, action: (Any) -> Unit) {
+        if (controller is LegacyTaskController) {
+            (controller.model.callMethodSilently("getCallbacks") as? Array<*>).orEmpty()
+                .filterNotNull()
+                .forEach { callbacks ->
+                    controller.uiExecutor.execute {
+                        runCatching { action(callbacks) }.onFailure { log(this@AppDrawerMode, it) }
+                    }
+                }
+            return
+        }
+
         val taskClass = callbackTaskClass ?: return
         val task = Proxy.newProxyInstance(taskClass.classLoader, arrayOf(taskClass)) { proxy, method, args ->
             when (method.name) {
@@ -723,6 +782,33 @@ class AppDrawerMode(context: Context) : ModPack(context) {
 
         controller.callMethodSilently("scheduleCallbackTask", task)
     }
+
+    private fun Any.taskContext(): Context {
+        if (this is LegacyTaskController) return context
+        return getFieldSilently("context") as? Context ?: mContext
+    }
+
+    private fun Any.modelWriter(): Any {
+        if (this !is LegacyTaskController) return callMethod("getModelWriter")!!
+
+        val getWriter = model.javaClass.methods
+            .filter { it.name == "getWriter" }
+            .maxByOrNull { it.parameterTypes.size }!!
+        val args = getWriter.parameterTypes.map { type ->
+            when {
+                type == Boolean::class.javaPrimitiveType -> false
+                type.simpleName == "CellPosMapper" -> type.getStaticFieldSilently("DEFAULT")
+                else -> null
+            }
+        }
+        return getWriter.invoke(model, *args.toTypedArray())!!
+    }
+
+    private class LegacyTaskController(
+        val context: Context,
+        val model: Any,
+        val uiExecutor: Executor
+    )
 
     private fun reloadModel() {
         Handler(Looper.getMainLooper()).post {
