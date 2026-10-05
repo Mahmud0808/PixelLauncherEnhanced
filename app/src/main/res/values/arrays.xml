@@ -11,6 +11,26 @@
         <item>com.android.launcher3</item>
     </string-array>
 
+    <string-array name="no_drawer_swipe_action_str" translatable="false">
+        <item>@string/no_drawer_swipe_nothing</item>
+        <item>@string/no_drawer_swipe_search</item>
+    </string-array>
+
+    <string-array name="no_drawer_swipe_action_value" translatable="false">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
+    <string-array name="no_drawer_arrangement_str" translatable="false">
+        <item>@string/no_drawer_arrangement_sorted</item>
+        <item>@string/no_drawer_arrangement_custom</item>
+    </string-array>
+
+    <string-array name="no_drawer_arrangement_value" translatable="false">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
     <string-array name="freeform_mode_str">
         <item>AOSP Origin</item>
         <item>Sunshine MiFreeform</item>

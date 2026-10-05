@@ -27,6 +27,8 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Remove shortcut icon badge |       ✅        |         ✅          |
 | Icon size                  |       ✅        |         ✅          |
 | Text size                  |       ✅        |         ✅          |
+| Kill app in app popup      |       ✅        |         ✅          |
+| Uninstall in app popup     |       ✅        |         ✅          |
 | Custom themed icon color   |       ✅        |         ⚠️         |
 
 </details>
@@ -56,16 +58,19 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 <details>
 <summary>App drawer</summary>
 
-| Feature                       | Pixel Launcher | Launcher3 Launcher |
-|-------------------------------|:--------------:|:------------------:|
-| Themed icons                  |       ✅        |         ✅          |
-| Toggle app search bar         |       ✅        |         ✅          |
-| Icon labels in app drawer     |       ✅        |         ✅          |
-| Hide apps from app drawer     |       ✅        |         ✅          |
-| Search hidden apps            |       ✅        |         ✅          |
-| App drawer background opacity |       ✅        |         ✅          |
-| App drawer columns            |       ✅        |         ✅          |
-| Row height multiplier         |       ✅        |         ✅          |
+| Feature                                  | Pixel Launcher | Launcher3 Launcher |
+|------------------------------------------|:--------------:|:------------------:|
+| Disable app drawer                       |       ✅        |         ✅          |
+| Themed icons                             |       ✅        |         ✅          |
+| Icon labels in app drawer                |       ✅        |         ✅          |
+| App drawer background opacity            |       ✅        |         ✅          |
+| App drawer columns                       |       ✅        |         ✅          |
+| Row height multiplier                    |       ✅        |         ✅          |
+| Toggle app search bar                    |       ✅        |         ✅          |
+| Quick launch                             |       ✅        |         ✅          |
+| Hide apps from app drawer                |       ✅        |         ✅          |
+| Search hidden apps                       |       ✅        |         ✅          |
+| Toggle hidden apps from homescreen popup |       ✅        |         ✅          |
 
 </details>
 
@@ -74,11 +79,14 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 
 | Feature                    | Pixel Launcher | Launcher3 Launcher |
 |----------------------------|:--------------:|:------------------:|
-| Clear all button           |       ✅        |         ✅          |
-| Remove screenshot button   |       ✅        |         ✅          |
 | Disable recents live tile  |       ✅        |         ✅          |
-| Recents background opacity |       ✅        |         ✅          |
+| Kill app in recents        |       ✅        |         ✅          |
+| Uninstall in recents       |       ✅        |         ✅          |
 | Freeform mode gesture      |       ✅        |         ✅          |
+| Clear all button           |       ✅        |         ✅          |
+| Fixed button width         |       ✅        |         ✅          |
+| Remove screenshot button   |       ✅        |         ✅          |
+| Recents background opacity |       ✅        |         ✅          |
 
 </details>
 
@@ -89,8 +97,9 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 |------------------------------------------|:--------------:|:------------------:|
 | Hide gesture indicator                   |       ✅        |         ✅          |
 | Hide navigation bar space                |       ✅        |         ✅          |
-| Show entry in launcher settings          |       ✅        |         ✅          |
 | Prevent wallpaper dimming caused restart |       ✅        |         ✅          |
+| Show entry in launcher settings          |       ✅        |         ✅          |
+| Show entry in homescreen popup           |       ✅        |         ✅          |
 | Developer options                        |       ✅        |         🚫         |
 | Restart                                  |       ✅        |         ✅          |
 
@@ -125,6 +134,8 @@ This module is only compatible with devices using the following launcher package
 Root access is a requirement for the following features:
 
 - Double tap to sleep
+
+- Kill app
 
 - Restart launcher
 

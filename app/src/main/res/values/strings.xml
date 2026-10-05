@@ -152,5 +152,17 @@
     <string name="recents_kill_app_desc">Add a Kill app option to the app menu in recents</string>
     <string name="recents_uninstall_app_title">Uninstall option</string>
     <string name="recents_uninstall_app_desc">Add an Uninstall option to the app menu in recents</string>
+    <string name="no_drawer_mode_title">Disable app drawer</string>
+    <string name="no_drawer_mode_desc">Place all apps on new home screen pages instead of the app drawer</string>
+    <string name="no_drawer_swipe_action_title">Swipe up action</string>
+    <string name="no_drawer_swipe_action_desc">What swiping up on the home screen does when the app drawer is disabled</string>
+    <string name="no_drawer_swipe_nothing">Do nothing</string>
+    <string name="no_drawer_swipe_search">Open search</string>
+    <string name="no_drawer_arrangement_title">Icon arrangement</string>
+    <string name="no_drawer_arrangement_desc">How icons on the added home screen pages are arranged</string>
+    <string name="no_drawer_arrangement_sorted">Sorted by name</string>
+    <string name="no_drawer_arrangement_custom">Custom</string>
+    <string name="no_drawer_auto_fill_title">Auto fill empty space</string>
+    <string name="no_drawer_auto_fill_desc">Shift icons on the added pages to fill gaps left by moved or uninstalled apps</string>
 
 </resources>

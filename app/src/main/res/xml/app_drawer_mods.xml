@@ -8,6 +8,39 @@
         app:iconSpaceReserved="false">
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_nodrawermode"
+            android:summary="@string/no_drawer_mode_desc"
+            android:title="@string/no_drawer_mode_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="@string/no_drawer_swipe_action_title"
+            android:entries="@array/no_drawer_swipe_action_str"
+            android:entryValues="@array/no_drawer_swipe_action_value"
+            android:key="xposed_nodrawerswipeaction"
+            android:summary="@string/no_drawer_swipe_action_desc"
+            android:title="@string/no_drawer_swipe_action_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="@string/no_drawer_arrangement_title"
+            android:entries="@array/no_drawer_arrangement_str"
+            android:entryValues="@array/no_drawer_arrangement_value"
+            android:key="xposed_nodrawerarrangement"
+            android:summary="@string/no_drawer_arrangement_desc"
+            android:title="@string/no_drawer_arrangement_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="xposed_nodrawerautofill"
+            android:summary="@string/no_drawer_auto_fill_desc"
+            android:title="@string/no_drawer_auto_fill_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_appdrawerthemedicons"
             android:summary="@string/app_drawer_themed_icons_desc"
             android:title="@string/app_drawer_themed_icons_title"

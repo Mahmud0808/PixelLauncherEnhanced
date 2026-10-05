@@ -16,6 +16,10 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_ARRANGEMENT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_FILL
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_SWIPE_ACTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_DARK
@@ -56,6 +60,10 @@ object PrefsHelper {
             HIDE_NAVIGATION_SPACE -> getBoolean(HIDE_GESTURE_PILL)
 
             SEARCH_HIDDEN_APPS -> getBoolean(HIDE_APPS_FROM_APP_DRAWER)
+
+            NO_DRAWER_SWIPE_ACTION,
+            NO_DRAWER_ARRANGEMENT,
+            NO_DRAWER_AUTO_FILL -> getBoolean(NO_DRAWER_MODE)
 
             else -> true
         }
