@@ -62,7 +62,6 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     private var containerRef: WeakReference<ViewGroup>? = null
     private var tabBar: TabBar? = null
     private var searchEditTextRef: WeakReference<EditText>? = null
-    private var searchHasQuery = false
     private var gestureDetector: GestureDetector? = null
     private var swipeStartedOnBar = false
     private var overridingUsingTabs = false
@@ -184,7 +183,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             }
 
         findClass("com.android.launcher3.allapps.AllAppsStore", suppressError = true)
-            .hookMethod("setApps")
+            .hookMethod("setApps", "notifyUpdate")
             .suppressError()
             .runAfter {
                 applicationInfoCache.clear()
@@ -338,7 +337,6 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
 
         alignWithNativeTabs(container, bar)
         refreshBar()
-        updateBarVisibility()
     }
 
     private fun alignWithNativeTabs(container: ViewGroup, bar: TabBar) {
@@ -376,6 +374,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         val bar = tabBar ?: return
         val visible = visibleTabs()
         bar.setTabs(visible, selectedTab()?.id)
+        updateBarVisibility()
     }
 
     private fun watchSearchText(container: ViewGroup) {
@@ -386,39 +385,48 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         editText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            override fun afterTextChanged(s: Editable?) {
-                val hasQuery = !s.isNullOrEmpty()
-                if (hasQuery != searchHasQuery) {
-                    searchHasQuery = hasQuery
-                    updateBarVisibility()
-                }
-            }
+            override fun afterTextChanged(s: Editable?) = updateBarVisibility()
         })
-        searchHasQuery = !editText.text.isNullOrEmpty()
     }
 
     private fun findSearchEditText(container: ViewGroup): EditText? {
         val roots = listOfNotNull(container.callMethodSilently("getSearchView") as? View, container)
+        var fallback: EditText? = null
+
         roots.forEach { root ->
             val pending = ArrayDeque<View>().apply { add(root) }
             while (pending.isNotEmpty()) {
                 when (val view = pending.removeFirst()) {
-                    is EditText -> return view
+                    // The search box holds a non focusable decoy above the real input,
+                    // and its text is the typeahead hint rather than the typed query.
+                    is EditText -> if (view.isFocusable) return view else if (fallback == null) fallback = view
                     is ViewGroup -> for (i in 0 until view.childCount) pending.add(view.getChildAt(i))
                 }
             }
         }
-        return null
+
+        return fallback
     }
 
     private fun updateBarVisibility() {
         val bar = tabBar ?: return
         val container = containerRef?.get() ?: return
         watchSearchText(container)
-        val searching = searchHasQuery
+
+        if (visibleTabs().size <= 1) {
+            bar.animate().cancel()
+            bar.visibility = View.GONE
+            return
+        }
+
+        val searching = searchEditTextRef?.get()?.text?.isNotEmpty() == true
                 || container.callMethodSilently("isSearching") as? Boolean
                 ?: container.getFieldSilently("mIsSearching") as? Boolean
                 ?: false
+
+        val targetVisibility = if (searching) View.INVISIBLE else View.VISIBLE
+        val targetAlpha = if (searching) 0f else 1f
+        if (bar.visibility == targetVisibility && bar.alpha == targetAlpha) return
 
         bar.animate().cancel()
         if (searching) {
@@ -574,8 +582,6 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                         }
                     }
             }
-
-            visibility = if (visible.size > 1) visibility.takeIf { it != GONE } ?: VISIBLE else GONE
         }
 
         private fun matchTabRadius() {
