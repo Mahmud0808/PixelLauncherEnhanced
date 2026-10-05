@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.DrawableContainer
@@ -32,6 +33,7 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_AT_BOTTOM
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.model.DrawerTab
@@ -54,6 +56,7 @@ import kotlin.math.abs
 class AppDrawerTabs(context: Context) : ModPack(context) {
 
     private var tabsEnabled = false
+    private var tabsAtBottom = false
     private var noDrawerMode = false
     private var tabs: List<DrawerTab> = emptyList()
     private var selectedTabId = DrawerTab.Type.ALL.key
@@ -78,12 +81,13 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             tabsEnabled = getBoolean(DRAWER_TABS_ENABLED, false)
+            tabsAtBottom = getBoolean(DRAWER_TABS_AT_BOTTOM, false)
             noDrawerMode = getBoolean(NO_DRAWER_MODE, false)
             tabs = DrawerTab.parse(getString(DRAWER_TABS, null))
         }
 
         when (key.firstOrNull()) {
-            DRAWER_TABS_ENABLED -> restartLauncher(mContext)
+            DRAWER_TABS_ENABLED, DRAWER_TABS_AT_BOTTOM -> restartLauncher(mContext)
             DRAWER_TABS -> mainHandler.post { onTabsChanged() }
         }
     }
@@ -145,8 +149,30 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     attachTabBar(container, layoutParams)
                 }
 
-                layoutParams.topMargin += barHeight(container)
-                view.layoutParams = layoutParams
+                if (!tabsAtBottom) {
+                    layoutParams.topMargin += barHeight(container)
+                    view.layoutParams = layoutParams
+                }
+            }
+
+        containerClass
+            .hookMethod("applyAdapterSideAndBottomPaddings")
+            .suppressError()
+            .runAfter { param ->
+                if (!barActive || !tabsAtBottom) return@runAfter
+
+                val container = param.thisObject as ViewGroup
+                val extra = barHeight(container) + container.context.dp(BAR_BOTTOM_GAP_DP)
+
+                (container.getFieldSilently("mAH") as? List<*>)?.forEach { holder ->
+                    val list = holder.getFieldSilently("mRecyclerView") as? View ?: return@forEach
+                    list.setPadding(
+                        list.paddingLeft,
+                        list.paddingTop,
+                        list.paddingRight,
+                        list.paddingBottom + extra
+                    )
+                }
             }
 
         containerClass
@@ -322,21 +348,35 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             container.addView(bar)
             watchSearchText(container)
             header?.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-                bar.translationY = view.paddingTop.toFloat()
+                if (!tabsAtBottom) bar.translationY = view.paddingTop.toFloat()
                 alignWithNativeTabs(container, bar)
             }
         }
 
-        bar.layoutParams = RelativeLayout.LayoutParams(headerParams).apply {
-            width = ViewGroup.LayoutParams.MATCH_PARENT
-            height = barHeight(container)
-            leftMargin = 0
-            rightMargin = 0
+        bar.layoutParams = if (tabsAtBottom) {
+            RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                barHeight(container)
+            ).apply {
+                addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                bottomMargin = bottomInset(container) + container.context.dp(BAR_BOTTOM_GAP_DP)
+            }
+        } else {
+            RelativeLayout.LayoutParams(headerParams).apply {
+                width = ViewGroup.LayoutParams.MATCH_PARENT
+                height = barHeight(container)
+                leftMargin = 0
+                rightMargin = 0
+            }
         }
-        bar.translationY = (header?.paddingTop ?: 0).toFloat()
+        bar.translationY = if (tabsAtBottom) 0f else (header?.paddingTop ?: 0).toFloat()
 
         alignWithNativeTabs(container, bar)
         refreshBar()
+    }
+
+    private fun bottomInset(container: ViewGroup): Int {
+        return (container.getFieldSilently("mInsets") as? Rect)?.bottom ?: 0
     }
 
     private fun alignWithNativeTabs(container: ViewGroup, bar: TabBar) {
