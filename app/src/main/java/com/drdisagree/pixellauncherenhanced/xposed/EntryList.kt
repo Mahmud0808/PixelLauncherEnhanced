@@ -17,7 +17,6 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.HideStatusbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.HotseatMod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconLabels
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconTextSize
-import com.drdisagree.pixellauncherenhanced.xposed.mods.IconUpdater
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherSettings
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LockLayout
@@ -37,7 +36,6 @@ object EntryList {
     private val launcherModPacks: List<Class<out ModPack>> = listOf(
         BroadcastHook::class.java,
         LauncherUtils::class.java,
-        IconUpdater::class.java,
         IconLabels::class.java,
         ThemedIcons::class.java,
         ThemedIconsColor::class.java,
