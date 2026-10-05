@@ -16,6 +16,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.os.UserHandle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.Gravity
@@ -23,6 +25,7 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
@@ -58,6 +61,8 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
 
     private var containerRef: WeakReference<ViewGroup>? = null
     private var tabBar: TabBar? = null
+    private var searchEditTextRef: WeakReference<EditText>? = null
+    private var searchHasQuery = false
     private var gestureDetector: GestureDetector? = null
     private var swipeStartedOnBar = false
     private var overridingUsingTabs = false
@@ -316,6 +321,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             (tabBar?.parent as? ViewGroup)?.removeView(tabBar)
             tabBar = bar
             container.addView(bar)
+            watchSearchText(container)
             header?.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
                 bar.translationY = view.paddingTop.toFloat()
                 alignWithNativeTabs(container, bar)
@@ -372,12 +378,47 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         bar.setTabs(visible, selectedTab()?.id)
     }
 
+    private fun watchSearchText(container: ViewGroup) {
+        val editText = findSearchEditText(container) ?: return
+        if (searchEditTextRef?.get() === editText) return
+
+        searchEditTextRef = WeakReference(editText)
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                val hasQuery = !s.isNullOrEmpty()
+                if (hasQuery != searchHasQuery) {
+                    searchHasQuery = hasQuery
+                    updateBarVisibility()
+                }
+            }
+        })
+        searchHasQuery = !editText.text.isNullOrEmpty()
+    }
+
+    private fun findSearchEditText(container: ViewGroup): EditText? {
+        val roots = listOfNotNull(container.callMethodSilently("getSearchView") as? View, container)
+        roots.forEach { root ->
+            val pending = ArrayDeque<View>().apply { add(root) }
+            while (pending.isNotEmpty()) {
+                when (val view = pending.removeFirst()) {
+                    is EditText -> return view
+                    is ViewGroup -> for (i in 0 until view.childCount) pending.add(view.getChildAt(i))
+                }
+            }
+        }
+        return null
+    }
+
     private fun updateBarVisibility() {
         val bar = tabBar ?: return
         val container = containerRef?.get() ?: return
-        val searching = container.callMethodSilently("isSearching") as? Boolean
-            ?: container.getFieldSilently("mIsSearching") as? Boolean
-            ?: false
+        watchSearchText(container)
+        val searching = searchHasQuery
+                || container.callMethodSilently("isSearching") as? Boolean
+                ?: container.getFieldSilently("mIsSearching") as? Boolean
+                ?: false
 
         bar.animate().cancel()
         if (searching) {
