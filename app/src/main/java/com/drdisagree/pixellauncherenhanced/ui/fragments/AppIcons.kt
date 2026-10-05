@@ -29,6 +29,7 @@ import com.drdisagree.pixellauncherenhanced.utils.IconApplyDialog
 import com.drdisagree.pixellauncherenhanced.utils.IconPackStore
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.syncAppBarWithList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -110,7 +111,7 @@ class AppIcons : Fragment() {
     private fun load() {
         if (items.isEmpty()) {
             binding.progressBar.visibility = View.VISIBLE
-            binding.recyclerView.visibility = View.GONE
+            binding.recyclerView.visibility = View.INVISIBLE
         }
 
         loadJob?.cancel()
@@ -151,8 +152,9 @@ class AppIcons : Fragment() {
             updateApplyButton()
             binding.progressBar.visibility = View.GONE
             binding.emptyText.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
-            binding.recyclerView.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
+            binding.recyclerView.visibility = if (items.isEmpty()) View.INVISIBLE else View.VISIBLE
             adapter.notifyDataSetChanged()
+            syncAppBarWithList(binding.header.appBarLayout, binding.recyclerView)
         }
     }
 

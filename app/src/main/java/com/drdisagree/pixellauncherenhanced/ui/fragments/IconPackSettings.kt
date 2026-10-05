@@ -32,6 +32,7 @@ import com.drdisagree.pixellauncherenhanced.utils.IconApplyDialog
 import com.drdisagree.pixellauncherenhanced.utils.IconPackStore
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.syncAppBarWithList
 import com.google.android.material.materialswitch.MaterialSwitch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -171,7 +172,7 @@ class IconPackSettings : Fragment() {
 
     private fun load() {
         binding.progressBar.visibility = View.VISIBLE
-        binding.recyclerView.visibility = View.GONE
+        binding.recyclerView.visibility = View.INVISIBLE
 
         viewLifecycleOwner.lifecycleScope.launch {
             val context = requireContext().applicationContext
@@ -194,6 +195,7 @@ class IconPackSettings : Fragment() {
             binding.progressBar.visibility = View.GONE
             binding.recyclerView.visibility = View.VISIBLE
             rebuild()
+            syncAppBarWithList(binding.header.appBarLayout, binding.recyclerView)
         }
     }
 
