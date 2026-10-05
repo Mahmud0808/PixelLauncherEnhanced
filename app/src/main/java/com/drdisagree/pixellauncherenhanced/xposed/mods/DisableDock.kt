@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.content.ComponentName
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -18,6 +19,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
 import java.lang.reflect.Proxy
 import java.util.concurrent.Executor
+import java.util.function.Predicate
 import kotlin.math.min
 
 class DisableDock(context: Context) : ModPack(context) {
@@ -135,6 +137,7 @@ class DisableDock(context: Context) : ModPack(context) {
     }
 
     private fun moveDockItems(context: Context, writer: () -> Any, dataModel: Any) {
+        val duplicates = ArrayList<Any>()
         val moved = synchronized(dataModel) {
             val items = (dataModel.getFieldSilently("itemsIdMap") as? Iterable<*>)
                 ?.filterNotNull()
@@ -152,6 +155,17 @@ class DisableDock(context: Context) : ModPack(context) {
             val rows = idp.getFieldSilently("numRows") as? Int ?: return
 
             val desktopItems = items.filter { it.getFieldSilently("container") == CONTAINER_DESKTOP }
+            val desktopFolderIds = desktopItems
+                .filter { it.intField("itemType", -1) == ITEM_TYPE_FOLDER }
+                .map { it.intField("id", -1) }
+                .toSet()
+            val homeApps = items
+                .filter { item ->
+                    val container = item.intField("container")
+                    container == CONTAINER_DESKTOP || container in desktopFolderIds
+                }
+                .mapNotNull { it.appKey() }
+                .toMutableSet()
             val grids = HashMap<Int, Array<BooleanArray>>()
 
             fun gridFor(screenId: Int) = grids.getOrPut(screenId) {
@@ -197,7 +211,15 @@ class DisableDock(context: Context) : ModPack(context) {
                 }
             }
 
-            dockItems.onEach { item ->
+            dockItems.filter { item ->
+                val key = item.appKey()
+                if (key != null && !homeApps.add(key)) {
+                    duplicates.add(item)
+                    false
+                } else {
+                    true
+                }
+            }.onEach { item ->
                 val (screenId, cellX, cellY) = nextFreeCell()
                 item.setField("container", CONTAINER_DESKTOP)
                 item.setField("screenId", screenId)
@@ -208,12 +230,20 @@ class DisableDock(context: Context) : ModPack(context) {
             }
         }
 
-        writeMoves(writer(), moved)
+        writeMoves(writer(), moved, duplicates)
         reloadModel()
     }
 
-    private fun writeMoves(modelWriter: Any, items: List<Any>) {
+    private fun writeMoves(modelWriter: Any, items: List<Any>, duplicates: List<Any>) {
         fun modify(target: Any) {
+            if (duplicates.isNotEmpty()) {
+                target.callMethod(
+                    "deleteItemsFromDatabase",
+                    Predicate<Any?> { info -> duplicates.any { it === info } },
+                    "PLEnhanced: duplicate dock item"
+                )
+            }
+
             items.forEach { item ->
                 target.callMethod(
                     "modifyItemInDatabase",
@@ -254,6 +284,12 @@ class DisableDock(context: Context) : ModPack(context) {
         execute.invoke(modelWriter, transaction)
     }
 
+    private fun Any.appKey(): String? {
+        if (intField("itemType", -1) != ITEM_TYPE_APPLICATION) return null
+        val component = callMethodSilently("getTargetComponent") as? ComponentName ?: return null
+        return "${component.flattenToString()}#${getFieldSilently("user")}"
+    }
+
     private fun legacyWriter(model: Any): Any {
         val getWriter = model.javaClass.methods
             .filter { it.name == "getWriter" }
@@ -285,5 +321,7 @@ class DisableDock(context: Context) : ModPack(context) {
         private const val CONTAINER_DESKTOP = -100
         private const val CONTAINER_HOTSEAT = -101
         private const val FIRST_SCREEN_ID = 0
+        private const val ITEM_TYPE_APPLICATION = 0
+        private const val ITEM_TYPE_FOLDER = 2
     }
 }
