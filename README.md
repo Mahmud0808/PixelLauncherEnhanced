@@ -44,6 +44,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Hide statusbar          |       ✅        |         ✅          |
 | Hide top shadow         |       ✅        |         ✅          |
 | Dark statusbar icon     |       ✅        |         ✅          |
+| Hide page indicator     |       ✅        |         ✅          |
 | Dark page indicator     |       ✅        |         ✅          |
 | Icon labels on desktop  |       ✅        |         ✅          |
 | Homescreen columns      |       ✅        |         ✅          |

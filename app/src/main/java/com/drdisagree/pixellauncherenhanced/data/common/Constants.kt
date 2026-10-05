@@ -30,6 +30,7 @@ object Constants {
     const val LAUNCHER_HIDE_TOP_SHADOW = "xposed_launcherhidetopshadow"
     const val LAUNCHER_DARK_STATUSBAR = "xposed_launcherdarkstatusbar"
     const val LAUNCHER_DARK_PAGE_INDICATOR = "xposed_launcherdarkpageindicator"
+    const val LAUNCHER_HIDE_PAGE_INDICATOR = "xposed_launcherhidepageindicator"
     const val DESKTOP_ICON_LABELS = "xposed_desktopiconlabels"
     const val APP_DRAWER_ICON_LABELS = "xposed_appdrawericonlabels"
     const val HIDE_AT_A_GLANCE = "xposed_hideataglance"

@@ -6,7 +6,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerMode
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
-import com.drdisagree.pixellauncherenhanced.xposed.mods.DarkPageIndicator
+import com.drdisagree.pixellauncherenhanced.xposed.mods.PageIndicator
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DarkStatusbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerSearchbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.FreeformMod
@@ -58,7 +58,7 @@ object EntryList {
         QuickLaunch::class.java,
         TaskbarHandle::class.java,
         DarkStatusbar::class.java,
-        DarkPageIndicator::class.java,
+        PageIndicator::class.java,
         WallpaperDim::class.java,
         AppShortcuts::class.java,
         AppDrawerMode::class.java,
