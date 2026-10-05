@@ -8,6 +8,13 @@
         app:iconSpaceReserved="false">
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_homethemedicons"
+            android:summary="@string/home_themed_icons_desc"
+            android:title="@string/home_themed_icons_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_locklayout"
             android:summaryOff="@string/lock_layout_desc_off"
             android:summaryOn="@string/lock_layout_desc_on"

@@ -3,6 +3,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_icon_packs_category"
+        android:title="@string/section_icon_packs_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.TwoTargetSwitchPreference
+            android:key="xposed_iconpacksenabled"
+            android:summary="@string/icon_packs_desc"
+            android:title="@string/icon_packs_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.IconPackSettings"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_home_screen_general"
         android:title="@string/section_general_title"
         app:iconSpaceReserved="false">

@@ -5,6 +5,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerMode
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerTabs
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DisableDock
+import com.drdisagree.pixellauncherenhanced.xposed.mods.IconPacks
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
@@ -66,6 +67,7 @@ object EntryList {
         AppDrawerMode::class.java,
         AppDrawerTabs::class.java,
         DisableDock::class.java,
+        IconPacks::class.java,
     )
 
     fun getEntries(packageName: String): ArrayList<Class<out ModPack>> {

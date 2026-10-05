@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    tools:context=".ui.fragments.AppIcons">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progressBar"
+            style="@style/Widget.Material3Expressive.CircularProgressIndicator.Wavy"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="top|center"
+            android:layout_marginTop="120dp"
+            android:indeterminate="true"
+            app:indicatorColor="?attr/colorPrimary"
+            app:trackCornerRadius="8dp" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/emptyText"
+            style="?attr/textAppearanceBodyMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center"
+            android:layout_marginTop="120dp"
+            android:gravity="center"
+            android:paddingHorizontal="32dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/applyButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:text="@string/icon_apply_button"
+        android:visibility="gone"
+        app:icon="@drawable/ic_check" />
+
+    <include
+        android:id="@+id/header"
+        layout="@layout/view_header_expandable" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

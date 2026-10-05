@@ -1,13 +1,17 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
 import android.text.TextUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FORCE_THEMED_ICONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadIcons
@@ -24,6 +28,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
@@ -36,24 +41,88 @@ class ThemedIcons(context: Context) : ModPack(context) {
 
     private var forceThemedIcons: Boolean = false
     private var appDrawerThemedIcons: Boolean = false
+    private var homeThemedIcons: Boolean = false
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             forceThemedIcons = getBoolean(FORCE_THEMED_ICONS, false)
             appDrawerThemedIcons = getBoolean(APP_DRAWER_THEMED_ICONS, false)
+            homeThemedIcons = getBoolean(HOME_THEMED_ICONS, false)
         }
 
         when (key.firstOrNull()) {
-            in setOf(
-                FORCE_THEMED_ICONS,
-                APP_DRAWER_THEMED_ICONS
-            ) -> reloadIcons()
+            FORCE_THEMED_ICONS,
+            APP_DRAWER_THEMED_ICONS -> reloadIcons()
+
+            HOME_THEMED_ICONS -> {
+                if (Xprefs.contains(HOME_THEMED_ICONS) && systemThemedIcons() != homeThemedIcons) {
+                    setSystemThemedIcons(homeThemedIcons)
+                }
+            }
+        }
+    }
+
+    private fun themedIconsUri(path: String) = Uri.parse("content://${mContext.packageName}.grid_control/$path")
+
+    private fun gridProxy(): Any? = runCatching {
+        findClass("com.android.launcher3.dagger.LauncherComponentProvider", suppressError = true)
+            .callStaticMethod("get", mContext)
+            .callMethod("getGridCustomizationsProxy")
+    }.getOrNull()
+
+    private fun systemThemedIcons(): Boolean? {
+        val uri = themedIconsUri("get_icon_themed")
+        val proxy = gridProxy()
+        val query = proxy?.javaClass?.methods?.firstOrNull {
+            it.name == "query" && it.parameterTypes.size == 5 && it.parameterTypes[0] == Uri::class.java
+        }
+
+        return runCatching {
+            val cursor = if (proxy != null && query != null) {
+                query.invoke(proxy, uri, null, null, null, null) as? Cursor
+            } else {
+                mContext.contentResolver.query(uri, null, null, null, null)
+            }
+
+            cursor?.use { if (it.moveToFirst()) it.getInt(it.getColumnIndexOrThrow("boolean_value")) == 1 else null }
+        }.getOrNull()
+    }
+
+    private fun setSystemThemedIcons(enabled: Boolean) {
+        val uri = themedIconsUri("icon_themed")
+        val values = ContentValues().apply { put("boolean_value", enabled) }
+        val proxy = gridProxy()
+        val update = proxy?.javaClass?.methods
+            ?.filter { it.name == "update" && it.parameterTypes.firstOrNull() == Uri::class.java }
+            ?.maxByOrNull { it.parameterTypes.size }
+
+        runCatching {
+            if (proxy != null && update != null) {
+                val args = arrayOfNulls<Any>(update.parameterTypes.size)
+                args[0] = uri
+                args[1] = values
+                update.invoke(proxy, *args)
+            } else {
+                mContext.contentResolver.update(uri, values, null, null)
+            }
+        }.onFailure { log(this@ThemedIcons, it) }
+    }
+
+    private fun syncThemedIconsPref() {
+        val system = systemThemedIcons() ?: return
+        if (!Xprefs.contains(HOME_THEMED_ICONS) || Xprefs.getBoolean(HOME_THEMED_ICONS, false) != system) {
+            runCatching { Xprefs.edit().putBoolean(HOME_THEMED_ICONS, system).apply() }
         }
     }
 
     @SuppressLint("DiscouragedApi")
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        findClass("com.android.launcher3.model.LoaderTask", suppressError = true)
+            .hookMethod("run")
+            .suppressError()
+            .runAfter { syncThemedIconsPref() }
 
         try {
             // Only for modified Launcher3
