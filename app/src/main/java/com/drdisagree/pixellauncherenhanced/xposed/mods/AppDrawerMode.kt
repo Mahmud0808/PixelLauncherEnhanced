@@ -271,16 +271,14 @@ class AppDrawerMode(context: Context) : ModPack(context) {
             "com.android.launcher3.uioverrides.touchcontrollers.PortraitStatesTouchController",
             suppressError = true
         )
-            .hookMethod("canInterceptTouch")
+            .hookMethod("getTargetState")
             .suppressError()
-            .runBefore { param ->
-                if (!noDrawerMode || swipeUpAction != SWIPE_UP_NOTHING) return@runBefore
+            .runAfter { param ->
+                if (!noDrawerMode || swipeUpAction != SWIPE_UP_NOTHING) return@runAfter
+                if (normalState == null || allAppsState == null) return@runAfter
 
-                val state = param.thisObject.getFieldSilently("mLauncher")
-                    .callMethodSilently("getStateManager")
-                    .getFieldSilently("mState")
-                if (normalState != null && state === normalState) {
-                    param.result = false
+                if (param.args.firstOrNull() === normalState && param.result === allAppsState) {
+                    param.result = normalState
                 }
             }
 
@@ -608,10 +606,17 @@ class AppDrawerMode(context: Context) : ModPack(context) {
         }
     }
 
-    private fun Any.transactionExecuteMethod(): Method? {
-        if (javaClass.methods.any { it.name == "deleteItemsFromDatabase" && it.parameterTypes.size == 2 }) {
-            return null
+    private fun Any.legacyDeleteMethod(): Method? {
+        return javaClass.methods.firstOrNull { method ->
+            method.name == "deleteItemsFromDatabase" &&
+                    method.parameterTypes.size == 2 &&
+                    method.parameterTypes.any { it == String::class.java } &&
+                    method.parameterTypes.any { Collection::class.java.isAssignableFrom(it) }
         }
+    }
+
+    private fun Any.transactionExecuteMethod(): Method? {
+        if (legacyDeleteMethod() != null) return null
 
         return javaClass.methods.firstOrNull { method ->
             method.name == "execute" &&
@@ -659,9 +664,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     }
 
     private fun deleteItems(modelWriter: Any, items: List<Any>) {
-        val legacyDelete = modelWriter.javaClass.methods.firstOrNull { method ->
-            method.name == "deleteItemsFromDatabase" && method.parameterTypes.size == 2
-        }
+        val legacyDelete = modelWriter.legacyDeleteMethod()
 
         if (legacyDelete != null) {
             legacyDelete.invoke(
