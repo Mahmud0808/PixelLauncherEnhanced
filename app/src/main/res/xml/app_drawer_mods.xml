@@ -49,6 +49,20 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_drawer_tabs"
+        android:title="@string/section_drawer_tabs_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.TwoTargetSwitchPreference
+            android:key="xposed_drawertabs"
+            android:summary="@string/drawer_tabs_desc"
+            android:title="@string/drawer_tabs_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.DrawerTabs"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_interface"
         android:title="@string/section_interface_title"
         app:iconSpaceReserved="false">

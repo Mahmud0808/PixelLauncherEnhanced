@@ -235,8 +235,8 @@ object HomeLayoutBackup {
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw BackupException(R.string.home_layout_invalid_file)
 
-        if (BackupCrypto.hasMagic(BackupCrypto.SETTINGS_MAGIC, bytes)) {
-            throw BackupException(R.string.home_layout_restore_got_settings_backup)
+        BackupCrypto.wrongTypeMessage(bytes, BackupCrypto.HOME_LAYOUT_MAGIC)?.let {
+            throw BackupException(it)
         }
 
         val archive = BackupCrypto.decrypt(BackupCrypto.HOME_LAYOUT_MAGIC, bytes)

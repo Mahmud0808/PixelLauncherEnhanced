@@ -63,6 +63,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 |------------------------------------------|:--------------:|:------------------:|
 | Disable app drawer                       |       ✅        |         ✅          |
 | Themed icons                             |       ✅        |         ✅          |
+| App drawer tabs                          |       ✅        |         ✅          |
 | Icon labels in app drawer                |       ✅        |         ✅          |
 | App drawer background opacity            |       ✅        |         ✅          |
 | App drawer columns                       |       ✅        |         ✅          |
@@ -105,6 +106,8 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Restart                                  |       ✅        |         ✅          |
 | Back up home screen layout               |       ✅        |         ✅          |
 | Restore home screen layout               |       ✅        |         ✅          |
+| Back up app drawer layout                |       ✅        |         ✅          |
+| Restore app drawer layout                |       ✅        |         ✅          |
 | Back up settings                         |       ✅        |         ✅          |
 | Restore settings                         |       ✅        |         ✅          |
 

@@ -116,7 +116,7 @@ class HiddenApps : Fragment() {
         binding.search.removeTextChangedListener(textWatcher)
 
         CoroutineScope(Dispatchers.IO).launch {
-            appList = getAllLaunchableApps()
+            appList = getAllLaunchableApps(RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!)
             adapter = AppListAdapter(appList!!)
             delay(300)
 
@@ -228,8 +228,7 @@ class HiddenApps : Fragment() {
     }
 
     companion object {
-        private fun getAllLaunchableApps(): List<AppInfoModel> {
-            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!
+        fun getAllLaunchableApps(selectedPackages: Set<String>): List<AppInfoModel> {
             val appList: MutableList<AppInfoModel> = ArrayList()
             val packageManager = appContext.packageManager
             val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
@@ -246,7 +245,7 @@ class HiddenApps : Fragment() {
 
                 val appName = appInfo.loadLabel(packageManager).toString()
                 val appIcon = appInfo.loadIcon(packageManager)
-                val isSelected = appBlockList.contains(packageName)
+                val isSelected = selectedPackages.contains(packageName)
 
                 val app = AppInfoModel(appName, packageName, appIcon, isSelected)
 

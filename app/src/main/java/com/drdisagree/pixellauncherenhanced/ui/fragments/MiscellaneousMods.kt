@@ -9,17 +9,20 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_DRAWER_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_HOME_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_SETTINGS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RESTART_LAUNCHER
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RESTORE_DRAWER_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RESTORE_HOME_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RESTORE_SETTINGS
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
 import com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
 import com.drdisagree.pixellauncherenhanced.utils.BackupException
+import com.drdisagree.pixellauncherenhanced.utils.DrawerLayoutBackup
 import com.drdisagree.pixellauncherenhanced.utils.HomeLayoutBackup
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
 import com.drdisagree.pixellauncherenhanced.utils.SettingsBackup
@@ -44,12 +47,26 @@ class MiscellaneousMods : ControlledPreferenceFragmentCompat() {
 
     private var includeHiddenApps = true
 
-    private val backupSettingsLauncher =
+    private val backupDrawerLayoutLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
             if (uri != null) {
                 val includeHiddenApps = includeHiddenApps
+                runBackupTask(R.string.drawer_layout_backup_success) {
+                    DrawerLayoutBackup.backup(it, uri, includeHiddenApps)
+                }
+            }
+        }
+
+    private val restoreDrawerLayoutLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) confirmRestoreDrawerLayout(uri)
+        }
+
+    private val backupSettingsLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+            if (uri != null) {
                 runBackupTask(R.string.settings_backup_success) {
-                    SettingsBackup.backup(it, uri, includeHiddenApps)
+                    SettingsBackup.backup(it, uri)
                 }
             }
         }
@@ -104,9 +121,21 @@ class MiscellaneousMods : ControlledPreferenceFragmentCompat() {
                 true
             }
 
+        findPreference<Preference>(BACKUP_DRAWER_LAYOUT)?.onPreferenceClickListener =
+            Preference.OnPreferenceClickListener {
+                chooseDrawerLayoutBackupOptions()
+                true
+            }
+
+        findPreference<Preference>(RESTORE_DRAWER_LAYOUT)?.onPreferenceClickListener =
+            Preference.OnPreferenceClickListener {
+                restoreDrawerLayoutLauncher.launch(BACKUP_MIME_TYPES)
+                true
+            }
+
         findPreference<Preference>(BACKUP_SETTINGS)?.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
-                chooseSettingsBackupOptions()
+                backupSettingsLauncher.launch(SettingsBackup.defaultFileName)
                 true
             }
 
@@ -130,19 +159,32 @@ class MiscellaneousMods : ControlledPreferenceFragmentCompat() {
             .show()
     }
 
-    private fun chooseSettingsBackupOptions() {
+    private fun chooseDrawerLayoutBackupOptions() {
         val checked = booleanArrayOf(true)
 
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.backup_settings_title)
+            .setTitle(R.string.backup_drawer_layout_title)
             .setMultiChoiceItems(
-                arrayOf(getString(R.string.backup_settings_include_hidden_apps)),
+                arrayOf(getString(R.string.backup_drawer_layout_include_hidden_apps)),
                 checked
             ) { _, _, isChecked -> checked[0] = isChecked }
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.backup_button) { _, _ ->
                 includeHiddenApps = checked[0]
-                backupSettingsLauncher.launch(SettingsBackup.defaultFileName)
+                backupDrawerLayoutLauncher.launch(DrawerLayoutBackup.defaultFileName)
+            }
+            .show()
+    }
+
+    private fun confirmRestoreDrawerLayout(uri: Uri) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.restore_drawer_layout_title)
+            .setMessage(R.string.restore_drawer_layout_confirm_desc)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.restore_home_layout_button) { _, _ ->
+                runBackupTask(R.string.drawer_layout_restore_success) {
+                    DrawerLayoutBackup.restore(it, uri)
+                }
             }
             .show()
     }

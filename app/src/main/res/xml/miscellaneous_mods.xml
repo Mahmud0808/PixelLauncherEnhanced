@@ -56,8 +56,8 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_misc_home_layout_backup"
-        android:title="@string/section_home_layout_backup_title"
+        android:key="xposed_misc_layout_backup"
+        android:title="@string/section_layout_backup_title"
         app:iconSpaceReserved="false">
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
@@ -71,6 +71,20 @@
             android:key="xposed_restorehomelayout"
             android:summary="@string/restore_home_layout_desc"
             android:title="@string/restore_home_layout_title"
+            app:iconSpaceReserved="false"
+            app:showArrow="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_backupdrawerlayout"
+            android:summary="@string/backup_drawer_layout_desc"
+            android:title="@string/backup_drawer_layout_title"
+            app:iconSpaceReserved="false"
+            app:showArrow="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_restoredrawerlayout"
+            android:summary="@string/restore_drawer_layout_desc"
+            android:title="@string/restore_drawer_layout_title"
             app:iconSpaceReserved="false"
             app:showArrow="false" />
 

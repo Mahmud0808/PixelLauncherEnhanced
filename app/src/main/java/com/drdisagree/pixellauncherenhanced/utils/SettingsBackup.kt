@@ -6,6 +6,9 @@ import android.provider.DocumentsContract
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_SCREENS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_FIRST_SCREEN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
@@ -27,17 +30,12 @@ object SettingsBackup {
                 SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
                 ".plebackup"
 
-    suspend fun backup(
-        context: Context,
-        uri: Uri,
-        includeHiddenApps: Boolean
-    ) = withContext(Dispatchers.IO) {
+    suspend fun backup(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
         try {
             val prefs = JSONObject()
 
             RPrefs.getPrefs.all.forEach { (key, value) ->
-                if (key == null || value == null || isDeviceSpecific(key)) return@forEach
-                if (!includeHiddenApps && key in HIDDEN_APPS_KEYS) return@forEach
+                if (key == null || value == null || isExcluded(key)) return@forEach
 
                 val (type, json) = when (value) {
                     is Boolean -> TYPE_BOOLEAN to value
@@ -56,7 +54,6 @@ object SettingsBackup {
                 .put(KEY_BACKUP_TYPE, BACKUP_TYPE)
                 .put(KEY_FORMAT_VERSION, FORMAT_VERSION)
                 .put(KEY_APP_VERSION, BuildConfig.VERSION_NAME)
-                .put(KEY_INCLUDES_HIDDEN_APPS, includeHiddenApps)
                 .put(KEY_PREFS, prefs)
 
             val output = context.contentResolver.openOutputStream(uri, "wt")
@@ -73,23 +70,21 @@ object SettingsBackup {
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw BackupException(R.string.settings_invalid_file)
 
-        if (BackupCrypto.hasMagic(BackupCrypto.HOME_LAYOUT_MAGIC, bytes)) throw BackupException(R.string.settings_restore_got_layout_backup)
+        BackupCrypto.wrongTypeMessage(bytes, BackupCrypto.SETTINGS_MAGIC)?.let {
+            throw BackupException(it)
+        }
 
         val root = parseBackup(bytes) ?: throw BackupException(R.string.settings_invalid_file)
         val prefs = root.optJSONObject(KEY_PREFS)
             ?: throw BackupException(R.string.settings_invalid_file)
-        val keepCurrentHiddenApps = !root.optBoolean(KEY_INCLUDES_HIDDEN_APPS, true)
-
-        fun isKept(key: String) = isDeviceSpecific(key) || (keepCurrentHiddenApps && key in HIDDEN_APPS_KEYS)
-
         val editor = RPrefs.getPrefs.edit()
 
         RPrefs.getPrefs.all.keys
-            .filterNot { isKept(it) }
+            .filterNot { isExcluded(it) }
             .forEach { editor.remove(it) }
 
         prefs.keys().forEach { key ->
-            if (isKept(key)) return@forEach
+            if (isExcluded(key)) return@forEach
 
             val entry = prefs.optJSONObject(key) ?: return@forEach
 
@@ -121,8 +116,8 @@ object SettingsBackup {
         }
     }
 
-    private fun isDeviceSpecific(key: String): Boolean {
-        return key in DEVICE_SPECIFIC_KEYS ||
+    private fun isExcluded(key: String): Boolean {
+        return key in EXCLUDED_KEYS ||
                 key.startsWith(LOAD_TIME_KEY_KEY) ||
                 key.startsWith(PACKAGE_STRIKE_KEY_KEY)
     }
@@ -134,7 +129,6 @@ object SettingsBackup {
     private const val KEY_FORMAT_VERSION = "formatVersion"
     private const val KEY_APP_VERSION = "appVersion"
     private const val KEY_PREFS = "prefs"
-    private const val KEY_INCLUDES_HIDDEN_APPS = "includesHiddenApps"
     private const val KEY_TYPE = "type"
     private const val KEY_VALUE = "value"
 
@@ -145,9 +139,11 @@ object SettingsBackup {
     private const val TYPE_STRING = "string"
     private const val TYPE_STRING_SET = "stringSet"
 
-    private val HIDDEN_APPS_KEYS = setOf(APP_BLOCK_LIST)
-
-    private val DEVICE_SPECIFIC_KEYS = setOf(
+    private val EXCLUDED_KEYS = setOf(
+        APP_BLOCK_LIST,
+        HIDE_APPS_FROM_APP_DRAWER,
+        SEARCH_HIDDEN_APPS,
+        DRAWER_TABS,
         XPOSED_HOOK_CHECK,
         NO_DRAWER_FIRST_SCREEN,
         NO_DRAWER_AUTO_SCREENS

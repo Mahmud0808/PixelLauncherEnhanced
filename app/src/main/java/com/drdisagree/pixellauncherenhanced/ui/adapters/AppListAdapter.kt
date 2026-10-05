@@ -16,8 +16,10 @@ import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.google.android.material.materialswitch.MaterialSwitch
 
-class AppListAdapter(private val appList: List<AppInfoModel>) :
-    RecyclerView.Adapter<AppListAdapter.ViewHolder>() {
+class AppListAdapter(
+    private val appList: List<AppInfoModel>,
+    private val onSelectionChanged: (AppInfoModel) -> Unit = ::updateBlockList
+) : RecyclerView.Adapter<AppListAdapter.ViewHolder>() {
 
     private var context: Context? = null
 
@@ -43,31 +45,13 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
             if (!compoundButton.isPressed) return@setOnCheckedChangeListener
 
             appInfo.isSelected = isChecked
-            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!.toMutableList()
-
-            if (isChecked) {
-                if (!appBlockList.contains(appInfo.packageName)) {
-                    appBlockList.add(appInfo.packageName)
-                }
-            } else {
-                appBlockList.remove(appInfo.packageName)
-            }
-            RPrefs.putStringSet(APP_BLOCK_LIST, appBlockList.toSet())
+            onSelectionChanged(appInfo)
         }
 
         holder.container.setOnClickListener {
             appInfo.isSelected = !appInfo.isSelected
             holder.switchView.isChecked = appInfo.isSelected
-
-            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!.toMutableList()
-            if (appInfo.isSelected) {
-                if (!appBlockList.contains(appInfo.packageName)) {
-                    appBlockList.add(appInfo.packageName)
-                }
-            } else {
-                appBlockList.remove(appInfo.packageName)
-            }
-            RPrefs.putStringSet(APP_BLOCK_LIST, appBlockList.toSet())
+            onSelectionChanged(appInfo)
         }
 
         setItemBackground(holder)
@@ -131,5 +115,19 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
 
         holder.itemView.layoutParams = layoutParams
         holder.container.clipToOutline = true
+    }
+
+    companion object {
+        private fun updateBlockList(appInfo: AppInfoModel) {
+            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!.toMutableSet()
+
+            if (appInfo.isSelected) {
+                appBlockList.add(appInfo.packageName)
+            } else {
+                appBlockList.remove(appInfo.packageName)
+            }
+
+            RPrefs.putStringSet(APP_BLOCK_LIST, appBlockList)
+        }
     }
 }

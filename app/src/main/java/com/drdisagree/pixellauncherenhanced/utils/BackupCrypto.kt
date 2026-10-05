@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.utils
 
+import com.drdisagree.pixellauncherenhanced.R
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
@@ -11,6 +12,22 @@ object BackupCrypto {
 
     val SETTINGS_MAGIC = "PLESET1".toByteArray()
     val HOME_LAYOUT_MAGIC = "PLELAY1".toByteArray()
+    val DRAWER_LAYOUT_MAGIC = "PLEDRW1".toByteArray()
+
+    fun wrongTypeMessage(data: ByteArray, expected: ByteArray): Int? {
+        return when {
+            expected !== SETTINGS_MAGIC && hasMagic(SETTINGS_MAGIC, data) ->
+                R.string.backup_wrong_type_settings
+
+            expected !== HOME_LAYOUT_MAGIC && hasMagic(HOME_LAYOUT_MAGIC, data) ->
+                R.string.backup_wrong_type_home_layout
+
+            expected !== DRAWER_LAYOUT_MAGIC && hasMagic(DRAWER_LAYOUT_MAGIC, data) ->
+                R.string.backup_wrong_type_drawer_layout
+
+            else -> null
+        }
+    }
 
     fun encrypt(magic: ByteArray, plain: ByteArray): ByteArray {
         val random = SecureRandom()

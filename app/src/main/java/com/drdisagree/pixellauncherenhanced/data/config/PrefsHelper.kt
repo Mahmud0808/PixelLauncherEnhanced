@@ -7,6 +7,7 @@ import androidx.preference.PreferenceGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_DARK_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
@@ -68,6 +69,9 @@ object PrefsHelper {
             NO_DRAWER_SWIPE_ACTION,
             NO_DRAWER_ARRANGEMENT,
             NO_DRAWER_AUTO_FILL -> getBoolean(NO_DRAWER_MODE)
+
+            DRAWER_TABS_ENABLED,
+            "xposed_app_drawer_tabs" -> !getBoolean(NO_DRAWER_MODE)
 
             else -> true
         }
