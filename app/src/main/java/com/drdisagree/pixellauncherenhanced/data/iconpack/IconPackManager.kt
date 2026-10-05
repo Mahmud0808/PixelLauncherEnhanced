@@ -52,7 +52,7 @@ object IconPackManager {
 
     private const val THEMED_ICON_PACK_ACTION = "app.lawnchair.icons.THEMED_ICON"
     private const val THEMED_ICON_INSET = 0.28f
-    private const val SIGNATURE_VERSION = 6
+    private const val SIGNATURE_VERSION = 7
 
     const val OVERRIDE_ORIGINAL = "original"
     const val OVERRIDE_CUSTOM = "custom"

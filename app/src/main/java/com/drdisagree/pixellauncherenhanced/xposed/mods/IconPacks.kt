@@ -19,6 +19,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
@@ -31,6 +32,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_MASK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackIconDrawable
+import com.drdisagree.pixellauncherenhanced.data.iconpack.ThemedPackIconDrawable
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
@@ -41,8 +43,11 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
+import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
 
@@ -186,6 +191,20 @@ class IconPacks(context: Context) : ModPack(context) {
             .hookMethod("createBadgedIconBitmap")
             .suppressError()
             .runBefore { param ->
+                val combined = param.args.getOrNull(0) as? ThemedPackIconDrawable
+                if (combined != null) {
+                    val method = param.method as Method
+                    fun create(drawable: Drawable): Any? = method.invoke(
+                        param.thisObject,
+                        *param.args.copyOf().also { it[0] = drawable }
+                    )
+
+                    val normal = create(combined.regular) ?: return@runBefore
+                    create(combined.themed)?.let { copyThemedLayers(it, normal) }
+                    param.result = normal
+                    return@runBefore
+                }
+
                 if (param.args.getOrNull(0) !is PackIconDrawable) return@runBefore
 
                 val options = param.args.getOrNull(1) ?: return@runBefore
@@ -213,13 +232,15 @@ class IconPacks(context: Context) : ModPack(context) {
             }
 
         findClass("com.android.quickstep.TaskIconCache", suppressError = true)
-            .hookMethod("getBitmapInfo", "getCacheEntry")
+            .hookMethod("getBitmapInfo", "getCacheEntry", "getBitmapInfoCacheEntry")
             .suppressError()
             .runBefore { param ->
-                val task = param.args.firstOrNull { it?.javaClass?.name?.endsWith(".Task") == true }
+                val task = param.args.firstOrNull { it?.javaClass?.name?.endsWith(".Task") == true } ?: return@runBefore
                 taskComponent.set(task.getFieldSilently("key").callMethodSilently("getComponent") as? ComponentName)
             }
-            .runAfter { taskComponent.remove() }
+            .runAfter { param ->
+                if (param.args.any { it?.javaClass?.name?.endsWith(".Task") == true }) taskComponent.remove()
+            }
 
         findClass("com.android.quickstep.TaskIconCache", suppressError = true)
             .hookMethod("getIcon")
@@ -426,18 +447,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
     private fun replaceIcon(component: ComponentName, original: Drawable?, density: Int): Drawable? {
         val hasOverride = component.flattenToString() in config.overrides
-
-        if (themedMode && !hasOverride && config.themedIconPacks.isNotEmpty() && original != null) {
-            runCatching {
-                IconPackManager.withThemedIcon(mContext, component, original, config, density)
-            }.getOrNull()?.let { themed ->
-                config.themedIconPacks.firstOrNull { pkg ->
-                    IconPackManager.pack(mContext, pkg)?.covers(component) == true
-                }?.let { recordSource(it, component.packageName) }
-                return themed
-            }
-        }
-
+        val inRecents = taskComponent.get() != null
         val resolved = runCatching {
             IconPackManager.resolve(
                 context = mContext,
@@ -450,7 +460,38 @@ class IconPacks(context: Context) : ModPack(context) {
         }.getOrNull()
 
         resolved?.packageName?.let { recordSource(it, component.packageName) }
-        return resolved?.drawable
+        val regular = resolved?.drawable
+
+        if (themedMode && !inRecents && !hasOverride && original != null) {
+            themedPackIcon(component, original, density)?.let { themed ->
+                return regular?.let { ThemedPackIconDrawable(it, themed) } ?: themed
+            }
+
+            if (hasStockMonochrome(original)) {
+                return regular?.let { ThemedPackIconDrawable(it, original) }
+            }
+        }
+
+        return regular
+    }
+
+    private fun hasStockMonochrome(icon: Drawable): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || icon !is AdaptiveIconDrawable) return false
+        val monochrome = icon.monochrome ?: return false
+        return XposedHelpers.getAdditionalInstanceField(icon, "mMonochromeIcon") !== monochrome
+    }
+
+    private fun themedPackIcon(component: ComponentName, original: Drawable, density: Int): Drawable? {
+        if (config.themedIconPacks.isEmpty()) return null
+
+        val themed = runCatching {
+            IconPackManager.withThemedIcon(mContext, component, original, config, density)
+        }.getOrNull() ?: return null
+
+        config.themedIconPacks.firstOrNull { pkg ->
+            IconPackManager.pack(mContext, pkg)?.covers(component) == true
+        }?.let { recordSource(it, component.packageName) }
+        return themed
     }
 
     private fun isCovered(component: ComponentName): Boolean {
@@ -459,6 +500,21 @@ class IconPacks(context: Context) : ModPack(context) {
         if (config.maskUnsupported && config.iconPacks.isNotEmpty()) return true
 
         return config.iconPacks.any { pkg -> IconPackManager.pack(mContext, pkg)?.covers(component) == true }
+    }
+
+    private fun copyThemedLayers(from: Any, to: Any) {
+        var type: Class<*>? = from.javaClass
+        while (type != null && type != Any::class.java) {
+            type.declaredFields
+                .filter { !Modifier.isStatic(it.modifiers) && THEMED_FIELD.containsMatchIn(it.name) }
+                .forEach { field ->
+                    runCatching {
+                        field.isAccessible = true
+                        field.get(from)?.let { field.set(to, it) }
+                    }
+                }
+            type = type.superclass
+        }
     }
 
     private fun Class<*>.hasField(name: String): Boolean {
@@ -474,6 +530,7 @@ class IconPacks(context: Context) : ModPack(context) {
         private const val ICON_CACHE_DB = "app_icons.db"
         private const val SCROLL_RESTORE_WINDOW_MS = 4_000L
         private const val FOLDER_REFRESH_DELAY_MS = 1_500L
+        private val THEMED_FIELD = Regex("mono|whiteshadow|themed", RegexOption.IGNORE_CASE)
         private val OPTION_FIELDS = listOf("wrapNonAdaptiveIcon", "isFullBleed", "drawFullBleed", "addShadows", "mAddShadows")
     }
 
