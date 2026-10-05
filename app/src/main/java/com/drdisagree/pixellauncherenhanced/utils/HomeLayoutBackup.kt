@@ -22,6 +22,7 @@ import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -40,7 +41,7 @@ object HomeLayoutBackup {
     val defaultFileName: String
         get() = "PLE_HomeLayout_" +
                 SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                ".zip"
+                ".plebackup"
 
     suspend fun backup(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
         val launcher = currentLauncher()
@@ -62,10 +63,8 @@ object HomeLayoutBackup {
                     ?.let { put(KEY_FIRST_MOD_SCREEN, it) }
             }
 
-            val output = context.contentResolver.openOutputStream(uri, "wt")
-                ?: throw BackupException(R.string.home_layout_failed)
-
-            ZipOutputStream(output).use { zip ->
+            val archive = ByteArrayOutputStream()
+            ZipOutputStream(archive).use { zip ->
                 zip.putNextEntry(ZipEntry(METADATA_ENTRY))
                 zip.write(metadata.toString().toByteArray())
                 zip.closeEntry()
@@ -73,6 +72,13 @@ object HomeLayoutBackup {
                 zip.putNextEntry(ZipEntry(DB_ENTRY))
                 database.inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
+            }
+
+            val output = context.contentResolver.openOutputStream(uri, "wt")
+                ?: throw BackupException(R.string.home_layout_failed)
+
+            output.use {
+                it.write(BackupCrypto.encrypt(BackupCrypto.HOME_LAYOUT_MAGIC, archive.toByteArray()))
             }
         } catch (e: Exception) {
             runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
@@ -226,11 +232,18 @@ object HomeLayoutBackup {
     private fun extractBackup(context: Context, uri: Uri, staged: File): JSONObject {
         var metadata: JSONObject? = null
 
-        val input = context.contentResolver.openInputStream(uri)
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw BackupException(R.string.home_layout_invalid_file)
+
+        if (BackupCrypto.hasMagic(BackupCrypto.SETTINGS_MAGIC, bytes)) {
+            throw BackupException(R.string.home_layout_restore_got_settings_backup)
+        }
+
+        val archive = BackupCrypto.decrypt(BackupCrypto.HOME_LAYOUT_MAGIC, bytes)
             ?: throw BackupException(R.string.home_layout_invalid_file)
 
         runCatching {
-            ZipInputStream(input).use { zip ->
+            ZipInputStream(archive.inputStream()).use { zip ->
                 generateSequence { zip.nextEntry }.forEach { entry ->
                     when (entry.name) {
                         METADATA_ENTRY -> metadata = JSONObject(zip.readBytes().decodeToString())
@@ -241,10 +254,6 @@ object HomeLayoutBackup {
         }
 
         val result = metadata
-        if (result == null && SettingsBackup.isSettingsBackup(context, uri)) {
-            throw BackupException(R.string.home_layout_restore_got_settings_backup)
-        }
-
         if (result == null ||
             !result.has(KEY_DB_NAME) ||
             result.optInt(KEY_FORMAT_VERSION) > FORMAT_VERSION ||

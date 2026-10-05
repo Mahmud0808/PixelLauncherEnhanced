@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 class MiscellaneousMods : ControlledPreferenceFragmentCompat() {
 
     private val backupLayoutLauncher =
-        registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
             if (uri != null) {
                 runBackupTask(R.string.home_layout_backup_success) {
                     HomeLayoutBackup.backup(it, uri)
@@ -189,10 +189,6 @@ class MiscellaneousMods : ControlledPreferenceFragmentCompat() {
     }
 
     companion object {
-        private val BACKUP_MIME_TYPES = arrayOf(
-            "application/zip",
-            "application/x-zip-compressed",
-            "application/octet-stream"
-        )
+        private val BACKUP_MIME_TYPES = arrayOf("application/octet-stream", "*/*")
     }
 }
