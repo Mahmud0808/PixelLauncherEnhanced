@@ -19,6 +19,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_FIRS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_SWIPE_ACTION
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
@@ -33,6 +34,7 @@ import de.robv.android.xposed.XposedHelpers.removeAdditionalInstanceField
 import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
+import java.lang.reflect.Modifier
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.text.Collator
@@ -205,17 +207,17 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     private fun hookRemoval() {
         val deleteDropTargetClass = findClass("com.android.launcher3.DeleteDropTarget", suppressError = true)
 
-        listOf(deleteDropTargetClass, findClass("com.android.launcher3.ButtonDropTarget", suppressError = true))
-            .forEach { targetClass ->
-                targetClass
-                    .hookMethod("supportsDrop")
-                    .suppressError()
-                    .runAfter { param ->
-                        if (deleteDropTargetClass?.isInstance(param.thisObject) != true) return@runAfter
-                        if (noDrawerMode && param.args[0].isProtectedFromRemoval()) {
-                            param.result = false
-                        }
+        listOfNotNull(deleteDropTargetClass, findClass("com.android.launcher3.ButtonDropTarget", suppressError = true))
+            .flatMap { targetClass ->
+                targetClass.declaredMethods.filter { it.name == "supportsDrop" && !Modifier.isAbstract(it.modifiers) }
+            }
+            .forEach { method ->
+                MethodHookHelper(method).runAfter { param ->
+                    if (deleteDropTargetClass?.isInstance(param.thisObject) != true) return@runAfter
+                    if (noDrawerMode && param.args[0].isProtectedFromRemoval()) {
+                        param.result = false
                     }
+                }
             }
 
         val removeFactory = findClass(

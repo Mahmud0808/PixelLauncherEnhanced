@@ -18,6 +18,7 @@ import de.robv.android.xposed.callbacks.XC_LayoutInflated
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
 class XposedHook {
@@ -140,14 +141,14 @@ class MethodHookHelper(
                     val pattern = Pattern.compile(methodName)
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
                         ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches()) {
+                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
                                 hookMethod(method, callback)
                                 foundAnyMethod = true
                             }
                         }
                 } else {
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName }?.let { method ->
+                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
                             hookMethod(method, callback)
                             foundAnyMethod = true
                         }
@@ -182,14 +183,14 @@ class MethodHookHelper(
                     val pattern = Pattern.compile(methodName)
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
                         ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches()) {
+                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
                                 hookMethodBefore(method, callback)
                                 foundAnyMethod = true
                             }
                         }
                 } else {
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName }?.let { method ->
+                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
                             hookMethodBefore(method, callback)
                             foundAnyMethod = true
                         }
@@ -224,14 +225,14 @@ class MethodHookHelper(
                     val pattern = Pattern.compile(methodName)
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
                         ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches()) {
+                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
                                 hookMethodAfter(method, callback)
                                 foundAnyMethod = true
                             }
                         }
                 } else {
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName }?.let { method ->
+                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
                             hookMethodAfter(method, callback)
                             foundAnyMethod = true
                         }
@@ -262,13 +263,13 @@ class MethodHookHelper(
                     val pattern = Pattern.compile(methodName)
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
                         ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches()) {
+                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
                                 hookMethodReplace(method, callback)
                             }
                         }
                 } else {
                     clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName }?.let { method ->
+                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
                             hookMethodReplace(method, callback)
                         } ?: run {
                         if (printError) {
