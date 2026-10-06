@@ -107,6 +107,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Clear all button           |       ✅        |         ✅          |
 | Fixed button width         |       ✅        |         ✅          |
 | Remove screenshot button   |       ✅        |         ✅          |
+| Disable selection          |       ✅        |         🚫          |
 | Recents background opacity |       ✅        |         ✅          |
 
 </details>

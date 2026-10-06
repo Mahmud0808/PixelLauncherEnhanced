@@ -27,6 +27,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_SWIPE_ACTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_DISABLE_SELECTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_LIGHT
@@ -47,7 +48,8 @@ object PrefsHelper {
         return when (key) {
             XPOSED_HOOK_CHECK -> false
 
-            DEVELOPER_OPTIONS -> isPixelLauncher
+            DEVELOPER_OPTIONS,
+            RECENTS_DISABLE_SELECTION -> isPixelLauncher
 
             FIXED_RECENTS_BUTTONS_WIDTH -> getBoolean(RECENTS_CLEAR_ALL_BUTTON)
 

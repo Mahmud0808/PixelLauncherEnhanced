@@ -182,6 +182,8 @@
     <string name="fixed_button_width_title">Fixed width for each button</string>
     <string name="recents_remove_screenshot_title">Remove screenshot button</string>
     <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
+    <string name="recents_disable_selection_title">Disable selection</string>
+    <string name="recents_disable_selection_summary">Hides the select button and turns off image and text selection on app previews</string>
     <string name="freeform_gesture_title">Use gesture in recents to start freeform mode</string>
     <string name="freeform_gesture_summary">Swipe up from the app and release at the top of the recents screen to trigger freeform mode (requires freeform enabled in developer options)</string>
     <string name="freeform_gesture_progress_title">Freeform swipe threshold</string>

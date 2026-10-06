@@ -64,6 +64,7 @@ object Constants {
     const val TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP = "xposed_togglehideappsinoptionspopup"
     const val REMOVE_ICON_BADGE = "xposed_removeiconbadge"
     const val RECENTS_REMOVE_SCREENSHOT_BUTTON = "xposed_recentsremovescreenshotbutton"
+    const val RECENTS_DISABLE_SELECTION = "xposed_recentsdisableselection"
     const val RECENTS_KILL_APP = "xposed_recentskillapp"
     const val RECENTS_UNINSTALL_APP = "xposed_recentsuninstallapp"
     const val POPUP_KILL_APP = "xposed_popupkillapp"
