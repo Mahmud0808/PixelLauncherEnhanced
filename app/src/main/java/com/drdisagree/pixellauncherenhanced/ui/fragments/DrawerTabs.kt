@@ -58,7 +58,7 @@ class DrawerTabs : Fragment() {
 
         adapter = DrawerTabAdapter(
             onStartDrag = { touchHelper.startDrag(it) },
-            onClick = { tab -> if (!tab.isBuiltIn) openEditor(tab) },
+            onClick = { tab -> if (tab.filtersApps) openEditor(tab) },
             onRemove = { tab -> if (tab.isBuiltIn) setHidden(tab, true) else confirmDelete(tab) },
             onAdd = { tab -> setHidden(tab, false) }
         )

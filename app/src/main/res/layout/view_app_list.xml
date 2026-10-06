@@ -48,6 +48,20 @@
             android:alpha="0.8"
             android:textColor="?attr/colorOnSurface" />
 
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/recommended"
+            style="?attr/textAppearanceLabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|center"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_recommended_chip"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:text="@string/drawer_tab_recommended"
+            android:textColor="?attr/colorOnSecondaryContainer"
+            android:visibility="gone" />
+
     </LinearLayout>
 
     <com.google.android.material.materialswitch.MaterialSwitch

@@ -9,6 +9,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_DOCK_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_AT_BOTTOM
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_DARK_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
@@ -79,6 +80,8 @@ object PrefsHelper {
 
             DRAWER_TABS_ENABLED,
             "xposed_app_drawer_tabs" -> !getBoolean(NO_DRAWER_MODE)
+
+            DRAWER_TABS_AT_BOTTOM -> getBoolean(DRAWER_TABS_ENABLED) && !getBoolean(NO_DRAWER_MODE)
 
             else -> true
         }

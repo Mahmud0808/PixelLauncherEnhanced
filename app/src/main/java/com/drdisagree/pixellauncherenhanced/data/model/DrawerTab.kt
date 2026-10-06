@@ -12,7 +12,8 @@ data class DrawerTab(
     val type: Type,
     val name: String = "",
     val hidden: Boolean = false,
-    val apps: Set<String> = emptySet()
+    val apps: Set<String> = emptySet(),
+    val excluded: Set<String> = emptySet()
 ) {
 
     enum class Type(val key: String) {
@@ -37,6 +38,9 @@ data class DrawerTab(
     val filtersApps: Boolean
         get() = type != Type.ALL && type != Type.WORK
 
+    val isCustomized: Boolean
+        get() = isBuiltIn && (apps.isNotEmpty() || excluded.isNotEmpty())
+
     fun displayName(resources: Resources): String {
         return when (type) {
             Type.ALL -> resources.getString(R.string.drawer_tab_all)
@@ -51,12 +55,20 @@ data class DrawerTab(
         }
     }
 
-    @Suppress("DEPRECATION")
     fun matches(packageName: String, appInfo: ApplicationInfo?): Boolean {
+        return when (type) {
+            Type.ALL, Type.WORK -> true
+            Type.CUSTOM -> packageName in apps
+            else -> packageName in apps || (packageName !in excluded && recommends(appInfo))
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    fun recommends(appInfo: ApplicationInfo?): Boolean {
         val category = appInfo?.category ?: ApplicationInfo.CATEGORY_UNDEFINED
 
         return when (type) {
-            Type.ALL, Type.WORK -> true
+            Type.ALL, Type.WORK, Type.CUSTOM -> false
             Type.GAMES -> category == ApplicationInfo.CATEGORY_GAME ||
                     (appInfo != null && appInfo.flags and ApplicationInfo.FLAG_IS_GAME != 0)
 
@@ -68,7 +80,6 @@ data class DrawerTab(
             Type.PRODUCTIVITY -> category == ApplicationInfo.CATEGORY_PRODUCTIVITY
             Type.NEWS -> category == ApplicationInfo.CATEGORY_NEWS
             Type.NAVIGATION -> category == ApplicationInfo.CATEGORY_MAPS
-            Type.CUSTOM -> packageName in apps
         }
     }
 
@@ -79,6 +90,7 @@ data class DrawerTab(
             .put(KEY_NAME, name)
             .put(KEY_HIDDEN, hidden)
             .put(KEY_APPS, JSONArray(apps.sorted()))
+            .put(KEY_EXCLUDED, JSONArray(excluded.sorted()))
     }
 
     companion object {
@@ -87,6 +99,7 @@ data class DrawerTab(
         private const val KEY_NAME = "name"
         private const val KEY_HIDDEN = "hidden"
         private const val KEY_APPS = "apps"
+        private const val KEY_EXCLUDED = "excluded"
 
         private val BUILT_IN_ORDER = listOf(
             Type.ALL,
@@ -113,13 +126,17 @@ data class DrawerTab(
                     val item = array.optJSONObject(index) ?: return@mapNotNull null
                     val type = Type.fromKey(item.optString(KEY_TYPE)) ?: return@mapNotNull null
                     val apps = item.optJSONArray(KEY_APPS)
+                    val excluded = item.optJSONArray(KEY_EXCLUDED)
 
                     DrawerTab(
                         id = if (type == Type.CUSTOM) item.optString(KEY_ID) else type.key,
                         type = type,
                         name = item.optString(KEY_NAME),
                         hidden = type != Type.CUSTOM && item.optBoolean(KEY_HIDDEN),
-                        apps = (0 until (apps?.length() ?: 0)).mapTo(HashSet()) { apps!!.getString(it) }
+                        apps = (0 until (apps?.length() ?: 0)).mapTo(HashSet()) { apps!!.getString(it) },
+                        excluded = if (type == Type.CUSTOM) emptySet() else {
+                            (0 until (excluded?.length() ?: 0)).mapTo(HashSet()) { excluded!!.getString(it) }
+                        }
                     )
                 }
             }.getOrDefault(emptyList())

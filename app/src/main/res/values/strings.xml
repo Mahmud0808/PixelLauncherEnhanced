@@ -229,6 +229,9 @@
     <string name="drawer_tab_desc_navigation">Maps and navigation apps</string>
     <string name="drawer_tabs_work_desc">Replaces the Personal and Work tabs when a work profile exists</string>
     <string name="drawer_tabs_custom_count">%1$d apps</string>
+    <string name="drawer_tabs_customized">%1$s · Customized</string>
+    <string name="drawer_tabs_reset">Reset to recommended</string>
+    <string name="drawer_tab_recommended">Recommended</string>
     <string name="drawer_tabs_custom_empty">No apps yet · Tap to add apps</string>
     <string name="drawer_tabs_name_empty">Enter a name</string>
     <string name="drawer_tab_all">All apps</string>

@@ -61,7 +61,6 @@
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:dependency="xposed_drawertabs"
             android:key="xposed_drawertabsatbottom"
             android:summary="@string/drawer_tabs_at_bottom_desc"
             android:title="@string/drawer_tabs_at_bottom_title"

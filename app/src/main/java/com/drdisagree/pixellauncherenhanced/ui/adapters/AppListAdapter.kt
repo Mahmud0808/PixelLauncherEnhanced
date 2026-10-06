@@ -40,6 +40,7 @@ class AppListAdapter(
         holder.appName.text = appInfo.appName
         holder.packageName.text = appInfo.packageName
         holder.switchView.isChecked = appInfo.isSelected
+        holder.recommended.visibility = if (appInfo.recommended) View.VISIBLE else View.GONE
 
         holder.switchView.setOnCheckedChangeListener { compoundButton, isChecked ->
             if (!compoundButton.isPressed) return@setOnCheckedChangeListener
@@ -75,6 +76,7 @@ class AppListAdapter(
         var appName: TextView = view.findViewById(R.id.title)
         var packageName: TextView = view.findViewById(R.id.summary)
         var switchView: MaterialSwitch = view.findViewById(R.id.switchView)
+        var recommended: TextView = view.findViewById(R.id.recommended)
     }
 
     private fun setItemBackground(holder: ViewHolder) {

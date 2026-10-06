@@ -70,6 +70,12 @@ class DrawerTabEditor : Fragment() {
 
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                if (currentTab()?.isBuiltIn == true) {
+                    menu.add(Menu.NONE, MENU_RESET, Menu.NONE, R.string.drawer_tabs_reset)
+                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+                    return
+                }
+
                 val item = menu.add(Menu.NONE, MENU_RENAME, Menu.NONE, R.string.drawer_tabs_rename)
                     .setIcon(R.drawable.ic_edit)
                 item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -85,6 +91,12 @@ class DrawerTabEditor : Fragment() {
                 return when (menuItem.itemId) {
                     MENU_RENAME -> {
                         rename()
+                        true
+                    }
+
+                    MENU_RESET -> {
+                        DrawerTabsStore.update(tabId) { it.copy(apps = emptySet(), excluded = emptySet()) }
+                        loadApps()
                         true
                     }
 
@@ -114,7 +126,7 @@ class DrawerTabEditor : Fragment() {
     private fun updateTitle() {
         setupToolbar(
             requireContext() as AppCompatActivity,
-            currentTab()?.name.orEmpty(),
+            currentTab()?.displayName(resources).orEmpty(),
             true,
             binding.header.toolbar,
             binding.header.collapsingToolbar
@@ -136,9 +148,19 @@ class DrawerTabEditor : Fragment() {
         binding.search.removeTextChangedListener(textWatcher)
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val selected = currentTab()?.apps.orEmpty()
+            val tab = currentTab()
+            val packageManager = requireContext().packageManager
             appList = withContext(Dispatchers.IO) {
-                HiddenApps.getAllLaunchableApps(selected).distinctBy { it.packageName }
+                HiddenApps.getAllLaunchableApps(emptySet())
+                    .distinctBy { it.packageName }
+                    .map { app ->
+                        val info = runCatching { packageManager.getApplicationInfo(app.packageName, 0) }.getOrNull()
+                        app.copy(
+                            isSelected = tab?.matches(app.packageName, info) == true,
+                            recommended = tab?.recommends(info) == true
+                        )
+                    }
+                    .sortedWith(compareBy<AppInfoModel> { !it.isSelected }.thenBy { it.appName.lowercase() })
             }
 
             binding.progressBar.visibility = View.GONE
@@ -160,14 +182,25 @@ class DrawerTabEditor : Fragment() {
         }
 
         binding.recyclerView.adapter = AppListAdapter(filtered) { app ->
-            DrawerTabsStore.update(tabId) { tab ->
-                tab.copy(apps = if (app.isSelected) tab.apps + app.packageName else tab.apps - app.packageName)
-            }
+            DrawerTabsStore.update(tabId) { tab -> tab.withApp(app) }
+        }
+    }
+
+    private fun DrawerTab.withApp(app: AppInfoModel): DrawerTab {
+        val pkg = app.packageName
+
+        if (!isBuiltIn) return copy(apps = if (app.isSelected) apps + pkg else apps - pkg)
+
+        return if (app.isSelected) {
+            copy(apps = if (app.recommended) apps - pkg else apps + pkg, excluded = excluded - pkg)
+        } else {
+            copy(apps = apps - pkg, excluded = if (app.recommended) excluded + pkg else excluded - pkg)
         }
     }
 
     companion object {
         const val ARG_TAB_ID = "tab_id"
         private const val MENU_RENAME = 1
+        private const val MENU_RESET = 2
     }
 }

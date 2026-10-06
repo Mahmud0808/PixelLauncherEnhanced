@@ -84,7 +84,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         }
 
         when (key.firstOrNull()) {
-            DRAWER_TABS_ENABLED, DRAWER_TABS_AT_BOTTOM -> restartLauncher(mContext)
+            DRAWER_TABS_ENABLED, DRAWER_TABS_AT_BOTTOM -> mainHandler.post { applyLive() }
             DRAWER_TABS -> mainHandler.post { onTabsChanged() }
         }
     }
@@ -244,6 +244,24 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     private fun hasWorkProfile(): Boolean {
         val container = containerRef?.get() ?: return false
         return if (overridingUsingTabs) savedUsingTabs else container.getFieldSilently("mUsingTabs") == true
+    }
+
+    private fun applyLive() {
+        val container = containerRef?.get() ?: return
+
+        if (hasWorkProfile()) {
+            restartLauncher(mContext)
+            return
+        }
+
+        tabBar?.let { (it.parent as? ViewGroup)?.removeView(it) }
+        tabBar = null
+        appsSourceRef = null
+
+        container.callMethodSilently("rebindAdapters", true)
+        (container.getFieldSilently("mAH") as? List<*>)?.forEach { it.callMethodSilently("applyPadding") }
+        refreshLists(container)
+        container.requestLayout()
     }
 
     private fun onTabsChanged() {

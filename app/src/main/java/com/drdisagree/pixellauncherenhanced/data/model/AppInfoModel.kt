@@ -6,5 +6,6 @@ data class AppInfoModel(
     val appName: String,
     val packageName: String,
     val appIcon: Drawable,
-    var isSelected: Boolean
+    var isSelected: Boolean,
+    val recommended: Boolean = false
 )

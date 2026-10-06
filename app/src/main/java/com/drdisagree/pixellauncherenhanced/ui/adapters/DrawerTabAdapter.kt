@@ -137,6 +137,8 @@ class DrawerTabAdapter(
             } else {
                 context.getString(R.string.drawer_tabs_custom_count, tab.apps.size)
             }
+        }.let { summary ->
+            if (tab.isCustomized) context.getString(R.string.drawer_tabs_customized, summary) else summary
         }
 
         holder.dragHandle.visibility = if (active) View.VISIBLE else View.INVISIBLE
