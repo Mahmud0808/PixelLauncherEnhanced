@@ -210,6 +210,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
                     setField("mLabel", resourceString(labelId) ?: fixedString(modRes.getString(action.labelRes)))
                 }
                 setFieldSilently("mAccessibilityActionId", labelId)
+                setFieldSilently("mIsCollapsible", true)
                 setAdditionalInstanceField(this, ACTION_KEY, action)
             }
         }.onFailure {
