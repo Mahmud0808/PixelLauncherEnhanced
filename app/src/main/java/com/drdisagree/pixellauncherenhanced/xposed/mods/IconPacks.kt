@@ -13,6 +13,7 @@ import android.os.Looper
 import android.os.Parcelable
 import android.os.SystemClock
 import android.os.UserManager
+import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import android.content.pm.ActivityInfo
@@ -22,6 +23,7 @@ import android.graphics.Canvas
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
@@ -41,7 +43,12 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.newInstance
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
@@ -71,6 +78,7 @@ class IconPacks(context: Context) : ModPack(context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val taskComponent = ThreadLocal<ComponentName?>()
     private val exportingShortcuts = ThreadLocal<Boolean>()
+    private var bgDataModelRef: WeakReference<Any>? = null
     private val skippedWrap = ThreadLocal<Any?>()
 
     override fun updatePrefs(vararg key: String) {
@@ -152,11 +160,19 @@ class IconPacks(context: Context) : ModPack(context) {
         findClass("com.android.launcher3.model.LoaderTask", suppressError = true)
             .hookMethod("run")
             .suppressError()
-            .runAfter {
+            .runAfter { param ->
+                param.thisObject.getFieldSilently("mBgDataModel")?.let { bgDataModelRef = WeakReference(it) }
                 exportPinnedShortcuts()
                 val token = pendingApply.takeIf { it != 0L } ?: return@runAfter
                 pendingApply = 0L
                 runCatching { Xprefs.edit().putLong(ICON_PACK_APPLIED, token).apply() }
+            }
+
+        findClass("com.android.launcher3.model.LoaderCursor", suppressError = true)
+            .hookMethod("checkAndAddItem")
+            .suppressError()
+            .runBefore { param ->
+                if (config.isActive) applyLegacyShortcutOverride(param.args[0])
             }
 
         LauncherApps::class.java
@@ -530,7 +546,7 @@ class IconPacks(context: Context) : ModPack(context) {
                     label = (shortcut.shortLabel ?: shortcut.longLabel ?: shortcut.id).toString(),
                     icon = icon
                 )
-            }.distinctBy { it.component }.sortedBy { it.label.lowercase() }
+            }.plus(legacyShortcuts(size)).distinctBy { it.component }.sortedBy { it.label.lowercase() }
         } finally {
             exportingShortcuts.remove()
         }
@@ -538,6 +554,76 @@ class IconPacks(context: Context) : ModPack(context) {
         val serialized = IconPackManager.serializeShortcuts(shortcuts)
         if (Xprefs.getString(PINNED_SHORTCUTS, null) == serialized) return
         runCatching { Xprefs.edit().putString(PINNED_SHORTCUTS, serialized).apply() }
+    }
+
+    private fun legacyShortcuts(size: Int): List<IconPackManager.PinnedShortcut> {
+        val model = bgDataModelRef?.get() ?: return emptyList()
+        val itemsIdMap = model.getFieldSilently("itemsIdMap")
+        val items = itemsIdMap as? SparseArray<*>
+            ?: itemsIdMap.getFieldSilently("itemsIdMap") as? SparseArray<*>
+            ?: return emptyList()
+
+        val infos = synchronized(model) { (0 until items.size()).mapNotNull { items.valueAt(it) } }
+
+        return infos.mapNotNull { info ->
+            val (packageName, id) = legacyShortcutKey(info) ?: return@mapNotNull null
+            val bitmap = (info.getExtraFieldSilently(ORIGINAL_LEGACY_ICON)
+                ?: info.getFieldSilently("bitmap").getFieldSilently("icon")) as? Bitmap
+            val title = info.getFieldSilently("title") as? CharSequence
+
+            IconPackManager.PinnedShortcut(
+                packageName = packageName,
+                id = id,
+                label = title?.toString().orEmpty().ifEmpty { packageName },
+                icon = bitmap?.let { IconPackManager.encodeBitmap(Bitmap.createScaledBitmap(it, size, size, true)) }
+            )
+        }
+    }
+
+    private fun legacyShortcutKey(info: Any?): Pair<String, String>? {
+        if (info.getFieldSilently("itemType") != ITEM_TYPE_SHORTCUT) return null
+
+        val intent = info.getFieldSilently("intent") as? Intent ?: return null
+        val packageName = intent.`package` ?: intent.component?.packageName ?: return null
+
+        return packageName to IconPackManager.legacyShortcutId(intent.toUri(0))
+    }
+
+    private fun applyLegacyShortcutOverride(info: Any?) {
+        val (packageName, id) = legacyShortcutKey(info) ?: return
+        val component = IconPackManager.shortcutComponent(packageName, id)
+        if (component.flattenToString() !in config.overrides) return
+
+        val originalBitmap = info.getFieldSilently("bitmap").getFieldSilently("icon") as? Bitmap
+        val original = originalBitmap?.let { BitmapDrawable(mContext.resources, it) }
+        val density = mContext.resources.configuration.densityDpi
+        val replaced = replaceIcon(component, original, density) ?: return
+        val bitmapInfo = createBitmapInfo(replaced) ?: return
+
+        info.setExtraField(ORIGINAL_LEGACY_ICON, originalBitmap)
+        info.setField("bitmap", bitmapInfo)
+    }
+
+    private fun createBitmapInfo(drawable: Drawable): Any? {
+        val factory = findClass($$"com.android.launcher3.icons.LauncherIcons$Companion", suppressError = true)
+            .callStaticMethodSilently("obtain", mContext)
+            ?: findClass("com.android.launcher3.icons.LauncherIcons", suppressError = true)
+                .callStaticMethodSilently("obtain", mContext)
+            ?: return null
+
+        return try {
+            val options = findClass($$"com.android.launcher3.icons.BaseIconFactory$IconOptions", suppressError = true)
+                ?.newInstance()
+            runCatching {
+                if (options != null) {
+                    factory.callMethod("createBadgedIconBitmap", drawable, options)
+                } else {
+                    factory.callMethod("createBadgedIconBitmap", drawable)
+                }
+            }.getOrNull()
+        } finally {
+            if (factory.hasMethod("recycle")) factory.callMethodSilently("recycle") else factory.callMethodSilently("close")
+        }
     }
 
     private fun hasStockMonochrome(icon: Drawable): Boolean {
@@ -596,6 +682,8 @@ class IconPacks(context: Context) : ModPack(context) {
         private const val SCROLL_RESTORE_WINDOW_MS = 4_000L
         private const val FOLDER_REFRESH_DELAY_MS = 1_500L
         private const val SHORTCUT_PREVIEW_DP = 60
+        private const val ITEM_TYPE_SHORTCUT = 1
+        private const val ORIGINAL_LEGACY_ICON = "pleOriginalLegacyIcon"
         private val THEMED_FIELD = Regex("mono|whiteshadow|themed", RegexOption.IGNORE_CASE)
         private val OPTION_FIELDS = listOf("wrapNonAdaptiveIcon", "isFullBleed", "drawFullBleed", "addShadows", "mAddShadows")
     }

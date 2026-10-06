@@ -53,6 +53,7 @@ object IconPackManager {
     private const val THEMED_ICON_PACK_ACTION = "app.lawnchair.icons.THEMED_ICON"
     private const val THEMED_ICON_INSET = 0.28f
     private const val SHORTCUT_PREFIX = "shortcut:"
+    private const val LEGACY_SHORTCUT_PREFIX = "legacy:"
     private const val SIGNATURE_VERSION = 7
 
     const val OVERRIDE_ORIGINAL = "original"
@@ -229,6 +230,8 @@ object IconPackManager {
     fun shortcutComponent(packageName: String, id: String) = ComponentName(packageName, SHORTCUT_PREFIX + id)
 
     fun isShortcut(component: ComponentName) = component.className.startsWith(SHORTCUT_PREFIX)
+
+    fun legacyShortcutId(intentUri: String) = LEGACY_SHORTCUT_PREFIX + hash(intentUri).take(16)
 
     fun serializeShortcuts(shortcuts: List<PinnedShortcut>): String = JSONArray().apply {
         shortcuts.forEach { shortcut ->
