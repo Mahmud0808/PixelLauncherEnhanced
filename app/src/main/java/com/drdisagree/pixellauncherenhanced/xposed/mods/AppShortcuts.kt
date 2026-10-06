@@ -206,7 +206,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 if (hasField("mLabelResId")) {
                     setField("mLabelResId", labelId)
                 } else {
-                    setField("mLabel", fixedString(modRes.getString(action.labelRes)))
+                    setField("mLabel", resourceString(labelId) ?: fixedString(modRes.getString(action.labelRes)))
                 }
                 setFieldSilently("mAccessibilityActionId", labelId)
                 setAdditionalInstanceField(this, ACTION_KEY, action)
@@ -214,6 +214,12 @@ class AppShortcuts(context: Context) : ModPack(context) {
         }.onFailure {
             log(this@AppShortcuts, it)
         }.getOrNull()
+    }
+
+    private fun resourceString(resId: Int): Any? {
+        return findClass($$"com.android.launcher3.popup.ui.StringContainer$ResourceString", suppressError = true)
+            ?.getConstructor(Int::class.javaPrimitiveType)
+            ?.newInstance(resId)
     }
 
     private fun fixedString(text: String): Any? {
