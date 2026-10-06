@@ -24,6 +24,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
@@ -163,7 +164,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
                 if (!noDrawerMode) return@runAfter
 
                 val original = param.result as? List<*> ?: return@runAfter
-                val filtered = original.filterNot { it.getFieldSilently("labelResId") == allAppsLabel }
+                val filtered = original.filterNot { it.labelResId() == allAppsLabel }
                 if (filtered.size == original.size) return@runAfter
 
                 val returnType = (param.method as? Method)?.returnType ?: return@runAfter
@@ -202,13 +203,19 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     }
 
     private fun hookRemoval() {
-        findClass("com.android.launcher3.DeleteDropTarget", suppressError = true)
-            .hookMethod("supportsDrop")
-            .suppressError()
-            .runAfter { param ->
-                if (noDrawerMode && param.args[0].isProtectedFromRemoval()) {
-                    param.result = false
-                }
+        val deleteDropTargetClass = findClass("com.android.launcher3.DeleteDropTarget", suppressError = true)
+
+        listOf(deleteDropTargetClass, findClass("com.android.launcher3.ButtonDropTarget", suppressError = true))
+            .forEach { targetClass ->
+                targetClass
+                    .hookMethod("supportsDrop")
+                    .suppressError()
+                    .runAfter { param ->
+                        if (deleteDropTargetClass?.isInstance(param.thisObject) != true) return@runAfter
+                        if (noDrawerMode && param.args[0].isProtectedFromRemoval()) {
+                            param.result = false
+                        }
+                    }
             }
 
         val removeFactory = findClass(
@@ -763,7 +770,12 @@ class AppDrawerMode(context: Context) : ModPack(context) {
             return
         }
 
-        val taskClass = callbackTaskClass ?: return
+        val taskClass = callbackTaskClass
+        if (taskClass == null || !controller.hasMethod("scheduleCallbackTask")) {
+            reloadModel()
+            return
+        }
+
         val task = Proxy.newProxyInstance(taskClass.classLoader, arrayOf(taskClass)) { proxy, method, args ->
             when (method.name) {
                 "execute" -> {
@@ -781,6 +793,12 @@ class AppDrawerMode(context: Context) : ModPack(context) {
         }
 
         controller.callMethodSilently("scheduleCallbackTask", task)
+    }
+
+    private fun Any?.labelResId(): Int? {
+        return getFieldSilently("labelResId") as? Int
+            ?: getFieldSilently("id") as? Int
+            ?: getFieldSilently("label").getFieldSilently("resId") as? Int
     }
 
     private fun Any.taskContext(): Context {
