@@ -99,6 +99,27 @@
             android:title="@string/recents_disable_selection_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_recentsmeminfo"
+            android:summary="@string/recents_meminfo_summary"
+            android:title="@string/recents_meminfo_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_recentsmeminfozram"
+            android:summary="@string/recents_meminfo_zram_summary"
+            android:title="@string/recents_meminfo_zram_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_recentsmeminfochip"
+            android:summary="@string/recents_meminfo_chip_summary"
+            android:title="@string/recents_meminfo_chip_title"
+            app:iconSpaceReserved="false" />
+
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_recentsbackgroundopacity"
             android:title="@string/recents_background_opacity_title"

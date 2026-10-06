@@ -203,6 +203,13 @@
     <string name="recents_remove_screenshot_summary">Hides the screenshot button in the recent apps overview</string>
     <string name="recents_disable_selection_title">Disable selection</string>
     <string name="recents_disable_selection_summary">Hides the select button and turns off image and text selection on app previews</string>
+    <string name="recents_meminfo_title">Memory info</string>
+    <string name="recents_meminfo_summary">Show available and total memory below the recent apps</string>
+    <string name="recents_meminfo_zram_title">Include ZRAM</string>
+    <string name="recents_meminfo_zram_summary">Add the ZRAM swap size to the total memory</string>
+    <string name="recents_meminfo_chip_title">Memory info background</string>
+    <string name="recents_meminfo_chip_summary">Show a pill behind the memory info</string>
+    <string name="meminfo_text">%1$s available | %2$s total</string>
     <string name="freeform_gesture_title">Use gesture in recents to start freeform mode</string>
     <string name="freeform_gesture_summary">Swipe up from the app and release at the top of the recents screen to trigger freeform mode (requires freeform enabled in developer options)</string>
     <string name="freeform_gesture_progress_title">Freeform swipe threshold</string>

@@ -7,6 +7,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerTabs
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DisableDock
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconPacks
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
+import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsMemInfo
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WidgetResize
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
@@ -56,6 +57,7 @@ object EntryList {
         WidgetResize::class.java,
         DrawerSearchbar::class.java,
         ClearAllButton::class.java,
+        RecentsMemInfo::class.java,
         GridOptions::class.java,
         HideApps::class.java,
         ShortcutBadge::class.java,
