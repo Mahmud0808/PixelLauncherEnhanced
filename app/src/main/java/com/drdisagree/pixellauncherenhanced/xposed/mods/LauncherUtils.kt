@@ -3,6 +3,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.UserHandle
 import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
@@ -13,6 +14,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
@@ -159,6 +161,16 @@ class LauncherUtils(context: Context) : ModPack(context) {
                 invariantDeviceProfileInstance.callMethod("onConfigChanged", context)
             } else {
                 invariantDeviceProfileInstance.callMethod("onConfigChanged")
+            }
+        }
+
+        fun removeCachedIcons(packageName: String, user: UserHandle) {
+            val iconCache = iconCacheInstance ?: return
+
+            if (iconCache.hasMethod("removeIconsForPkg", UserHandle::class.java, String::class.java)) {
+                iconCache.callMethodSilently("removeIconsForPkg", user, packageName)
+            } else {
+                iconCache.callMethodSilently("removeIconsForPkg", packageName, user)
             }
         }
 

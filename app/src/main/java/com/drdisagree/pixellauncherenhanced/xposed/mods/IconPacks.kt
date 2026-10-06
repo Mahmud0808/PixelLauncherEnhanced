@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
 import android.os.SystemClock
+import android.os.UserHandle
 import android.os.UserManager
 import android.util.SparseArray
 import android.view.View
@@ -183,7 +184,8 @@ class IconPacks(context: Context) : ModPack(context) {
         if (changed.isEmpty()) return
 
         val components = changed.mapNotNull { ComponentName.unflattenFromString(it) }
-        val shortcutChanged = components.any { IconPackManager.isShortcut(it) }
+        val shortcutPackages = components.filter { IconPackManager.isShortcut(it) }.map { it.packageName }.toSet()
+        val shortcutChanged = shortcutPackages.isNotEmpty()
         val packages = components.filterNot { IconPackManager.isShortcut(it) }.map { it.packageName }.toSet()
 
         mainHandler.post {
@@ -192,6 +194,9 @@ class IconPacks(context: Context) : ModPack(context) {
             when {
                 model == null && modelCallbacksRef?.get() == null -> restartLauncher(mContext)
                 shortcutChanged && model != null -> {
+                    userProfiles().forEach { user ->
+                        shortcutPackages.forEach { LauncherUtils.removeCachedIcons(it, user) }
+                    }
                     if (model.hasMethod("forceReload", String::class.java)) {
                         model.callMethodSilently("forceReload", "pleEdit")
                     } else {
@@ -460,6 +465,10 @@ class IconPacks(context: Context) : ModPack(context) {
             }
         }
     }
+
+    private fun userProfiles(): List<UserHandle> = runCatching {
+        mContext.getSystemService(UserManager::class.java).userProfiles
+    }.getOrNull() ?: listOf(Process.myUserHandle())
 
     private fun refreshApps(appPackages: Collection<String>) {
         if (appPackages.isEmpty()) return
