@@ -8,16 +8,15 @@ import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.android.material.color.DynamicColors
 import com.drdisagree.pixellauncherenhanced.utils.RootShell
-import com.topjohnwu.superuser.Shell
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
 
     private var keepShowing = true
     private val runner = Runnable {
-        Shell.getShell { _: Shell? ->
-            val isRooted = Shell.isAppGrantedRoot() == java.lang.Boolean.TRUE
+        val isRooted = RootShell.isRootShell()
 
+        runOnUiThread {
             keepShowing = false
 
             startActivity(

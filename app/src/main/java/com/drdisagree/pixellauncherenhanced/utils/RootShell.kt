@@ -1,9 +1,13 @@
 package com.drdisagree.pixellauncherenhanced.utils
 
+import android.os.Handler
+import android.os.Looper
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.topjohnwu.superuser.Shell
 
 object RootShell {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     fun init() {
         Shell.enableVerboseLogging = BuildConfig.DEBUG
@@ -17,8 +21,16 @@ object RootShell {
         }
     }
 
+    fun isRootShell(): Boolean {
+        Shell.getCachedShell()?.takeIf { !it.isRoot }?.close()
+        return runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+    }
+
     fun checkRoot(callback: (Boolean) -> Unit) {
         init()
-        Shell.getShell { callback(Shell.isAppGrantedRoot() == true) }
+        Shell.EXECUTOR.execute {
+            val isRooted = isRootShell()
+            mainHandler.post { callback(isRooted) }
+        }
     }
 }

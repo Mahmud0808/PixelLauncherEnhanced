@@ -92,7 +92,7 @@ object HomePreviewLoader {
         val authority = launcherAuthority() ?: return null
 
         RootShell.init()
-        if (Shell.getShell().isRoot.not()) return null
+        if (!RootShell.isRootShell()) return null
 
         val background = loadWallpaper(context, width, height)
         val result = runCatching {

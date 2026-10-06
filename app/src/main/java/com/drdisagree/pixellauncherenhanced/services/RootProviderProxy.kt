@@ -8,6 +8,7 @@ import android.os.IBinder
 import android.os.RemoteException
 import com.drdisagree.pixellauncherenhanced.IRootProviderProxy
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.RootShell
 import com.topjohnwu.superuser.Shell
 
 class RootProviderProxy : Service() {
@@ -49,6 +50,7 @@ class RootProviderProxy : Service() {
 
         @Throws(RemoteException::class)
         private fun ensureEnvironment() {
+            if (!rootGranted) rootGranted = RootShell.isRootShell()
             if (!rootGranted) {
                 throw RemoteException("Root permission denied")
             }
