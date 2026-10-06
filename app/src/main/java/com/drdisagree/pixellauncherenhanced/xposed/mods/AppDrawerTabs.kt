@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.DrawableContainer
@@ -16,8 +17,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.os.UserHandle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.Gravity
@@ -25,13 +24,13 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_AT_BOTTOM
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.model.DrawerTab
@@ -54,6 +53,7 @@ import kotlin.math.abs
 class AppDrawerTabs(context: Context) : ModPack(context) {
 
     private var tabsEnabled = false
+    private var tabsAtBottom = false
     private var noDrawerMode = false
     private var tabs: List<DrawerTab> = emptyList()
     private var selectedTabId = DrawerTab.Type.ALL.key
@@ -61,8 +61,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
 
     private var containerRef: WeakReference<ViewGroup>? = null
     private var tabBar: TabBar? = null
-    private var searchEditTextRef: WeakReference<EditText>? = null
-    private var searchHasQuery = false
+    private var appsSourceRef: WeakReference<View>? = null
     private var gestureDetector: GestureDetector? = null
     private var swipeStartedOnBar = false
     private var overridingUsingTabs = false
@@ -79,12 +78,13 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             tabsEnabled = getBoolean(DRAWER_TABS_ENABLED, false)
+            tabsAtBottom = getBoolean(DRAWER_TABS_AT_BOTTOM, false)
             noDrawerMode = getBoolean(NO_DRAWER_MODE, false)
             tabs = DrawerTab.parse(getString(DRAWER_TABS, null))
         }
 
         when (key.firstOrNull()) {
-            DRAWER_TABS_ENABLED -> restartLauncher(mContext)
+            DRAWER_TABS_ENABLED, DRAWER_TABS_AT_BOTTOM -> restartLauncher(mContext)
             DRAWER_TABS -> mainHandler.post { onTabsChanged() }
         }
     }
@@ -146,8 +146,29 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     attachTabBar(container, layoutParams)
                 }
 
-                layoutParams.topMargin += barHeight(container)
-                view.layoutParams = layoutParams
+                if (!tabsAtBottom) {
+                    layoutParams.topMargin += barHeight(container)
+                    view.layoutParams = layoutParams
+                }
+            }
+
+        findClass($$"com.android.launcher3.allapps.ActivityAllAppsContainerView$AdapterHolder", suppressError = true)
+            .hookMethod("applyPadding")
+            .suppressError()
+            .runAfter { param ->
+                if (!barActive || !tabsAtBottom) return@runAfter
+                val list = param.thisObject.getFieldSilently("mRecyclerView") as? View ?: return@runAfter
+                val container = containerRef?.get() ?: return@runAfter
+                val extra = barHeight(container) + container.context.dp(BAR_BOTTOM_GAP_DP)
+
+                list.setPadding(list.paddingLeft, list.paddingTop, list.paddingRight, list.paddingBottom + extra)
+            }
+
+        containerClass
+            .hookMethod("setInsets", "dispatchApplyWindowInsets")
+            .suppressError()
+            .runAfter { param ->
+                if (barActive && tabsAtBottom) updateBottomMargin(param.thisObject as ViewGroup)
             }
 
         containerClass
@@ -169,11 +190,6 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     fallback?.let { selectTab(it, fromPager = true) }
                 }
             }
-
-        containerClass
-            .hookMethod("animateToSearchState", "reset", "onClearSearchResult")
-            .suppressError()
-            .runAfter { mainHandler.post { updateBarVisibility() } }
 
         containerClass
             .hookMethod("onInterceptTouchEvent")
@@ -321,24 +337,77 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             (tabBar?.parent as? ViewGroup)?.removeView(tabBar)
             tabBar = bar
             container.addView(bar)
-            watchSearchText(container)
-            header?.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-                bar.translationY = view.paddingTop.toFloat()
+            header?.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
                 alignWithNativeTabs(container, bar)
+            }
+            container.viewTreeObserver.addOnPreDrawListener {
+                if (tabBar === bar && container.isShown) syncBar(container, bar)
+                true
             }
         }
 
-        bar.layoutParams = RelativeLayout.LayoutParams(headerParams).apply {
-            width = ViewGroup.LayoutParams.MATCH_PARENT
-            height = barHeight(container)
-            leftMargin = 0
-            rightMargin = 0
+        bar.layoutParams = if (tabsAtBottom) {
+            RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, barHeight(container)).apply {
+                addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                bottomMargin = bottomMargin(container)
+            }
+        } else {
+            RelativeLayout.LayoutParams(headerParams).apply {
+                width = ViewGroup.LayoutParams.MATCH_PARENT
+                height = barHeight(container)
+                leftMargin = 0
+                rightMargin = 0
+            }
         }
-        bar.translationY = (header?.paddingTop ?: 0).toFloat()
 
+        appsSourceRef = null
         alignWithNativeTabs(container, bar)
         refreshBar()
-        updateBarVisibility()
+    }
+
+    private fun bottomMargin(container: ViewGroup): Int {
+        val insets = container.getFieldSilently("mInsets") as? Rect
+        return (insets?.bottom ?: 0) + container.context.dp(BAR_BOTTOM_GAP_DP)
+    }
+
+    private fun updateBottomMargin(container: ViewGroup) {
+        val bar = tabBar?.takeIf { it.parent === container } ?: return
+        val params = bar.layoutParams as? RelativeLayout.LayoutParams ?: return
+        val margin = bottomMargin(container)
+        if (params.bottomMargin == margin) return
+
+        params.bottomMargin = margin
+        bar.layoutParams = params
+    }
+
+    private fun appsSource(container: ViewGroup): View? {
+        appsSourceRef?.get()?.takeIf { it.parent != null }?.let { return it }
+
+        val source = container.callMethodSilently("getAppsRecyclerViewContainer") as? View
+            ?: container.getFieldSilently("mViewPager") as? View
+            ?: (container.getFieldSilently("mAH") as? List<*>)?.firstOrNull()?.getFieldSilently("mRecyclerView") as? View
+        appsSourceRef = source?.let { WeakReference(it) }
+        return source
+    }
+
+    private fun syncBar(container: ViewGroup, bar: TabBar) {
+        if (visibleTabs().size <= 1) {
+            if (bar.visibility != View.GONE) bar.visibility = View.GONE
+            return
+        }
+
+        val source = appsSource(container)
+        val alpha = if (source == null || source.visibility == View.VISIBLE) source?.alpha ?: 1f else 0f
+        val visibility = if (alpha > 0f) View.VISIBLE else View.INVISIBLE
+
+        if (bar.alpha != alpha) bar.alpha = alpha
+        if (bar.visibility != visibility) bar.visibility = visibility
+
+        if (!tabsAtBottom) {
+            val header = container.getFieldSilently("mHeader") as? View
+            val translation = (header?.paddingTop ?: 0) + (header?.translationY ?: 0f)
+            if (bar.translationY != translation) bar.translationY = translation
+        }
     }
 
     private fun alignWithNativeTabs(container: ViewGroup, bar: TabBar) {
@@ -376,57 +445,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         val bar = tabBar ?: return
         val visible = visibleTabs()
         bar.setTabs(visible, selectedTab()?.id)
-    }
-
-    private fun watchSearchText(container: ViewGroup) {
-        val editText = findSearchEditText(container) ?: return
-        if (searchEditTextRef?.get() === editText) return
-
-        searchEditTextRef = WeakReference(editText)
-        editText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            override fun afterTextChanged(s: Editable?) {
-                val hasQuery = !s.isNullOrEmpty()
-                if (hasQuery != searchHasQuery) {
-                    searchHasQuery = hasQuery
-                    updateBarVisibility()
-                }
-            }
-        })
-        searchHasQuery = !editText.text.isNullOrEmpty()
-    }
-
-    private fun findSearchEditText(container: ViewGroup): EditText? {
-        val roots = listOfNotNull(container.callMethodSilently("getSearchView") as? View, container)
-        roots.forEach { root ->
-            val pending = ArrayDeque<View>().apply { add(root) }
-            while (pending.isNotEmpty()) {
-                when (val view = pending.removeFirst()) {
-                    is EditText -> return view
-                    is ViewGroup -> for (i in 0 until view.childCount) pending.add(view.getChildAt(i))
-                }
-            }
-        }
-        return null
-    }
-
-    private fun updateBarVisibility() {
-        val bar = tabBar ?: return
-        val container = containerRef?.get() ?: return
-        watchSearchText(container)
-        val searching = searchHasQuery
-                || container.callMethodSilently("isSearching") as? Boolean
-                ?: container.getFieldSilently("mIsSearching") as? Boolean
-                ?: false
-
-        bar.animate().cancel()
-        if (searching) {
-            bar.animate().alpha(0f).setDuration(120).withEndAction { bar.visibility = View.INVISIBLE }
-        } else {
-            bar.visibility = View.VISIBLE
-            bar.animate().alpha(1f).setDuration(120)
-        }
+        containerRef?.get()?.let { syncBar(it, bar) }
     }
 
     private fun handleSwipe(container: ViewGroup, event: MotionEvent) {
@@ -575,7 +594,6 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     }
             }
 
-            visibility = if (visible.size > 1) visibility.takeIf { it != GONE } ?: VISIBLE else GONE
         }
 
         private fun matchTabRadius() {

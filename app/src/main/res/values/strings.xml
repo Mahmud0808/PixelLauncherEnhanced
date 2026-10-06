@@ -203,6 +203,8 @@
     <string name="section_drawer_tabs_title">Tabs</string>
     <string name="drawer_tabs_title">App drawer tabs</string>
     <string name="drawer_tabs_desc">Filter the app drawer by category or by your own tabs</string>
+    <string name="drawer_tabs_at_bottom_title">Tabs at the bottom</string>
+    <string name="drawer_tabs_at_bottom_desc">Float the tab bar above the bottom of the app drawer instead of below the search bar</string>
     <string name="fragment_drawer_tabs_title">App drawer tabs</string>
     <string name="drawer_tabs_new">New tab</string>
     <string name="drawer_tabs_new_hint">Tab name</string>
