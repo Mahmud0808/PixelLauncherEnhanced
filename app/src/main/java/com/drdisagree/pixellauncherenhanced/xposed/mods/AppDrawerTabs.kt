@@ -200,7 +200,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             }
 
         findClass("com.android.launcher3.allapps.AllAppsStore", suppressError = true)
-            .hookMethod("setApps")
+            .hookMethod("setApps", "notifyUpdate")
             .suppressError()
             .runAfter {
                 applicationInfoCache.clear()

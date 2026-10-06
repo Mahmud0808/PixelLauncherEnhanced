@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
+import android.util.TypedValue
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import java.util.concurrent.ConcurrentHashMap
 
@@ -39,6 +40,23 @@ object InjectedResources {
             .runBefore { param ->
                 val modResId = modResIds[param.args[0] as Int] ?: return@runBefore
                 param.result = modRes.getDrawable(modResId, null)
+            }
+
+        Resources::class.java
+            .hookMethod("getValue")
+            .parameters(Int::class.javaPrimitiveType, TypedValue::class.java, Boolean::class.javaPrimitiveType)
+            .runBefore { param ->
+                val modResId = modResIds[param.args[0] as Int] ?: return@runBefore
+                modRes.getValue(modResId, param.args[1] as TypedValue, param.args[2] as Boolean)
+                param.result = null
+            }
+
+        Resources::class.java
+            .hookMethod("getXml")
+            .parameters(Int::class.javaPrimitiveType)
+            .runBefore { param ->
+                val modResId = modResIds[param.args[0] as Int] ?: return@runBefore
+                param.result = modRes.getXml(modResId)
             }
     }
 }

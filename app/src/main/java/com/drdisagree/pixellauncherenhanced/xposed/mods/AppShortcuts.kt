@@ -195,13 +195,32 @@ class AppShortcuts(context: Context) : ModPack(context) {
             constructor.newInstance(*constructorArgs.toTypedArray()).apply {
                 val labelId = InjectedResources.idFor(action.labelRes)
                 setField("mIconResId", InjectedResources.idFor(action.iconRes))
-                setField("mLabelResId", labelId)
+                if (hasField("mLabelResId")) {
+                    setField("mLabelResId", labelId)
+                } else {
+                    setField("mLabel", fixedString(modRes.getString(action.labelRes)))
+                }
                 setFieldSilently("mAccessibilityActionId", labelId)
                 setAdditionalInstanceField(this, ACTION_KEY, action)
             }
         }.onFailure {
             log(this@AppShortcuts, it)
         }.getOrNull()
+    }
+
+    private fun fixedString(text: String): Any? {
+        return findClass($$"com.android.launcher3.popup.ui.StringContainer$FixedString", suppressError = true)
+            ?.getConstructor(String::class.java)
+            ?.newInstance(text)
+    }
+
+    private fun Any.hasField(name: String): Boolean {
+        var type: Class<*>? = javaClass
+        while (type != null) {
+            if (type.declaredFields.any { it.name == name }) return true
+            type = type.superclass
+        }
+        return false
     }
 
     private fun performAction(action: Action, context: Context, itemInfo: Any?) {
