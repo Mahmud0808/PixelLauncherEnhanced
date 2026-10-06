@@ -43,7 +43,7 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
             DashboardTile("icons", ScreenStyles.ICONS, R.string.dashboard_icons_desc, IconsMods::class.java)
         ),
         listOf(
-            DashboardTile("gestures", ScreenStyles.GESTURES, R.string.fragment_gestures_desc, GesturesMods::class.java),
+            DashboardTile("gestures", ScreenStyles.GESTURES, R.string.fragment_gestures_actions_desc, GesturesMods::class.java),
             DashboardTile("recents", ScreenStyles.RECENTS, R.string.dashboard_recents_desc, RecentsMods::class.java)
         ),
         listOf(

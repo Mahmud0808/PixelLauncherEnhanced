@@ -89,7 +89,8 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 
 | Feature                   | Pixel Launcher | Launcher3 Launcher |
 |---------------------------|:--------------:|:------------------:|
-| Double tap to sleep       |       ✅        |         ✅          |
+| Double tap actions        |       ✅        |         ✅          |
+| Pinch in and out actions  |       ✅        |         ✅          |
 | Hide gesture indicator    |       ✅        |         ✅          |
 | Hide navigation bar space |       ✅        |         ✅          |
 
@@ -168,7 +169,7 @@ This module is only compatible with devices using the following launcher package
 
 Root access is a requirement for the following features:
 
-- Double tap to sleep
+- Home screen gesture actions that turn off the screen, open the notifications, quick settings, recent apps or assistant, or take a screenshot
 
 - Kill app
 

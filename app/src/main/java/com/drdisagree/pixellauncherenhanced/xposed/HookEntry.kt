@@ -25,11 +25,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
 import java.util.Queue
+import java.util.concurrent.Executors
 import java.util.concurrent.CompletableFuture
 
 class HookEntry : ServiceConnection {
@@ -171,22 +171,27 @@ class HookEntry : ServiceConnection {
     }
 
     private fun forceConnectRootService() {
-        CoroutineScope(Dispatchers.Main).launch {
+        if (isConnectingRootService) return
+        isConnectingRootService = true
+
+        CoroutineScope(Dispatchers.IO).launch {
             val mUserManager = mContext.getSystemService(Context.USER_SERVICE) as? UserManager
+            var waitedForUnlock = false
 
-            withContext(Dispatchers.IO) {
-                while (mUserManager == null || !mUserManager.isUserUnlocked) {
-                    // device is still CE encrypted
-                    delay(2000)
-                }
-
-                delay(5000) // wait for the unlocked account to settle down a bit
-
-                while (rootProxyIPC == null) {
-                    connectRootService()
-                    delay(5000)
-                }
+            while (mUserManager == null || !mUserManager.isUserUnlocked) {
+                // device is still CE encrypted
+                waitedForUnlock = true
+                delay(2000)
             }
+
+            if (waitedForUnlock) delay(5000) // wait for the unlocked account to settle down a bit
+
+            while (rootProxyIPC == null) {
+                connectRootService()
+                delay(5000)
+            }
+
+            isConnectingRootService = false
         }
     }
 
@@ -210,13 +215,17 @@ class HookEntry : ServiceConnection {
     }
 
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-        rootProxyIPC = IRootProviderProxy.Stub.asInterface(service)
+        val proxy = IRootProviderProxy.Stub.asInterface(service)
+        rootProxyIPC = proxy
 
         synchronized(proxyQueue) {
             while (!proxyQueue.isEmpty()) {
-                try {
-                    proxyQueue.poll()!!.run(rootProxyIPC!!)
-                } catch (_: Throwable) {
+                val runnable = proxyQueue.poll()!!
+                proxyExecutor.execute {
+                    try {
+                        runnable.run(proxy)
+                    } catch (_: Throwable) {
+                    }
                 }
             }
         }
@@ -243,22 +252,33 @@ class HookEntry : ServiceConnection {
         val runningMods = ArrayList<ModPack>()
         var isChildProcess = false
 
+        @Volatile
         private var rootProxyIPC: IRootProviderProxy? = null
+
+        @Volatile
+        private var isConnectingRootService = false
         private val proxyQueue: Queue<ProxyRunnable> = LinkedList()
+        private val proxyExecutor = Executors.newSingleThreadExecutor()
 
         fun enqueueProxyCommand(runnable: ProxyRunnable) {
-            rootProxyIPC?.let {
-                try {
-                    runnable.run(it)
-                } catch (_: RemoteException) {
+            rootProxyIPC?.let { proxy ->
+                proxyExecutor.execute {
+                    try {
+                        runnable.run(proxy)
+                    } catch (_: RemoteException) {
+                    }
                 }
             } ?: run {
                 synchronized(proxyQueue) {
                     proxyQueue.add(runnable)
                 }
 
-                instance!!.forceConnectRootService()
+                instance?.forceConnectRootService()
             }
+        }
+
+        fun connectRootProxy() {
+            if (rootProxyIPC == null) instance?.forceConnectRootService()
         }
     }
 }

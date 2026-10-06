@@ -7,10 +7,34 @@
         android:title="@string/section_home_gestures_title"
         app:iconSpaceReserved="false">
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:key="xposed_doubletaptosleep"
-            android:summary="@string/double_tap_to_sleep_desc"
-            android:title="@string/double_tap_to_sleep_title"
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_double_tap_title"
+            android:entries="@array/gesture_action_str"
+            android:entryValues="@array/gesture_action_value"
+            android:key="xposed_gesturedoubletap"
+            android:summary="@string/gesture_double_tap_desc"
+            android:title="@string/gesture_double_tap_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_pinch_in_title"
+            android:entries="@array/gesture_action_str"
+            android:entryValues="@array/gesture_action_value"
+            android:key="xposed_gesturepinchin"
+            android:summary="@string/gesture_pinch_in_desc"
+            android:title="@string/gesture_pinch_in_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_pinch_out_title"
+            android:entries="@array/gesture_action_str"
+            android:entryValues="@array/gesture_action_value"
+            android:key="xposed_gesturepinchout"
+            android:summary="@string/gesture_pinch_out_desc"
+            android:title="@string/gesture_pinch_out_title"
             app:iconSpaceReserved="false" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
