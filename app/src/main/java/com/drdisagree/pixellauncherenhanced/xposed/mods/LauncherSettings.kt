@@ -75,7 +75,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
             $$"com.android.launcher3.SettingsActivity$LauncherSettingsFragment",
             $$"com.android.launcher3.settings.SettingsActivity$LauncherSettingsFragment"
         )
-        val featureFlagsClass = findClass("com.android.launcher3.config.FeatureFlags")
+        val featureFlagsClass = findClass("com.android.launcher3.config.FeatureFlags", suppressError = true)
 
         if (mContext.packageName == PIXEL_LAUNCHER_PACKAGE) {
             launcherSettingsFragmentClass

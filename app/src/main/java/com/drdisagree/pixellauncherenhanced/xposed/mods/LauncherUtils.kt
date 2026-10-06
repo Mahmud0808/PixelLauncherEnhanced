@@ -16,6 +16,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.resetCounter
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import kotlinx.coroutines.CoroutineScope
@@ -49,8 +50,7 @@ class LauncherUtils(context: Context) : ModPack(context) {
         BaseIconCacheClass
             .hookConstructor()
             .runAfter { param ->
-                mIconDb = param.thisObject.getAnyField("mIconDb", "iconDb")
-                mCache = param.thisObject.getAnyField("mCache", "cache")
+                iconCacheInstance = param.thisObject
             }
 
         LauncherAppStateClass
@@ -91,8 +91,9 @@ class LauncherUtils(context: Context) : ModPack(context) {
         private var LauncherAppStateCompanionClass: Class<*>? = null
 
         private var invariantDeviceProfileInstance: Any? = null
-        private var mIconDb: Any? = null
-        private var mCache: Any? = null
+        private var iconCacheInstance: Any? = null
+
+        private const val TAG = "LauncherUtils"
         private var mModel: Any? = null
 
         private var lastRestartTime = 0L
@@ -163,24 +164,28 @@ class LauncherUtils(context: Context) : ModPack(context) {
 
         fun reloadIcons() {
             Handler(Looper.getMainLooper()).post {
-                mCache.callMethod("clear")
+                val iconCache = iconCacheInstance
 
-                if (mIconDb.hasMethod("clear")) {
-                    mIconDb.callMethod("clear")
-                } else {
-                    mIconDb.getField("mOpenHelper").also { mOpenHelper ->
-                        mOpenHelper.callMethod(
-                            "clearDB",
-                            mOpenHelper.callMethod("getWritableDatabase")
-                        )
+                runCatching {
+                    iconCache.getAnyField("mCache", "cache").callMethod("clear")
+                }.onFailure { log(TAG, it) }
+
+                runCatching {
+                    val iconDb = iconCache.getAnyField("mIconDb", "iconDb")
+
+                    if (iconDb.hasMethod("clear")) {
+                        iconDb.callMethod("clear")
+                    } else {
+                        iconDb.getField("mOpenHelper").also { openHelper ->
+                            openHelper.callMethod("clearDB", openHelper.callMethod("getWritableDatabase"))
+                        }
                     }
-                }
+                }.onFailure { log(TAG, it) }
 
-                try {
-                    mModel.callMethod("forceReload")
-                } catch (_: Throwable) {
-                    mModel.callMethod("forceReload", "reloadIcons")
-                }
+                runCatching {
+                    runCatching { mModel.callMethod("forceReload") }
+                        .getOrElse { mModel.callMethod("forceReload", "reloadIcons") }
+                }.onFailure { log(TAG, it) }
             }
         }
     }

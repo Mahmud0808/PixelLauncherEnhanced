@@ -65,7 +65,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
             findClass("com.android.launcher3.uioverrides.states.BackgroundAppState")
         val overviewStateClass =
             findClass("com.android.launcher3.uioverrides.states.OverviewState")
-        val featureFlagsClass = findClass("com.android.launcher3.config.FeatureFlags")
+        val featureFlagsClass = findClass("com.android.launcher3.config.FeatureFlags", suppressError = true)
         val recentsStateClass = findClass("com.android.quickstep.fallback.RecentsState")
         val overviewActionsViewClass = findClass("com.android.quickstep.views.OverviewActionsView")
         val dismissAllTasksMethod: Method =
@@ -127,7 +127,8 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     elements = elements or FLOATING_SEARCH_BAR
                 }
 
-                if (featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean == true &&
+                val splitContextual = featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean ?: true
+                val splitSelecting = runCatching {
                     if (launcher.hasMethod("isSplitSelectionActive")) {
                         launcher.callMethod("isSplitSelectionActive") as Boolean
                     } else {
@@ -136,7 +137,9 @@ class ClearAllButton(context: Context) : ModPack(context) {
                             .getField("value")
                             .callMethod("booleanValue") as Boolean
                     }
-                ) {
+                }.getOrDefault(false)
+
+                if (splitContextual && splitSelecting) {
                     elements = elements and CLEAR_ALL_BUTTON.inv()
                 }
 
