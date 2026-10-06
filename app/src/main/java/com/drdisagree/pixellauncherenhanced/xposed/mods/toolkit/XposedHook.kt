@@ -885,6 +885,17 @@ fun Any?.getAnyField(vararg fieldNames: String): Any? {
     throw NoSuchFieldError("Field not found: ${fieldNames.joinToString()}")
 }
 
+fun Any?.getAnyFieldSilently(vararg fieldNames: String): Any? {
+    fieldNames.forEach { fieldName ->
+        try {
+            return XposedHelpers.getObjectField(this, fieldName)
+        } catch (_: Throwable) {
+        }
+    }
+
+    return null
+}
+
 fun Any?.setAnyField(value: Any?, vararg fieldNames: String) {
     fieldNames.forEach { fieldName ->
         try {

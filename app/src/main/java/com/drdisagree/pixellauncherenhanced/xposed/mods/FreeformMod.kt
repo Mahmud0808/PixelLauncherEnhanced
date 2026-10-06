@@ -68,7 +68,7 @@ class FreeformMod(context: Context) : ModPack(context) {
 
         // ── onCurrentShiftUpdated: hint view updates during gesture ──
         absSwipeClass
-            .hookMethod("onCurrentShiftUpdated")
+            .hookMethod("onCurrentShiftUpdated", "updateFinalShift")
             .runAfter { param ->
                 if (!freeformEnabled) return@runAfter
                 val mProgress = param.thisObject

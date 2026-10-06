@@ -9,7 +9,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_R
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -54,8 +54,8 @@ class GridOptions(context: Context) : ModPack(context) {
 
         fun Any.hookDeviceProfile() {
             val temp = getFieldSilently("iconSizePx") as? Int
-            val mHotseatProfile = getAnyField("mHotseatProfile", "hotseatProfile")
-            val mDisplayOptionSpec = getAnyField("mDisplayOptionSpec", "displayOptionSpec")
+            val mHotseatProfile = getAnyFieldSilently("mHotseatProfile", "hotseatProfile")
+            val mDisplayOptionSpec = getAnyFieldSilently("mDisplayOptionSpec", "displayOptionSpec")
 
             if (homeScreenGridColumns != 0) {
                 setFieldSilently("numShownHotseatIcons", homeScreenGridColumns)
@@ -66,7 +66,7 @@ class GridOptions(context: Context) : ModPack(context) {
                 setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
 
                 if (temp == null) {
-                    val mAllAppsProfile = getAnyField("mAllAppsProfile", "allAppsProfile")
+                    val mAllAppsProfile = getAnyFieldSilently("mAllAppsProfile", "allAppsProfile")
                     mAllAppsProfile.setFieldSilently("numShownAllAppsColumns", appDrawerGridColumns)
                 }
             }

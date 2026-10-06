@@ -123,7 +123,7 @@ class HideApps(context: Context) : ModPack(context) {
                 }
                 if (hybridHotseatOrganizerClassInstance == null) {
                     hybridHotseatOrganizerClassInstance =
-                        hotseatPredictionControllerInstance.getField("mHotseatOrganizer")
+                        hotseatPredictionControllerInstance.getFieldSilently("mHotseatOrganizer")
                 }
             }
 

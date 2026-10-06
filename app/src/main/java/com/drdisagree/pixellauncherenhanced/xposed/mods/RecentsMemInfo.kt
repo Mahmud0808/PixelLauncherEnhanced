@@ -120,7 +120,7 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
         fun updateVerticalMargin() {
             val params = layoutParams as? FrameLayout.LayoutParams ?: return
             val deviceProfile = container.getFieldSilently("mDp")
-            val claimedSpace = deviceProfile.callMethodSilently("getOverviewActionsClaimedSpaceBelow") as? Int
+            val claimedSpace = deviceProfile?.callMethodSilently("getOverviewActionsClaimedSpaceBelow") as? Int
                 ?: container.rootWindowInsets?.stableInsetBottom
                 ?: 0
 
@@ -137,8 +137,13 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
             if (isVisible && showMemInfo) startMonitoring() else stopMonitoring()
         }
 
+        private val actionButtonsId by lazy {
+            container.resources.getIdentifier("action_buttons", "id", container.context.packageName)
+        }
+
         private val actionButtons: View?
             get() = container.getFieldSilently("mActionButtons") as? View
+                ?: actionButtonsId.takeIf { it != 0 }?.let { container.findViewById(it) }
 
         private val preDrawListener = ViewTreeObserver.OnPreDrawListener {
             syncWithActionButtons()

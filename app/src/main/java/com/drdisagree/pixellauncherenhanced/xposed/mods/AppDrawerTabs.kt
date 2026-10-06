@@ -345,7 +345,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     private fun refreshLists(container: Any) {
         (container.getFieldSilently("mAH") as? List<*>)?.forEach { holder ->
             holder.getFieldSilently("mAppsList").callMethodSilently("onAppsUpdated")
-            holder.getFieldSilently("mRecyclerView").callMethodSilently("scrollToTop")
+            holder.getFieldSilently("mRecyclerView")?.callMethodSilently("scrollToTop")
         }
     }
 
