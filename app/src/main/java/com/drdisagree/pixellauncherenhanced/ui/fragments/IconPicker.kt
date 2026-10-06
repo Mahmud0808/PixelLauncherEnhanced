@@ -2,7 +2,6 @@ package com.drdisagree.pixellauncherenhanced.ui.fragments
 
 import android.content.ComponentName
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -19,6 +18,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -235,17 +235,14 @@ class IconPicker : Fragment() {
         row.findViewById<TextView>(R.id.choiceSummary).text = summary
         row.findViewById<MaterialRadioButton>(R.id.choiceRadio).isChecked = selected
         row.findViewById<View>(R.id.choiceChevron).visibility = if (chevron) View.VISIBLE else View.GONE
-        row.findViewById<ImageView>(R.id.choiceIcon).apply {
-            if (icon != null) {
-                imageTintList = null
-                setImageDrawable(icon)
-            } else {
-                setImageResource(if (chevron) R.drawable.ic_settings_icon_pack else R.drawable.ic_add)
-                imageTintList = ColorStateList.valueOf(
-                    MaterialColors.getColor(row, com.google.android.material.R.attr.colorOnSurfaceVariant)
-                )
+        row.findViewById<ImageView>(R.id.choiceIcon).setImageDrawable(
+            icon ?: ContextCompat.getDrawable(
+                row.context,
+                if (chevron) R.drawable.ic_settings_icon_pack else R.drawable.ic_add
+            )?.mutate()?.apply {
+                setTint(MaterialColors.getColor(row, com.google.android.material.R.attr.colorOnSurfaceVariant))
             }
-        }
+        )
         row.setOnClickListener { onClick() }
     }
 
