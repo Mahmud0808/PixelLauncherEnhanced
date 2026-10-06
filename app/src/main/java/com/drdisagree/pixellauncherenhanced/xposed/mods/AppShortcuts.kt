@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_EDIT_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_KILL_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_UNINSTALL_APP
@@ -47,7 +48,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
         UNINSTALL(R.drawable.ic_uninstall, R.string.uninstall_app)
     }
 
-    private var popupEditApp = true
+    private var popupEditApp = false
     private var popupKillApp = false
     private var popupUninstallApp = false
     private var recentsKillApp = false
@@ -59,7 +60,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
-            popupEditApp = getBoolean(POPUP_EDIT_APP, true)
+            popupEditApp = getBoolean(POPUP_EDIT_APP, false) && getBoolean(ICON_PACKS_ENABLED, false)
             popupKillApp = getBoolean(POPUP_KILL_APP, false)
             popupUninstallApp = getBoolean(POPUP_UNINSTALL_APP, false)
             recentsKillApp = getBoolean(RECENTS_KILL_APP, false)

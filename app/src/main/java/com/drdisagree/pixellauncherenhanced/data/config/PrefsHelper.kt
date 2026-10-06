@@ -27,6 +27,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_SWIPE_ACTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS_ENABLED
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_EDIT_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_DISABLE_SELECTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_MEMINFO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_MEMINFO_CHIP
@@ -55,6 +57,8 @@ object PrefsHelper {
             RECENTS_DISABLE_SELECTION -> isPixelLauncher
 
             FIXED_RECENTS_BUTTONS_WIDTH -> getBoolean(RECENTS_CLEAR_ALL_BUTTON)
+
+            POPUP_EDIT_APP -> getBoolean(ICON_PACKS_ENABLED)
 
             RECENTS_MEMINFO_ZRAM,
             RECENTS_MEMINFO_CHIP -> getBoolean(RECENTS_MEMINFO)

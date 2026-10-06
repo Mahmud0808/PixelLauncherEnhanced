@@ -14,6 +14,13 @@
             app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.IconPackSettings"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_popupeditapp"
+            android:summary="@string/popup_edit_app_desc"
+            android:title="@string/popup_edit_app_title"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
@@ -136,13 +143,6 @@
         android:key="xposed_app_popup_menu"
         android:title="@string/section_app_popup_title"
         app:iconSpaceReserved="false">
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:defaultValue="true"
-            android:key="xposed_popupeditapp"
-            android:summary="@string/popup_edit_app_desc"
-            android:title="@string/popup_edit_app_title"
-            app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_popupkillapp"
