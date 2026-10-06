@@ -46,7 +46,10 @@ class GridOptions(context: Context) : ModPack(context) {
 
     override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         val deviceProfileClass = findClass("com.android.launcher3.DeviceProfile")
-        val deviceProfileBuilderClass = findClass($$"com.android.launcher3.DeviceProfile$Builder")
+        val deviceProfileBuilderClass = findClass(
+            $$"com.android.launcher3.DeviceProfile$Builder",
+            "com.android.launcher3.deviceprofile.DeviceProfileBuilder"
+        )
         val invariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
 
         fun Any.hookDeviceProfile() {
@@ -112,25 +115,38 @@ class GridOptions(context: Context) : ModPack(context) {
                 }
             }
 
+        fun Any?.patchGrid() {
+            val closestProfile = this?.getFieldSilently("grid") ?: return
+            val displayOptionSpecs = listOfNotNull(
+                closestProfile.getFieldSilently("displayOptionSpec"),
+                closestProfile.getFieldSilently("twoPanelDisplayOptionSpec")
+            )
+
+            if (homeScreenGridRows != 0) {
+                closestProfile.setFieldSilently("numRows", homeScreenGridRows)
+            }
+            if (homeScreenGridColumns != 0) {
+                closestProfile.setFieldSilently("numColumns", homeScreenGridColumns)
+                closestProfile.setFieldSilently("numHotseatIcons", homeScreenGridColumns)
+                closestProfile.setFieldSilently("numDatabaseHotseatIcons", homeScreenGridColumns)
+                displayOptionSpecs.forEach { it.setFieldSilently("numShownHotseatIcons", homeScreenGridColumns) }
+            }
+            if (appDrawerGridColumns != 0) {
+                closestProfile.setFieldSilently("numAllAppsColumns", appDrawerGridColumns)
+                closestProfile.setFieldSilently("numDatabaseAllAppsColumns", appDrawerGridColumns)
+                displayOptionSpecs.forEach { it.setFieldSilently("numAllAppsColumns", appDrawerGridColumns) }
+            }
+        }
+
         invariantDeviceProfileClass
             .hookMethod("invDistWeightedInterpolate")
-            .runAfter { param ->
-                val displayOption = param.result
-                val closestProfile = displayOption.getField("grid")
+            .suppressError()
+            .runAfter { param -> param.result.patchGrid() }
 
-                if (homeScreenGridRows != 0) {
-                    closestProfile.setFieldSilently("numRows", homeScreenGridRows)
-                }
-                if (homeScreenGridColumns != 0) {
-                    closestProfile.setFieldSilently("numColumns", homeScreenGridColumns)
-                    closestProfile.setFieldSilently("numHotseatIcons", homeScreenGridColumns)
-                    closestProfile.setFieldSilently("numDatabaseHotseatIcons", homeScreenGridColumns)
-                }
-                if (appDrawerGridColumns != 0) {
-                    closestProfile.setFieldSilently("numAllAppsColumns", homeScreenGridColumns)
-                    closestProfile.setFieldSilently("numDatabaseAllAppsColumns", homeScreenGridColumns)
-                }
-            }
+        findClass("com.android.launcher3.deviceprofile.parser.DisplayOption", suppressError = true)
+            .hookMethod("parseWeightedPredefinedDisplayOption")
+            .suppressError()
+            .runAfter { param -> param.result.patchGrid() }
 
         deviceProfileClass
             .hookMethod(
