@@ -138,6 +138,13 @@
         app:iconSpaceReserved="false">
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="xposed_popupeditapp"
+            android:summary="@string/popup_edit_app_desc"
+            android:title="@string/popup_edit_app_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_popupkillapp"
             android:summary="@string/popup_kill_app_desc"
             android:title="@string/popup_kill_app_title"

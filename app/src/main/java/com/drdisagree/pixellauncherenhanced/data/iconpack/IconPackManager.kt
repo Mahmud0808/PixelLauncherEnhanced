@@ -14,6 +14,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
 import android.os.Build
 import android.util.Base64
+import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
 import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
@@ -31,10 +32,27 @@ object IconPackManager {
         val iconPacks: List<String> = emptyList(),
         val themedIconPacks: List<String> = emptyList(),
         val maskUnsupported: Boolean = false,
-        val overrides: Map<String, String> = emptyMap()
+        val overrides: Map<String, String> = emptyMap(),
+        val homeOverrides: Map<String, String> = emptyMap(),
+        val themedOverrides: Map<String, String> = emptyMap(),
+        val homeThemedOverrides: Map<String, String> = emptyMap(),
+        val labels: Map<String, String> = emptyMap()
     ) {
         val isActive: Boolean
-            get() = iconPacks.isNotEmpty() || themedIconPacks.isNotEmpty() || overrides.isNotEmpty()
+            get() = iconPacks.isNotEmpty() || themedIconPacks.isNotEmpty() || overrides.isNotEmpty() ||
+                    homeOverrides.isNotEmpty() || themedOverrides.isNotEmpty() || homeThemedOverrides.isNotEmpty()
+
+        fun overridesFor(slot: IconSlot): Map<String, String> = when (slot) {
+            IconSlot.DRAWER -> overrides
+            IconSlot.HOME -> homeOverrides
+            IconSlot.THEMED -> themedOverrides
+            IconSlot.THEMED_HOME -> homeThemedOverrides
+        }
+
+        fun hasHomeOverride(component: String) = component in homeOverrides || component in homeThemedOverrides
+
+        fun isCustomized(component: String) =
+            IconSlot.entries.any { component in overridesFor(it) } || component in labels
     }
 
     enum class Source { PACK, MASK, CUSTOM, ORIGINAL }
@@ -54,10 +72,12 @@ object IconPackManager {
     private const val THEMED_ICON_INSET = 0.28f
     private const val SHORTCUT_PREFIX = "shortcut:"
     private const val LEGACY_SHORTCUT_PREFIX = "legacy:"
-    private const val SIGNATURE_VERSION = 7
+    private const val SIGNATURE_VERSION = 8
+    private const val CUSTOM_ICON_KEY_PREFIX = "xposed_customicon_"
 
     const val OVERRIDE_ORIGINAL = "original"
     const val OVERRIDE_CUSTOM = "custom"
+    const val OVERRIDE_NONE = "none"
     private const val OVERRIDE_PACK_PREFIX = "pack:"
 
     private val packs = ConcurrentHashMap<String, IconPack>()
@@ -121,17 +141,7 @@ object IconPackManager {
         when (val override = config.overrides[key]) {
             null -> Unit
             OVERRIDE_ORIGINAL -> return null
-            OVERRIDE_CUSTOM -> customIcon(key)?.let { bitmap ->
-                return Resolved(adaptiveFromImage(context, bitmap), Source.CUSTOM)
-            }
-
-            else -> if (override.startsWith(OVERRIDE_PACK_PREFIX)) {
-                val (pkg, name) = override.removePrefix(OVERRIDE_PACK_PREFIX).split('|', limit = 2)
-                    .let { it.getOrNull(0).orEmpty() to it.getOrNull(1).orEmpty() }
-                pack(context, pkg)?.loadDrawable(name, density)?.let {
-                    return Resolved(PackIconDrawable.wrap(context, it), Source.PACK, pkg)
-                }
-            }
+            else -> resolveValue(context, override, density, customIcon(key))?.let { return it }
         }
 
         config.iconPacks.forEach { pkg ->
@@ -153,6 +163,65 @@ object IconPackManager {
         }
 
         return null
+    }
+
+    fun resolveValue(context: Context, value: String, density: Int, customBitmap: Bitmap?): Resolved? {
+        if (value == OVERRIDE_CUSTOM) {
+            return customBitmap?.let { Resolved(adaptiveFromImage(context, it), Source.CUSTOM) }
+        }
+
+        val (pkg, name) = packDrawable(value) ?: return null
+        return pack(context, pkg)?.loadDrawable(name, density)?.let {
+            Resolved(PackIconDrawable.wrap(context, it), Source.PACK, pkg)
+        }
+    }
+
+    fun themedMonochrome(
+        context: Context,
+        component: ComponentName,
+        value: String?,
+        config: Config,
+        density: Int,
+        original: Drawable?,
+        customBitmap: Bitmap?
+    ): Drawable? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
+
+        return when (value) {
+            null -> themedLayer(context, component, config, density) ?: (original as? AdaptiveIconDrawable)?.monochrome
+            OVERRIDE_NONE -> null
+            OVERRIDE_ORIGINAL -> (original as? AdaptiveIconDrawable)?.monochrome
+            OVERRIDE_CUSTOM -> customBitmap?.let { InsetDrawable(BitmapDrawable(context.resources, it), THEMED_ICON_INSET) }
+            else -> packDrawable(value)?.let { (pkg, name) ->
+                pack(context, pkg)?.loadDrawable(name, density)?.let { glyph ->
+                    if (glyph is AdaptiveIconDrawable) glyph.monochrome ?: glyph.foreground else InsetDrawable(glyph, THEMED_ICON_INSET)
+                }
+            }
+        }
+    }
+
+    fun withMonochrome(icon: Drawable, monochrome: Drawable): Drawable {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return icon
+
+        val base = icon as? AdaptiveIconDrawable ?: AdaptiveIconDrawable(
+            ColorDrawable(Color.TRANSPARENT),
+            InsetDrawable(icon, AdaptiveIconDrawable.getExtraInsetFraction() / (1 + 2 * AdaptiveIconDrawable.getExtraInsetFraction()))
+        )
+
+        return AdaptiveIconDrawable(base.background, base.foreground, monochrome)
+    }
+
+    fun withoutMonochrome(icon: Drawable): Drawable {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return icon
+        val adaptive = icon as? AdaptiveIconDrawable ?: return icon
+        if (adaptive.monochrome == null) return icon
+        return AdaptiveIconDrawable(adaptive.background, adaptive.foreground)
+    }
+
+    private fun packDrawable(value: String): Pair<String, String>? {
+        if (!value.startsWith(OVERRIDE_PACK_PREFIX)) return null
+        return value.removePrefix(OVERRIDE_PACK_PREFIX).split('|', limit = 2)
+            .let { it.getOrNull(0).orEmpty() to it.getOrNull(1).orEmpty() }
     }
 
     fun themedLayer(context: Context, component: ComponentName, config: Config, density: Int): Drawable? {
@@ -179,13 +248,7 @@ object IconPackManager {
 
     fun withThemedIcon(context: Context, component: ComponentName, icon: Drawable, config: Config, density: Int): Drawable? {
         val monochrome = themedLayer(context, component, config, density) ?: return null
-
-        val base = icon as? AdaptiveIconDrawable ?: AdaptiveIconDrawable(
-            ColorDrawable(Color.TRANSPARENT),
-            InsetDrawable(icon, AdaptiveIconDrawable.getExtraInsetFraction() / (1 + 2 * AdaptiveIconDrawable.getExtraInsetFraction()))
-        )
-
-        return AdaptiveIconDrawable(base.background, base.foreground, monochrome)
+        return withMonochrome(icon, monochrome)
     }
 
     fun adaptiveFromImage(context: Context, bitmap: Bitmap): Drawable {
@@ -198,17 +261,29 @@ object IconPackManager {
         )
     }
 
-    fun signature(config: Config, customIconKeys: Collection<String>, themedMode: Boolean): String {
+    fun signature(config: Config, themedMode: Boolean): String {
         val raw = buildString {
             append(SIGNATURE_VERSION).append('|')
             append(themedMode).append('|')
             append(config.iconPacks.joinToString(","))
             append('|').append(config.themedIconPacks.joinToString(","))
             append('|').append(config.maskUnsupported)
-            append('|').append(config.overrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" })
-            append('|').append(customIconKeys.sorted().joinToString(","))
         }
         return "ple:" + hash(raw).take(12)
+    }
+
+    fun packageStamps(config: Config, customHashes: Map<String, Int>, slots: List<IconSlot>): Map<String, String> {
+        val entries = HashMap<String, MutableList<String>>()
+
+        slots.forEach { slot ->
+            config.overridesFor(slot).forEach { (component, value) ->
+                val pkg = ComponentName.unflattenFromString(component)?.packageName ?: return@forEach
+                val custom = customHashes[slot.customKey(component)] ?: 0
+                entries.getOrPut(pkg) { mutableListOf() }.add("${slot.name}|$component|$value|$custom")
+            }
+        }
+
+        return entries.mapValues { (_, values) -> "ple:" + hash(values.sorted().joinToString(",")).take(10) }
     }
 
     fun overrideForPack(packageName: String, drawable: String) = "$OVERRIDE_PACK_PREFIX$packageName|$drawable"
@@ -257,7 +332,9 @@ object IconPackManager {
         }
     }.getOrDefault(emptyList())
 
-    fun customIconKey(component: String) = "xposed_customicon_" + hash(component).take(16)
+    fun customIconKey(component: String) = CUSTOM_ICON_KEY_PREFIX + hash(component).take(16)
+
+    fun isCustomIconKey(key: String) = key.startsWith(CUSTOM_ICON_KEY_PREFIX)
 
     fun encodeBitmap(bitmap: Bitmap): String {
         val output = java.io.ByteArrayOutputStream()

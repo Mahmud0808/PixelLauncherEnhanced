@@ -1,42 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/Widget.Material3.CardView.Filled"
-    android:stateListAnimator="@animator/press_scale"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:checkable="true"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="?attr/colorSurfaceContainer"
-    app:cardCornerRadius="@dimen/ui_container_radius"
-    app:checkedIconTint="?attr/colorPrimary"
-    app:strokeWidth="2dp">
+    android:gravity="center_vertical"
+    android:minHeight="80dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="@dimen/preference_padding_horizontal"
+    android:paddingVertical="14dp">
+
+    <ImageView
+        android:id="@+id/choiceIcon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@android:string/untitled"
+        android:scaleType="fitCenter" />
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="16dp">
-
-        <ImageView
-            android:id="@+id/choiceIcon"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:contentDescription="@android:string/untitled"
-            android:scaleType="fitCenter" />
+        android:layout_marginStart="18dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/choiceLabel"
-            style="?attr/textAppearanceTitleSmall"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:maxLines="2"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="?attr/colorOnSurface" />
 
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/choiceSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+    <ImageView
+        android:id="@+id/choiceChevron"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_arrow_right"
+        android:visibility="gone"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+    <com.google.android.material.radiobutton.MaterialRadioButton
+        android:id="@+id/choiceRadio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:background="@null"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:minWidth="0dp"
+        android:minHeight="0dp" />
+
+</LinearLayout>

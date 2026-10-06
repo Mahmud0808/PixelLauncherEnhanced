@@ -10,11 +10,14 @@ import android.os.Process
 import android.os.UserHandle
 import android.view.View
 import android.widget.Toast
+import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_EDIT_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_KILL_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_UNINSTALL_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_KILL_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_UNINSTALL_APP
+import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -39,10 +42,12 @@ import java.util.stream.Stream
 class AppShortcuts(context: Context) : ModPack(context) {
 
     private enum class Action(val iconRes: Int, val labelRes: Int) {
+        EDIT(R.drawable.ic_edit, R.string.popup_edit),
         KILL(R.drawable.ic_kill_app, R.string.kill_app),
         UNINSTALL(R.drawable.ic_uninstall, R.string.uninstall_app)
     }
 
+    private var popupEditApp = true
     private var popupKillApp = false
     private var popupUninstallApp = false
     private var recentsKillApp = false
@@ -54,6 +59,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
+            popupEditApp = getBoolean(POPUP_EDIT_APP, true)
             popupKillApp = getBoolean(POPUP_KILL_APP, false)
             popupUninstallApp = getBoolean(POPUP_UNINSTALL_APP, false)
             recentsKillApp = getBoolean(RECENTS_KILL_APP, false)
@@ -135,6 +141,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 @Suppress("UNCHECKED_CAST")
                 val original = param.result as? Stream<Any?> ?: return@runAfter
                 val added = buildList {
+                    if (popupEditApp) add(popupFactories[Action.EDIT])
                     if (popupKillApp) add(popupFactories[Action.KILL])
                     if (popupUninstallApp) add(popupFactories[Action.UNINSTALL])
                 }.filterNotNull()
@@ -179,6 +186,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
         val packageName = itemInfo.packageName() ?: return null
 
         if (packageName == mContext.packageName) return null
+        if (action == Action.EDIT && editTarget(itemInfo) == null) return null
         if (action == Action.UNINSTALL && !isUninstallable(packageName, itemInfo.user())) {
             return null
         }
@@ -228,6 +236,25 @@ class AppShortcuts(context: Context) : ModPack(context) {
         val user = itemInfo.user()
 
         when (action) {
+            Action.EDIT -> {
+                val component = editTarget(itemInfo) ?: return
+                val container = itemInfo.getFieldSilently("container") as? Int ?: -1
+                val title = itemInfo.getFieldSilently("title") as? CharSequence
+
+                runCatching {
+                    context.startActivity(
+                        Intent()
+                            .setComponent(ComponentName(BuildConfig.APPLICATION_ID, EDITOR_ACTIVITY))
+                            .putExtra(EXTRA_COMPONENT, component.flattenToString())
+                            .putExtra(EXTRA_LABEL, title?.toString())
+                            .putExtra(EXTRA_HOME, container >= 0 || container in HOME_CONTAINERS)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }.onFailure {
+                    log(this@AppShortcuts, it)
+                }
+            }
+
             Action.KILL -> {
                 val userId = user.callMethodSilently("getIdentifier") as? Int ?: user.hashCode()
                 enqueueProxyCommand { proxy ->
@@ -283,11 +310,35 @@ class AppShortcuts(context: Context) : ModPack(context) {
             ?: (getFieldSilently("intent") as? Intent)?.let { it.component?.packageName ?: it.`package` }
     }
 
+    private fun editTarget(itemInfo: Any?): ComponentName? {
+        val packageName = itemInfo.packageName() ?: return null
+
+        return when (itemInfo.getFieldSilently("itemType")) {
+            ITEM_TYPE_APPLICATION -> itemInfo.callMethodSilently("getTargetComponent") as? ComponentName
+            ITEM_TYPE_DEEP_SHORTCUT -> {
+                val id = itemInfo.callMethodSilently("getDeepShortcutId") as? String
+                    ?: (itemInfo.getFieldSilently("intent") as? Intent)?.getStringExtra(EXTRA_SHORTCUT_ID)
+                    ?: return null
+                IconPackManager.shortcutComponent(packageName, id)
+            }
+
+            else -> null
+        }
+    }
+
     private fun Any?.user(): UserHandle {
         return getFieldSilently("user") as? UserHandle ?: Process.myUserHandle()
     }
 
     companion object {
         private const val ACTION_KEY = "plenhanced_app_shortcut_action"
+        private const val EDITOR_ACTIVITY = "${BuildConfig.APPLICATION_ID}.ui.activities.AppEditorActivity"
+        private const val EXTRA_COMPONENT = "component"
+        private const val EXTRA_LABEL = "label"
+        private const val EXTRA_HOME = "home"
+        private const val EXTRA_SHORTCUT_ID = "shortcut_id"
+        private const val ITEM_TYPE_APPLICATION = 0
+        private const val ITEM_TYPE_DEEP_SHORTCUT = 6
+        private val HOME_CONTAINERS = setOf(-100, -101, -103)
     }
 }

@@ -2,31 +2,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:paddingHorizontal="8dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="4dp">
+    android:orientation="vertical">
 
     <include
         android:id="@+id/choiceFollow"
         layout="@layout/view_icon_choice"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1" />
+        android:layout_marginBottom="2dp" />
 
     <include
         android:id="@+id/choiceOriginal"
         layout="@layout/view_icon_choice"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="8dp"
-        android:layout_weight="1" />
+        android:layout_marginBottom="2dp" />
+
+    <include
+        android:id="@+id/choicePack"
+        layout="@layout/view_icon_choice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp" />
 
     <include
         android:id="@+id/choiceCustom"
         layout="@layout/view_icon_choice"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

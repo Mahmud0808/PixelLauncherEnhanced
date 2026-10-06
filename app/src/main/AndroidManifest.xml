@@ -36,6 +36,15 @@
             android:exported="false"
             android:theme="@style/Theme.PixelLauncherEnhanced" />
 
+        <activity
+            android:name=".ui.activities.AppEditorActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/Theme.PixelLauncherEnhanced.Sheet"
+            android:windowSoftInputMode="adjustResize" />
+
         <service
             android:name=".services.RootProviderProxy"
             android:exported="true"

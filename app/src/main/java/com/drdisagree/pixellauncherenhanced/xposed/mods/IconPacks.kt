@@ -17,6 +17,7 @@ import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.ShortcutInfo
 import android.graphics.Canvas
@@ -28,6 +29,10 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_OVERRIDES
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_OVERRIDES_HOME
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_THEMED_OVERRIDES
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_THEMED_OVERRIDES_HOME
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.LABEL_OVERRIDES
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLIED
@@ -36,11 +41,13 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_MASK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
+import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.ThemedPackIconDrawable
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.newInstance
@@ -53,6 +60,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
@@ -69,6 +77,10 @@ class IconPacks(context: Context) : ModPack(context) {
     private var themedMode = false
     private var signature = ""
     private val customIcons = ConcurrentHashMap<String, Bitmap>()
+    private val customHashes = ConcurrentHashMap<String, Int>()
+    private var packageStamps: Map<String, String> = emptyMap()
+    private var itemStamps: Map<String, String> = emptyMap()
+    private val homeBitmaps = ConcurrentHashMap<String, Any>()
     private val iconSources = ConcurrentHashMap<String, MutableSet<String>>()
     private var launcherModelRef: WeakReference<Any>? = null
     private var modelCallbacksRef: WeakReference<Any>? = null
@@ -88,15 +100,25 @@ class IconPacks(context: Context) : ModPack(context) {
         }
         if (key.firstOrNull() == PINNED_SHORTCUTS) return
 
+        val changedKey = key.firstOrNull()
+        val previousStamps = itemStamps
+
         Xprefs.apply {
             pendingApply = getLong(ICON_PACK_APPLY, 0L).takeIf { it != getLong(ICON_PACK_APPLIED, 0L) } ?: 0L
             themedMode = getBoolean(HOME_THEMED_ICONS, false)
+            val labels = IconPackManager.parseOverrides(getString(LABEL_OVERRIDES, null))
+
+            customIcons.clear()
+            customHashes.clear()
+            homeBitmaps.clear()
 
             if (!getBoolean(ICON_PACKS_ENABLED, false)) {
-                config = IconPackManager.Config()
-                customIcons.clear()
+                config = IconPackManager.Config(labels = labels)
                 signature = ""
-                if (key.firstOrNull() == ICON_PACKS_ENABLED) applyIcons()
+                packageStamps = emptyMap()
+                itemStamps = computeItemStamps()
+                if (changedKey == ICON_PACKS_ENABLED) applyIcons()
+                else if (changedKey == LABEL_OVERRIDES) refreshEdited(previousStamps, itemStamps)
                 return
             }
 
@@ -104,24 +126,81 @@ class IconPacks(context: Context) : ModPack(context) {
                 iconPacks = IconPackManager.parseList(getString(ICON_PACKS, null)),
                 themedIconPacks = IconPackManager.parseList(getString(THEMED_ICON_PACKS, null)),
                 maskUnsupported = getBoolean(ICON_PACK_MASK, false),
-                overrides = IconPackManager.parseOverrides(getString(ICON_OVERRIDES, null))
+                overrides = IconPackManager.parseOverrides(getString(ICON_OVERRIDES, null)),
+                homeOverrides = IconPackManager.parseOverrides(getString(ICON_OVERRIDES_HOME, null)),
+                themedOverrides = IconPackManager.parseOverrides(getString(ICON_THEMED_OVERRIDES, null)),
+                homeThemedOverrides = IconPackManager.parseOverrides(getString(ICON_THEMED_OVERRIDES_HOME, null)),
+                labels = labels
             )
 
-            customIcons.clear()
-            config.overrides
-                .filterValues { it == IconPackManager.OVERRIDE_CUSTOM }
-                .keys
-                .forEach { component ->
-                    IconPackManager.decodeBitmap(getString(IconPackManager.customIconKey(component), null))
-                        ?.let { customIcons[component] = it }
-                }
+            IconSlot.entries.forEach { slot ->
+                config.overridesFor(slot)
+                    .filterValues { it == IconPackManager.OVERRIDE_CUSTOM }
+                    .keys
+                    .forEach { component ->
+                        val customKey = slot.customKey(component)
+                        val encoded = getString(IconPackManager.customIconKey(customKey), null) ?: return@forEach
+                        IconPackManager.decodeBitmap(encoded)?.let {
+                            customIcons[customKey] = it
+                            customHashes[customKey] = encoded.hashCode()
+                        }
+                    }
+            }
         }
 
-        signature = IconPackManager.signature(config, customIcons.keys, themedMode)
+        signature = IconPackManager.signature(config, themedMode)
+        packageStamps = IconPackManager.packageStamps(config, customHashes, listOf(IconSlot.DRAWER, IconSlot.THEMED))
+        itemStamps = computeItemStamps()
 
-        when (key.firstOrNull()) {
-            ICON_PACKS_ENABLED,
-            ICON_PACK_APPLY -> applyIcons()
+        when {
+            changedKey == ICON_PACKS_ENABLED || changedKey == ICON_PACK_APPLY -> applyIcons()
+            changedKey != null && isPerAppKey(changedKey) -> refreshEdited(previousStamps, itemStamps)
+        }
+    }
+
+    private fun isPerAppKey(key: String) =
+        key == LABEL_OVERRIDES || IconPackManager.isCustomIconKey(key) || IconSlot.entries.any { it.prefKey == key }
+
+    private fun computeItemStamps(): Map<String, String> {
+        val stamps = HashMap<String, StringBuilder>()
+
+        IconSlot.entries.forEach { slot ->
+            config.overridesFor(slot).forEach { (component, value) ->
+                stamps.getOrPut(component) { StringBuilder() }
+                    .append(slot.name).append('=').append(value).append(':')
+                    .append(customHashes[slot.customKey(component)] ?: 0).append(';')
+            }
+        }
+        config.labels.forEach { (component, label) ->
+            stamps.getOrPut(component) { StringBuilder() }.append("label=").append(label)
+        }
+
+        return stamps.mapValues { it.value.toString() }
+    }
+
+    private fun refreshEdited(previous: Map<String, String>, current: Map<String, String>) {
+        val changed = (previous.keys + current.keys).filter { previous[it] != current[it] }
+        if (changed.isEmpty()) return
+
+        val components = changed.mapNotNull { ComponentName.unflattenFromString(it) }
+        val shortcutChanged = components.any { IconPackManager.isShortcut(it) }
+        val packages = components.filterNot { IconPackManager.isShortcut(it) }.map { it.packageName }.toSet()
+
+        mainHandler.post {
+            val model = launcherModelRef?.get()
+
+            when {
+                model == null && modelCallbacksRef?.get() == null -> restartLauncher(mContext)
+                shortcutChanged && model != null -> {
+                    if (model.hasMethod("forceReload", String::class.java)) {
+                        model.callMethodSilently("forceReload", "pleEdit")
+                    } else {
+                        model.callMethodSilently("forceReload")
+                    }
+                }
+
+                else -> refreshApps(packages)
+            }
         }
     }
 
@@ -171,8 +250,40 @@ class IconPacks(context: Context) : ModPack(context) {
         findClass("com.android.launcher3.model.LoaderCursor", suppressError = true)
             .hookMethod("checkAndAddItem")
             .suppressError()
-            .runBefore { param ->
-                if (config.isActive) applyLegacyShortcutOverride(param.args[0])
+            .runBefore { param -> applyLegacyShortcutOverride(param.args[0]) }
+
+        findClass("com.android.launcher3.icons.IconCache", suppressError = true)
+            .hookMethod("applyCacheEntry")
+            .suppressError()
+            .runAfter { param ->
+                if (config.labels.isEmpty()) return@runAfter
+                val info = param.args.getOrNull(1) ?: return@runAfter
+                applyLabelOverride(info, info.callMethodSilently("getTargetComponent") as? ComponentName)
+            }
+
+        findClass("com.android.launcher3.model.data.WorkspaceItemInfo", suppressError = true)
+            .hookMethod("updateFromDeepShortcutInfo")
+            .suppressError()
+            .runAfter { param ->
+                if (config.labels.isEmpty()) return@runAfter
+                val shortcut = param.args.getOrNull(0) as? ShortcutInfo ?: return@runAfter
+                applyLabelOverride(param.thisObject, IconPackManager.shortcutComponent(shortcut.`package`, shortcut.id))
+            }
+
+        findClass("com.android.launcher3.model.data.ItemInfoWithIcon", suppressError = true)
+            ?.declaredMethods
+            ?.filter { it.name == "newIcon" }
+            ?.forEach { method ->
+                MethodHookHelper(method)
+                    .runBefore { param ->
+                        val home = homeBitmapFor(param.thisObject) ?: return@runBefore
+                        param.setObjectExtra(HOME_ORIGINAL_BITMAP, param.thisObject.getFieldSilently("bitmap"))
+                        param.thisObject.setField("bitmap", home)
+                    }
+                    .runAfter { param ->
+                        val original = param.getObjectExtra(HOME_ORIGINAL_BITMAP) ?: return@runAfter
+                        param.thisObject.setField("bitmap", original)
+                    }
             }
 
         LauncherApps::class.java
@@ -218,6 +329,24 @@ class IconPacks(context: Context) : ModPack(context) {
                     else -> state.callMethodSilently("withAdditionalValues", arrayOf(signature))
                         ?.let { param.thisObject.setField("mSystemState", it) }
                 }
+            }
+
+        iconProviderClass
+            .hookMethod("getStateForApp")
+            .suppressError()
+            .runAfter { param ->
+                val packageName = (param.args.getOrNull(0) as? ApplicationInfo)?.packageName ?: return@runAfter
+                val stamp = packageStamps[packageName] ?: return@runAfter
+                param.result.callMethodSilently("withAdditionalValues", arrayOf(stamp))?.let { param.result = it }
+            }
+
+        iconProviderClass
+            .hookMethod("getSystemStateForPackage")
+            .suppressError()
+            .runAfter { param ->
+                val packageName = param.args.getOrNull(1) as? String ?: return@runAfter
+                val stamp = packageStamps[packageName] ?: return@runAfter
+                (param.result as? String)?.let { param.result = "$it $stamp" }
             }
 
         iconProviderClass
@@ -476,7 +605,9 @@ class IconPacks(context: Context) : ModPack(context) {
     private fun usedPackPackages(): Set<String> {
         if (!config.isActive) return emptySet()
 
-        val overridePacks = config.overrides.values.mapNotNull { IconPackManager.overridePackage(it) }
+        val overridePacks = IconSlot.entries.flatMap { slot ->
+            config.overridesFor(slot).values.mapNotNull { IconPackManager.overridePackage(it) }
+        }
 
         return (config.iconPacks + config.themedIconPacks + overridePacks).toSet()
     }
@@ -488,7 +619,7 @@ class IconPacks(context: Context) : ModPack(context) {
     }
 
     private fun replaceIcon(component: ComponentName, original: Drawable?, density: Int): Drawable? {
-        val hasOverride = component.flattenToString() in config.overrides
+        val key = component.flattenToString()
         val inRecents = taskComponent.get() != null
         val resolved = runCatching {
             IconPackManager.resolve(
@@ -503,8 +634,42 @@ class IconPacks(context: Context) : ModPack(context) {
 
         resolved?.packageName?.let { recordSource(it, component.packageName) }
         val regular = resolved?.drawable
+        if (inRecents) return regular
 
-        if (themedMode && !inRecents && !hasOverride && original != null) {
+        return composeIcon(
+            component = component,
+            regular = regular,
+            hasIconOverride = key in config.overrides,
+            themedValue = config.themedOverrides[key],
+            themedCustom = customIcons[IconSlot.THEMED.customKey(key)],
+            original = original,
+            density = density
+        )
+    }
+
+    private fun composeIcon(
+        component: ComponentName,
+        regular: Drawable?,
+        hasIconOverride: Boolean,
+        themedValue: String?,
+        themedCustom: Bitmap?,
+        original: Drawable?,
+        density: Int
+    ): Drawable? {
+        if (themedValue != null) {
+            if (themedValue == IconPackManager.OVERRIDE_NONE) {
+                return regular ?: original?.let { IconPackManager.withoutMonochrome(it) }
+            }
+
+            val base = regular ?: original ?: return null
+            val monochrome = runCatching {
+                IconPackManager.themedMonochrome(mContext, component, themedValue, config, density, original, themedCustom)
+            }.getOrNull() ?: return regular
+
+            return ThemedPackIconDrawable(base, IconPackManager.withMonochrome(base, monochrome))
+        }
+
+        if (themedMode && !hasIconOverride && original != null) {
             themedPackIcon(component, original, density)?.let { themed ->
                 return regular?.let { ThemedPackIconDrawable(it, themed) } ?: themed
             }
@@ -515,6 +680,62 @@ class IconPacks(context: Context) : ModPack(context) {
         }
 
         return regular
+    }
+
+    private fun homeBitmapFor(info: Any?): Any? {
+        if (config.homeOverrides.isEmpty() && config.homeThemedOverrides.isEmpty()) return null
+        if (info.getFieldSilently("itemType") != ITEM_TYPE_APPLICATION) return null
+
+        val container = info.getFieldSilently("container") as? Int ?: return null
+        if (container < 0 && container !in HOME_CONTAINERS) return null
+
+        val component = info.callMethodSilently("getTargetComponent") as? ComponentName ?: return null
+        val key = component.flattenToString()
+        if (!config.hasHomeOverride(key)) return null
+
+        homeBitmaps[key]?.let { return it }
+        return buildHomeBitmap(component)?.also { homeBitmaps[key] = it }
+    }
+
+    private fun buildHomeBitmap(component: ComponentName): Any? {
+        val key = component.flattenToString()
+        val density = mContext.resources.configuration.densityDpi
+        val original = runCatching { mContext.packageManager.getActivityIcon(component) }.getOrNull()
+        val homeValue = config.homeOverrides[key]
+
+        val regular = runCatching {
+            when (homeValue) {
+                null -> IconPackManager.resolve(mContext, component, config, density, { customIcons[it] }, { original })?.drawable
+                IconPackManager.OVERRIDE_ORIGINAL -> null
+                else -> IconPackManager.resolveValue(mContext, homeValue, density, customIcons[IconSlot.HOME.customKey(key)])?.drawable
+            }
+        }.getOrNull()
+
+        val homeThemed = config.homeThemedOverrides[key]
+        val themedSlot = if (homeThemed != null) IconSlot.THEMED_HOME else IconSlot.THEMED
+        val drawable = composeIcon(
+            component = component,
+            regular = regular,
+            hasIconOverride = (homeValue ?: config.overrides[key]) != null,
+            themedValue = homeThemed ?: config.themedOverrides[key],
+            themedCustom = customIcons[themedSlot.customKey(key)],
+            original = original,
+            density = density
+        ) ?: regular ?: original ?: return null
+
+        return createBitmapInfo(drawable)
+    }
+
+    private fun applyLabelOverride(info: Any?, component: ComponentName?) {
+        if (info == null || component == null) return
+        val label = config.labels[component.flattenToString()] ?: return
+
+        if (info.getExtraFieldSilently(ORIGINAL_TITLE) == null) {
+            info.setExtraField(ORIGINAL_TITLE, info.getFieldSilently("title"))
+        }
+        info.setField("title", label)
+        info.setFieldSilently("appTitle", label)
+        info.setFieldSilently("contentDescription", label)
     }
 
     private fun exportPinnedShortcuts() {
@@ -569,7 +790,7 @@ class IconPacks(context: Context) : ModPack(context) {
             val (packageName, id) = legacyShortcutKey(info) ?: return@mapNotNull null
             val bitmap = (info.getExtraFieldSilently(ORIGINAL_LEGACY_ICON)
                 ?: info.getFieldSilently("bitmap").getFieldSilently("icon")) as? Bitmap
-            val title = info.getFieldSilently("title") as? CharSequence
+            val title = (info.getExtraFieldSilently(ORIGINAL_TITLE) ?: info.getFieldSilently("title")) as? CharSequence
 
             IconPackManager.PinnedShortcut(
                 packageName = packageName,
@@ -592,7 +813,8 @@ class IconPacks(context: Context) : ModPack(context) {
     private fun applyLegacyShortcutOverride(info: Any?) {
         val (packageName, id) = legacyShortcutKey(info) ?: return
         val component = IconPackManager.shortcutComponent(packageName, id)
-        if (component.flattenToString() !in config.overrides) return
+        applyLabelOverride(info, component)
+        if (!config.isActive || component.flattenToString() !in config.overrides) return
 
         val originalBitmap = info.getFieldSilently("bitmap").getFieldSilently("icon") as? Bitmap
         val original = originalBitmap?.let { BitmapDrawable(mContext.resources, it) }
@@ -683,6 +905,10 @@ class IconPacks(context: Context) : ModPack(context) {
         private const val FOLDER_REFRESH_DELAY_MS = 1_500L
         private const val SHORTCUT_PREVIEW_DP = 60
         private const val ITEM_TYPE_SHORTCUT = 1
+        private const val ITEM_TYPE_APPLICATION = 0
+        private val HOME_CONTAINERS = setOf(-100, -101, -103)
+        private const val HOME_ORIGINAL_BITMAP = "pleHomeOriginalBitmap"
+        private const val ORIGINAL_TITLE = "pleOriginalTitle"
         private const val ORIGINAL_LEGACY_ICON = "pleOriginalLegacyIcon"
         private val THEMED_FIELD = Regex("mono|whiteshadow|themed", RegexOption.IGNORE_CASE)
         private val OPTION_FIELDS = listOf("wrapNonAdaptiveIcon", "isFullBleed", "drawFullBleed", "addShadows", "mAddShadows")

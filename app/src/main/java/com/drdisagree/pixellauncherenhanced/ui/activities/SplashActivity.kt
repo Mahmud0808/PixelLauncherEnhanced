@@ -6,8 +6,8 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.google.android.material.color.DynamicColors
+import com.drdisagree.pixellauncherenhanced.utils.RootShell
 import com.topjohnwu.superuser.Shell
 
 @SuppressLint("CustomSplashScreen")
@@ -22,7 +22,7 @@ class SplashActivity : AppCompatActivity() {
 
             startActivity(
                 Intent(this@SplashActivity, MainActivity::class.java).apply {
-                    putExtra("isRooted", isRooted)
+                    putExtra(MainActivity.EXTRA_IS_ROOTED, isRooted)
                 }
             )
             finish()
@@ -39,15 +39,7 @@ class SplashActivity : AppCompatActivity() {
 
     companion object {
         init {
-            Shell.enableVerboseLogging = BuildConfig.DEBUG
-            @Suppress("DEPRECATION")
-            if (Shell.getCachedShell() == null) {
-                Shell.setDefaultBuilder(
-                    Shell.Builder.create()
-                        .setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR)
-                        .setTimeout(20)
-                )
-            }
+            RootShell.init()
         }
     }
 }

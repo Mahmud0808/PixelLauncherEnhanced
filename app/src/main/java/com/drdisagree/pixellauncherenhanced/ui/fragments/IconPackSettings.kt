@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
 import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentIconPacksBinding
@@ -413,7 +414,9 @@ class IconPackSettings : Fragment() {
                 }
 
                 Entry.PerAppIcons -> {
-                    val count = IconPackStore.config().overrides.size
+                    val count = IconPackStore.config().let { config ->
+                        (IconSlot.entries.flatMap { config.overridesFor(it).keys } + config.labels.keys).toSet().size
+                    }
                     bindPlainRow(
                         view = view,
                         title = getString(R.string.per_app_icons_title),

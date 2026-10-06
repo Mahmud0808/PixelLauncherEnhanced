@@ -23,6 +23,10 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_FG_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_FG_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_OVERRIDES
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_OVERRIDES_HOME
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_THEMED_OVERRIDES
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_THEMED_OVERRIDES_HOME
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.LABEL_OVERRIDES
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_MASK
@@ -30,6 +34,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
+import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 
 object IconPackStore {
@@ -58,7 +63,11 @@ object IconPackStore {
         iconPacks = IconPackManager.parseList(RPrefs.getString(ICON_PACKS, null)),
         themedIconPacks = IconPackManager.parseList(RPrefs.getString(THEMED_ICON_PACKS, null)),
         maskUnsupported = RPrefs.getBoolean(ICON_PACK_MASK, false),
-        overrides = IconPackManager.parseOverrides(RPrefs.getString(ICON_OVERRIDES, null))
+        overrides = IconPackManager.parseOverrides(RPrefs.getString(ICON_OVERRIDES, null)),
+        homeOverrides = IconPackManager.parseOverrides(RPrefs.getString(ICON_OVERRIDES_HOME, null)),
+        themedOverrides = IconPackManager.parseOverrides(RPrefs.getString(ICON_THEMED_OVERRIDES, null)),
+        homeThemedOverrides = IconPackManager.parseOverrides(RPrefs.getString(ICON_THEMED_OVERRIDES_HOME, null)),
+        labels = IconPackManager.parseOverrides(RPrefs.getString(LABEL_OVERRIDES, null))
     )
 
     fun setIconPacks(packs: List<String>) {
@@ -79,38 +88,70 @@ object IconPackStore {
         dirty = true
     }
 
-    fun setOverride(component: ComponentName, value: String?) {
+    fun override(slot: IconSlot, component: ComponentName): String? =
+        config().overridesFor(slot)[component.flattenToString()]
+
+    fun setOverride(component: ComponentName, value: String?) = setOverride(IconSlot.DRAWER, component, value)
+
+    fun setOverride(slot: IconSlot, component: ComponentName, value: String?) {
         val key = component.flattenToString()
-        val overrides = config().overrides.toMutableMap()
+        val overrides = config().overridesFor(slot).toMutableMap()
         if (overrides[key] == value && value != IconPackManager.OVERRIDE_CUSTOM) return
 
         if (value == null) overrides.remove(key) else overrides[key] = value
-        if (value != IconPackManager.OVERRIDE_CUSTOM) RPrefs.clearPref(IconPackManager.customIconKey(key))
+        if (value != IconPackManager.OVERRIDE_CUSTOM) RPrefs.clearPref(IconPackManager.customIconKey(slot.customKey(key)))
 
-        RPrefs.putString(ICON_OVERRIDES, IconPackManager.serializeOverrides(overrides))
-        dirty = true
+        RPrefs.putString(slot.prefKey, IconPackManager.serializeOverrides(overrides))
     }
 
-    fun setCustomIcon(component: ComponentName, bitmap: Bitmap) {
+    fun setCustomIcon(component: ComponentName, bitmap: Bitmap) = setCustomIcon(IconSlot.DRAWER, component, bitmap)
+
+    fun setCustomIcon(slot: IconSlot, component: ComponentName, bitmap: Bitmap) {
         val key = component.flattenToString()
-        RPrefs.putString(IconPackManager.customIconKey(key), IconPackManager.encodeBitmap(bitmap))
-        setOverride(component, IconPackManager.OVERRIDE_CUSTOM)
+        RPrefs.putString(IconPackManager.customIconKey(slot.customKey(key)), IconPackManager.encodeBitmap(bitmap))
+        setOverride(slot, component, IconPackManager.OVERRIDE_CUSTOM)
     }
 
-    fun customIcon(component: String): Bitmap? {
-        return IconPackManager.decodeBitmap(RPrefs.getString(IconPackManager.customIconKey(component), null))
+    fun customIcon(component: String): Bitmap? = customIcon(IconSlot.DRAWER, component)
+
+    fun customIcon(slot: IconSlot, component: String): Bitmap? {
+        return IconPackManager.decodeBitmap(RPrefs.getString(IconPackManager.customIconKey(slot.customKey(component)), null))
+    }
+
+    fun label(component: ComponentName): String? = config().labels[component.flattenToString()]
+
+    fun setLabel(component: ComponentName, label: String?) {
+        val key = component.flattenToString()
+        val labels = config().labels.toMutableMap()
+        val value = label?.trim()?.takeIf { it.isNotEmpty() }
+        if (labels[key] == value) return
+
+        if (value == null) labels.remove(key) else labels[key] = value
+        RPrefs.putString(LABEL_OVERRIDES, IconPackManager.serializeOverrides(labels))
+    }
+
+    fun reset(component: ComponentName) {
+        IconSlot.entries.forEach { setOverride(it, component, null) }
+        setLabel(component, null)
     }
 
     fun pruneMissingPackOverrides(context: Context): Boolean {
-        val overrides = config().overrides
+        val config = config()
         val packageManager = context.packageManager
-        val pruned = IconPackManager.withoutMissingPacks(overrides) { pkg ->
-            runCatching { packageManager.getApplicationInfo(pkg, 0) }.isSuccess
-        }
-        if (pruned.size == overrides.size) return false
+        var changed = false
 
-        RPrefs.putString(ICON_OVERRIDES, IconPackManager.serializeOverrides(pruned))
-        return true
+        IconSlot.entries.forEach { slot ->
+            val overrides = config.overridesFor(slot)
+            val pruned = IconPackManager.withoutMissingPacks(overrides) { pkg ->
+                runCatching { packageManager.getApplicationInfo(pkg, 0) }.isSuccess
+            }
+            if (pruned.size != overrides.size) {
+                RPrefs.putString(slot.prefKey, IconPackManager.serializeOverrides(pruned))
+                changed = true
+            }
+        }
+
+        return changed
     }
 
     fun applyIfChanged(): Long? {
@@ -175,27 +216,56 @@ object IconPackStore {
         }.getOrNull() ?: original
     }
 
-    fun previewIcon(context: Context, app: LauncherApp, config: IconPackManager.Config): Drawable {
-        val themedMode = RPrefs.getBoolean(HOME_THEMED_ICONS)
+    fun previewIcon(context: Context, app: LauncherApp, config: IconPackManager.Config): Drawable =
+        previewFor(context, app.component, app.icon, config, home = false, themed = RPrefs.getBoolean(HOME_THEMED_ICONS))
+
+    fun previewFor(
+        context: Context,
+        component: ComponentName,
+        appIcon: Drawable,
+        config: IconPackManager.Config,
+        home: Boolean,
+        themed: Boolean
+    ): Drawable {
+        val key = component.flattenToString()
         val density = context.resources.displayMetrics.densityDpi
-        val hasOverride = app.component.flattenToString() in config.overrides
+        val original = { appIcon.constantState?.newDrawable()?.mutate() ?: appIcon }
+        val homeValue = if (home) config.homeOverrides[key] else null
 
-        val colors by lazy { themedColors(context) }
+        val regular = runCatching {
+            when (homeValue) {
+                null -> IconPackManager.resolve(context, component, config, density, { customIcon(it) }, original)?.drawable
+                IconPackManager.OVERRIDE_ORIGINAL -> null
+                else -> IconPackManager.resolveValue(context, homeValue, density, customIcon(IconSlot.HOME, key))?.drawable
+            }
+        }.getOrNull() ?: appIcon
 
-        if (themedMode && !hasOverride) {
-            runCatching { IconPackManager.themedLayer(context, app.component, config, density) }
-                .getOrNull()
-                ?.let { return IconPackManager.themedPreview(context, it, colors) }
-        }
+        if (!themed) return regular
 
-        val icon = runCatching { resolveIcon(context, app, config)?.drawable }.getOrNull() ?: app.icon
+        val homeThemed = if (home) config.homeThemedOverrides[key] else null
+        val themedValue = homeThemed ?: config.themedOverrides[key]
+        val themedSlot = if (homeThemed != null) IconSlot.THEMED_HOME else IconSlot.THEMED
+        val hasIconOverride = (homeValue ?: config.overrides[key]) != null
 
-        if (themedMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            (icon as? AdaptiveIconDrawable)?.monochrome?.let { return IconPackManager.themedPreview(context, it, colors) }
-        }
+        val monochrome = runCatching {
+            when {
+                themedValue != null -> IconPackManager.themedMonochrome(
+                    context, component, themedValue, config, density, appIcon, customIcon(themedSlot, key)
+                )
 
-        return icon
+                hasIconOverride -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    (regular as? AdaptiveIconDrawable)?.monochrome
+                } else null
+
+                else -> IconPackManager.themedMonochrome(context, component, null, config, density, appIcon, null)
+            }
+        }.getOrNull() ?: return regular
+
+        return IconPackManager.themedPreview(context, monochrome, themedColors(context))
     }
+
+    fun themedPreview(context: Context, monochrome: Drawable): Drawable =
+        IconPackManager.themedPreview(context, monochrome, themedColors(context))
 
     @SuppressLint("DiscouragedApi")
     private fun themedColors(context: Context): Pair<Int, Int> {

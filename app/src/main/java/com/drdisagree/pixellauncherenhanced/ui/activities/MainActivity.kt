@@ -1,6 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.ui.activities
 
 import android.graphics.Color
+import android.content.ComponentName
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +14,8 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.model.SettingsEntry
 import com.drdisagree.pixellauncherenhanced.databinding.ActivityMainBinding
 import com.drdisagree.pixellauncherenhanced.ui.base.BaseActivity
+import com.drdisagree.pixellauncherenhanced.ui.fragments.AppIconEditor
+import com.drdisagree.pixellauncherenhanced.utils.RootShell
 import com.drdisagree.pixellauncherenhanced.ui.fragments.HomePage
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -33,22 +36,41 @@ class MainActivity : BaseActivity(), PreferenceFragmentCompat.OnPreferenceStartF
 
         if (savedInstanceState == null) {
             replaceFragment(supportFragmentManager, HomePage())
+            openEditorFromIntent()
         }
 
-        val isRooted = intent.getBooleanExtra("isRooted", false)
+        if (intent.hasExtra(EXTRA_IS_ROOTED)) {
+            if (!intent.getBooleanExtra(EXTRA_IS_ROOTED, false)) showRootFailedDialog()
+        } else {
+            RootShell.checkRoot { isRooted -> if (!isRooted && !isFinishing) showRootFailedDialog() }
+        }
+    }
 
-        if (!isRooted) {
-            MaterialAlertDialogBuilder(
-                this@MainActivity,
-                R.style.MaterialComponents_MaterialAlertDialog_Centered
+    private fun openEditorFromIntent() {
+        val component = intent.getStringExtra(EXTRA_EDIT_COMPONENT)
+            ?.let { ComponentName.unflattenFromString(it) } ?: return
+
+        replaceFragment(
+            supportFragmentManager,
+            AppIconEditor.newInstance(
+                component,
+                intent.getStringExtra(EXTRA_EDIT_LABEL).orEmpty(),
+                intent.getBooleanExtra(EXTRA_EDIT_HOME, false)
             )
-                .setIcon(R.drawable.ic_error)
-                .setCancelable(false)
-                .setTitle(getText(R.string.root_connection_failed_title))
-                .setMessage(getText(R.string.root_connection_failed_desc))
-                .setPositiveButton(getText(R.string.exit)) { dialog, i -> exitProcess(0) }
-                .show()
-        }
+        )
+    }
+
+    private fun showRootFailedDialog() {
+        MaterialAlertDialogBuilder(
+            this@MainActivity,
+            R.style.MaterialComponents_MaterialAlertDialog_Centered
+        )
+            .setIcon(R.drawable.ic_error)
+            .setCancelable(false)
+            .setTitle(getText(R.string.root_connection_failed_title))
+            .setMessage(getText(R.string.root_connection_failed_desc))
+            .setPositiveButton(getText(R.string.exit)) { dialog, i -> exitProcess(0) }
+            .show()
     }
 
     private val sharedElementBinder = object : FragmentManager.FragmentLifecycleCallbacks() {
@@ -131,6 +153,10 @@ class MainActivity : BaseActivity(), PreferenceFragmentCompat.OnPreferenceStartF
 
         const val ARG_SHARED_ELEMENT = "plenhanced_shared_element"
         const val ARG_HIGHLIGHT_KEY = "plenhanced_highlight_key"
+        const val EXTRA_IS_ROOTED = "isRooted"
+        const val EXTRA_EDIT_COMPONENT = "plenhanced_edit_component"
+        const val EXTRA_EDIT_LABEL = "plenhanced_edit_label"
+        const val EXTRA_EDIT_HOME = "plenhanced_edit_home"
         private const val TRANSFORM_DURATION = 450L
 
         fun replaceFragment(fragmentManager: FragmentManager, fragment: Fragment) {

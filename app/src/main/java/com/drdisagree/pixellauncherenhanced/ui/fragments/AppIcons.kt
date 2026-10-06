@@ -170,7 +170,7 @@ class AppIcons : Fragment() {
 
     private fun refreshConfig() {
         config = IconPackStore.config()
-        val key = IconPackManager.signature(config, emptyList(), RPrefs.getBoolean(HOME_THEMED_ICONS))
+        val key = IconPackManager.signature(config, RPrefs.getBoolean(HOME_THEMED_ICONS)) + config.hashCode()
         if (key != configKey) {
             if (configKey != null) iconCache.evictAll()
             configKey = key
@@ -180,12 +180,12 @@ class AppIcons : Fragment() {
     private fun buildItems(launcherApps: List<IconPackStore.LauncherApp>): List<Item> {
         val apps = launcherApps.map { app ->
             val key = app.component.flattenToString()
-            Item.App(app, key in config.overrides, versions[key] ?: 0)
+            Item.App(app, config.isCustomized(key), versions[key] ?: 0)
         }
         val customized = apps.filter { it.customized }.map { Item.App(it.app, true, it.version, inCustomizedSection = true) }
         val shortcuts = IconPackStore.pinnedShortcuts().map { shortcut ->
             val key = shortcut.component.flattenToString()
-            Item.Shortcut(shortcut, key in config.overrides, versions[key] ?: 0)
+            Item.Shortcut(shortcut, config.isCustomized(key), versions[key] ?: 0)
         }
 
         return buildList {
@@ -229,15 +229,7 @@ class AppIcons : Fragment() {
     private fun openPicker(component: ComponentName, label: String) {
         IconFlow.navigating = true
         editingKey = component.flattenToString()
-        MainActivity.replaceFragment(
-            parentFragmentManager,
-            IconPicker().apply {
-                arguments = Bundle().apply {
-                    putString(IconPicker.ARG_COMPONENT, component.flattenToString())
-                    putString(IconPicker.ARG_LABEL, label)
-                }
-            }
-        )
+        MainActivity.replaceFragment(parentFragmentManager, AppIconEditor.newInstance(component, label))
     }
 
     private fun updateApplyButton() {
@@ -284,7 +276,7 @@ class AppIcons : Fragment() {
                 else -> return
             }
 
-            holder.itemView.findViewById<TextView>(R.id.label).text = label
+            holder.itemView.findViewById<TextView>(R.id.label).text = config.labels[component.flattenToString()] ?: label
             holder.itemView.findViewById<ImageView>(R.id.badge).visibility = if (customized) View.VISIBLE else View.GONE
             holder.itemView.setOnClickListener { openPicker(component, label) }
 
