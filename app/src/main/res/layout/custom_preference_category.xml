@@ -1,50 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?android:selectableItemBackgroundBorderless"
-    android:minHeight="?android:attr/listPreferredItemHeight"
-    android:paddingHorizontal="@dimen/ui_container_margin_side">
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="24dp"
+    android:paddingTop="28dp"
+    android:paddingEnd="@dimen/ui_container_margin_side"
+    android:paddingBottom="10dp">
 
     <ImageView
         android:id="@android:id/icon"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="@dimen/preference_padding_horizontal"
-        android:layout_marginEnd="18dp"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginEnd="10dp"
         android:contentDescription="@android:string/untitled"
         android:visibility="gone"
-        app:tint="?attr/colorOnSurface" />
+        app:tint="?attr/colorPrimary" />
 
-    <RelativeLayout
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toStartOf="@android:id/widget_frame"
-        android:layout_toEndOf="@android:id/icon"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@android:id/title"
-            style="@style/TextAppearance.Material3.TitleSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="?attr/colorPrimary" />
+            android:letterSpacing="0.02"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@android:id/summary"
-            style="@style/TextAppearance.Material3.BodySmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@android:id/title"
-            android:alpha="0.7"
-            android:textColor="?attr/colorOnSurface" />
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
-    </RelativeLayout>
-</RelativeLayout>
+    </LinearLayout>
+
+</LinearLayout>

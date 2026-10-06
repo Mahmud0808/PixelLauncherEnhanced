@@ -23,7 +23,7 @@
         android:contentDescription="@string/drawer_tabs_reorder"
         android:padding="12dp"
         app:srcCompat="@drawable/ic_drag_handle"
-        app:tint="?android:textColorSecondary" />
+        app:tint="?attr/colorOnSurfaceVariant" />
 
     <LinearLayout
         android:id="@+id/textContainer"
@@ -37,19 +37,18 @@
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/title"
-            style="?attr/textAppearanceTitleSmall"
+            style="@style/Preference.TitleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="?attr/colorOnSurface" />
+            android:textColor="@color/text_color_primary" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/summary"
-            style="?attr/textAppearanceBodySmall"
+            style="@style/Preference.SummaryText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:alpha="0.8"
-            android:textColor="?attr/colorOnSurface" />
+            android:textColor="@color/text_color_secondary" />
 
     </LinearLayout>
 
@@ -62,6 +61,6 @@
         android:background="?selectableItemBackgroundBorderless"
         android:padding="12dp"
         android:scaleType="fitCenter"
-        app:tint="?android:textColorSecondary" />
+        app:tint="?attr/colorOnSurfaceVariant" />
 
 </RelativeLayout>

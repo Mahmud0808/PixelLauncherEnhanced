@@ -4,7 +4,6 @@ import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLIED
@@ -36,7 +35,7 @@ object IconApplyDialog {
             handler.removeCallbacksAndMessages(null)
             RPrefs.getPrefs.unregisterOnSharedPreferenceChangeListener(listener)
             if (dialog.isShowing) runCatching { dialog.dismiss() }
-            if (applied) Toast.makeText(context.applicationContext, R.string.icon_apply_done, Toast.LENGTH_SHORT).show()
+            if (applied) Messages.show(context, context.getString(R.string.icon_apply_done))
             onDone()
         }
 

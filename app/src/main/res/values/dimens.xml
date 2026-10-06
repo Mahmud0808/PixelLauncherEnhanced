@@ -7,7 +7,7 @@
     <dimen name="cpv_color_preference_large">44dp</dimen>
     <dimen name="about_button_icon_size">22dp</dimen>
     <dimen name="mtrl_slider_track_side_padding" tools:ignore="PrivateResource">4dp</dimen>
-    <dimen name="preference_padding_horizontal">18dp</dimen>
-    <dimen name="preference_padding_vertical">16dp</dimen>
+    <dimen name="preference_padding_horizontal">20dp</dimen>
+    <dimen name="preference_padding_vertical">18dp</dimen>
 
 </resources>

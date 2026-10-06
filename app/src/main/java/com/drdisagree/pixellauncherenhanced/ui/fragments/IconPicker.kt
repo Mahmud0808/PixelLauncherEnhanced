@@ -17,7 +17,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -25,6 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.Messages
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPack
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentIconPickerBinding
@@ -290,7 +290,7 @@ class IconPicker : Fragment() {
             }
 
             if (bitmap == null) {
-                Toast.makeText(context, R.string.icon_picker_image_failed, Toast.LENGTH_SHORT).show()
+                Messages.show(requireActivity(), getString(R.string.icon_picker_image_failed))
                 return@launch
             }
 

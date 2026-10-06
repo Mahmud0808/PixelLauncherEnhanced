@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.BackupCardPreference
+        android:icon="@drawable/ic_home_screen"
+        android:key="xposed_backupcardhome"
+        android:summary="@string/backup_card_home_desc"
+        android:title="@string/section_home_layout_backup_title"
+        app:cardPalette="primary"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.BackupCardPreference
+        android:icon="@drawable/ic_app_drawer"
+        android:key="xposed_backupcarddrawer"
+        android:summary="@string/backup_card_drawer_desc"
+        android:title="@string/section_drawer_layout_backup_title"
+        app:cardPalette="secondary"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.BackupCardPreference
+        android:icon="@drawable/ic_advanced"
+        android:key="xposed_backupcardsettings"
+        android:summary="@string/backup_card_settings_desc"
+        android:title="@string/section_module_settings_backup_title"
+        app:cardPalette="tertiary"
+        app:iconSpaceReserved="false" />
+
+</PreferenceScreen>

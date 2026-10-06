@@ -4,7 +4,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_general"
-        android:title="@string/section_general_title"
+        android:title="@string/section_drawer_mode_title"
         app:iconSpaceReserved="false">
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
@@ -40,12 +40,6 @@
             android:title="@string/no_drawer_auto_fill_title"
             app:iconSpaceReserved="false" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:key="xposed_appdrawerthemedicons"
-            android:summary="@string/app_drawer_themed_icons_desc"
-            android:title="@string/app_drawer_themed_icons_title"
-            app:iconSpaceReserved="false" />
-
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
@@ -70,27 +64,8 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_interface"
-        android:title="@string/section_interface_title"
+        android:title="@string/section_layout_title"
         app:iconSpaceReserved="false">
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:defaultValue="true"
-            android:key="xposed_appdrawericonlabels"
-            android:title="@string/app_drawer_icon_labels_title"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_appdrawerbackgroundopacity"
-            android:title="@string/app_drawer_background_opacity_title"
-            app:defaultValue="-1"
-            app:hideValueOnDefault="true"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="-1"
-            app:showDefaultIndicator="true"
-            app:showResetButton="true"
-            app:tickInterval="1"
-            app:valueFormat="%" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_appdrawergridcolumns"
@@ -119,6 +94,38 @@
             app:showResetButton="true"
             app:tickInterval="0.5"
             app:valueFormat="x" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="xposed_appdrawericonlabels"
+            android:title="@string/app_drawer_icon_labels_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_drawer_appearance"
+        android:title="@string/section_appearance_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_appdrawerthemedicons"
+            android:summary="@string/app_drawer_themed_icons_desc"
+            android:title="@string/app_drawer_themed_icons_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_appdrawerbackgroundopacity"
+            android:title="@string/app_drawer_background_opacity_title"
+            app:defaultValue="-1"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-1"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
@@ -165,4 +172,5 @@
             app:iconSpaceReserved="false" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
 </PreferenceScreen>

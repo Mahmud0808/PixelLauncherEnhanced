@@ -17,20 +17,9 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
-        android:title="@string/section_general_title"
+        android:key="xposed_icons_appearance"
+        android:title="@string/section_appearance_title"
         app:iconSpaceReserved="false">
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:key="xposed_forcethemedicons"
-            android:summary="@string/force_themed_icons_desc"
-            android:title="@string/force_themed_icons_title"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:key="xposed_removeiconbadge"
-            android:title="@string/remove_shortcut_badge_title"
-            app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_launchericonsize"
@@ -58,31 +47,23 @@
             app:tickInterval="1"
             app:valueFormat="%" />
 
-    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
-
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_app_popup_menu"
-        android:title="@string/section_app_popup_title"
-        app:iconSpaceReserved="false">
-
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:key="xposed_popupkillapp"
-            android:summary="@string/popup_kill_app_desc"
-            android:title="@string/popup_kill_app_title"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:key="xposed_popupuninstallapp"
-            android:summary="@string/popup_uninstall_app_desc"
-            android:title="@string/popup_uninstall_app_title"
+            android:key="xposed_removeiconbadge"
+            android:title="@string/remove_shortcut_badge_title"
             app:iconSpaceReserved="false" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
-        android:key="xposed_home_screen_general"
-        android:title="@string/section_icon_colors_title"
+        android:key="xposed_icons_themed"
+        android:title="@string/section_themed_icons_title"
         app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_forcethemedicons"
+            android:summary="@string/force_themed_icons_desc"
+            android:title="@string/force_themed_icons_title"
+            app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_themediconcustomcolor"
@@ -147,6 +128,25 @@
             app:cpv_allowPresets="false"
             app:cpv_dialogType="custom"
             app:cpv_showAlphaSlider="true"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_popup_menu"
+        android:title="@string/section_app_popup_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_popupkillapp"
+            android:summary="@string/popup_kill_app_desc"
+            android:title="@string/popup_kill_app_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_popupuninstallapp"
+            android:summary="@string/popup_uninstall_app_desc"
+            android:title="@string/popup_uninstall_app_title"
             app:iconSpaceReserved="false" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>

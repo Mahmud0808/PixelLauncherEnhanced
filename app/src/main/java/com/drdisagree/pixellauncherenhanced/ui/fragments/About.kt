@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentAboutBinding
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
@@ -64,6 +65,8 @@ class About : Fragment() {
         binding.btnNews.setOnClickListener { openUrl("https://t.me/DrDsProjects") }
         binding.btnSupport.setOnClickListener { openUrl("https://t.me/DrDsProjectsChat") }
         binding.btnGithub.setOnClickListener { openUrl("https://github.com/Mahmud0808/PixelLauncherEnhanced") }
+        RowBackgrounds.apply(binding.developer, 0, 2)
+        RowBackgrounds.apply(binding.buymeacoffee, 1, 2)
         binding.developer.setOnClickListener { openUrl("https://github.com/Mahmud0808") }
         binding.buymeacoffee.setOnClickListener { openUrl("https://buymeacoffee.com/drdisagree") }
 

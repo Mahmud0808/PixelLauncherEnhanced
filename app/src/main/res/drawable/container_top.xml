@@ -3,10 +3,10 @@
     android:color="?attr/colorControlHighlight">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="?attr/colorSurfaceBright" />
+            <solid android:color="?attr/colorSurfaceContainer" />
             <corners
-                android:bottomLeftRadius="4dp"
-                android:bottomRightRadius="4dp"
+                android:bottomLeftRadius="6dp"
+                android:bottomRightRadius="6dp"
                 android:topLeftRadius="@dimen/ui_container_radius"
                 android:topRightRadius="@dimen/ui_container_radius" />
         </shape>

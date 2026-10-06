@@ -13,6 +13,13 @@
             android:title="@string/disable_recents_live_tile_title"
             app:iconSpaceReserved="false" />
 
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_recents_app_menu"
+        android:title="@string/section_app_menu_title"
+        app:iconSpaceReserved="false">
+
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_recentskillapp"
             android:summary="@string/recents_kill_app_desc"
@@ -24,6 +31,13 @@
             android:summary="@string/recents_uninstall_app_desc"
             android:title="@string/recents_uninstall_app_title"
             app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_recents_freeform"
+        android:title="@string/section_freeform_title"
+        app:iconSpaceReserved="false">
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_startfreeformbygesture"
@@ -92,4 +106,5 @@
             app:valueFormat="%" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
 </PreferenceScreen>

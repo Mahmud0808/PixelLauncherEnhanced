@@ -74,22 +74,7 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
             }
 
             itemView.findViewById<MaterialButton>(R.id.btn_more).setOnClickListener {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle(context.resources.getString(R.string.attention))
-                    .setMessage(
-                        if (!hasBootlooped) {
-                            buildString {
-                                append(appContext.resources.getString(R.string.lsposed_warn))
-                            }
-                        } else {
-                            context.resources.getString(R.string.lsposed_bootloop_warn)
-                        }
-                    )
-                    .setPositiveButton(context.resources.getString(R.string.understood)) { dialog: DialogInterface, _: Int ->
-                        dialog.dismiss()
-                    }
-                    .setCancelable(true)
-                    .show()
+                showHelp(context)
             }
         }
     }
@@ -117,8 +102,6 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
 
     private val delayedHookCheck: Runnable = Runnable {
         if (!isHooked) {
-            RPrefs.putBoolean(XPOSED_HOOK_CHECK, false)
-
             hasBootlooped = false
             for (packageName in hookPackages) {
                 val strikeKey = "$PACKAGE_STRIKE_KEY_KEY$packageName"
@@ -128,6 +111,8 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
                     break
                 }
             }
+
+            RPrefs.putBoolean(XPOSED_HOOK_CHECK, false)
 
             notifyChanged()
         }
@@ -178,5 +163,26 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
     companion object {
         private var hasBootlooped: Boolean = false
         var isHooked: Boolean = false
+
+        val bootlooped: Boolean
+            get() = hasBootlooped
+
+        fun showHelp(context: Context) {
+            MaterialAlertDialogBuilder(context, R.style.MaterialComponents_MaterialAlertDialog_Centered)
+                .setIcon(R.drawable.ic_info)
+                .setTitle(context.resources.getString(R.string.attention))
+                .setMessage(
+                    if (!hasBootlooped) {
+                        appContext.resources.getString(R.string.lsposed_warn)
+                    } else {
+                        context.resources.getString(R.string.lsposed_bootloop_warn)
+                    }
+                )
+                .setPositiveButton(context.resources.getString(R.string.understood)) { dialog: DialogInterface, _: Int ->
+                    dialog.dismiss()
+                }
+                .setCancelable(true)
+                .show()
+        }
     }
 }

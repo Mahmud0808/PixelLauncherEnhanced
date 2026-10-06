@@ -11,7 +11,7 @@ kotlin {
 
 android {
     namespace = "com.drdisagree.pixellauncherenhanced"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.drdisagree.pixellauncherenhanced"
@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.recyclerview)

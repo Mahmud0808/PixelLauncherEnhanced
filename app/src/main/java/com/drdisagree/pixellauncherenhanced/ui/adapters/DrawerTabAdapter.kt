@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
 import com.drdisagree.pixellauncherenhanced.data.model.DrawerTab
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import java.util.Collections
@@ -175,14 +176,7 @@ class DrawerTabAdapter(
     private fun applyShape(holder: TabHolder, index: Int, size: Int) {
         val layoutParams = holder.itemView.layoutParams as MarginLayoutParams
 
-        holder.container.setBackgroundResource(
-            when {
-                size == 1 -> R.drawable.container_single
-                index == 0 -> R.drawable.container_top
-                index == size - 1 -> R.drawable.container_bottom
-                else -> R.drawable.container_mid
-            }
-        )
+        RowBackgrounds.apply(holder.container, index, size)
         layoutParams.bottomMargin = if (index == size - 1) 0 else dpToPx(2)
         holder.itemView.layoutParams = layoutParams
         holder.container.clipToOutline = true

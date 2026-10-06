@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentIconPacksBinding
 import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
@@ -471,14 +472,7 @@ class IconPackSettings : Fragment() {
 
         private fun applyShape(container: View, index: Int, size: Int, topMargin: Int = 0) {
             val layoutParams = container.layoutParams as MarginLayoutParams
-            container.setBackgroundResource(
-                when {
-                    size == 1 -> R.drawable.container_single
-                    index == 0 -> R.drawable.container_top
-                    index == size - 1 -> R.drawable.container_bottom
-                    else -> R.drawable.container_mid
-                }
-            )
+            RowBackgrounds.apply(container, index, size)
             layoutParams.topMargin = topMargin
             layoutParams.bottomMargin = if (index == size - 1) 0 else dpToPx(2)
             container.layoutParams = layoutParams

@@ -45,7 +45,7 @@ object PrefsHelper {
 
     fun isVisible(key: String?): Boolean {
         return when (key) {
-            XPOSED_HOOK_CHECK -> !getBoolean(key)
+            XPOSED_HOOK_CHECK -> false
 
             DEVELOPER_OPTIONS -> isPixelLauncher
 

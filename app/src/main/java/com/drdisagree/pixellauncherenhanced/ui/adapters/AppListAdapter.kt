@@ -10,6 +10,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
@@ -93,30 +94,26 @@ class AppListAdapter(
             itemCount == 1 -> {
                 layoutParams.topMargin = baseTop
                 layoutParams.bottomMargin = baseBottom
-                container.setBackgroundResource(R.drawable.container_single)
             }
 
             position == 0 -> {
                 layoutParams.topMargin = baseTop
                 layoutParams.bottomMargin = midBottom
-                container.setBackgroundResource(R.drawable.container_top)
             }
 
             position == itemCount - 1 -> {
                 layoutParams.topMargin = 0
                 layoutParams.bottomMargin = 0
-                container.setBackgroundResource(R.drawable.container_bottom)
             }
 
             else -> {
                 layoutParams.topMargin = 0
                 layoutParams.bottomMargin = midBottom
-                container.setBackgroundResource(R.drawable.container_mid)
             }
         }
 
         holder.itemView.layoutParams = layoutParams
-        holder.container.clipToOutline = true
+        RowBackgrounds.apply(container, position, itemCount)
     }
 
     companion object {

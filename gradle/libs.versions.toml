@@ -1,20 +1,21 @@
 [versions]
-agp = "9.1.1"
+agp = "9.4.1"
 circleimageview = "3.1.0"
 colorpickerVersion = "1.1.0"
 konfettiXml = "2.0.5"
-kotlin = "2.3.20"
-coreKtx = "1.18.0"
+kotlin = "2.4.20"
+coreKtx = "1.19.1"
 coreSplashscreen = "1.2.0"
-appcompat = "1.7.1"
-material = "1.14.0-beta01"
+appcompat = "1.8.0"
+material = "1.14.0"
+graphicsShapes = "1.1.0"
 activity = "1.13.0"
-constraintlayout = "2.2.1"
-kotlinxCoroutinesAndroid = "1.10.2"
+constraintlayout = "2.2.2"
+kotlinxCoroutinesAndroid = "1.11.0"
 libsuVersion = "6.0.0"
-navigationFragment = "2.9.7"
-navigationFragmentKtx = "2.9.7"
-navigationUiKtx = "2.9.7"
+navigationFragment = "2.10.2"
+navigationFragmentKtx = "2.10.2"
+navigationUiKtx = "2.10.2"
 preferenceKtx = "1.2.1"
 recyclerview = "1.4.0"
 recyclerviewSelection = "1.2.0"
@@ -38,6 +39,7 @@ jaredrummler-colorpicker = { module = "com.jaredrummler:colorpicker", version.re
 konfetti-xml = { module = "nl.dionsegijn:konfetti-xml", version.ref = "konfettiXml" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-graphics-shapes = { group = "androidx.graphics", name = "graphics-shapes", version.ref = "graphicsShapes" }
 remotepreferences = { module = "com.crossbowffs.remotepreferences:remotepreferences", version.ref = "remotepreferences" }
 su-core = { module = "com.github.topjohnwu.libsu:core", version.ref = "libsuVersion" }
 su-nio = { module = "com.github.topjohnwu.libsu:nio", version.ref = "libsuVersion" }

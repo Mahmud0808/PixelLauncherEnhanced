@@ -3,9 +3,12 @@ package com.drdisagree.pixellauncherenhanced.ui.fragments
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import androidx.core.view.doOnPreDraw
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
+import com.drdisagree.pixellauncherenhanced.ui.preferences.DashboardHeroPreference
 import com.drdisagree.pixellauncherenhanced.ui.preferences.HookCheckPreference
 
 class HomePage : ControlledPreferenceFragmentCompat() {
@@ -52,10 +55,25 @@ class HomePage : ControlledPreferenceFragmentCompat() {
         }
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        postponeEnterTransition()
+        view.doOnPreDraw { startPostponedEnterTransition() }
+    }
+
+    override fun updateScreen(key: String?) {
+        super.updateScreen(key)
+        findPreference<DashboardHeroPreference>(DASHBOARD_HERO)?.refresh()
+    }
+
     override fun onResume() {
         super.onResume()
 
         HookCheckPreference.isHooked = false
         hookCheckPreference?.initializeHookCheck()
+    }
+
+    companion object {
+        private const val DASHBOARD_HERO = "dashboard_hero"
     }
 }

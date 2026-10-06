@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.StringRes
@@ -165,7 +166,8 @@ class DrawerTabs : Fragment() {
     }
 
     private fun confirmDelete(tab: DrawerTab) {
-        MaterialAlertDialogBuilder(requireContext())
+        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
+            .setIcon(R.drawable.ic_delete)
             .setTitle(R.string.drawer_tabs_delete_title)
             .setMessage(getString(R.string.drawer_tabs_delete_desc, tab.name))
             .setNegativeButton(android.R.string.cancel, null)
@@ -207,8 +209,10 @@ class DrawerTabs : Fragment() {
                 setSelection(initialName.length)
                 isSingleLine = true
             }
-            val inputLayout = TextInputLayout(context).apply {
+            val inputLayout = TextInputLayout(context, null, com.google.android.material.R.attr.textInputOutlinedStyle).apply {
                 hint = context.getString(R.string.drawer_tabs_new_hint)
+                val radius = dpToPx(16).toFloat()
+                setBoxCornerRadii(radius, radius, radius, radius)
                 addView(input)
             }
             val container = FrameLayout(context).apply {
@@ -234,6 +238,7 @@ class DrawerTabs : Fragment() {
                 }
             }
 
+            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
             input.requestFocus()
         }
     }

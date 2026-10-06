@@ -126,8 +126,9 @@ class SwitchPreference : SwitchPreferenceCompat {
     private fun showUnstableDialog() {
         MaterialAlertDialogBuilder(
             context,
-            R.style.MaterialComponents_MaterialAlertDialog
+            R.style.MaterialComponents_MaterialAlertDialog_Centered
         )
+            .setIcon(R.drawable.ic_info)
             .setTitle(context.getString(R.string.unstable_dialog_title))
             .setMessage(context.getString(R.string.unstable_dialog_desc))
             .setPositiveButton(android.R.string.ok, null)

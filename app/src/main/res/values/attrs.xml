@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <declare-styleable name="BackupCardPreference">
+        <attr name="cardPalette" format="enum">
+            <enum name="primary" value="0" />
+            <enum name="secondary" value="1" />
+            <enum name="tertiary" value="2" />
+        </attr>
+    </declare-styleable>
+
     <declare-styleable name="PreferenceMenu">
         <attr name="showArrow" format="boolean" />
     </declare-styleable>

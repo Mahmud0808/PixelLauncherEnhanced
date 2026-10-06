@@ -1,6 +1,11 @@
 <resources>
 
     <style name="Base.Theme.PixelLauncherEnhanced" parent="Theme.Material3Expressive.Dark.NoActionBar">
+        <item name="materialAlertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="android:alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="actionOverflowMenuStyle">@style/PopupMenu.Overflow</item>
+        <item name="popupMenuStyle">@style/PopupMenu.Popup</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
