@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
+import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
@@ -469,7 +470,31 @@ class IconPackSettings : Fragment() {
             samples.forEach { drawable ->
                 addView(ImageView(context).apply {
                     setImageDrawable(drawable)
-                }, LinearLayout.LayoutParams(dpToPx(28), dpToPx(28)).apply { marginEnd = dpToPx(6) })
+                }, LinearLayout.LayoutParams(dpToPx(SAMPLE_SIZE_DP), dpToPx(SAMPLE_SIZE_DP)))
+            }
+            doOnLayout { fitSamples() }
+        }
+
+        private fun LinearLayout.fitSamples() {
+            val count = childCount
+            if (count == 0 || width == 0) return
+
+            val maxSize = dpToPx(SAMPLE_SIZE_DP)
+            val maxGap = dpToPx(SAMPLE_GAP_DP)
+            val scale = (width.toFloat() / (count * maxSize + (count - 1) * maxGap)).coerceAtMost(1f)
+            val size = (maxSize * scale).toInt()
+            val gap = (maxGap * scale).toInt()
+
+            for (index in 0 until count) {
+                val child = getChildAt(index)
+                val params = child.layoutParams as LinearLayout.LayoutParams
+                val end = if (index == count - 1) 0 else gap
+                if (params.width != size || params.marginEnd != end) {
+                    params.width = size
+                    params.height = size
+                    params.marginEnd = end
+                    child.layoutParams = params
+                }
             }
         }
 
@@ -485,6 +510,8 @@ class IconPackSettings : Fragment() {
 
     companion object {
         private const val SAMPLE_COUNT = 5
+        private const val SAMPLE_SIZE_DP = 28
+        private const val SAMPLE_GAP_DP = 6
         private const val TYPE_SECTION = 0
         private const val TYPE_ROW = 1
     }
