@@ -128,7 +128,8 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
 
                 if (param.args.getOrNull(1) == true &&
                     view !== container.getFieldSilently("mHeader") &&
-                    isWorkTakeover(container)
+                    barActive &&
+                    tabs.any { it.type == DrawerTab.Type.WORK && !it.hidden }
                 ) {
                     param.args[1] = false
                 }
