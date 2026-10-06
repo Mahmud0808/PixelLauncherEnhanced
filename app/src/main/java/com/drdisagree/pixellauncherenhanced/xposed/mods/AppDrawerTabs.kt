@@ -132,6 +132,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     tabs.any { it.type == DrawerTab.Type.WORK && !it.hidden }
                 ) {
                     param.args[1] = false
+                    view.setPadding(view.paddingLeft, 0, view.paddingRight, view.paddingBottom)
                 }
             }
             .runAfter { param ->
