@@ -38,6 +38,7 @@ class LockLayout(context: Context) : ModPack(context) {
         val launcherPopupItemDragHandlerClass = findClass(
             $$"com.android.launcher3.popup.PopupContainerWithArrow$LauncherPopupItemDragHandler",
             "com.android.launcher3.popup.LauncherPopupItemDragHandler",
+            suppressError = true
         )
         val optionsPopupViewClass = findClass(
             "com.android.launcher3.views.OptionsPopupView",
@@ -112,6 +113,25 @@ class LockLayout(context: Context) : ModPack(context) {
                 if (!lockLayout) return@runBefore
 
                 param.result = false
+            }
+
+        listOf(
+            "com.android.launcher3.popup.LauncherDeepShortcutDragHandler",
+            "com.android.launcher3.popup.DeepShortcutDragHandler"
+        ).forEach { className ->
+            findClass(className, suppressError = true)
+                .hookMethod("canStartDrag")
+                .suppressError()
+                .runBefore { param ->
+                    if (lockLayout) param.result = false
+                }
+        }
+
+        findClass("com.android.launcher3.popup.LauncherDeepShortcutDragHandler", suppressError = true)
+            .hookMethod("startDrag")
+            .suppressError()
+            .runBefore { param ->
+                if (lockLayout) param.result = null
             }
 
         fun showLayoutLockedToast() {
