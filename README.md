@@ -25,6 +25,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 |-------------------------|:--------------:|:------------------:|
 | Themed icons            |       ✅        |         ✅          |
 | Lock layout             |       ✅        |         ✅          |
+| Free widget resizing    |       ✅        |         ✅          |
 | Wallpaper zooming       |       ✅        |         ✅          |
 | Homescreen columns      |       ✅        |         ✅          |
 | Homescreen rows         |       ✅        |         ✅          |

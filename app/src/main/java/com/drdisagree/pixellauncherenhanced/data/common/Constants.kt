@@ -50,6 +50,7 @@ object Constants {
     const val ENTRY_IN_LAUNCHER_SETTINGS = "xposed_entryinlaunchersettings"
     const val ENTRY_IN_OPTIONS_POPUP = "xposed_entryinoptionspopup"
     const val LOCK_LAYOUT = "xposed_locklayout"
+    const val FREE_WIDGET_RESIZE = "xposed_freewidgetresize"
     const val DRAWER_SEARCH_BAR = "xposed_drawersearchbar"
     const val RECENTS_CLEAR_ALL_BUTTON = "xposed_recentsclearallbutton"
     const val FIXED_RECENTS_BUTTONS_WIDTH = "xposed_fixedrecentsbuttonswidth"
