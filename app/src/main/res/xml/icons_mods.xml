@@ -21,6 +21,13 @@
         android:title="@string/section_appearance_title"
         app:iconSpaceReserved="false">
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_iconshape"
+            android:summary="@string/icon_shape_desc"
+            android:title="@string/icon_shape_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.IconShapeEditor"
+            app:iconSpaceReserved="false" />
+
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_launchericonsize"
             android:title="@string/launcher_icon_size_title"

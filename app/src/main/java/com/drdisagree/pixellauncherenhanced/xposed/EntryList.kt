@@ -6,6 +6,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerMode
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerTabs
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DisableDock
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconPacks
+import com.drdisagree.pixellauncherenhanced.xposed.mods.IconShapes
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
 import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsAppLock
 import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsMemInfo
@@ -78,6 +79,7 @@ object EntryList {
         AppDrawerTabs::class.java,
         DisableDock::class.java,
         IconPacks::class.java,
+        IconShapes::class.java,
     )
 
     fun getEntries(packageName: String): ArrayList<Class<out ModPack>> {

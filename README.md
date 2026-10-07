@@ -78,6 +78,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Separate home screen icons     |       ✅        |         ✅          |
 | Rename apps and shortcuts      |       ✅        |         ✅          |
 | Home screen shortcut icons     |       ✅        |         ✅          |
+| Custom icon shape              |       ✅        |         ✅          |
 | Icon size                      |       ✅        |         ✅          |
 | Text size                      |       ✅        |         ✅          |
 | Remove shortcut icon badge     |       ✅        |         ✅          |
