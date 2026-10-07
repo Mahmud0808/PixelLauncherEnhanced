@@ -57,6 +57,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Icon labels in app drawer                |       ✅        |         ✅          |
 | Themed icons                             |       ✅        |         ✅          |
 | App drawer background opacity            |       ✅        |         ✅          |
+| Hide scrollbar                           |       ✅        |         ✅          |
 | Toggle app search bar                    |       ✅        |         ✅          |
 | Quick launch                             |       ✅        |         ✅          |
 | Hide apps from app drawer                |       ✅        |         ✅          |

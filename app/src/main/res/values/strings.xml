@@ -129,6 +129,8 @@
     <string name="quick_launch_title">Quick Launch</string>
     <string name="quick_launch_desc">Launch apps directly from search by pressing enter</string>
     <string name="app_drawer_icon_labels_title">Icon labels in app drawer</string>
+    <string name="hide_drawer_scrollbar_title">Hide scrollbar</string>
+    <string name="hide_drawer_scrollbar_desc">Hide the fast scroll bar on the edge of the app drawer</string>
     <string name="disable_recents_live_tile_title">Disable recents live tile</string>
     <string name="disable_recents_live_tile_desc">Disable live tile if recents screen is buggy</string>
     <string name="hide_at_a_glance_title">Hide At A Glance</string>

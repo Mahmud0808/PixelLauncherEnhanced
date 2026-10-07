@@ -127,6 +127,13 @@
             app:tickInterval="1"
             app:valueFormat="%" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_hidedrawerscrollbar"
+            android:summary="@string/hide_drawer_scrollbar_desc"
+            android:title="@string/hide_drawer_scrollbar_title"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory

@@ -13,6 +13,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.WidgetResize
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
 import com.drdisagree.pixellauncherenhanced.xposed.mods.PageIndicator
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DarkStatusbar
+import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerScrollbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerSearchbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.FreeformMod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.GestureMod
@@ -58,6 +59,7 @@ object EntryList {
         LockLayout::class.java,
         WidgetResize::class.java,
         DrawerSearchbar::class.java,
+        DrawerScrollbar::class.java,
         ClearAllButton::class.java,
         RecentsMemInfo::class.java,
         GridOptions::class.java,

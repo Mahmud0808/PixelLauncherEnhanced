@@ -58,6 +58,7 @@ object Constants {
     const val LOCK_LAYOUT = "xposed_locklayout"
     const val FREE_WIDGET_RESIZE = "xposed_freewidgetresize"
     const val DRAWER_SEARCH_BAR = "xposed_drawersearchbar"
+    const val HIDE_DRAWER_SCROLLBAR = "xposed_hidedrawerscrollbar"
     const val RECENTS_CLEAR_ALL_BUTTON = "xposed_recentsclearallbutton"
     const val FIXED_RECENTS_BUTTONS_WIDTH = "xposed_fixedrecentsbuttonswidth"
     const val DESKTOP_GRID_ROWS = "xposed_desktopgridrows"
