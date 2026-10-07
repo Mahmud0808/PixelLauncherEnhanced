@@ -3,19 +3,22 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_DARK_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
+import java.lang.reflect.Modifier
 
 class PageIndicator(context: Context) : ModPack(context) {
 
@@ -31,7 +34,9 @@ class PageIndicator(context: Context) : ModPack(context) {
         }
 
         when (key.firstOrNull()) {
-            LAUNCHER_DARK_PAGE_INDICATOR -> restartLauncher(mContext)
+            LAUNCHER_DARK_PAGE_INDICATOR -> pageIndicatorRef?.get()?.let { indicator ->
+                indicator.post { indicator.callMethodSilently("setPaintColor", stockColor(indicator)) }
+            }
             LAUNCHER_HIDE_PAGE_INDICATOR -> pageIndicatorRef?.get()?.invalidateTree()
         }
     }
@@ -52,8 +57,20 @@ class PageIndicator(context: Context) : ModPack(context) {
 
         listOf(
             "com.android.launcher3.pageindicators.PageIndicatorDots",
+            "com.android.launcher3.pageindicators.PageIndicatorDotsWithArrows",
             "com.android.launcher3.pageindicators.WorkspacePageIndicator"
         ).forEach { className ->
+            findClass(className, suppressError = true)
+                ?.declaredMethods
+                ?.filter { it.name == "setPaintColor" && !Modifier.isAbstract(it.modifiers) }
+                ?.forEach { method ->
+                    MethodHookHelper(method).runBefore { param ->
+                        if (darkPageIndicatorEnabled && (param.thisObject as View).isWorkspaceIndicator()) {
+                            param.args[0] = Color.BLACK
+                        }
+                    }
+                }
+
             findClass(className, suppressError = true)
                 .hookMethod("onDraw")
                 .suppressError()
@@ -68,11 +85,19 @@ class PageIndicator(context: Context) : ModPack(context) {
     private fun setupPageIndicator(launcher: Any) {
         val pageIndicator = launcher.getField("mWorkspace").callMethod("getPageIndicator")
 
-        (pageIndicator as? View)?.let { pageIndicatorRef = WeakReference(it) }
-
-        if (darkPageIndicatorEnabled) {
-            pageIndicator.callMethod("setPaintColor", Color.BLACK)
+        (pageIndicator as? View)?.let { indicator ->
+            pageIndicatorRef = WeakReference(indicator)
+            if (darkPageIndicatorEnabled) indicator.callMethodSilently("setPaintColor", Color.BLACK)
         }
+    }
+
+    @SuppressLint("DiscouragedApi")
+    private fun stockColor(indicator: View): Int {
+        val context = indicator.context
+        val attr = context.resources.getIdentifier("isWorkspaceDarkText", "attr", context.packageName)
+        val value = TypedValue()
+        val darkText = attr != 0 && context.theme.resolveAttribute(attr, value, true) && value.data != 0
+        return if (darkText) Color.BLACK else Color.WHITE
     }
 
     @SuppressLint("DiscouragedApi")

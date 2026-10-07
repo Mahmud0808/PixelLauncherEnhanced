@@ -3,19 +3,23 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.app.Activity
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import androidx.core.view.WindowInsetsCompat
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_STATUSBAR
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
@@ -23,6 +27,7 @@ import java.lang.reflect.Proxy
 class HideStatusbar(context: Context) : ModPack(context) {
 
     private var hideStatusbarEnabled = false
+    private var launcherRef: WeakReference<Activity>? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -30,7 +35,10 @@ class HideStatusbar(context: Context) : ModPack(context) {
         }
 
         when (key.firstOrNull()) {
-            LAUNCHER_HIDE_STATUSBAR -> restartLauncher(mContext)
+            LAUNCHER_HIDE_STATUSBAR -> Handler(Looper.getMainLooper()).post {
+                val launcher = launcherRef?.get()?.takeUnless { it.isDestroyed } ?: return@post
+                if (hideStatusbarEnabled && !launcher.isInOverview()) hideStatusBar(launcher) else showStatusBar(launcher)
+            }
         }
     }
 
@@ -44,64 +52,63 @@ class HideStatusbar(context: Context) : ModPack(context) {
         quickstepLauncherClass
             .hookMethod("onCreate")
             .runAfter { param ->
-                if (!hideStatusbarEnabled) return@runAfter
-
                 val launcherActivity = param.thisObject as Activity
+                launcherRef = WeakReference(launcherActivity)
 
                 val noStatusBarStateListener = object : CustomStateListener() {
                     override fun onStateTransitionStart() {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            launcherActivity.window.decorView.windowInsetsController?.show(
-                                WindowInsetsCompat.Type.statusBars()
-                            )
-                        } else {
-                            @Suppress("DEPRECATION")
-                            launcherActivity.window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                        }
+                        if (hideStatusbarEnabled) showStatusBar(launcherActivity)
                     }
 
                     override fun onStateTransitionComplete() {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            launcherActivity.window.decorView.windowInsetsController?.hide(
-                                WindowInsetsCompat.Type.statusBars()
-                            )
-                        } else {
-                            @Suppress("DEPRECATION")
-                            launcherActivity.window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                        }
+                        if (hideStatusbarEnabled) hideStatusBar(launcherActivity)
                     }
                 }
 
-                param.thisObject.setExtraField(
-                    "noStatusBarStateListener",
-                    getListener(noStatusBarStateListener)
-                )
+                val listener = getListener(noStatusBarStateListener)
+                launcherActivity.setExtraField(LISTENER_KEY, listener)
+                launcherActivity.callMethod("getStateManager").callMethod("addStateListener", listener)
 
-                param.thisObject
-                    .callMethod("getStateManager")
-                    .callMethod(
-                        "addStateListener",
-                        param.thisObject.getExtraField("noStatusBarStateListener")
-                    )
+                if (hideStatusbarEnabled) hideStatusBar(launcherActivity)
             }
 
         quickstepLauncherClass
             .hookMethod("onDestroy")
             .runAfter { param ->
-                if (!hideStatusbarEnabled) return@runAfter
-
+                val listener = param.thisObject.getExtraFieldSilently(LISTENER_KEY) ?: return@runAfter
                 param.thisObject
-                    .callMethod("getStateManager")
-                    .callMethod(
-                        "removeStateListener",
-                        param.thisObject.getExtraField("noStatusBarStateListener")
-                    )
+                    .callMethodSilently("getStateManager")
+                    ?.callMethodSilently("removeStateListener", listener)
             }
+    }
+
+    private fun Activity.isInOverview(): Boolean {
+        val stateManager = callMethodSilently("getStateManager") ?: return false
+        val state = stateManager.getFieldSilently("mState") ?: stateManager.callMethodSilently("getState")
+        return state == OVERVIEW
+    }
+
+    private fun hideStatusBar(activity: Activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            activity.window.decorView.windowInsetsController?.hide(WindowInsetsCompat.Type.statusBars())
+        } else {
+            @Suppress("DEPRECATION")
+            activity.window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        }
+    }
+
+    private fun showStatusBar(activity: Activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            activity.window.decorView.windowInsetsController?.show(WindowInsetsCompat.Type.statusBars())
+        } else {
+            @Suppress("DEPRECATION")
+            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        }
     }
 
     private fun getListener(listener: CustomStateListener): Any {
         val listenerClass =
-            findClass("com.android.launcher3.statemanager.StateManager\$StateListener")!!
+            findClass($$"com.android.launcher3.statemanager.StateManager$StateListener")!!
 
         return Proxy.newProxyInstance(
             listenerClass.classLoader,
@@ -129,6 +136,9 @@ class HideStatusbar(context: Context) : ModPack(context) {
                         onStateTransitionComplete()
                     }
                 }
+
+                "equals" -> return proxy === args?.getOrNull(0)
+                "hashCode" -> return System.identityHashCode(proxy)
             }
 
             return null
@@ -140,6 +150,7 @@ class HideStatusbar(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private const val LISTENER_KEY = "pleNoStatusBarStateListener"
         private lateinit var OVERVIEW: Any
     }
 }

@@ -1,29 +1,37 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.os.Handler
+import android.os.Looper
+import android.util.TypedValue
 import android.view.View
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.toDrawable
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_TOP_SHADOW
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setAnyField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.util.WeakHashMap
 
 class TopShadow(context: Context) : ModPack(context) {
 
     private var removeTopShadow = false
     private var sysUiScrimInstance: Any? = null
+    private val standIns = WeakHashMap<Any, Any>()
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -31,10 +39,8 @@ class TopShadow(context: Context) : ModPack(context) {
         }
 
         when (key.firstOrNull()) {
-            LAUNCHER_HIDE_TOP_SHADOW -> if (removeTopShadow) {
-                updateMaskBitmaps()
-            } else {
-                restartLauncher(mContext)
+            LAUNCHER_HIDE_TOP_SHADOW -> Handler(Looper.getMainLooper()).post {
+                if (removeTopShadow) hideScrim() else restoreScrim()
             }
         }
     }
@@ -46,17 +52,17 @@ class TopShadow(context: Context) : ModPack(context) {
             .hookConstructor()
             .runAfter { param ->
                 sysUiScrimInstance = param.thisObject
-                updateMaskBitmaps()
+                hideScrim()
             }
 
         sysUiScrimClass
-            .hookMethod(
-                "onViewAttachedToWindow",
-                "onViewDetachedFromWindow"
-            )
+            .hookMethod("onViewAttachedToWindow", "onViewDetachedFromWindow")
             .runBefore { param ->
                 if (!removeTopShadow) return@runBefore
 
+                if (param.method.name == "onViewAttachedToWindow") {
+                    param.thisObject.setExtraField(ATTACH_SKIPPED, true)
+                }
                 param.result = null
             }
 
@@ -66,36 +72,86 @@ class TopShadow(context: Context) : ModPack(context) {
             .runAfter { param ->
                 if (!removeTopShadow) return@runAfter
 
-                val bitmap = param.result as Bitmap
-                bitmap.eraseColor(Color.TRANSPARENT)
+                val original = param.result as? Bitmap ?: return@runAfter
+                param.result = transparentBitmap(original).also { standIns[it] = original }
             }
     }
 
-    private fun updateMaskBitmaps() {
-        if (!removeTopShadow || sysUiScrimInstance == null) return
+    private fun hideScrim() {
+        val scrim = sysUiScrimInstance ?: return
+        if (!removeTopShadow) return
 
-        val mRoot = sysUiScrimInstance.getField("mRoot") as View
-        val mTopMaskPaint = sysUiScrimInstance.getAnyField(
-            "mTopMaskPaint",
-            "mWallpaperScrimPaint"
-        ) as Paint
+        @Suppress("UNCHECKED_CAST")
+        val originals = scrim.getExtraFieldSilently(ORIGINALS) as? HashMap<String, Any?>
+            ?: HashMap<String, Any?>().also { scrim.setExtraField(ORIGINALS, it) }
 
-        mTopMaskPaint.color = Color.rgb(0x22, 0x22, 0x22)
+        MASK_FIELDS.forEach { name ->
+            val current = scrim.getFieldSilently(name) ?: return@forEach
+            if (standIns.containsKey(current)) return@forEach
 
-        // Use tiny transparent bitmaps to prevent the scrim from regenerating visible masks
-        val transparent = createBitmap(1, 1, Bitmap.Config.ALPHA_8)
-
-        sysUiScrimInstance.apply {
-            setField("mHideSysUiScrim", true)
-            try {
-                setField("mTopMaskBitmap", transparent)
-            } catch (_: Throwable) {
-                setField("mTopScrim", transparent.toDrawable(mContext.resources))
+            if (!originals.containsKey(name)) originals[name] = current
+            val standIn: Any = when (current) {
+                is Bitmap -> transparentBitmap(current)
+                is Drawable -> ColorDrawable(Color.TRANSPARENT)
+                else -> return@forEach
             }
-            setAnyField(transparent, "mBottomMask", "mBottomMaskBitmap")
-            setAnyField(mTopMaskPaint, "mTopMaskPaint", "mWallpaperScrimPaint")
+            standIns[standIn] = current
+            scrim.setFieldSilently(name, standIn)
         }
 
-        mRoot.invalidate()
+        (scrim.getAnyFieldSilently("mTopMaskPaint", "mWallpaperScrimPaint") as? Paint)?.let { paint ->
+            if (!originals.containsKey(PAINT_COLOR)) originals[PAINT_COLOR] = paint.color
+            paint.color = Color.rgb(0x22, 0x22, 0x22)
+        }
+
+        scrim.setFieldSilently("mHideSysUiScrim", true)
+        (scrim.getFieldSilently("mRoot") as? View)?.invalidate()
+    }
+
+    private fun restoreScrim() {
+        val scrim = sysUiScrimInstance ?: return
+
+        @Suppress("UNCHECKED_CAST")
+        val originals = scrim.getExtraFieldSilently(ORIGINALS) as? HashMap<String, Any?> ?: HashMap()
+
+        MASK_FIELDS.forEach { name ->
+            val current = scrim.getFieldSilently(name) ?: return@forEach
+            val original = standIns.remove(current) ?: originals[name] ?: return@forEach
+            scrim.setFieldSilently(name, original)
+        }
+
+        (scrim.getAnyFieldSilently("mTopMaskPaint", "mWallpaperScrimPaint") as? Paint)?.let { paint ->
+            (originals[PAINT_COLOR] as? Int)?.let { paint.color = it }
+        }
+        originals.clear()
+
+        val root = scrim.getFieldSilently("mRoot") as? View
+        root?.let { scrim.setFieldSilently("mHideSysUiScrim", isWorkspaceDarkText(it.context)) }
+
+        if (scrim.getExtraFieldSilently(ATTACH_SKIPPED) == true && root?.isAttachedToWindow == true) {
+            scrim.setExtraField(ATTACH_SKIPPED, false)
+            scrim.callMethodSilently("onViewAttachedToWindow", root)
+        }
+
+        scrim.callMethodSilently("reapplySysUiAlpha")
+        root?.invalidate()
+    }
+
+    private fun transparentBitmap(source: Bitmap): Bitmap =
+        createBitmap(source.width.coerceAtLeast(1), source.height.coerceAtLeast(1), Bitmap.Config.ALPHA_8)
+
+    @SuppressLint("DiscouragedApi")
+    private fun isWorkspaceDarkText(context: Context): Boolean {
+        val attr = context.resources.getIdentifier("isWorkspaceDarkText", "attr", context.packageName)
+        if (attr == 0) return false
+        val value = TypedValue()
+        return context.theme.resolveAttribute(attr, value, true) && value.data != 0
+    }
+
+    companion object {
+        private const val ORIGINALS = "pleScrimOriginals"
+        private const val ATTACH_SKIPPED = "pleScrimAttachSkipped"
+        private const val PAINT_COLOR = "paintColor"
+        private val MASK_FIELDS = listOf("mTopMaskBitmap", "mTopScrim", "mBottomMask", "mBottomMaskBitmap")
     }
 }

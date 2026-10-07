@@ -2,10 +2,13 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.LinearLayout
 import androidx.appcompat.view.ContextThemeWrapper
@@ -18,20 +21,22 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_DISABL
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_REMOVE_SCREENSHOT_BUTTON
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers.findMethodBestMatch
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
 class ClearAllButton(context: Context) : ModPack(context) {
@@ -43,6 +48,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
     private val hookedOverlayClasses = mutableSetOf<Class<*>>()
     private var recentsViewInstance: Any? = null
     private var actionClearAllButton: Button? = null
+    private var actionButtonsRef: WeakReference<ViewGroup>? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -53,11 +59,10 @@ class ClearAllButton(context: Context) : ModPack(context) {
         }
 
         when (key.firstOrNull()) {
-            RECENTS_CLEAR_ALL_BUTTON -> updateVisibility()
-
+            RECENTS_CLEAR_ALL_BUTTON,
             FIXED_RECENTS_BUTTONS_WIDTH,
             RECENTS_REMOVE_SCREENSHOT_BUTTON,
-            RECENTS_DISABLE_SELECTION -> restartLauncher(mContext)
+            RECENTS_DISABLE_SELECTION -> Handler(Looper.getMainLooper()).post { updateVisibility() }
         }
     }
 
@@ -251,111 +256,158 @@ class ClearAllButton(context: Context) : ModPack(context) {
                 }
 
                 mActionButtons.addView(actionClearAllButton)
-
-                if (fixedButtonWidth) {
-                    mActionButtons.children.forEach { child ->
-                        if (child is Button) {
-                            child.maxLines = 1
-                            child.ellipsize = TextUtils.TruncateAt.END
-                        }
-                    }
-                }
+                actionButtonsRef = WeakReference(mActionButtons)
 
                 updateVisibility()
             }
     }
 
-    @SuppressLint("DiscouragedApi")
     private fun updateVisibility() {
-        var childCount: Int
+        val row = actionButtonsRef?.get() ?: return
+        actionClearAllButton?.visibility = if (clearAllButton) View.VISIBLE else View.GONE
 
-        if (clearAllButton) {
-            actionClearAllButton?.visibility = View.VISIBLE
-            childCount = 3
-        } else {
-            actionClearAllButton?.visibility = View.GONE
-            childCount = 2
-        }
-
+        var childCount = if (clearAllButton) 3 else 2
         if (removeScreenshotButton) childCount--
         if (disableSelection) childCount--
         childCount = childCount.coerceAtLeast(2)
 
-        val parentView = actionClearAllButton?.parent as? ViewGroup
-        val displayMetrics = mContext.resources.displayMetrics
+        if (fixedButtonWidth) wrapButtons(row) else unwrapButtons(row)
 
-        parentView?.children?.forEach { child ->
-            if (child is Button) {
-                child.maxWidth = displayMetrics.widthPixels / childCount
-            }
+        val maxWidth = mContext.resources.displayMetrics.widthPixels / childCount
+        row.children.forEach { child ->
+            if (child is Button) child.maxWidth = maxWidth
         }
 
-        if (removeScreenshotButton) parentView?.keepHidden("action_screenshot")
-        if (disableSelection) parentView?.keepHidden("action_select")
+        row.setHidden("action_screenshot", removeScreenshotButton)
+        row.setHidden("action_select", disableSelection)
+    }
 
-        if (fixedButtonWidth) {
-            val parentView = (actionClearAllButton?.parent as? ViewGroup)?.apply {
-                layoutParams?.width = ViewGroup.LayoutParams.MATCH_PARENT
-            }
-            val containerTag = "action_button_container"
+    private fun wrapButtons(row: ViewGroup) {
+        if (row.getExtraFieldSilently(WRAPPED) == true) return
+        row.setExtraField(WRAPPED, true)
 
-            parentView?.children?.forEach { child ->
-                if (child is Button) {
-                    val container = LinearLayout(mContext).apply {
-                        tag = containerTag
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = Gravity.CENTER
-                        layoutParams = LinearLayout.LayoutParams(
-                            0,
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            1f
-                        )
-                    }
-                    val index = parentView.indexOfChild(child)
-                    parentView.removeView(child)
-                    container.addView(child)
-                    parentView.addView(container, index)
+        row.setExtraField(ORIGINAL_WIDTH, row.layoutParams?.width)
+        row.layoutParams?.width = ViewGroup.LayoutParams.MATCH_PARENT
 
-                    (child.layoutParams as ViewGroup.MarginLayoutParams).marginStart = 0
+        row.children.toList().forEach { child ->
+            if (child is Button) {
+                child.setExtraField(ORIGINAL_MARGIN, (child.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart)
+                child.setExtraField(ORIGINAL_MAX_LINES, child.maxLines)
+                child.setExtraField(ORIGINAL_ELLIPSIZE, child.ellipsize)
+                child.maxLines = 1
+                child.ellipsize = TextUtils.TruncateAt.END
 
-                    fun updateVisibility(isVisible: Boolean) {
+                val container = LinearLayout(mContext).apply {
+                    tag = CONTAINER_TAG
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                }
+                val index = row.indexOfChild(child)
+                row.removeView(child)
+                container.addView(child)
+                row.addView(container, index)
+
+                (child.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart = 0
+
+                container.visibility = if (child.isVisible) View.VISIBLE else View.GONE
+                container.setExtraField(
+                    LAYOUT_LISTENER,
+                    child.addVisibilityListener { isVisible ->
                         container.visibility = if (isVisible) View.VISIBLE else View.GONE
                     }
-
-                    child.setOnVisibilityChangeListener { isVisible -> updateVisibility(isVisible) }
-                    updateVisibility(child.isVisible)
-                } else if (child.tag != containerTag) {
-                    child.setOnVisibilityChangeListener { isVisible ->
-                        child.visibility = View.GONE
-                    }
-                    child.visibility = View.GONE
-                }
+                )
+            } else if (child.tag != CONTAINER_TAG) {
+                child.setExtraField(ORIGINAL_VISIBILITY, child.visibility)
+                child.visibility = View.GONE
+                child.setExtraField(
+                    LAYOUT_LISTENER,
+                    child.addVisibilityListener { isVisible -> if (isVisible) child.visibility = View.GONE }
+                )
             }
         }
+    }
+
+    private fun unwrapButtons(row: ViewGroup) {
+        if (row.getExtraFieldSilently(WRAPPED) != true) return
+        row.setExtraField(WRAPPED, false)
+
+        row.children.toList().forEach { child ->
+            if (child.tag == CONTAINER_TAG && child is ViewGroup) {
+                child.removeLayoutListener()
+                val button = child.getChildAt(0) as? Button ?: return@forEach
+                val index = row.indexOfChild(child)
+                child.removeView(button)
+                row.removeView(child)
+                row.addView(button, index)
+
+                (button.getExtraFieldSilently(ORIGINAL_MARGIN) as? Int)?.let {
+                    (button.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart = it
+                }
+                (button.getExtraFieldSilently(ORIGINAL_MAX_LINES) as? Int)?.let { button.maxLines = it }
+                button.ellipsize = button.getExtraFieldSilently(ORIGINAL_ELLIPSIZE) as? TextUtils.TruncateAt
+            } else {
+                child.removeLayoutListener()
+                (child.getExtraFieldSilently(ORIGINAL_VISIBILITY) as? Int)?.let { child.visibility = it }
+            }
+        }
+
+        (row.getExtraFieldSilently(ORIGINAL_WIDTH) as? Int)?.let { row.layoutParams?.width = it }
+        row.requestLayout()
     }
 
     @SuppressLint("DiscouragedApi")
-    private fun ViewGroup.keepHidden(idName: String) {
+    private fun ViewGroup.setHidden(idName: String, hidden: Boolean) {
         val id = mContext.resources.getIdentifier(idName, "id", mContext.packageName)
         if (id == 0) return
+        val view = findViewById<View>(id) ?: return
+        val listener = view.getExtraFieldSilently(HIDE_LISTENER)
 
-        findViewById<View>(id)?.let { view ->
-            view.setOnVisibilityChangeListener { isVisible ->
-                if (isVisible) {
-                    view.visibility = View.GONE
-                }
+        if (hidden) {
+            if (listener == null) {
+                view.setExtraField(STOCK_VISIBILITY, view.visibility)
+                view.setExtraField(
+                    HIDE_LISTENER,
+                    view.addVisibilityListener { isVisible ->
+                        if (isVisible) {
+                            view.setExtraField(STOCK_VISIBILITY, View.VISIBLE)
+                            view.visibility = View.GONE
+                        }
+                    }
+                )
             }
             view.visibility = View.GONE
+        } else if (listener is ViewTreeObserver.OnGlobalLayoutListener) {
+            view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+            view.setExtraField(HIDE_LISTENER, null)
+            view.visibility = view.getExtraFieldSilently(STOCK_VISIBILITY) as? Int ?: View.VISIBLE
         }
     }
 
-    private fun View.setOnVisibilityChangeListener(onVisibilityChanged: (Boolean) -> Unit) {
-        viewTreeObserver.addOnGlobalLayoutListener {
-            onVisibilityChanged(isVisible)
+    private fun View.addVisibilityListener(onVisibilityChanged: (Boolean) -> Unit): ViewTreeObserver.OnGlobalLayoutListener {
+        val listener = ViewTreeObserver.OnGlobalLayoutListener { onVisibilityChanged(isVisible) }
+        viewTreeObserver.addOnGlobalLayoutListener(listener)
+        return listener
+    }
+
+    private fun View.removeLayoutListener() {
+        (getExtraFieldSilently(LAYOUT_LISTENER) as? ViewTreeObserver.OnGlobalLayoutListener)?.let {
+            viewTreeObserver.removeOnGlobalLayoutListener(it)
         }
+        setExtraField(LAYOUT_LISTENER, null)
     }
 
     companion object {
+        private const val CONTAINER_TAG = "action_button_container"
+        private const val WRAPPED = "pleButtonsWrapped"
+        private const val ORIGINAL_WIDTH = "pleOriginalWidth"
+        private const val ORIGINAL_MARGIN = "pleOriginalMargin"
+        private const val ORIGINAL_MAX_LINES = "pleOriginalMaxLines"
+        private const val ORIGINAL_ELLIPSIZE = "pleOriginalEllipsize"
+        private const val ORIGINAL_VISIBILITY = "pleOriginalVisibility"
+        private const val STOCK_VISIBILITY = "pleStockVisibility"
+        private const val LAYOUT_LISTENER = "pleLayoutListener"
+        private const val HIDE_LISTENER = "pleHideListener"
         private const val OVERVIEW_ACTIONS = 1 shl 3
         private const val CLEAR_ALL_BUTTON = 1 shl 4
         private const val FLOATING_SEARCH_BAR = 1 shl 7
