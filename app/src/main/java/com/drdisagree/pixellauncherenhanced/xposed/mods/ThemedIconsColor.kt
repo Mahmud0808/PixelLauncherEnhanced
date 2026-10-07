@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.content.res.XResources
 import android.graphics.Color
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_LIGHT
@@ -30,6 +31,7 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
     private var mFolderColorLight = Color.WHITE
     private var mFolderColorDark = Color.BLACK
     private var packageName: String? = null
+    private val replacedIds = HashSet<Int>()
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -50,7 +52,7 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             THEMED_ICON_CUSTOM_BG_COLOR_DARK,
             FOLDER_CUSTOM_COLOR_LIGHT,
             FOLDER_CUSTOM_COLOR_DARK -> {
-                replaceResources(packageName)
+                if (mCustomThemedIconColor) replaceResources(packageName) else clearResources(packageName)
                 reloadIcons()
             }
         }
@@ -79,6 +81,17 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             }
     }
 
+    private fun replace(res: XResources, id: Int, color: Int) {
+        replacedIds.add(id)
+        res.setReplacement(id, color)
+    }
+
+    private fun clearResources(packageName: String?) {
+        val resParam = resParams[packageName] ?: return
+        replacedIds.forEach { id -> runCatching { resParam.res.setReplacement(id, null) } }
+        replacedIds.clear()
+    }
+
     @SuppressLint("DiscouragedApi")
     private fun replaceResources(packageName: String?) {
         if (!mCustomThemedIconColor || packageName == null) return
@@ -93,7 +106,8 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(
+            replace(
+                resParam.res,
                 it,
                 if (isDarkTheme) mIconBgColorDark else mIconBgColorLight
             )
@@ -107,7 +121,8 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(
+            replace(
+                resParam.res,
                 it,
                 if (isDarkTheme) mIconFgColorDark else mIconFgColorLight
             )
@@ -118,7 +133,8 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(
+            replace(
+                resParam.res,
                 it,
                 if (isDarkTheme) mIconBgColorDark else mIconBgColorLight
             )
@@ -128,7 +144,8 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(
+            replace(
+                resParam.res,
                 it,
                 if (isDarkTheme) mIconFgColorDark else mIconFgColorLight
             )
@@ -139,28 +156,28 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorLight)
+            replace(resParam.res, it, mFolderColorLight)
         }
         mContext.resources.getIdentifier(
             "folder_preview_dark",
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorDark)
+            replace(resParam.res, it, mFolderColorDark)
         }
         mContext.resources.getIdentifier(
             "folder_background_light",
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorLight)
+            replace(resParam.res, it, mFolderColorLight)
         }
         mContext.resources.getIdentifier(
             "folder_background_dark",
             "color",
             packageName
         ).takeIf { it != 0 }?.let {
-            resParam.res.setReplacement(it, mFolderColorDark)
+            replace(resParam.res, it, mFolderColorDark)
         }
     }
 }

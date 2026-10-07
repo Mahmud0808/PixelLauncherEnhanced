@@ -164,6 +164,14 @@ class LauncherUtils(context: Context) : ModPack(context) {
             }
         }
 
+        fun reloadModel() {
+            Handler(Looper.getMainLooper()).post {
+                runCatching { mModel.callMethod("forceReload") }
+                    .recoverCatching { mModel.callMethod("forceReload", "PLEnhanced") }
+                    .onFailure { log(TAG, it) }
+            }
+        }
+
         fun removeCachedIcons(packageName: String, user: UserHandle) {
             val iconCache = iconCacheInstance ?: return
 

@@ -10,7 +10,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadModel
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.Helpers.toPx
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceHookManager
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
@@ -45,13 +46,18 @@ class HotseatMod(context: Context) : ModPack(context) {
         when (key.firstOrNull()) {
             DESKTOP_SEARCH_BAR -> {
                 triggerSearchBarVisibility()
-                restartLauncher(mContext)
+                reloadLauncher(mContext)
             }
 
-            DESKTOP_DOCK_SPACING,
-            DISABLE_DOCK -> restartLauncher(mContext)
+            DESKTOP_DOCK_SPACING -> reloadLauncher(mContext)
 
-            LAUNCHER_HIDE_PAGE_INDICATOR -> if (dockDisabled) restartLauncher(mContext)
+            DISABLE_DOCK -> {
+                triggerSearchBarVisibility()
+                reloadLauncher(mContext)
+                reloadModel()
+            }
+
+            LAUNCHER_HIDE_PAGE_INDICATOR -> if (dockDisabled) reloadLauncher(mContext)
 
             DESKTOP_SEARCH_BAR_OPACITY -> updateSearchBarOpacity()
         }
