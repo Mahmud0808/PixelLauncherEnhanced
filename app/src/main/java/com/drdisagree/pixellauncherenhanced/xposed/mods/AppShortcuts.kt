@@ -17,6 +17,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_EDIT_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_KILL_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_UNINSTALL_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_KILL_APP
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_LOCK_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_UNINSTALL_APP
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
@@ -32,6 +33,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.utils.LockedApps
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers.getAdditionalInstanceField
 import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
@@ -45,7 +47,9 @@ class AppShortcuts(context: Context) : ModPack(context) {
     private enum class Action(val iconRes: Int, val labelRes: Int) {
         EDIT(R.drawable.ic_edit, R.string.popup_edit),
         KILL(R.drawable.ic_kill_app, R.string.kill_app),
-        UNINSTALL(R.drawable.ic_uninstall, R.string.uninstall_app)
+        UNINSTALL(R.drawable.ic_uninstall, R.string.uninstall_app),
+        LOCK(R.drawable.ic_lock, R.string.lock_app),
+        UNLOCK(R.drawable.ic_lock_open, R.string.unlock_app)
     }
 
     private var popupEditApp = false
@@ -53,6 +57,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
     private var popupUninstallApp = false
     private var recentsKillApp = false
     private var recentsUninstallApp = false
+    private var recentsLockApp = false
 
     private var appInfoShortcutClass: Class<*>? = null
     private var appInfoShortcutConstructor: Constructor<*>? = null
@@ -65,6 +70,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
             popupUninstallApp = getBoolean(POPUP_UNINSTALL_APP, false)
             recentsKillApp = getBoolean(RECENTS_KILL_APP, false)
             recentsUninstallApp = getBoolean(RECENTS_UNINSTALL_APP, false)
+            recentsLockApp = getBoolean(RECENTS_LOCK_APP, false)
         }
     }
 
@@ -112,7 +118,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
             suppressError = true
         ) ?: return
 
-        Action.entries.forEach { action ->
+        listOf(Action.EDIT, Action.KILL, Action.UNINSTALL).forEach { action ->
             popupFactories[action] = Proxy.newProxyInstance(
                 factoryClass.classLoader,
                 arrayOf(factoryClass)
@@ -158,7 +164,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
             .hookMethod("getEnabledShortcuts")
             .suppressError()
             .runAfter { param ->
-                if (!recentsKillApp && !recentsUninstallApp) return@runAfter
+                if (!recentsKillApp && !recentsUninstallApp && !recentsLockApp) return@runAfter
 
                 val original = param.result as? List<*> ?: return@runAfter
                 val template = original.firstOrNull {
@@ -171,6 +177,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
                     template.getFieldSilently("mOriginalView")
                 )
                 val added = buildList {
+                    if (recentsLockApp) add(createShortcut(lockAction(args), args))
                     if (recentsKillApp) add(createShortcut(Action.KILL, args))
                     if (recentsUninstallApp) add(createShortcut(Action.UNINSTALL, args))
                 }.filterNotNull()
@@ -179,6 +186,13 @@ class AppShortcuts(context: Context) : ModPack(context) {
                     param.result = ArrayList(original).apply { addAll(added) }
                 }
             }
+    }
+
+    private fun lockAction(args: Array<out Any?>): Action {
+        val itemInfo = args.firstOrNull { it?.getFieldSilently("itemType") != null }
+        val packageName = itemInfo.packageName() ?: return Action.LOCK
+        val locked = LockedApps.isLocked(mContext, packageName, itemInfo.user().userId())
+        return if (locked) Action.UNLOCK else Action.LOCK
     }
 
     private fun createShortcut(action: Action, args: Array<out Any?>): Any? {
@@ -264,7 +278,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
             }
 
             Action.KILL -> {
-                val userId = user.callMethodSilently("getIdentifier") as? Int ?: user.hashCode()
+                val userId = user.userId()
                 enqueueProxyCommand { proxy ->
                     proxy.runCommand("am force-stop --user $userId $packageName")
                 }
@@ -273,6 +287,18 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 Toast.makeText(
                     context,
                     modRes.getString(R.string.app_killed, label),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            Action.LOCK, Action.UNLOCK -> {
+                val locked = action == Action.LOCK
+                LockedApps.setLocked(context, packageName, user.userId(), locked)
+
+                val label = itemInfo.getFieldSilently("title") as? CharSequence ?: packageName
+                Toast.makeText(
+                    context,
+                    modRes.getString(if (locked) R.string.app_locked else R.string.app_unlocked, label),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -332,6 +358,10 @@ class AppShortcuts(context: Context) : ModPack(context) {
 
             else -> null
         }
+    }
+
+    private fun UserHandle.userId(): Int {
+        return callMethodSilently("getIdentifier") as? Int ?: hashCode()
     }
 
     private fun Any?.user(): UserHandle {

@@ -32,6 +32,12 @@
             android:title="@string/recents_uninstall_app_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_recentslockapp"
+            android:summary="@string/recents_lock_app_desc"
+            android:title="@string/recents_lock_app_title"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory

@@ -77,6 +77,7 @@ object Constants {
     const val RECENTS_MEMINFO_CHIP = "xposed_recentsmeminfochip"
     const val RECENTS_KILL_APP = "xposed_recentskillapp"
     const val RECENTS_UNINSTALL_APP = "xposed_recentsuninstallapp"
+    const val RECENTS_LOCK_APP = "xposed_recentslockapp"
     const val POPUP_KILL_APP = "xposed_popupkillapp"
     const val POPUP_UNINSTALL_APP = "xposed_popupuninstallapp"
     const val POPUP_EDIT_APP = "xposed_popupeditapp"

@@ -375,6 +375,12 @@
     <string name="recents_kill_app_desc">Add a Kill app option to the app menu in recents</string>
     <string name="recents_uninstall_app_title">Uninstall option</string>
     <string name="recents_uninstall_app_desc">Add an Uninstall option to the app menu in recents</string>
+    <string name="recents_lock_app_title">Lock option</string>
+    <string name="recents_lock_app_desc">Add a Lock option to the app menu in recents. Locked apps stay when you tap Clear all</string>
+    <string name="lock_app">Lock</string>
+    <string name="unlock_app">Unlock</string>
+    <string name="app_locked">%1$s locked</string>
+    <string name="app_unlocked">%1$s unlocked</string>
     <string name="no_drawer_mode_title">Disable app drawer</string>
     <string name="no_drawer_mode_desc">Place all apps on new home screen pages instead of the app drawer</string>
     <string name="no_drawer_swipe_action_title">Swipe up action</string>
