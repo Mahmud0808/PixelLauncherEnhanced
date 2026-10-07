@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pixel Launcher Enhanced · Xposed module for Pixel Launcher and Launcher3</title>
+  <meta name="description" content="Pixel Launcher Enhanced is a free, open-source Xposed module that adds 73 settings to Pixel Launcher and Launcher3: icon packs, custom icon shapes, app drawer tabs, hidden apps, gestures, recents tweaks and layout backups.">
+  <meta name="keywords" content="Pixel Launcher, Launcher3, Xposed module, LSPosed, Android launcher customization, icon packs, themed icons, app drawer tabs, root">
+  <meta name="author" content="DrDisagree">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://mahmud0808.github.io/PixelLauncherEnhanced/">
+
+  <meta name="theme-color" content="#F9F9FF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111318" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pixel Launcher Enhanced">
+  <meta property="og:title" content="Pixel Launcher Enhanced · Make Pixel Launcher yours">
+  <meta property="og:description" content="A free, open-source Xposed module that adds 73 settings to Pixel Launcher and Launcher3.">
+  <meta property="og:url" content="https://mahmud0808.github.io/PixelLauncherEnhanced/">
+  <meta property="og:image" content="https://mahmud0808.github.io/PixelLauncherEnhanced/assets/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Pixel Launcher Enhanced logo on a blue background">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Pixel Launcher Enhanced · Make Pixel Launcher yours">
+  <meta name="twitter:description" content="A free, open-source Xposed module that adds 73 settings to Pixel Launcher and Launcher3.">
+  <meta name="twitter:image" content="https://mahmud0808.github.io/PixelLauncherEnhanced/assets/img/og.png">
+
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="icon" href="assets/img/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="assets/img/favicon-48.png" type="image/png" sizes="48x48">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500&family=Google+Sans+Flex:opsz,wght@6..144,400..700&display=swap">
+  <link rel="stylesheet" href="assets/css/tokens.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+
+  <script>
+    try {
+      var t = localStorage.getItem("ple-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+    document.documentElement.classList.add("js");
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://mahmud0808.github.io/PixelLauncherEnhanced/#website",
+        "url": "https://mahmud0808.github.io/PixelLauncherEnhanced/",
+        "name": "Pixel Launcher Enhanced",
+        "inLanguage": "en"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Pixel Launcher Enhanced",
+        "alternateName": "PLEnhanced",
+        "description": "An Xposed module that adds 73 settings to Pixel Launcher and Launcher3, including icon packs, custom icon shapes, app drawer tabs, hidden apps, gestures, recents tweaks and layout backups.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Android 8.0+",
+        "url": "https://mahmud0808.github.io/PixelLauncherEnhanced/",
+        "downloadUrl": "https://github.com/Mahmud0808/PixelLauncherEnhanced/releases/latest",
+        "codeRepository": "https://github.com/Mahmud0808/PixelLauncherEnhanced",
+        "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+        "isAccessibleForFree": true,
+        "image": "https://mahmud0808.github.io/PixelLauncherEnhanced/assets/img/icon-512.png",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "DrDisagree", "url": "https://github.com/Mahmud0808" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do I need root to use Pixel Launcher Enhanced?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Xposed frameworks like LSPosed need root to run, and the app needs root access as well." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it only work on Pixel phones?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. It works with the launcher, not the device. Any phone running Pixel Launcher (com.google.android.apps.nexuslauncher) or Launcher3 (com.android.launcher3) is supported." }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Android versions are supported?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Android 12 or newer is recommended. The app installs on Android 8.0 and up, but features are not guaranteed to work on older versions." }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I install Pixel Launcher Enhanced?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Install the APK from the latest GitHub release, grant it root access, enable the module in your Xposed manager, then force close your launcher." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 0 1-12.3 7.6L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3.5 8.5h3.5l2-3h6l2 3h3.5v11h-17z"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7.5 8.5 6 8.5-6"/></symbol>
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+      <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5.5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16.5" r="2.5"/></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+      <symbol id="i-photos" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17.5 5-4.5 4 3.5 3-2.5 4 3.5"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.6 3.5 5.4 3.5 8.5s-1.1 5.9-3.5 8.5c-2.4-2.6-3.5-5.4-3.5-8.5s1.1-5.9 3.5-8.5z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+      <symbol id="i-notes" viewBox="0 0 24 24"><path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M9 11h6M9 15h6"/></symbol>
+      <symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></symbol>
+      <symbol id="i-files" viewBox="0 0 24 24"><path d="M3.5 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8.5h14l-1 11.5H6z"/><path d="M9 8.5a3 3 0 0 1 6 0"/></symbol>
+      <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/></symbol>
+      <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2.2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2.2z"/></symbol>
+      <symbol id="cookie" viewBox="0 0 100 100"><path fill="currentColor" stroke="none" d="M50.0 1.8 L51.4 2.0 L52.8 2.4 L54.1 3.2 L55.4 4.2 L56.5 5.4 L57.6 6.7 L58.7 8.0 L59.7 9.2 L60.6 10.4 L61.6 11.3 L62.6 12.1 L63.6 12.6 L64.7 12.9 L66.0 12.9 L67.3 12.8 L68.8 12.6 L70.4 12.2 L72.0 11.9 L73.7 11.6 L75.3 11.5 L76.9 11.5 L78.4 11.8 L79.8 12.3 L81.0 13.1 L81.9 14.1 L82.7 15.3 L83.2 16.8 L83.5 18.4 L83.7 20.0 L83.7 21.7 L83.7 23.4 L83.6 25.0 L83.6 26.5 L83.7 27.8 L84.0 29.0 L84.5 30.1 L85.2 31.0 L86.1 31.9 L87.2 32.7 L88.5 33.4 L89.9 34.2 L91.3 35.0 L92.8 35.8 L94.2 36.8 L95.4 37.8 L96.4 39.0 L97.1 40.3 L97.5 41.6 L97.5 43.0 L97.3 44.5 L96.8 45.9 L96.0 47.3 L95.1 48.7 L94.0 50.0 L92.9 51.2 L91.8 52.4 L90.9 53.6 L90.1 54.7 L89.5 55.8 L89.2 56.9 L89.1 58.1 L89.3 59.3 L89.6 60.6 L90.1 62.0 L90.7 63.5 L91.3 65.0 L91.9 66.6 L92.3 68.3 L92.6 69.9 L92.6 71.4 L92.3 72.8 L91.7 74.1 L90.9 75.2 L89.8 76.2 L88.5 76.9 L87.0 77.5 L85.4 78.0 L83.7 78.3 L82.1 78.5 L80.5 78.8 L79.0 79.0 L77.7 79.4 L76.6 79.8 L75.6 80.5 L74.8 81.3 L74.1 82.4 L73.5 83.6 L73.0 85.0 L72.5 86.5 L72.0 88.1 L71.4 89.7 L70.7 91.2 L69.9 92.6 L68.9 93.7 L67.7 94.7 L66.5 95.3 L65.1 95.6 L63.7 95.6 L62.2 95.4 L60.6 94.9 L59.1 94.2 L57.6 93.3 L56.2 92.5 L54.9 91.6 L53.6 90.9 L52.3 90.3 L51.2 89.9 L50.0 89.8 L48.8 89.9 L47.7 90.3 L46.4 90.9 L45.1 91.6 L43.8 92.5 L42.4 93.3 L40.9 94.2 L39.4 94.9 L37.8 95.4 L36.3 95.6 L34.9 95.6 L33.5 95.3 L32.3 94.7 L31.1 93.7 L30.1 92.6 L29.3 91.2 L28.6 89.7 L28.0 88.1 L27.5 86.5 L27.0 85.0 L26.5 83.6 L25.9 82.4 L25.2 81.3 L24.4 80.5 L23.4 79.8 L22.3 79.4 L21.0 79.0 L19.5 78.8 L17.9 78.5 L16.3 78.3 L14.6 78.0 L13.0 77.5 L11.5 76.9 L10.2 76.2 L9.1 75.2 L8.3 74.1 L7.7 72.8 L7.4 71.4 L7.4 69.9 L7.7 68.3 L8.1 66.6 L8.7 65.0 L9.3 63.5 L9.9 62.0 L10.4 60.6 L10.7 59.3 L10.9 58.1 L10.8 56.9 L10.5 55.8 L9.9 54.7 L9.1 53.6 L8.2 52.4 L7.1 51.2 L6.0 50.0 L4.9 48.7 L4.0 47.3 L3.2 45.9 L2.7 44.5 L2.5 43.0 L2.5 41.6 L2.9 40.3 L3.6 39.0 L4.6 37.8 L5.8 36.8 L7.2 35.8 L8.7 35.0 L10.1 34.2 L11.5 33.4 L12.8 32.7 L13.9 31.9 L14.8 31.0 L15.5 30.1 L16.0 29.0 L16.3 27.8 L16.4 26.5 L16.4 25.0 L16.3 23.4 L16.3 21.7 L16.3 20.0 L16.5 18.4 L16.8 16.8 L17.3 15.3 L18.1 14.1 L19.0 13.1 L20.2 12.3 L21.6 11.8 L23.1 11.5 L24.7 11.5 L26.3 11.6 L28.0 11.9 L29.6 12.2 L31.2 12.6 L32.7 12.8 L34.0 12.9 L35.3 12.9 L36.4 12.6 L37.4 12.1 L38.4 11.3 L39.4 10.4 L40.3 9.2 L41.3 8.0 L42.4 6.7 L43.5 5.4 L44.6 4.2 L45.9 3.2 L47.2 2.4 L48.6 2.0Z"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+      <symbol id="c-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z"/></symbol>
+      <symbol id="c-drawer" viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2"/><circle cx="12" cy="6.5" r="2"/><circle cx="17.5" cy="6.5" r="2"/><circle cx="6.5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="17.5" cy="12" r="2"/><circle cx="6.5" cy="17.5" r="2"/><circle cx="12" cy="17.5" r="2"/><circle cx="17.5" cy="17.5" r="2"/></symbol>
+      <symbol id="c-icons" viewBox="0 0 24 24"><circle cx="7.5" cy="7.5" r="3.5"/><rect x="13" y="4" width="7" height="7" rx="2"/><path d="M7.5 13.5 11 20H4z"/><path d="M16.5 13a3.5 3.5 0 0 1 3.5 3.5V20h-3.5a3.5 3.5 0 0 1 0-7z"/></symbol>
+      <symbol id="c-gestures" viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-4.6-2.2L4 15.8a1.5 1.5 0 0 1 2.3-1.9L9 16"/></symbol>
+      <symbol id="c-recents" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="16" rx="2"/><path d="M4 7v10M20 7v10"/></symbol>
+      <symbol id="c-backup" viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6A3.8 3.8 0 0 1 17 18.5z"/><path d="M12 16v-5m-2.5 2.5L12 11l2.5 2.5"/></symbol>
+      <symbol id="c-advanced" viewBox="0 0 24 24"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav" data-nav>
+    <div class="nav__inner">
+      <a class="brand" href="#top" aria-label="Pixel Launcher Enhanced home">
+        <img class="brand__mark" src="assets/img/mark.png" width="38" height="38" alt="">
+        <span class="brand__name brand__name--full">Pixel Launcher Enhanced</span>
+        <span class="brand__name brand__name--short">PLEnhanced</span>
+      </a>
+      <nav class="nav__center" aria-label="Primary">
+        <a class="nav__link" data-spy href="#features">Features</a>
+        <a class="nav__link" data-spy href="#install">Install</a>
+        <a class="nav__link" data-spy href="#faq">FAQ</a>
+      </nav>
+      <div class="nav__right">
+        <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="icon icon--moon" aria-hidden="true"><use href="#i-moon"/></svg>
+          <svg class="icon icon--sun" aria-hidden="true"><use href="#i-sun"/></svg>
+        </button>
+        <a class="icon-btn nav__github" href="https://github.com/Mahmud0808/PixelLauncherEnhanced" rel="noopener" aria-label="Source code on GitHub">
+          <svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>
+        </a>
+        <a class="btn btn--primary btn--sm" href="https://github.com/Mahmud0808/PixelLauncherEnhanced/releases/latest" rel="noopener">Download</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap">
+        <div class="hero__copy">
+          <h1 class="hero__title" id="hero-title" data-enter>Make Pixel Launcher yours.</h1>
+          <div class="hero__side" data-enter>
+            <p class="hero__lede">An Xposed module that adds 73 settings to Pixel Launcher and Launcher3. Icon packs and shapes, drawer tabs, hidden apps, gestures, recents controls and layout backups.</p>
+            <div class="hero__actions">
+              <a class="btn btn--primary" href="https://github.com/Mahmud0808/PixelLauncherEnhanced/releases/latest" rel="noopener">
+                <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+                <span>Download APK</span>
+              </a>
+              <a class="btn btn--ghost" href="https://github.com/Mahmud0808/PixelLauncherEnhanced" rel="noopener">
+                <svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>
+                <span>View source</span>
+              </a>
+            </div>
+            <p class="hero__release" data-release hidden></p>
+          </div>
+        </div>
+
+        <figure class="play" data-play aria-labelledby="play-caption">
+          <div class="prefs" role="group" aria-labelledby="prefs-title">
+            <p class="prefs__title" id="prefs-title">Customise</p>
+            <ul class="prefs__list">
+              <li class="pref pref--stack">
+                <div class="pref__text">
+                  <span class="pref__name" id="p-tint">Themed icon colour</span>
+                  <span class="pref__sum">Any tint, not just the wallpaper's</span>
+                </div>
+                <div class="swatches" role="group" aria-labelledby="p-tint">
+                  <button type="button" class="swatch swatch--off" data-set="tint" data-value="off" aria-pressed="true" aria-label="Off"></button>
+                  <button type="button" class="swatch swatch--blue" data-set="tint" data-value="blue" aria-pressed="false" aria-label="Blue"></button>
+                  <button type="button" class="swatch swatch--green" data-set="tint" data-value="green" aria-pressed="false" aria-label="Green"></button>
+                  <button type="button" class="swatch swatch--rose" data-set="tint" data-value="rose" aria-pressed="false" aria-label="Rose"></button>
+                  <button type="button" class="swatch swatch--amber" data-set="tint" data-value="amber" aria-pressed="false" aria-label="Amber"></button>
+                </div>
+              </li>
+              <li class="pref pref--stack">
+                <div class="pref__text">
+                  <span class="pref__name" id="p-pack">Icon pack</span>
+                  <span class="pref__sum">Use any installed pack</span>
+                </div>
+                <div class="seg" role="group" aria-labelledby="p-pack">
+                  <button type="button" class="seg__opt" data-set="pack" data-value="system" aria-pressed="true">System</button>
+                  <button type="button" class="seg__opt" data-set="pack" data-value="line" aria-pressed="false">Line</button>
+                  <button type="button" class="seg__opt" data-set="pack" data-value="paper" aria-pressed="false">Paper</button>
+                </div>
+              </li>
+              <li class="pref pref--stack">
+                <div class="pref__text">
+                  <label class="pref__name" for="p-size">Icon size</label>
+                  <span class="pref__sum" data-size-out>100%</span>
+                </div>
+                <input class="slider" id="p-size" type="range" min="70" max="115" step="5" value="100" data-size>
+              </li>
+              <li class="pref">
+                <div class="pref__text">
+                  <span class="pref__name" id="p-glance">Hide At a Glance</span>
+                  <span class="pref__sum">Remove the date line from the home screen</span>
+                </div>
+                <button class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="p-glance" data-switch="hideglance">
+                  <span class="switch__track" aria-hidden="true"><span class="switch__thumb"><svg><use href="#i-check"/></svg></span></span>
+                </button>
+              </li>
+            </ul>
+            <figcaption class="play__caption" id="play-caption">Four of the 73 settings. Change them and watch the home screen.</figcaption>
+          </div>
+            <div class="screen" data-screen data-tint="off" data-pack="system" data-hideglance="false" aria-hidden="true">
+              <span class="screen__shape screen__shape--a"></span>
+              <span class="screen__shape screen__shape--b"></span>
+              <div class="glance">
+                <span class="glance__day" data-glance>Thursday, Oct 8</span>
+              </div>
+              <ul class="apps" data-apps>
+                <li class="app" style="--c: var(--color-icon-red)"><span class="app__icon"><svg><use href="#i-mail"/></svg></span><span class="app__label">Mail</span></li>
+                <li class="app" style="--c: var(--color-icon-blue)"><span class="app__icon"><svg><use href="#i-calendar"/></svg></span><span class="app__label">Calendar</span></li>
+                <li class="app" style="--c: var(--color-icon-green)"><span class="app__icon"><svg><use href="#i-map"/></svg></span><span class="app__label">Maps</span></li>
+                <li class="app" style="--c: var(--color-icon-amber)"><span class="app__icon"><svg><use href="#i-photos"/></svg></span><span class="app__label">Photos</span></li>
+                <li class="app" style="--c: var(--color-icon-orange)"><span class="app__icon"><svg><use href="#i-music"/></svg></span><span class="app__label">Music</span></li>
+                <li class="app" style="--c: var(--color-icon-slate)"><span class="app__icon"><svg><use href="#i-clock"/></svg></span><span class="app__label">Clock</span></li>
+                <li class="app" style="--c: var(--color-icon-teal)"><span class="app__icon"><svg><use href="#i-sun"/></svg></span><span class="app__label">Weather</span></li>
+                <li class="app" style="--c: var(--color-icon-amber)"><span class="app__icon"><svg><use href="#i-notes"/></svg></span><span class="app__label">Notes</span></li>
+                <li class="app" style="--c: var(--color-icon-blue)"><span class="app__icon"><svg><use href="#i-files"/></svg></span><span class="app__label">Files</span></li>
+                <li class="app" style="--c: var(--color-icon-slate)"><span class="app__icon"><svg><use href="#i-settings"/></svg></span><span class="app__label">Settings</span></li>
+                <li class="app" style="--c: var(--color-icon-red)"><span class="app__icon"><svg><use href="#i-video"/></svg></span><span class="app__label">Videos</span></li>
+                <li class="app" style="--c: var(--color-icon-teal)"><span class="app__icon"><svg><use href="#i-person"/></svg></span><span class="app__label">Contacts</span></li>
+                <li class="app" style="--c: var(--color-icon-orange)"><span class="app__icon"><svg><use href="#i-calc"/></svg></span><span class="app__label">Calculator</span></li>
+                <li class="app" style="--c: var(--color-icon-green)"><span class="app__icon"><svg><use href="#i-mic"/></svg></span><span class="app__label">Recorder</span></li>
+                <li class="app" style="--c: var(--color-icon-violet)"><span class="app__icon"><svg><use href="#i-heart"/></svg></span><span class="app__label">Health</span></li>
+              </ul>
+              <ul class="dock" data-dock>
+                <li class="app" style="--c: var(--color-icon-green)"><span class="app__icon"><svg><use href="#i-phone"/></svg></span></li>
+                <li class="app" style="--c: var(--color-icon-blue)"><span class="app__icon"><svg><use href="#i-chat"/></svg></span></li>
+                <li class="app" style="--c: var(--color-icon-teal)"><span class="app__icon"><svg><use href="#i-bag"/></svg></span></li>
+                <li class="app" style="--c: var(--color-icon-violet)"><span class="app__icon"><svg><use href="#i-globe"/></svg></span></li>
+                <li class="app" style="--c: var(--color-icon-slate)"><span class="app__icon"><svg><use href="#i-camera"/></svg></span></li>
+              </ul>
+              <div class="searchbar">
+                <svg aria-hidden="true"><use href="#i-search"/></svg>
+                <span class="searchbar__line"></span>
+              </div>
+            </div>
+
+        </figure>
+      </div>
+    </section>
+
+    <section class="stack" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <h2 class="section-head__title" id="features-title">73 settings, filed where you’d look for them.</h2>
+          <p class="section-head__lede">Every setting works on Pixel Launcher. Launcher3 gets everything except the ones marked below.</p>
+        </header>
+
+        <div class="stack__grid">
+          <aside class="stack__index" aria-label="Feature categories">
+            <ol class="index" data-index>
+              <li><a class="index__link" href="#f-home" style="--tone: var(--tone-home)"><span>Home screen</span><span class="index__n">17</span></a></li>
+              <li><a class="index__link" href="#f-drawer" style="--tone: var(--tone-drawer)"><span>App drawer</span><span class="index__n">15</span></a></li>
+              <li><a class="index__link" href="#f-icons" style="--tone: var(--tone-icons)"><span>Icons</span><span class="index__n">16</span></a></li>
+              <li><a class="index__link" href="#f-gestures" style="--tone: var(--tone-gestures)"><span>Gestures</span><span class="index__n">4</span></a></li>
+              <li><a class="index__link" href="#f-recents" style="--tone: var(--tone-recents)"><span>Recents</span><span class="index__n">11</span></a></li>
+              <li><a class="index__link" href="#f-backup" style="--tone: var(--tone-backup)"><span>Backup &amp; restore</span><span class="index__n">6</span></a></li>
+              <li><a class="index__link" href="#f-advanced" style="--tone: var(--tone-advanced)"><span>Advanced</span><span class="index__n">4</span></a></li>
+            </ol>
+            <ul class="legend" aria-label="Legend">
+              <li><span class="tag tag--pixel">Pixel only</span> not on Launcher3</li>
+              <li><span class="tag tag--partial">Partial</span> limited on Launcher3</li>
+            </ul>
+          </aside>
+
+          <div class="stack__body" data-features>
+            <article class="cat reveal" id="f-home" data-cat style="--tone: var(--tone-home)">
+              <header class="cat__head">
+                <h3 class="cat__title"><span class="cat__icon" aria-hidden="true"><svg><use href="#c-home"/></svg></span>Home screen</h3>
+                <p class="cat__desc">Grid size, labels, the status bar and the dock: the parts you see every time you unlock.</p>
+              </header>
+              <ul class="feats">
+                <li>Themed icons</li>
+                <li>Lock layout</li>
+                <li>Free widget resizing</li>
+                <li>Wallpaper zooming</li>
+                <li>Homescreen columns</li>
+                <li>Homescreen rows</li>
+                <li>Icon labels on desktop</li>
+                <li>Hide statusbar</li>
+                <li>Hide top shadow</li>
+                <li>Dark statusbar icon</li>
+                <li>Hide page indicator</li>
+                <li>Dark page indicator</li>
+                <li>Hide At A Glance</li>
+                <li>Disable dock</li>
+                <li>Dock spacing</li>
+                <li>Hide desktop search bar</li>
+                <li>Search bar opacity <span class="tag">Pixel only</span></li>
+              </ul>
+            </article>
+
+            <article class="cat reveal" id="f-drawer" data-cat style="--tone: var(--tone-drawer)">
+              <header class="cat__head">
+                <h3 class="cat__title"><span class="cat__icon" aria-hidden="true"><svg><use href="#c-drawer"/></svg></span>App drawer</h3>
+                <p class="cat__desc">Tabs, hidden apps and quick launch, in a layout sized for the apps you actually have.</p>
+              </header>
+              <ul class="feats">
+                <li>Disable app drawer</li>
+                <li>App drawer tabs</li>
+                <li>Tabs at the bottom</li>
+                <li>Edit apps in built-in tabs</li>
+                <li>App drawer columns</li>
+                <li>Row height multiplier</li>
+                <li>Icon labels in app drawer</li>
+                <li>Themed icons</li>
+                <li>App drawer background opacity</li>
+                <li>Hide scrollbar</li>
+                <li>Toggle app search bar</li>
+                <li>Quick launch</li>
+                <li>Hide apps from app drawer</li>
+                <li>Search hidden apps</li>
+                <li>Toggle hidden apps from homescreen popup</li>
+              </ul>
+            </article>
+
+            <article class="cat reveal" id="f-icons" data-cat style="--tone: var(--tone-icons)">
+              <header class="cat__head">
+                <h3 class="cat__title"><span class="cat__icon" aria-hidden="true"><svg><use href="#c-icons"/></svg></span>Icons</h3>
+                <p class="cat__desc">Icon packs with a fallback order, per-app overrides, custom shapes and themed colours.</p>
+              </header>
+              <ul class="feats">
+                <li>Icon packs with fallback order</li>
+                <li>Themed icon packs</li>
+                <li>Per-app icons</li>
+                <li>Per-app themed icons</li>
+                <li>Separate home screen icons</li>
+                <li>Rename apps and shortcuts</li>
+                <li>Home screen shortcut icons</li>
+                <li>Custom icon shape</li>
+                <li>Icon size</li>
+                <li>Text size</li>
+                <li>Remove shortcut icon badge</li>
+                <li>Force themed icons</li>
+                <li>Custom themed icon color <span class="tag">Partial</span></li>
+                <li>Edit app in app popup</li>
+                <li>Kill app in app popup</li>
+                <li>Uninstall in app popup</li>
+              </ul>
+            </article>
+
+            <article class="cat reveal" id="f-gestures" data-cat style="--tone: var(--tone-gestures)">
+              <header class="cat__head">
+                <h3 class="cat__title"><span class="cat__icon" aria-hidden="true"><svg><use href="#c-gestures"/></svg></span>Gestures</h3>
+                <p class="cat__desc">Double tap and pinch to do something useful, and take back the space under the gesture bar.</p>
+              </header>
+              <ul class="feats">
+                <li>Double tap actions</li>
+                <li>Pinch in and out actions</li>
+                <li>Hide gesture indicator</li>
+                <li>Hide navigation bar space</li>
+              </ul>
+            </article>
+
+            <article class="cat reveal" id="f-recents" data-cat style="--tone: var(--tone-recents)">
+              <header class="cat__head">
+                <h3 class="cat__title"><span class="cat__icon" aria-hidden="true"><svg><use href="#c-recents"/></svg></span>Recents</h3>
+                <p class="cat__desc">Kill, uninstall or lock apps, check memory at a glance and drop the buttons you never tap.</p>
+              </header>
+              <ul class="feats">
+                <li>Disable recents live tile</li>
+                <li>Kill app in recents</li>
+                <li>Uninstall in recents</li>
+                <li>Lock apps in recents</li>
+                <li>Freeform mode gesture</li>
+                <li>Clear all button</li>
+                <li>Fixed button width</li>
+                <li>Remove screenshot button</li>
+                <li>Disable selection <span class="tag">Pixel only</span></li>
+                <li>Memory info in recents</li>
+                <li>Recents background opacity</li>
+              </ul>
+            </article>
+
+            <article class="cat reveal" id="f-backup" data-cat style="--tone: var(--tone-backup)">
+              <header class="cat__head">
+                <h3 class="cat__title"><span class="cat__icon" aria-hidden="true"><svg><use href="#c-backup"/></svg></span>Backup &amp; restore</h3>
+                <p class="cat__desc">Save your home screen, app drawer and settings, then bring them back after a reset or a new phone.</p>
+              </header>
+              <ul class="feats">
+                <li>Back up home screen layout</li>
+                <li>Restore home screen layout</li>
+                <li>Back up app drawer layout</li>
+                <li>Restore app drawer layout</li>
+                <li>Back up settings</li>
+                <li>Restore settings</li>
+              </ul>
+            </article>
+
+            <article class="cat reveal" id="f-advanced" data-cat style="--tone: var(--tone-advanced)">
+              <header class="cat__head">
+                <h3 class="cat__title"><span class="cat__icon" aria-hidden="true"><svg><use href="#c-advanced"/></svg></span>Advanced</h3>
+                <p class="cat__desc">Launcher-level switches, and quicker ways back into the module from the launcher itself.</p>
+              </header>
+              <ul class="feats">
+                <li>Prevent wallpaper dimming caused restart</li>
+                <li>Developer options <span class="tag">Pixel only</span></li>
+                <li>Show entry in launcher settings</li>
+                <li>Show entry in homescreen popup</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="install" aria-labelledby="install-title">
+      <div class="wrap">
+        <div class="band__panel">
+        <div class="band__intro reveal">
+          <h2 class="band__title" id="install-title">Running in four steps.</h2>
+          <p class="band__lede">You need an Xposed framework already set up. After that it takes about as long as a launcher restart.</p>
+          <dl class="reqs">
+            <div class="reqs__row"><dt>Xposed framework</dt><dd>Installed and active</dd></div>
+            <div class="reqs__row"><dt>Android</dt><dd>12 or newer recommended</dd></div>
+            <div class="reqs__row"><dt>Root</dt><dd>Required</dd></div>
+          </dl>
+        </div>
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step__n" aria-hidden="true"><span>1</span></span>
+            <div>
+              <h3 class="step__title">Install the APK</h3>
+              <p class="step__text">Grab it from the <a href="https://github.com/Mahmud0808/PixelLauncherEnhanced/releases/latest" rel="noopener">latest GitHub release</a>.</p>
+            </div>
+          </li>
+          <li class="step reveal">
+            <span class="step__n" aria-hidden="true"><span>2</span></span>
+            <div>
+              <h3 class="step__title">Grant root access</h3>
+              <p class="step__text">Allow it when the app asks.</p>
+            </div>
+          </li>
+          <li class="step reveal">
+            <span class="step__n" aria-hidden="true"><span>3</span></span>
+            <div>
+              <h3 class="step__title">Enable the module</h3>
+              <p class="step__text">Switch it on in your Xposed manager.</p>
+            </div>
+          </li>
+          <li class="step reveal">
+            <span class="step__n" aria-hidden="true"><span>4</span></span>
+            <div>
+              <h3 class="step__title">Force close your launcher</h3>
+              <p class="step__text">It comes back with the module loaded. Open the app and start changing things.</p>
+            </div>
+          </li>
+        </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq" id="faq" aria-labelledby="faq-title">
+      <div class="wrap faq__grid">
+        <header class="faq__head reveal">
+          <h2 class="section-head__title" id="faq-title">Questions, answered.</h2>
+          <p class="section-head__lede">Something else? Ask in the <a href="https://t.me/DrDsProjects" rel="noopener">Telegram group</a> or <a href="https://github.com/Mahmud0808/PixelLauncherEnhanced/issues" rel="noopener">open an issue</a>.</p>
+        </header>
+        <div class="faq__list">
+          <details class="qa" name="faq">
+            <summary class="qa__q">Do I need root?<svg class="qa__icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+            <div class="qa__a">
+              <p>Yes. Xposed frameworks like LSPosed need root to run, and the app needs root access as well.</p>
+            </div>
+          </details>
+          <details class="qa" name="faq">
+            <summary class="qa__q">Is it only for Pixel phones?<svg class="qa__icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+            <div class="qa__a">
+              <p>No. It works with the launcher, not the phone. Any device running Pixel Launcher (<code>com.google.android.apps.nexuslauncher</code>) or Launcher3 (<code>com.android.launcher3</code>) is supported. Launchers with other package names are not.</p>
+            </div>
+          </details>
+          <details class="qa" name="faq">
+            <summary class="qa__q">Which Android versions work?<svg class="qa__icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+            <div class="qa__a">
+              <p>Android 12 or newer is recommended. The app installs on Android 8.0 and up, but features aren’t guaranteed there. If you try an older version, reports on what works are welcome.</p>
+            </div>
+          </details>
+          <details class="qa" name="faq">
+            <summary class="qa__q">Do changes need a launcher restart?<svg class="qa__icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+            <div class="qa__a">
+              <p>Many settings apply right away. The rest take effect once the launcher restarts, which the app can do for you.</p>
+            </div>
+          </details>
+          <details class="qa" name="faq">
+            <summary class="qa__q">How can I help?<svg class="qa__icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+            <div class="qa__a">
+              <p>Translate the app on <a href="https://crowdin.com/project/pixellauncher-enhanced" rel="noopener">Crowdin</a>, report bugs or request features on <a href="https://github.com/Mahmud0808/PixelLauncherEnhanced/issues" rel="noopener">GitHub</a>, or <a href="https://www.buymeacoffee.com/DrDisagree" rel="noopener">buy the developer a coffee</a>.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap">
+      <p class="foot__line reveal">Your home screen, set up the way you meant.</p>
+      <nav class="foot__links" aria-label="Project links">
+        <a href="https://github.com/Mahmud0808/PixelLauncherEnhanced/releases" rel="noopener">Releases</a>
+        <a href="https://github.com/Mahmud0808/PixelLauncherEnhanced" rel="noopener">GitHub</a>
+        <a href="https://crowdin.com/project/pixellauncher-enhanced" rel="noopener">Translate</a>
+        <a href="https://t.me/DrDsProjects" rel="noopener">Telegram</a>
+        <a href="https://www.buymeacoffee.com/DrDisagree" rel="noopener">Support</a>
+      </nav>
+      <div class="foot__meta">
+        <span class="foot__brand"><img class="brand__mark brand__mark--sm" src="assets/img/mark.png" width="28" height="28" alt="">Pixel Launcher Enhanced</span>
+        <span class="foot__legal">GPL-3.0 · by <a href="https://github.com/Mahmud0808" rel="noopener">DrDisagree</a></span>
+        <a class="foot__top" href="#top">Back to top<svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>

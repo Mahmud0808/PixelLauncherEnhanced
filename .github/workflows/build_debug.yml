@@ -3,6 +3,14 @@ name: Build Debug APK
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - 'app/**'
+      - 'ModuleBase/**'
+      - 'gradle/**'
+      - '**/*.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - '.github/workflows/build_debug.yml'
   workflow_dispatch:
 
 jobs:
