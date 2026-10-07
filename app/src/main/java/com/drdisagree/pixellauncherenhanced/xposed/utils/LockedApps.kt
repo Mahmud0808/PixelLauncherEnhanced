@@ -1,6 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.utils
 
 import android.content.Context
+import java.util.concurrent.CopyOnWriteArrayList
 
 object LockedApps {
 
@@ -9,6 +10,11 @@ object LockedApps {
 
     @Volatile
     private var cache: Set<String>? = null
+    private val listeners = CopyOnWriteArrayList<() -> Unit>()
+
+    fun addListener(listener: () -> Unit) {
+        listeners.add(listener)
+    }
 
     fun isLocked(context: Context, packageName: String, userId: Int): Boolean {
         return load(context).contains(key(packageName, userId))
@@ -21,6 +27,7 @@ object LockedApps {
         }
         cache = updated
         prefs(context).edit().putStringSet(KEY_LOCKED, updated).apply()
+        listeners.forEach { it() }
     }
 
     private fun load(context: Context): Set<String> {
