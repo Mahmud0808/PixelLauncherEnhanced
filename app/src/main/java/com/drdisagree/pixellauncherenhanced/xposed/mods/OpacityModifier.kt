@@ -10,6 +10,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -115,13 +116,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
             .runAfter { param ->
                 if (appDrawerBackgroundOpacity < 0) return@runAfter
 
-                val launcher = param.args[0]
-                val isTablet = (launcher
-                    .callMethodSilently("getDeviceProfile")
-                    .getFieldSilently("isTablet") as? Boolean
-                    ?: launcher
-                        .callMethodSilently("getDeviceProfile")
-                        .getFieldSilently("mDeviceProperties")
+                val deviceProfile = param.args[0].callMethodSilently("getDeviceProfile")
+                val isTablet = (deviceProfile.getFieldSilently("isTablet") as? Boolean
+                    ?: deviceProfile
+                        .getAnyFieldSilently("mDeviceProperties", "deviceProperties")
                         .getFieldSilently("isTablet") as? Boolean) == true
 
                 if (!isTablet) {

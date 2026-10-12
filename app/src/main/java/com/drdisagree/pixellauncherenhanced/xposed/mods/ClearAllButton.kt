@@ -26,6 +26,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
@@ -141,32 +142,45 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     ?: launcher
                         .getField("deviceProfileRef")
                         .getField("value")
+                val deviceProperties = deviceProfile.getAnyFieldSilently(
+                    "mDeviceProperties",
+                    "deviceProperties"
+                )
                 val isPhone = deviceProfile.getFieldSilently("isPhone") as? Boolean
-                    ?: deviceProfile
-                        .getField("mDeviceProperties")
-                        .getField("isPhone") as Boolean
+                    ?: deviceProperties.getField("isPhone") as Boolean
                 val isLandscape = deviceProfile.getFieldSilently("isLandscape") as? Boolean
-                    ?: deviceProfile
-                        .getField("mDeviceProperties")
-                        .getField("isLandscape") as Boolean
+                    ?: deviceProperties.getField("isLandscape") as Boolean
 
                 val showFloatingSearch = if (isPhone) {
                     // Only show search in phone overview in portrait mode.
                     !isLandscape
                 } else {
                     // Only show search in tablet overview if taskbar is not visible.
-                    !(deviceProfile.getField("isTaskbarPresent") as Boolean) ||
-                            param.thisObject.callMethod("isTaskbarStashed", launcher) as Boolean
+                    val isTaskbarPresent = deviceProfile.getFieldSilently("isTaskbarPresent") as? Boolean
+                        ?: deviceProperties
+                            .getField("taskbarConfiguration")
+                            .getField("isTaskbarPresent") as Boolean
+                    val isTaskbarStashed = param.thisObject
+                        .callMethodSilently("isTaskbarStashed", launcher) as? Boolean
+                        ?: param.thisObject
+                            .callMethodSilently("isTaskbarStashed", deviceProfile) as? Boolean
+                        ?: false
+
+                    !isTaskbarPresent || isTaskbarStashed
                 }
 
                 if (showFloatingSearch) {
                     elements = elements or FLOATING_SEARCH_BAR
                 }
 
-                val splitContextual = featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean ?: true
+                val splitContextual = featureFlagsClass?.callStaticMethodSilently("enableSplitContextual") as? Boolean ?: true
                 val splitSelecting = runCatching {
                     if (launcher.hasMethod("isSplitSelectionActive")) {
                         launcher.callMethod("isSplitSelectionActive") as Boolean
+                    } else if (launcher.getFieldSilently("splitScreenUiState") != null) {
+                        launcher
+                            .getField("splitScreenUiState")
+                            .getField("isSplitSelectActive") as Boolean
                     } else {
                         launcher
                             .getField("isSplitSelectActiveRef")
