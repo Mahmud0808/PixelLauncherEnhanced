@@ -18,6 +18,9 @@
 /.idea/migrations.xml
 /.idea/misc.xml
 /.idea/gradle.xml
+/.idea/codeStyles
+/.idea/deploymentTargetSelector.xml
+/.idea/shelf
 .DS_Store
 /build
 /captures
