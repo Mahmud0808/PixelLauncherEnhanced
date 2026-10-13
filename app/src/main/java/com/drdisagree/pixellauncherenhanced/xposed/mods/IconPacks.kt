@@ -437,11 +437,7 @@ class IconPacks(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 val icon = param.args.getOrNull(0) as? AdaptiveIconDrawable ?: return@runBefore
-<<<<<<< HEAD
                 if (!icon.isPackAdaptiveIcon()) return@runBefore
-=======
-                if (icon.getExtraFieldSilently(PACK_ADAPTIVE_ICON) != true) return@runBefore
->>>>>>> df2a30352e45b26744bdd5f7920ddc4aa3601f38
                 if (param.thisObject.getFieldSilently("mIsOpening") != false) return@runBefore
 
                 param.args[0] = AdaptiveIconDrawable(
@@ -923,10 +919,7 @@ class IconPacks(context: Context) : ModPack(context) {
             AdaptiveIconDrawable(background, foreground, monochrome)
         } else {
             AdaptiveIconDrawable(background, foreground)
-        }.apply {
-            setBounds(0, 0, 1, 1)
-            setExtraField(PACK_ADAPTIVE_ICON, true)
-        }
+        }.apply { setBounds(0, 0, 1, 1) }
     }
 
     private fun AdaptiveIconDrawable.isPackAdaptiveIcon(): Boolean {
@@ -995,7 +988,6 @@ class IconPacks(context: Context) : ModPack(context) {
         private const val HOME_ORIGINAL_BITMAP = "pleHomeOriginalBitmap"
         private const val ORIGINAL_TITLE = "pleOriginalTitle"
         private const val ORIGINAL_LEGACY_ICON = "pleOriginalLegacyIcon"
-        private const val PACK_ADAPTIVE_ICON = "plePackAdaptiveIcon"
         private val THEMED_FIELD = Regex("mono|whiteshadow|themed", RegexOption.IGNORE_CASE)
         private val OPTION_FIELDS = listOf("wrapNonAdaptiveIcon", "isFullBleed", "drawFullBleed", "addShadows", "mAddShadows")
     }
