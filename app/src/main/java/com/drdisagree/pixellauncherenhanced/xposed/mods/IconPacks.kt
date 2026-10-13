@@ -22,10 +22,13 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.ShortcutInfo
 import android.graphics.Canvas
+import android.graphics.Color
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
@@ -405,6 +408,14 @@ class IconPacks(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 if (param.args.getOrNull(0) is PackIconDrawable) param.args[1] = false
+            }
+
+        findClass("com.android.launcher3.icons.BaseIconFactory", suppressError = true)
+            .hookMethod("wrapToAdaptiveIcon")
+            .suppressError()
+            .runBefore { param ->
+                if (param.args.getOrNull(1) != null) return@runBefore
+                param.result = transparentAdaptiveIcon(param.args.getOrNull(0) as? Drawable) ?: return@runBefore
             }
 
         findClass("com.android.quickstep.TaskIconCache", suppressError = true)
@@ -855,6 +866,31 @@ class IconPacks(context: Context) : ModPack(context) {
         } finally {
             if (factory.hasMethod("recycle")) factory.callMethodSilently("recycle") else factory.callMethodSilently("close")
         }
+    }
+
+    private fun transparentAdaptiveIcon(drawable: Drawable?): AdaptiveIconDrawable? {
+        val regular = when (drawable) {
+            is PackIconDrawable -> drawable
+            is ThemedPackIconDrawable -> drawable.regular
+            else -> return null
+        }
+        if (regular is AdaptiveIconDrawable) {
+            return (drawable as? ThemedPackIconDrawable)?.themed as? AdaptiveIconDrawable ?: regular
+        }
+
+        val background = ColorDrawable(Color.TRANSPARENT)
+        val foreground = InsetDrawable(regular, AdaptiveIconDrawable.getExtraInsetFraction())
+        val monochrome = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ((drawable as? ThemedPackIconDrawable)?.themed as? AdaptiveIconDrawable)?.monochrome
+        } else {
+            null
+        }
+
+        return if (monochrome != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            AdaptiveIconDrawable(background, foreground, monochrome)
+        } else {
+            AdaptiveIconDrawable(background, foreground)
+        }.apply { setBounds(0, 0, 1, 1) }
     }
 
     private fun hasStockMonochrome(icon: Drawable): Boolean {
