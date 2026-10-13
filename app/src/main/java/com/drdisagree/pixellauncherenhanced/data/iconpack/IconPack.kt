@@ -55,7 +55,6 @@ class IconPack(context: Context, val packageName: String) {
     @SuppressLint("DiscouragedApi")
     private fun resourceId(name: String): Int {
         drawableIds[name]?.let { return it }
-        if (drawableIds.isNotEmpty()) return 0
 
         return resourceIds.getOrPut(name) {
             resources.getIdentifier(name, "drawable", packageName).takeIf { it != 0 }
@@ -75,9 +74,12 @@ class IconPack(context: Context, val packageName: String) {
 
             val base = sample and 0xFFFF0000.toInt()
             var entry = 0
-            while (entry <= 0xFFFF) {
-                val name = runCatching { resources.getResourceEntryName(base or entry) }.getOrNull() ?: break
-                ids.putIfAbsent(name, base or entry)
+            var lastFound = 0
+            while (entry <= 0xFFFF && entry - lastFound <= MAX_ENTRY_GAP) {
+                runCatching { resources.getResourceEntryName(base or entry) }.getOrNull()?.let { name ->
+                    ids.putIfAbsent(name, base or entry)
+                    lastFound = entry
+                }
                 entry++
             }
         }
@@ -234,6 +236,7 @@ class IconPack(context: Context, val packageName: String) {
 
     companion object {
         private const val PROBE_LIMIT = 50
+        private const val MAX_ENTRY_GAP = 0x400
         const val OTHER_CATEGORY = "\u0000other"
     }
 
