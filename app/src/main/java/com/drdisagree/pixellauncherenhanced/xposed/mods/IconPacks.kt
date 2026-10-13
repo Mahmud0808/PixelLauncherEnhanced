@@ -96,6 +96,7 @@ class IconPacks(context: Context) : ModPack(context) {
     private val exportingShortcuts = ThreadLocal<Boolean>()
     private var bgDataModelRef: WeakReference<Any>? = null
     private val skippedWrap = ThreadLocal<Any?>()
+    private val fullDrawableBitmap = ThreadLocal<Bitmap?>()
 
     override fun updatePrefs(vararg key: String) {
         if (key.firstOrNull() == PINNED_SHORTCUTS_REQUEST) {
@@ -416,6 +417,33 @@ class IconPacks(context: Context) : ModPack(context) {
             .runBefore { param ->
                 if (param.args.getOrNull(1) != null) return@runBefore
                 param.result = transparentAdaptiveIcon(param.args.getOrNull(0) as? Drawable) ?: return@runBefore
+            }
+
+        listOf("com.android.launcher3.graphics.IconLoader", "com.android.launcher3.Utilities").forEach { className ->
+            findClass(className, suppressError = true)
+                .hookMethod("getFullDrawable")
+                .suppressError()
+                .runBefore { param ->
+                    val bitmap = param.args.firstNotNullOfOrNull {
+                        it.getFieldSilently("bitmap").getFieldSilently("icon") as? Bitmap
+                    }
+                    fullDrawableBitmap.set(bitmap)
+                }
+                .runAfter { fullDrawableBitmap.remove() }
+        }
+
+        findClass("com.android.launcher3.views.FloatingIconView", suppressError = true)
+            .hookMethod("setIcon")
+            .suppressError()
+            .runBefore { param ->
+                val icon = param.args.getOrNull(0) as? AdaptiveIconDrawable ?: return@runBefore
+                if (!icon.isPackAdaptiveIcon()) return@runBefore
+                if (param.thisObject.getFieldSilently("mIsOpening") != false) return@runBefore
+
+                param.args[0] = AdaptiveIconDrawable(
+                    ColorDrawable(Color.TRANSPARENT),
+                    ColorDrawable(Color.TRANSPARENT)
+                ).apply { setBounds(0, 0, 1, 1) }
             }
 
         findClass("com.android.quickstep.TaskIconCache", suppressError = true)
@@ -879,7 +907,8 @@ class IconPacks(context: Context) : ModPack(context) {
         }
 
         val background = ColorDrawable(Color.TRANSPARENT)
-        val foreground = InsetDrawable(regular, AdaptiveIconDrawable.getExtraInsetFraction())
+        val source = fullDrawableBitmap.get()?.let { BitmapDrawable(mContext.resources, it) } ?: regular
+        val foreground = InsetDrawable(source, AdaptiveIconDrawable.getExtraInsetFraction())
         val monochrome = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ((drawable as? ThemedPackIconDrawable)?.themed as? AdaptiveIconDrawable)?.monochrome
         } else {
@@ -891,6 +920,10 @@ class IconPacks(context: Context) : ModPack(context) {
         } else {
             AdaptiveIconDrawable(background, foreground)
         }.apply { setBounds(0, 0, 1, 1) }
+    }
+
+    private fun AdaptiveIconDrawable.isPackAdaptiveIcon(): Boolean {
+        return (background as? ColorDrawable)?.color == Color.TRANSPARENT && foreground is InsetDrawable
     }
 
     private fun hasStockMonochrome(icon: Drawable): Boolean {
