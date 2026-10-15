@@ -67,13 +67,18 @@ object WallpaperGlass {
             float2 e = float2(1.0, 0.0);
             float d;
             float2 normal;
+            float edge = refraction;
+            float strength = 1.0;
 
             if (useMask > 0.5) {
                 d = maskDistance(coord);
+                float2 m = float2(2.0, 0.0);
                 normal = float2(
-                    maskDistance(coord + e.xy) - maskDistance(coord - e.xy),
-                    maskDistance(coord + e.yx) - maskDistance(coord - e.yx)
+                    maskDistance(coord + m.xy) - maskDistance(coord - m.xy),
+                    maskDistance(coord + m.yx) - maskDistance(coord - m.yx)
                 );
+                edge = min(refraction, maskRange * 0.9);
+                strength = smoothstep(0.05, 0.4, length(normal));
             } else {
                 d = roundedBox(p, halfSize, radius);
                 normal = float2(
@@ -83,8 +88,8 @@ object WallpaperGlass {
             }
             normal = normal / max(length(normal), 0.0001);
 
-            float band = clamp(1.0 + d / max(refraction, 1.0), 0.0, 1.0);
-            float bend = band * band * band;
+            float band = clamp(1.0 + d / max(edge, 1.0), 0.0, 1.0);
+            float bend = band * band * band * strength;
             float2 offset = -normal * refraction * bend;
 
             half4 color;
@@ -357,7 +362,9 @@ object WallpaperGlass {
         blurRadius: Float,
         alpha: Float,
         liquid: Boolean,
-        shapePath: Path? = null
+        shapePath: Path? = null,
+        maskKey: Any? = null,
+        maskDrawer: ((Canvas) -> Unit)? = null
     ): Paint? {
         track(host)
         checkWallpaper(host.context)
@@ -402,11 +409,16 @@ object WallpaperGlass {
             shader.setFloatUniform("radius", corner)
             val refraction = minOf(localRect.height(), localRect.width()) * LIQUID_REFRACTION
             shader.setFloatUniform("refraction", refraction)
-            val mask = shapePath?.let { shapeMask(it, localRect, refraction) }
+            val mask = shapePath?.let { path -> shapeMask(path, localRect, refraction) { it.drawPath(path, maskPaint) } }
+                ?: maskDrawer?.let { shapeMask(maskKey ?: it, localRect, refraction, it) }
             if (mask != null) {
-                shader.setInputShader("mask", BitmapShader(mask, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP))
+                val maskShader = BitmapShader(mask, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+                    filterMode = BitmapShader.FILTER_MODE_LINEAR
+                }
+                val padding = maskPadding(refraction)
+                shader.setInputShader("mask", maskShader)
                 shader.setFloatUniform("useMask", 1f)
-                shader.setFloatUniform("maskOrigin", localRect.left - MASK_PADDING, localRect.top - MASK_PADDING)
+                shader.setFloatUniform("maskOrigin", localRect.left - padding, localRect.top - padding)
                 shader.setFloatUniform("maskScale", 1f)
                 shader.setFloatUniform("maskRange", maskBlurRadius(refraction) * MASK_RAMP)
             } else {
@@ -431,16 +443,19 @@ object WallpaperGlass {
 
     private fun maskBlurRadius(refraction: Float): Int = max(1, (refraction * MASK_BLUR).roundToInt())
 
-    private fun shapeMask(path: Path, bounds: RectF, refraction: Float): Bitmap {
-        val key = Triple(path, bounds.width().roundToInt(), bounds.height().roundToInt())
+    private fun maskPadding(refraction: Float): Int = MASK_PADDING + maskBlurRadius(refraction) * 3
+
+    private fun shapeMask(source: Any, bounds: RectF, refraction: Float, drawer: (Canvas) -> Unit): Bitmap {
+        val key = Triple(source, bounds.width().roundToInt(), bounds.height().roundToInt())
         maskCache[key]?.let { return it }
 
-        val width = bounds.width().roundToInt() + MASK_PADDING * 2
-        val height = bounds.height().roundToInt() + MASK_PADDING * 2
+        val padding = maskPadding(refraction)
+        val width = bounds.width().roundToInt() + padding * 2
+        val height = bounds.height().roundToInt() + padding * 2
         val bitmap = Bitmap.createBitmap(max(1, width), max(1, height), Bitmap.Config.ARGB_8888)
         Canvas(bitmap).apply {
-            translate(MASK_PADDING - bounds.left, MASK_PADDING - bounds.top)
-            drawPath(path, maskPaint)
+            translate(padding - bounds.left, padding - bounds.top)
+            drawer(this)
         }
         val blurred = boxBlur(bitmap, maskBlurRadius(refraction))
         if (maskCache.size >= MASK_CACHE_SIZE) maskCache.remove(maskCache.keys.first())

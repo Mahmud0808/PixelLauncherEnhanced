@@ -10,6 +10,11 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -18,6 +23,7 @@ import android.graphics.drawable.DrawableWrapper
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.ShapeDrawable
+import android.graphics.drawable.VectorDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -25,6 +31,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_CORNER
@@ -55,6 +62,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.util.Collections
 import java.util.WeakHashMap
+import kotlin.math.abs
 
 class BlurPanels(context: Context) : ModPack(context) {
 
@@ -67,6 +75,9 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var dockAttached = false
     private var dockBlurMargin = DEFAULT_DOCK_MARGIN
     private val windowLocation = IntArray(2)
+    private val maskBounds = Rect()
+    private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val maskPaint = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
     private var widgetBlurRadius = 0
     private var widgetBlurTint = 0
     private var widgetClearBackground = false
@@ -370,6 +381,70 @@ class BlurPanels(context: Context) : ModPack(context) {
         return alpha * childAlpha
     }
 
+    private fun View.shapeMask(): Drawable? {
+        val source = (this as? ImageView)?.drawable?.takeIf { it.isPlainShape() || isShapeImage() }
+            ?: background?.takeIf { it.isPlainShape() }
+            ?: return null
+        if (source.isRoundedRect()) return null
+
+        (getExtraFieldSilently(SHAPE_MASK) as? Pair<*, *>)?.let { (cachedSource, mask) ->
+            if (cachedSource === source) return mask as? Drawable
+        }
+        val mask = source.constantState?.newDrawable(resources)?.mutate()?.apply {
+            alpha = 255
+            colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
+        }
+        setExtraField(SHAPE_MASK, source to mask)
+        return mask
+    }
+
+    private fun ViewGroup.drawMaskedLiquid(canvas: Canvas, target: View, mask: Drawable): Boolean {
+        val paint = WallpaperGlass.canvasPaint(
+            host = this,
+            canvas = canvas,
+            localRect = rect,
+            corner = 0f,
+            blurRadius = widgetBlurRadius.dp(this),
+            alpha = 1f,
+            liquid = true,
+            maskKey = mask,
+            maskDrawer = { drawMask(it, target, mask) }
+        ) ?: return false
+
+        canvas.drawRect(rect, paint)
+        val tintColor = tint(widgetBlurTint)
+        if (Color.alpha(tintColor) != 0) {
+            tintPaint.color = tintColor
+            canvas.drawRect(rect, tintPaint)
+        }
+        return true
+    }
+
+    private fun drawMask(canvas: Canvas, target: View, mask: Drawable) {
+        val save = canvas.save()
+        if (target is ImageView) {
+            canvas.translate(rect.left + target.paddingLeft, rect.top + target.paddingTop)
+            canvas.concat(target.imageMatrix)
+            target.drawable?.bounds?.let { mask.bounds = it }
+        } else {
+            rect.roundOut(maskBounds)
+            mask.bounds = maskBounds
+        }
+        mask.draw(canvas)
+        canvas.restoreToCount(save)
+    }
+
+    private fun Drawable.isRoundedRect(): Boolean {
+        return when (this) {
+            is ColorDrawable -> true
+            is GradientDrawable -> shape == GradientDrawable.RECTANGLE
+            is DrawableWrapper -> drawable?.isRoundedRect() != false
+            is DrawableContainer -> current?.isRoundedRect() != false
+            is LayerDrawable -> (0 until numberOfLayers).all { getDrawable(it)?.isRoundedRect() != false }
+            else -> false
+        }
+    }
+
     private fun ViewGroup.installWidgetPanel() {
         if (background is BlurPanelDrawable) return
         hosts.add(this)
@@ -389,17 +464,31 @@ class BlurPanels(context: Context) : ModPack(context) {
                 ?: widgetCornerRadius()
             val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
 
-            if (widgetUsesGlass() && WallpaperGlass.draw(
-                    host = this,
-                    canvas = canvas,
-                    rect = rect,
-                    corner = corner,
-                    bottomCorner = corner,
-                    blurRadius = widgetBlurRadius.dp(this),
-                    tintColor = tint(widgetBlurTint),
-                    liquid = widgetLiquid
-                )
-            ) return@BlurPanelDrawable
+            val mask = target.shapeMask()
+            val layer = if (mask != null) canvas.saveLayer(rect, null) else -1
+
+            val drawn = widgetUsesGlass() && if (mask != null && widgetLiquid) {
+                drawMaskedLiquid(canvas, target, mask)
+            } else WallpaperGlass.draw(
+                host = this,
+                canvas = canvas,
+                rect = rect,
+                corner = corner,
+                bottomCorner = corner,
+                blurRadius = widgetBlurRadius.dp(this),
+                tintColor = tint(widgetBlurTint),
+                liquid = widgetLiquid
+            )
+
+            if (mask != null) {
+                if (drawn) {
+                    canvas.saveLayer(rect, maskPaint)
+                    drawMask(canvas, target, mask)
+                    canvas.restore()
+                }
+                canvas.restoreToCount(layer)
+            }
+            if (drawn) return@BlurPanelDrawable
 
             panel().draw(
                 canvas = canvas,
@@ -576,22 +665,105 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun ViewGroup.clearLargeBackgrounds(hostArea: Int) {
         if (hostArea <= 0) return
 
+        val colors = mutableSetOf<Int>()
+        clearLargeBackgrounds(hostArea, colors)
+        if (colors.isNotEmpty()) clearMatchingBackgrounds(colors)
+    }
+
+    private fun ViewGroup.clearLargeBackgrounds(hostArea: Int, colors: MutableSet<Int>) {
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             val isLarge = child.width * child.height >= hostArea * LARGE_BACKGROUND_RATIO
 
             if (isLarge) {
-                child.background?.let { background ->
-                    if (background.alpha != 0) child.background = background.mutate().apply { alpha = 0 }
+                child.background?.takeIf { it.isFilled() }?.let { background ->
+                    background.fillColor()?.let { colors.add(it) }
+                    child.background = background.mutate().apply { alpha = 0 }
+                    child.setExtraField(CLEARED, true)
                 }
 
-                if (child is ImageView && child.imageAlpha != 0 && child.drawable?.isPlainShape() == true) {
+                if (child.isShapeImage() && (child as ImageView).imageAlpha != 0) {
                     child.imageAlpha = 0
+                    child.setExtraField(CLEARED, true)
+                } else if (child is ImageView && child.imageAlpha != 0 && child.drawable?.isPlainShape() == true &&
+                    child.drawable?.isFilled() == true
+                ) {
+                    child.drawable?.fillColor()?.let { colors.add(it) }
+                    child.imageAlpha = 0
+                    child.setExtraField(CLEARED, true)
                 }
             }
 
-            if (child is ViewGroup) child.clearLargeBackgrounds(hostArea)
+            if (child is ViewGroup) child.clearLargeBackgrounds(hostArea, colors)
         }
+    }
+
+    private fun ViewGroup.clearMatchingBackgrounds(colors: Set<Int>) {
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            if (child is TextView || child is ViewGroup) {
+                child.background?.takeIf { it.isFilled() && it.alpha != 0 }?.let { background ->
+                    val color = background.fillColor() ?: return@let
+                    if (colors.any { it.matches(color) }) {
+                        child.background = background.mutate().apply { alpha = 0 }
+                    }
+                }
+            }
+            if (child is ViewGroup) child.clearMatchingBackgrounds(colors)
+        }
+    }
+
+    private fun Int.matches(other: Int): Boolean {
+        return abs(Color.red(this) - Color.red(other)) <= COLOR_TOLERANCE &&
+                abs(Color.green(this) - Color.green(other)) <= COLOR_TOLERANCE &&
+                abs(Color.blue(this) - Color.blue(other)) <= COLOR_TOLERANCE
+    }
+
+    private fun Drawable.fillColor(): Int? {
+        return when (this) {
+            is ColorDrawable -> color
+            is GradientDrawable -> color?.defaultColor ?: colors?.firstOrNull()
+            is ShapeDrawable -> paint.color
+            is DrawableWrapper -> drawable?.fillColor()
+            is DrawableContainer -> current?.fillColor()
+            is LayerDrawable -> (numberOfLayers - 1 downTo 0).firstNotNullOfOrNull { layer(it)?.fillColor() }
+            else -> null
+        }
+    }
+
+    private fun Drawable.isFilled(): Boolean {
+        if (alpha == 0) return false
+        return when (this) {
+            is ColorDrawable -> Color.alpha(color) != 0
+            is GradientDrawable -> colors?.any { Color.alpha(it) != 0 }
+                ?: color?.let { Color.alpha(it.defaultColor) != 0 || it.isStateful }
+                ?: false
+            is ShapeDrawable -> Color.alpha(paint.color) != 0 || paint.shader != null
+            is DrawableWrapper -> drawable?.isFilled() == true
+            is DrawableContainer -> current?.isFilled() == true
+            is LayerDrawable -> (0 until numberOfLayers).any { layer(it)?.isFilled() == true }
+            else -> true
+        }
+    }
+
+    private fun LayerDrawable.layer(index: Int): Drawable? {
+        return if (getId(index) == android.R.id.mask) null else getDrawable(index)
+    }
+
+    private fun View.isShapeImage(): Boolean {
+        if (this !is ImageView) return false
+        val group = parent as? ViewGroup ?: return false
+        if (group.childCount < 2 || group.getChildAt(0) !== this) return false
+        var source = drawable
+        while (source is DrawableWrapper) source = source.drawable
+        return source is VectorDrawable
+    }
+
+    private fun View.hasPanel(): Boolean {
+        if (getExtraFieldSilently(CLEARED) == true) return true
+        if (isShapeImage()) return true
+        if (background?.isFilled() == true) return true
+        return this is ImageView && imageAlpha != 0 && drawable?.let { it.isPlainShape() && it.isFilled() } == true
     }
 
     private fun ViewGroup.panelTarget(): View? {
@@ -623,8 +795,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                 if (child.visibility != View.VISIBLE) continue
 
                 val area = child.width * child.height
-                val isPanel = child.background != null ||
-                        (child is ImageView && child.drawable?.isPlainShape() == true)
+                val isPanel = child.hasPanel()
                 if (isPanel && area >= hostArea * LARGE_BACKGROUND_RATIO && area > bestArea) {
                     best = child
                     bestArea = area
@@ -673,6 +844,9 @@ class BlurPanels(context: Context) : ModPack(context) {
     companion object {
         private const val BLUR_PANEL = "pleBlurPanel"
         private const val PANEL_TARGET = "plePanelTarget"
+        private const val SHAPE_MASK = "pleShapeMask"
+        private const val CLEARED = "pleCleared"
+        private const val COLOR_TOLERANCE = 6
         private const val GLASS_OVERLAY = "pleGlassOverlay"
         private const val GLASS_APPEAR_SPEED = 2.5f
         private const val RESUME_REFRESH_DELAY = 300L
