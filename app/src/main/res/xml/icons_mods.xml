@@ -140,6 +140,33 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_icons_notification_dots"
+        android:title="@string/section_notification_dots_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_notificationdotcount"
+            android:summary="@string/notification_dot_count_desc"
+            android:title="@string/notification_dot_count_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.TwoTargetSwitchPreference
+            android:key="xposed_notificationdotblocklistenabled"
+            android:summary="@string/notification_dot_block_list_desc"
+            android:title="@string/notification_dot_block_list_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.HiddenApps"
+            app:iconSpaceReserved="false">
+
+            <extra
+                android:name="pref_key"
+                android:value="xposed_notificationdotblocklist" />
+
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.TwoTargetSwitchPreference>
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_popup_menu"
         android:title="@string/section_app_popup_title"
         app:iconSpaceReserved="false">

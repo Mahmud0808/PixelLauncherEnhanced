@@ -469,4 +469,10 @@
     <string name="folder_columns_title">Folder columns</string>
     <string name="folder_rows_title">Folder rows</string>
     <string name="folder_background_opacity_title">Folder background opacity</string>
+    <string name="section_notification_dots_title">Notification dots</string>
+    <string name="notification_dot_count_title">Show notification count</string>
+    <string name="notification_dot_count_desc">Show the number of notifications inside the dot</string>
+    <string name="notification_dot_block_list_title">Hide dots for selected apps</string>
+    <string name="notification_dot_block_list_desc">Choose apps that never show a notification dot</string>
+    <string name="fragment_notification_dot_apps_title">Hide notification dots</string>
 </resources>

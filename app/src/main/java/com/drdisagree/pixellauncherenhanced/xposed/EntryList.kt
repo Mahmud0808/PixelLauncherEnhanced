@@ -29,6 +29,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.IconTextSize
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherSettings
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LockLayout
+import com.drdisagree.pixellauncherenhanced.xposed.mods.NotificationDots
 import com.drdisagree.pixellauncherenhanced.xposed.mods.OpacityModifier
 import com.drdisagree.pixellauncherenhanced.xposed.mods.QuickLaunch
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ShortcutBadge
@@ -68,6 +69,7 @@ object EntryList {
         GridOptions::class.java,
         HideApps::class.java,
         ShortcutBadge::class.java,
+        NotificationDots::class.java,
         WallpaperZoom::class.java,
         QuickLaunch::class.java,
         TaskbarHandle::class.java,
