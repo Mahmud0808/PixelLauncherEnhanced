@@ -6,6 +6,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_GRI
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_COLUMNS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_ROWS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_DATABASE_ICON_COUNT
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
@@ -26,6 +27,10 @@ class GridOptions(context: Context) : ModPack(context) {
     private var homeScreenGridColumns = 0
     private var appDrawerGridColumns = 0
     private var appDrawerGridRowHeightMultiplier = 1f
+    private var dockDatabaseIconCount = 0
+
+    private val hotseatIcons: Int
+        get() = homeScreenGridColumns
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -34,6 +39,7 @@ class GridOptions(context: Context) : ModPack(context) {
             appDrawerGridColumns = getSliderInt(APP_DRAWER_GRID_COLUMNS, 0)
             appDrawerGridRowHeightMultiplier =
                 getSliderFloat(APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER, 10f) / 10f
+            dockDatabaseIconCount = getInt(DOCK_DATABASE_ICON_COUNT, 0)
         }
 
         when (key.firstOrNull()) {
@@ -57,9 +63,9 @@ class GridOptions(context: Context) : ModPack(context) {
             val mHotseatProfile = getAnyFieldSilently("mHotseatProfile", "hotseatProfile")
             val mDisplayOptionSpec = getAnyFieldSilently("mDisplayOptionSpec", "displayOptionSpec")
 
-            if (homeScreenGridColumns != 0) {
-                setFieldSilently("numShownHotseatIcons", homeScreenGridColumns)
-                mHotseatProfile?.setField("numShownIcons", homeScreenGridColumns)
+            if (hotseatIcons != 0) {
+                setFieldSilently("numShownHotseatIcons", hotseatIcons)
+                mHotseatProfile?.setField("numShownIcons", hotseatIcons)
             }
 
             if (appDrawerGridColumns != 0) {
@@ -72,8 +78,8 @@ class GridOptions(context: Context) : ModPack(context) {
             }
 
             mDisplayOptionSpec?.apply {
-                if (homeScreenGridColumns != 0) {
-                    setField("numShownHotseatIcons", homeScreenGridColumns)
+                if (hotseatIcons != 0) {
+                    setField("numShownHotseatIcons", hotseatIcons)
                 }
                 if (appDrawerGridColumns != 0) {
                     setField("numAllAppsColumns", appDrawerGridColumns)
@@ -96,11 +102,13 @@ class GridOptions(context: Context) : ModPack(context) {
         invariantDeviceProfileClass
             .hookMethod("initGrid")
             .runBefore { param ->
-                if (homeScreenGridColumns != 0 && param.args.size >= 3) {
-                    val displayOption = param.args[2]
-                    val closestProfile = displayOption.getField("grid")
+                if (param.args.size >= 3) {
+                    val closestProfile = param.args[2].getFieldSilently("grid") ?: return@runBefore
 
-                    closestProfile.setField("numHotseatIcons", homeScreenGridColumns)
+                    if (hotseatIcons != 0) {
+                        closestProfile.setFieldSilently("numHotseatIcons", hotseatIcons)
+                    }
+                    closestProfile.patchDatabaseHotseatIcons()
                 }
             }
             .runAfter { param ->
@@ -110,8 +118,11 @@ class GridOptions(context: Context) : ModPack(context) {
                     }
                     if (homeScreenGridColumns != 0) {
                         setField("numColumns", homeScreenGridColumns)
-                        setField("numShownHotseatIcons", homeScreenGridColumns)
                     }
+                    if (hotseatIcons != 0) {
+                        setFieldSilently("numShownHotseatIcons", hotseatIcons)
+                    }
+                    patchDatabaseHotseatIcons()
                 }
             }
 
@@ -127,10 +138,12 @@ class GridOptions(context: Context) : ModPack(context) {
             }
             if (homeScreenGridColumns != 0) {
                 closestProfile.setFieldSilently("numColumns", homeScreenGridColumns)
-                closestProfile.setFieldSilently("numHotseatIcons", homeScreenGridColumns)
-                closestProfile.setFieldSilently("numDatabaseHotseatIcons", homeScreenGridColumns)
-                displayOptionSpecs.forEach { it.setFieldSilently("numShownHotseatIcons", homeScreenGridColumns) }
             }
+            if (hotseatIcons != 0) {
+                closestProfile.setFieldSilently("numHotseatIcons", hotseatIcons)
+                displayOptionSpecs.forEach { it.setFieldSilently("numShownHotseatIcons", hotseatIcons) }
+            }
+            closestProfile.patchDatabaseHotseatIcons()
             if (appDrawerGridColumns != 0) {
                 closestProfile.setFieldSilently("numAllAppsColumns", appDrawerGridColumns)
                 closestProfile.setFieldSilently("numDatabaseAllAppsColumns", appDrawerGridColumns)
@@ -195,5 +208,19 @@ class GridOptions(context: Context) : ModPack(context) {
                     iconDrawablePaddingPx
                 )
             }
+    }
+
+    private fun Any.patchDatabaseHotseatIcons() {
+        if (hotseatIcons == 0 && dockDatabaseIconCount == 0) return
+
+        val current = getFieldSilently("numDatabaseHotseatIcons") as? Int ?: return
+        val required = maxOf(current, hotseatIcons, dockDatabaseIconCount)
+
+        if (required != current) setFieldSilently("numDatabaseHotseatIcons", required)
+
+        if (required > dockDatabaseIconCount) {
+            dockDatabaseIconCount = required
+            runCatching { Xprefs.edit().putInt(DOCK_DATABASE_ICON_COUNT, required).apply() }
+        }
     }
 }

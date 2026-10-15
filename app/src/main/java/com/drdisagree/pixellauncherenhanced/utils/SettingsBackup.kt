@@ -6,6 +6,7 @@ import android.provider.DocumentsContract
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_DATABASE_ICON_COUNT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
@@ -141,6 +142,7 @@ object SettingsBackup {
 
     private val EXCLUDED_KEYS = setOf(
         APP_BLOCK_LIST,
+        DOCK_DATABASE_ICON_COUNT,
         HIDE_APPS_FROM_APP_DRAWER,
         SEARCH_HIDDEN_APPS,
         DRAWER_TABS,
