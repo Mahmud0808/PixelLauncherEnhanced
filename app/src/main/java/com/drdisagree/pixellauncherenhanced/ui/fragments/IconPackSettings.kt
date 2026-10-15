@@ -131,6 +131,7 @@ class IconPackSettings : Fragment() {
                     }
                 }
                 adapter.notifyItemMoved(viewHolder.bindingAdapterPosition, target.bindingAdapterPosition)
+                recyclerView.post { adapter.refreshShapes(recyclerView) }
                 return true
             }
 
@@ -455,6 +456,16 @@ class IconPackSettings : Fragment() {
             view.findViewById<View>(R.id.container).apply {
                 setOnClickListener { onClick() }
                 applyShape(this, 0, 1, topMargin)
+            }
+        }
+
+        fun refreshShapes(recyclerView: RecyclerView) {
+            for (i in 0 until recyclerView.childCount) {
+                val holder = recyclerView.getChildViewHolder(recyclerView.getChildAt(i))
+                val position = holder.bindingAdapterPosition
+                val entry = entries.getOrNull(position) as? Entry.Pack ?: continue
+                holder.itemView.findViewById<View>(R.id.container)
+                    ?.let { applyShape(it, position.indexInGroup(), entry.size) }
             }
         }
 
