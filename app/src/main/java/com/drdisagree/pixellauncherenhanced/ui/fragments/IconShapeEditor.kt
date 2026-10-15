@@ -8,6 +8,7 @@ import android.os.Process
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -115,6 +116,7 @@ class IconShapeEditor : Fragment() {
 
     private fun buildTiles() {
         val inflater = LayoutInflater.from(requireContext())
+        val tileMargin = (2 * resources.displayMetrics.density).toInt()
         binding.tiles.removeAllViews()
         tiles.clear()
 
@@ -127,7 +129,16 @@ class IconShapeEditor : Fragment() {
                 updateTileSelection(animate = true)
                 render(animate = true)
             }
-            binding.tiles.addView(tile.root)
+            binding.tiles.addView(
+                tile.root,
+                GridLayout.LayoutParams(
+                    GridLayout.spec(GridLayout.UNDEFINED),
+                    GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                ).apply {
+                    width = 0
+                    setMargins(tileMargin, tileMargin, tileMargin, tileMargin)
+                }
+            )
             tiles[entry] = tile
         }
     }

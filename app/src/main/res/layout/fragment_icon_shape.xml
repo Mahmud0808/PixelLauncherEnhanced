@@ -48,22 +48,13 @@
                 android:textAppearance="?attr/textAppearanceTitleSmall"
                 android:textColor="?attr/colorPrimary" />
 
-            <HorizontalScrollView
+            <GridLayout
+                android:id="@+id/tiles"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="@dimen/ui_container_margin_side_negative"
                 android:layout_marginTop="8dp"
-                android:clipToPadding="false"
-                android:paddingHorizontal="12dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:id="@+id/tiles"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" />
-
-            </HorizontalScrollView>
+                android:columnCount="4"
+                android:useDefaultMargins="false" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/sliderCard"
