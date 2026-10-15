@@ -63,34 +63,52 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Restore last notified commit
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci/last_notified_sha
+          key: telegram-last-sha-${{ github.run_id }}
+          restore-keys: telegram-last-sha-
+
       - name: Get Commit Messages
         id: get_commit_message
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          COMMIT_MESSAGE_HEADER=""
-          COMMIT_MESSAGE_HEADER=$(git log -1 --pretty=%B | head -n 1)
+          echo "SKIP_BUILD=false" >> $GITHUB_ENV
 
-          if [[ "$COMMIT_MESSAGE_HEADER" == *".md"* || "$COMMIT_MESSAGE_HEADER" == *".yml"* ]]; then
-            echo "Skipping build upload."
-            echo "SKIP_BUILD=true" >> $GITHUB_ENV
-          else
-            echo "SKIP_BUILD=false" >> $GITHUB_ENV
+          LAST_SHA=$(cat .ci/last_notified_sha 2>/dev/null || true)
+
+          HEADERS=""
+          if [[ -n "$LAST_SHA" && "$LAST_SHA" != "${{ github.sha }}" ]]; then
+            HEADERS=$(gh api "repos/${{ github.repository }}/compare/$LAST_SHA...${{ github.sha }}" \
+              --jq '.commits[].commit.message | split("\n")[0]' || true)
+          fi
+          if [[ -z "$HEADERS" ]]; then
+            HEADERS=$(git log -1 --pretty=%B | head -n 1)
           fi
 
-          if [[ "$COMMIT_MESSAGE_HEADER" =~ ^Merge\ remote-tracking\ branch ]]; then
-            COMMIT_MESSAGE_HEADER="Synced with the latest changes"
-          fi
+          HEADERS=$(echo "$HEADERS" \
+            | sed -E 's/^Merge remote-tracking branch.*/Synced with the latest changes/' \
+            | sed -E 's|.*Mahmud0808/localization$|Updated translation strings|' \
+            | grep -v -E '\.(md|yml)' \
+            | sed '/^[[:space:]]*$/d' \
+            | awk '!seen[$0]++' || true)
 
-          if [[ "$COMMIT_MESSAGE_HEADER" =~ Mahmud0808/localization$ ]]; then
-            COMMIT_MESSAGE_HEADER="Updated translation strings"
-          fi
-
-          if [[ -z "$COMMIT_MESSAGE_HEADER" ]]; then
+          if [[ -z "$HEADERS" ]]; then
             echo "No valid changelog found!"
-            COMMIT_MESSAGE_HEADER="No valid changelog found!"
+            HEADERS="No valid changelog found!"
             echo "SKIP_BUILD=true" >> $GITHUB_ENV
           fi
 
-          ESCAPED_MESSAGE=$(echo "$COMMIT_MESSAGE_HEADER" | jq -Rsa . | sed 's/^"\(.*\)"$/\1/' | sed "s/'//g")
+          if [[ $(echo "$HEADERS" | wc -l) -gt 1 ]]; then
+            CHANGELOG=$(printf '\n%s' "$(echo "$HEADERS" | sed 's/^/• /')")
+          else
+            CHANGELOG=" $HEADERS"
+          fi
+          CHANGELOG=$(printf '%s' "$CHANGELOG" | head -c 900)
+
+          ESCAPED_MESSAGE=$(printf '%s' "$CHANGELOG" | jq -Rsa . | sed 's/^"\(.*\)"$/\1/' | sed "s/'//g")
           echo "COMMIT_MESSAGE_HEADER=${ESCAPED_MESSAGE}" >> $GITHUB_ENV
 
       - name: Clean Previous Release Folder
@@ -124,7 +142,20 @@ jobs:
             -F chat_id=${{ secrets.TG_CHAT_ID }} \
             -F message_thread_id=${{ secrets.TG_CHAT_THREAD_ID }} \
             -F media='[
-              {"type":"document", "media":"attach://file", "caption":"#PLEnhanced: ${{ env.COMMIT_MESSAGE_HEADER }}"}
+              {"type":"document", "media":"attach://file", "caption":"#PLEnhanced:${{ env.COMMIT_MESSAGE_HEADER }}"}
             ]' \
             -F file="@releases/PLEnhanced v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.zip" \
             -F disable_notification=true || exit 1
+
+      - name: Remember notified commit
+        if: github.repository == 'Mahmud0808/PixelLauncherEnhanced' && env.SKIP_BUILD != 'true'
+        run: |
+          mkdir -p .ci
+          echo "${{ github.sha }}" > .ci/last_notified_sha
+
+      - name: Save last notified commit
+        if: github.repository == 'Mahmud0808/PixelLauncherEnhanced' && env.SKIP_BUILD != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci/last_notified_sha
+          key: telegram-last-sha-${{ github.run_id }}
