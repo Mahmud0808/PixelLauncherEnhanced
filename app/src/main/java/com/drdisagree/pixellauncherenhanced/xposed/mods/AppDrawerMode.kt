@@ -384,7 +384,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     private fun syncAutoPages(controller: Any, items: List<Any>, allAppsList: Any) {
         val context = controller.taskContext()
         val blockList = if (HideApps.HIDE_APPS_ENABLED) {
-            Xprefs.getStringSet(APP_BLOCK_LIST, emptySet()).orEmpty()
+            runCatching { Xprefs.getStringSet(APP_BLOCK_LIST, emptySet()) }.getOrNull().orEmpty()
         } else {
             emptySet()
         }
@@ -555,7 +555,8 @@ class AppDrawerMode(context: Context) : ModPack(context) {
             if (!isNew) movedItems.add(item)
         }
 
-        if (Xprefs.getInt(NO_DRAWER_FIRST_SCREEN, -1) != firstModScreen) saveFirstModScreen(firstModScreen)
+        val storedScreen = runCatching { Xprefs.getInt(NO_DRAWER_FIRST_SCREEN, -1) }.getOrNull()
+        if (storedScreen != null && storedScreen != firstModScreen) saveFirstModScreen(firstModScreen)
 
         if (removedItems.isEmpty() && movedItems.isEmpty() && newItems.isEmpty()) return
 
@@ -859,14 +860,14 @@ class AppDrawerMode(context: Context) : ModPack(context) {
         }
     }
 
-    private fun storedFirstModScreen(): Int? {
-        Xprefs.getInt(NO_DRAWER_FIRST_SCREEN, -1).takeIf { it > 0 }?.let { return it }
+    private fun storedFirstModScreen(): Int? = runCatching {
+        Xprefs.getInt(NO_DRAWER_FIRST_SCREEN, -1).takeIf { it > 0 }?.let { return@runCatching it }
 
-        return Xprefs.getStringSet(NO_DRAWER_AUTO_SCREENS, emptySet()).orEmpty()
+        Xprefs.getStringSet(NO_DRAWER_AUTO_SCREENS, emptySet()).orEmpty()
             .mapNotNull { it.toIntOrNull() }
             .filter { it > 0 }
             .minOrNull()
-    }
+    }.getOrNull()
 
     private fun saveFirstModScreen(screenId: Int?) {
         Xprefs.edit().apply {
