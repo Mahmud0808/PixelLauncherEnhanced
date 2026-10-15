@@ -190,13 +190,28 @@
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_desktopdockspacing"
-            android:title="@string/dock_spacing_title"
-            app:defaultValue="-1"
+            android:key="xposed_docktopspacing"
+            android:summary="@string/dock_top_spacing_desc"
+            android:title="@string/dock_top_spacing_title"
+            app:defaultValue="0"
             app:hideValueOnDefault="true"
             app:iconSpaceReserved="false"
-            app:maxVal="260"
-            app:minVal="-1"
+            app:maxVal="96"
+            app:minVal="-96"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockbottomspacing"
+            android:summary="@string/dock_bottom_spacing_desc"
+            android:title="@string/dock_bottom_spacing_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="96"
+            app:minVal="-48"
             app:showDefaultIndicator="true"
             app:showResetButton="true"
             app:tickInterval="1"

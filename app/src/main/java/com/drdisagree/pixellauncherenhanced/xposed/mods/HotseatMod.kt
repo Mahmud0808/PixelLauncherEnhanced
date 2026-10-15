@@ -4,10 +4,11 @@ import android.content.Context
 import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_DOCK_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BOTTOM_SPACING
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_TOP_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
@@ -19,17 +20,22 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilent
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 
 class HotseatMod(context: Context) : ModPack(context) {
 
     private var hideDesktopSearchBar = false
     private var dockDisabled = false
     private var hidePageIndicator = false
-    private var desktopDockSpacing = -1
+    private var dockBottomSpacing = 0
+    private var dockTopSpacing = 0
+    private val inProfileCopy = ThreadLocal<Boolean>()
+    private val originalBottomSpaces = mutableListOf<Pair<WeakReference<Any>, Int>>()
     private var desktopSearchBarOpacity = 100
     private var mQuickSearchBar: View? = null
     private val workspaceInsets = Rect()
@@ -39,7 +45,8 @@ class HotseatMod(context: Context) : ModPack(context) {
             hideDesktopSearchBar = getBoolean(DESKTOP_SEARCH_BAR, false)
             dockDisabled = getBoolean(DISABLE_DOCK, false)
             hidePageIndicator = getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR, false)
-            desktopDockSpacing = getSliderInt(DESKTOP_DOCK_SPACING, -1)
+            dockBottomSpacing = getSliderInt(DOCK_BOTTOM_SPACING, 0)
+            dockTopSpacing = getSliderInt(DOCK_TOP_SPACING, 0)
             desktopSearchBarOpacity = getSliderInt(DESKTOP_SEARCH_BAR_OPACITY, 100)
         }
 
@@ -49,7 +56,8 @@ class HotseatMod(context: Context) : ModPack(context) {
                 reloadLauncher(mContext)
             }
 
-            DESKTOP_DOCK_SPACING -> reloadLauncher(mContext)
+            DOCK_BOTTOM_SPACING,
+            DOCK_TOP_SPACING -> reloadLauncher(mContext)
 
             DISABLE_DOCK -> {
                 triggerSearchBarVisibility()
@@ -113,8 +121,7 @@ class HotseatMod(context: Context) : ModPack(context) {
 
                 val bottomPadding = when {
                     dockDisabled -> if (hidePageIndicator) 0 else pageIndicatorHeight(workspace)
-                    desktopDockSpacing == -1 -> padding.bottom
-                    else -> mContext.toPx(desktopDockSpacing + 20)
+                    else -> (padding.bottom + mContext.toPx(dockTopSpacing)).coerceAtLeast(0)
                 }
 
                 workspace.setPadding(padding.left, padding.top, padding.right, bottomPadding)
@@ -122,12 +129,67 @@ class HotseatMod(context: Context) : ModPack(context) {
                 if (dockDisabled) placePageIndicatorAtBottom(workspace)
             }
 
+        val hotseatProfileClass = findClass(
+            "com.android.launcher3.deviceprofile.HotseatProfile",
+            suppressError = true
+        )
+
+        hotseatProfileClass
+            .hookMethod("copy", $$"copy$default")
+            .suppressError()
+            .runBefore { inProfileCopy.set(true) }
+            .runAfter { inProfileCopy.remove() }
+
+        hotseatProfileClass
+            .hookConstructor()
+            .suppressError()
+            .runAfter { param ->
+                if (inProfileCopy.get() == true) return@runAfter
+                param.thisObject.adjustHotseatSize(PROFILE_FIELDS)
+            }
+
+        findClass("com.android.launcher3.DeviceProfile")
+            .hookMethod("updateHotseatSizes")
+            .suppressError()
+            .runAfter { param -> param.thisObject.adjustHotseatSize(LEGACY_FIELDS) }
+
         ResourceHookManager
             .hookDimen()
             .whenCondition { hideDesktopSearchBar || dockDisabled }
             .forPackageName(loadPackageParam.packageName)
             .addResource("qsb_widget_height") { 0 }
             .apply()
+    }
+
+    private fun Any.originalBottomSpace(current: Int): Int = synchronized(originalBottomSpaces) {
+        originalBottomSpaces.removeAll { it.first.get() == null }
+        originalBottomSpaces.firstOrNull { it.first.get() === this }?.second
+            ?: current.also { originalBottomSpaces.add(WeakReference(this) to it) }
+    }
+
+    private fun Any.adjustHotseatSize(fields: HotseatFields) {
+        var barSize = getFieldSilently(fields.barSize) as? Int ?: return
+        var bottomSpace = getFieldSilently(fields.bottomSpace) as? Int ?: return
+        val qsbInline = getFieldSilently("isQsbInline") as? Boolean ?: false
+
+        if ((hideDesktopSearchBar || dockDisabled) && !qsbInline) {
+            val qsbSpace = getFieldSilently(fields.qsbSpace) as? Int ?: 0
+            val qsbVisualHeight = getFieldSilently(fields.qsbVisualHeight) as? Int ?: 0
+
+            barSize -= qsbSpace + qsbVisualHeight
+            setFieldSilently(fields.qsbSpace, 0)
+            setFieldSilently(fields.qsbVisualHeight, 0)
+        }
+
+        val originalBottomSpace = originalBottomSpace(bottomSpace)
+        val targetBottomSpace = (originalBottomSpace + mContext.toPx(dockBottomSpacing)).coerceAtLeast(0)
+        val delta = targetBottomSpace - bottomSpace
+
+        bottomSpace += delta
+        barSize += delta
+
+        setFieldSilently(fields.bottomSpace, bottomSpace)
+        setFieldSilently(fields.barSize, barSize.coerceAtLeast(0))
     }
 
     private fun pageIndicatorHeight(workspace: View): Int {
@@ -151,5 +213,28 @@ class HotseatMod(context: Context) : ModPack(context) {
 
     private fun updateSearchBarOpacity() {
         mQuickSearchBar?.background?.alpha = desktopSearchBarOpacity * 255 / 100
+    }
+
+    private class HotseatFields(
+        val barSize: String,
+        val bottomSpace: String,
+        val qsbSpace: String,
+        val qsbVisualHeight: String
+    )
+
+    companion object {
+        private val PROFILE_FIELDS = HotseatFields(
+            barSize = "barSizePx",
+            bottomSpace = "barBottomSpacePx",
+            qsbSpace = "qsbSpace",
+            qsbVisualHeight = "qsbVisualHeight"
+        )
+
+        private val LEGACY_FIELDS = HotseatFields(
+            barSize = "hotseatBarSizePx",
+            bottomSpace = "hotseatBarBottomSpacePx",
+            qsbSpace = "hotseatQsbSpace",
+            qsbVisualHeight = "hotseatQsbVisualHeight"
+        )
     }
 }
