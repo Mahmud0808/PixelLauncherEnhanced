@@ -10,13 +10,16 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.utils.Messages
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
 import com.drdisagree.pixellauncherenhanced.ui.preferences.BackupCardPreference
+import com.drdisagree.pixellauncherenhanced.utils.BackupCrypto
 import com.drdisagree.pixellauncherenhanced.utils.BackupException
 import com.drdisagree.pixellauncherenhanced.utils.DrawerLayoutBackup
 import com.drdisagree.pixellauncherenhanced.utils.HomeLayoutBackup
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
 import com.drdisagree.pixellauncherenhanced.utils.SettingsBackup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class BackupRestore : ControlledPreferenceFragmentCompat() {
 
@@ -31,7 +34,9 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
 
     private val restoreLayoutLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri != null) confirmRestoreLayout(uri)
+            if (uri != null) verifyBackup(uri, BackupCrypto.HOME_LAYOUT_MAGIC, R.string.home_layout_invalid_file) {
+                confirmRestoreLayout(uri)
+            }
         }
 
     private var includeHiddenApps = true
@@ -48,7 +53,9 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
 
     private val restoreDrawerLayoutLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri != null) confirmRestoreDrawerLayout(uri)
+            if (uri != null) verifyBackup(uri, BackupCrypto.DRAWER_LAYOUT_MAGIC, R.string.drawer_layout_invalid_file) {
+                confirmRestoreDrawerLayout(uri)
+            }
         }
 
     private val backupSettingsLauncher =
@@ -62,7 +69,9 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
 
     private val restoreSettingsLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri != null) confirmRestoreSettings(uri)
+            if (uri != null) verifyBackup(uri, BackupCrypto.SETTINGS_MAGIC, R.string.settings_invalid_file) {
+                confirmRestoreSettings(uri)
+            }
         }
 
     override val title: String
@@ -165,6 +174,39 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
             .show()
     }
 
+    private fun verifyBackup(uri: Uri, magic: ByteArray, @StringRes invalidRes: Int, onValid: () -> Unit) {
+        val context = requireContext().applicationContext
+
+        lifecycleScope.launch {
+            val header = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        val buffer = ByteArray(BACKUP_HEADER_SIZE)
+                        var read = 0
+                        while (read < buffer.size) {
+                            val count = input.read(buffer, read, buffer.size - read)
+                            if (count < 0) break
+                            read += count
+                        }
+                        buffer.copyOf(read)
+                    }
+                }.getOrNull()
+            }
+
+            val error = when {
+                header == null -> invalidRes
+                else -> BackupCrypto.wrongTypeMessage(header, magic)
+                    ?: invalidRes.takeUnless { BackupCrypto.hasMagic(magic, header) }
+            }
+
+            if (error == null) {
+                onValid()
+            } else {
+                Messages.show(activity ?: context, context.getString(error), long = true)
+            }
+        }
+    }
+
     private fun runBackupTask(
         @StringRes successRes: Int,
         onSuccess: (Context) -> Unit = {},
@@ -189,6 +231,7 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
 
     companion object {
         private val BACKUP_MIME_TYPES = arrayOf("application/octet-stream", "*/*")
+        private const val BACKUP_HEADER_SIZE = 16
         private const val CARD_HOME = "xposed_backupcardhome"
         private const val CARD_DRAWER = "xposed_backupcarddrawer"
         private const val CARD_SETTINGS = "xposed_backupcardsettings"
