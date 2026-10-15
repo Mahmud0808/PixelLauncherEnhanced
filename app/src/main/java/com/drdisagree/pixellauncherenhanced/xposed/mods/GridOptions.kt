@@ -268,6 +268,16 @@ class GridOptions(context: Context) : ModPack(context) {
                 param.result?.fitFolderToScreen(FOLDER_PROFILE_FIELDS)
             }
 
+        findClass("com.android.launcher3.responsive.CalculatedResponsiveSpec", suppressError = true)
+            .apply {
+                hookConstructor()
+                    .suppressError()
+                    .runAfter { param -> param.thisObject.fitResponsiveSpec() }
+                hookMethod("updateRemainderSpaces")
+                    .suppressError()
+                    .runAfter { param -> param.thisObject.fitResponsiveSpec() }
+            }
+
         val allAppsProfileClass = findClass(
             "com.android.launcher3.deviceprofile.AllAppsProfile",
             suppressError = Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM
@@ -304,6 +314,28 @@ class GridOptions(context: Context) : ModPack(context) {
             dockDatabaseIconCount = required
             runCatching { Xprefs.edit().putInt(DOCK_DATABASE_ICON_COUNT, required).apply() }
         }
+    }
+
+    private fun Any.fitResponsiveSpec() {
+        if (homeScreenGridColumns == 0 && homeScreenGridRows == 0 && appDrawerGridColumns == 0 &&
+            folderGridColumns == 0 && folderGridRows == 0
+        ) return
+
+        val available = getFieldSilently("availableSpace") as? Int ?: return
+        val cells = getFieldSilently("cells") as? Int ?: return
+        val startPadding = getFieldSilently("startPaddingPx") as? Int ?: return
+        val endPadding = getFieldSilently("endPaddingPx") as? Int ?: return
+        val gutter = getFieldSilently("gutterPx") as? Int ?: return
+        if (cells <= 0 || available <= 0 || (startPadding >= 0 && endPadding >= 0)) return
+
+        val padding = gutter.coerceAtLeast(0)
+        val cellSize = (available - padding * 2 - gutter * (cells - 1)) / cells
+        if (cellSize <= 0) return
+
+        val used = cellSize * cells + gutter * (cells - 1)
+        setFieldSilently("cellSizePx", cellSize)
+        setFieldSilently("startPaddingPx", (available - used) / 2)
+        setFieldSilently("endPaddingPx", available - used - (available - used) / 2)
     }
 
     private fun Any.patchFolderGrid() {
@@ -379,7 +411,6 @@ class GridOptions(context: Context) : ModPack(context) {
         private const val FOLDER_PREVIEW_ITEMS = 4
         private const val FOLDER_SCREEN_MARGIN_DP = 16
         private const val FOLDER_MAX_HEIGHT_RATIO = 0.8f
-
         private val FOLDER_PROFILE_FIELDS = FolderFields(
             cellWidth = "cellWidthPx",
             cellHeight = "cellHeightPx",

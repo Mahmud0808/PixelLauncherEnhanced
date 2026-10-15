@@ -73,7 +73,7 @@
             app:defaultValue="0"
             app:hideValueOnDefault="true"
             app:iconSpaceReserved="false"
-            app:maxVal="15"
+            app:maxVal="20"
             app:minVal="0"
             app:showDefaultIndicator="true"
             app:showResetButton="true"
