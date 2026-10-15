@@ -2,11 +2,14 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_RECENTS_LIVE_TILE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
@@ -26,13 +29,17 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private var appDrawerBackgroundOpacity: Int = -1
     private var recentsBackgroundOpacity: Int = -1
     private var disableRecentsLiveTile: Boolean = false
+    private var folderBackgroundOpacity: Int = -1
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             appDrawerBackgroundOpacity = getSliderInt(APP_DRAWER_BACKGROUND_OPACITY, -1) * 255 / 100
             recentsBackgroundOpacity = getSliderInt(RECENTS_BACKGROUND_OPACITY, -1) * 255 / 100
             disableRecentsLiveTile = getBoolean(DISABLE_RECENTS_LIVE_TILE, false)
+            folderBackgroundOpacity = getSliderInt(FOLDER_BACKGROUND_OPACITY, -1) * 255 / 100
         }
+
+        if (key.firstOrNull() == FOLDER_BACKGROUND_OPACITY) reloadLauncher(mContext)
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
@@ -234,6 +241,32 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 }
             }
 
+        findClass("com.android.launcher3.folder.Folder")
+            .hookMethod("onFinishInflate", "animateOpen")
+            .suppressError()
+            .runAfter { param ->
+                (param.thisObject.getFieldSilently("mBackground") as? GradientDrawable)
+                    ?.alpha = folderBackgroundOpacity.takeIf { it >= 0 } ?: 255
+            }
+
+        findClass("com.android.launcher3.folder.PreviewBackground")
+            .hookMethod("drawBackground")
+            .suppressError()
+            .runBefore { param ->
+                if (folderBackgroundOpacity < 0) return@runBefore
+
+                val color = param.thisObject.getFieldSilently("mBgColor") as? Int ?: return@runBefore
+                param.setObjectExtra(PREVIEW_ORIGINAL_COLOR, color)
+                param.thisObject.setFieldSilently(
+                    "mBgColor",
+                    ColorUtils.setAlphaComponent(color, Color.alpha(color) * folderBackgroundOpacity / 255)
+                )
+            }
+            .runAfter { param ->
+                val color = param.getObjectExtra(PREVIEW_ORIGINAL_COLOR) as? Int ?: return@runAfter
+                param.thisObject.setFieldSilently("mBgColor", color)
+            }
+
         val recentsViewClass = findClass("com.android.quickstep.views.RecentsView")
 
         recentsViewClass
@@ -274,5 +307,9 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 ColorUtils.setAlphaComponent(backgroundColor, backgroundOpacity),
                 foregroundColor
             )
+    }
+
+    companion object {
+        private const val PREVIEW_ORIGINAL_COLOR = "plePreviewOriginalColor"
     }
 }
