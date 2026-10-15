@@ -19,13 +19,14 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
-import java.lang.ref.WeakReference
 
 class HotseatMod(context: Context) : ModPack(context) {
 
@@ -35,7 +36,6 @@ class HotseatMod(context: Context) : ModPack(context) {
     private var dockBottomSpacing = 0
     private var dockTopSpacing = 0
     private val inProfileCopy = ThreadLocal<Boolean>()
-    private val originalBottomSpaces = mutableListOf<Pair<WeakReference<Any>, Int>>()
     private var desktopSearchBarOpacity = 100
     private var mQuickSearchBar: View? = null
     private val workspaceInsets = Rect()
@@ -161,12 +161,6 @@ class HotseatMod(context: Context) : ModPack(context) {
             .apply()
     }
 
-    private fun Any.originalBottomSpace(current: Int): Int = synchronized(originalBottomSpaces) {
-        originalBottomSpaces.removeAll { it.first.get() == null }
-        originalBottomSpaces.firstOrNull { it.first.get() === this }?.second
-            ?: current.also { originalBottomSpaces.add(WeakReference(this) to it) }
-    }
-
     private fun Any.adjustHotseatSize(fields: HotseatFields) {
         var barSize = getFieldSilently(fields.barSize) as? Int ?: return
         var bottomSpace = getFieldSilently(fields.bottomSpace) as? Int ?: return
@@ -181,7 +175,8 @@ class HotseatMod(context: Context) : ModPack(context) {
             setFieldSilently(fields.qsbVisualHeight, 0)
         }
 
-        val originalBottomSpace = originalBottomSpace(bottomSpace)
+        val originalBottomSpace = getExtraFieldSilently(ORIGINAL_BOTTOM_SPACE) as? Int
+            ?: bottomSpace.also { setExtraField(ORIGINAL_BOTTOM_SPACE, it) }
         val targetBottomSpace = (originalBottomSpace + mContext.toPx(dockBottomSpacing)).coerceAtLeast(0)
         val delta = targetBottomSpace - bottomSpace
 
@@ -223,6 +218,8 @@ class HotseatMod(context: Context) : ModPack(context) {
     )
 
     companion object {
+        private const val ORIGINAL_BOTTOM_SPACE = "pleOriginalHotseatBottomSpace"
+
         private val PROFILE_FIELDS = HotseatFields(
             barSize = "barSizePx",
             bottomSpace = "barBottomSpacePx",

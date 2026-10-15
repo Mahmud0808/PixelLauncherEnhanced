@@ -7,19 +7,19 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
-import java.lang.ref.WeakReference
 
 class IconTextSize(context: Context) : ModPack(context) {
 
     private var iconSizeModifier = 1f
     private var textSizeModifier = 1f
-    private val scaledObjects = mutableListOf<WeakReference<Any>>()
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -104,11 +104,8 @@ class IconTextSize(context: Context) : ModPack(context) {
     }
 
     private fun Any.scaleOnce(block: Any.() -> Unit) {
-        synchronized(scaledObjects) {
-            scaledObjects.removeAll { it.get() == null }
-            if (scaledObjects.any { it.get() === this }) return
-            scaledObjects.add(WeakReference(this))
-        }
+        if (getExtraFieldSilently(SCALED) == true) return
+        setExtraField(SCALED, true)
         block()
     }
 
@@ -117,5 +114,9 @@ class IconTextSize(context: Context) : ModPack(context) {
             is Int -> setFieldSilently(field, (value * modifier).toInt())
             is Float -> setFieldSilently(field, value * modifier)
         }
+    }
+
+    companion object {
+        private const val SCALED = "pleIconTextScaled"
     }
 }

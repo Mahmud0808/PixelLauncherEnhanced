@@ -16,6 +16,7 @@ import de.robv.android.xposed.XposedHelpers.findAndHookMethod
 import de.robv.android.xposed.XposedHelpers.getStaticObjectField
 import de.robv.android.xposed.callbacks.XC_LayoutInflated
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -918,18 +919,49 @@ fun Class<*>?.getAnyStaticField(vararg fieldNames: String): Any? {
     throw NoSuchFieldError("Field not found: ${fieldNames.joinToString()}")
 }
 
-fun Any?.getExtraField(fieldName: String): Any {
-    return XposedHelpers.getAdditionalInstanceField(this, fieldName)
+private class IdentityKey(
+    referent: Any,
+    queue: ReferenceQueue<Any>?
+) : WeakReference<Any>(referent, queue) {
+    private val hash = System.identityHashCode(referent)
+
+    override fun hashCode(): Int = hash
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is IdentityKey || other.hash != hash) return false
+        val referent = get()
+        return referent != null && referent === other.get()
+    }
 }
 
-fun Any?.getExtraFieldSilently(fieldName: String): Any? {
-    return try {
-        XposedHelpers.getAdditionalInstanceField(this, fieldName)
-    } catch (_: Throwable) {
+private val extraFieldsQueue = ReferenceQueue<Any>()
+private val extraFields = HashMap<IdentityKey, HashMap<String, Any?>>()
+
+private fun Any.extraFields(create: Boolean): HashMap<String, Any?>? = synchronized(extraFields) {
+    while (true) {
+        val stale = extraFieldsQueue.poll() ?: break
+        extraFields.remove(stale)
+    }
+
+    val key = IdentityKey(this, null)
+    extraFields[key] ?: if (create) {
+        HashMap<String, Any?>().also { extraFields[IdentityKey(this, extraFieldsQueue)] = it }
+    } else {
         null
     }
 }
 
+fun Any?.getExtraField(fieldName: String): Any {
+    val fields = requireNotNull(this).extraFields(false)
+    return fields?.get(fieldName) ?: throw NoSuchFieldError("Extra field not found: $fieldName")
+}
+
+fun Any?.getExtraFieldSilently(fieldName: String): Any? {
+    return this?.extraFields(false)?.get(fieldName)
+}
+
 fun Any?.setExtraField(fieldName: String, value: Any?) {
-    XposedHelpers.setAdditionalInstanceField(this, fieldName, value)
+    val fields = requireNotNull(this).extraFields(true) ?: return
+    synchronized(extraFields) { fields[fieldName] = value }
 }
