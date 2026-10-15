@@ -1,6 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
+import android.view.View
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -87,6 +88,40 @@ class IconLabels(context: Context) : ModPack(context) {
             }
         }
 
+        findClass("com.android.launcher3.ShortcutAndWidgetContainer")
+            .hookMethod("measureChild")
+            .suppressError()
+            .runAfter { param ->
+                if (showDesktopLabels) return@runAfter
+
+                val child = param.args.getOrNull(0) as? View ?: return@runAfter
+                centerIconWithoutLabel(param.thisObject as View, child)
+            }
+
+        bubbleTextViewClass
+            .hookMethod("onMeasure")
+            .suppressError()
+            .runBefore { param ->
+                val view = param.thisObject as View
+                if (!view.isDrawerIconWithoutLabel()) return@runBefore
+                if (view.getFieldSilently("mCenterVertically") != true) return@runBefore
+
+                view.setField("mCenterVertically", false)
+                param.setObjectExtra(CENTER_VERTICALLY, true)
+            }
+            .runAfter { param ->
+                if (param.getObjectExtra(CENTER_VERTICALLY) != true) return@runAfter
+
+                val view = param.thisObject as View
+                view.setField("mCenterVertically", true)
+
+                val iconSize = view.getFieldSilently("mIconSize") as? Int ?: return@runAfter
+                val paddingTop = ((view.measuredHeight - iconSize) / 2).coerceAtLeast(0)
+                if (view.paddingTop != paddingTop) {
+                    view.setPadding(view.paddingLeft, paddingTop, view.paddingRight, view.paddingBottom)
+                }
+            }
+
         try {
             bubbleTextViewClass
                 .hookMethod("applyLabel")
@@ -103,6 +138,29 @@ class IconLabels(context: Context) : ModPack(context) {
         }
     }
 
+    private fun centerIconWithoutLabel(container: View, child: View) {
+        val containerType = container.getFieldSilently("mContainerType") as? Int ?: return
+        if (containerType != CONTAINER_WORKSPACE && containerType != CONTAINER_FOLDER) return
+
+        val iconSize = when {
+            child.javaClass.name.endsWith(".FolderIcon") ->
+                child.getFieldSilently("mFolderName").getFieldSilently("mIconSize") as? Int
+            else -> child.getFieldSilently("mIconSize") as? Int
+        } ?: return
+
+        val layoutParams = child.layoutParams ?: return
+        if (layoutParams.width <= 0 || layoutParams.height <= 0 || iconSize <= 0) return
+
+        val paddingTop = ((layoutParams.height - iconSize) / 2).coerceAtLeast(0)
+        if (child.paddingTop == paddingTop) return
+
+        child.setPadding(child.paddingLeft, paddingTop, child.paddingRight, child.paddingBottom)
+        child.measure(
+            View.MeasureSpec.makeMeasureSpec(layoutParams.width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(layoutParams.height, View.MeasureSpec.EXACTLY)
+        )
+    }
+
     private fun setNativeLabelsHidden(hidden: Boolean): Boolean {
         val launcherPrefs = runCatching {
             findClass("com.android.launcher3.LauncherPrefs").callStaticMethod("get", mContext)
@@ -114,6 +172,11 @@ class IconLabels(context: Context) : ModPack(context) {
         return runCatching { launcherPrefs.callMethod("put", nativeLabelHiddenItem, hidden) }
             .onFailure { log(this@IconLabels, it) }
             .isSuccess
+    }
+
+    private fun View.isDrawerIconWithoutLabel(): Boolean {
+        if (showDrawerLabels) return false
+        return (getFieldSilently("mDisplay") as? Int)?.isDrawer() == true
     }
 
     private fun Int.isNativelyHandled(): Boolean {
@@ -138,6 +201,7 @@ class IconLabels(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private const val CENTER_VERTICALLY = "pleCenterVertically"
         const val DISPLAY_WORKSPACE: Int = 0
         const val DISPLAY_ALL_APPS: Int = 1
         const val DISPLAY_FOLDER: Int = 2
@@ -145,5 +209,7 @@ class IconLabels(context: Context) : ModPack(context) {
         const val DISPLAY_SEARCH_RESULT_SMALL: Int = 7
         const val DISPLAY_PREDICTION_ROW: Int = 8
         const val DISPLAY_SEARCH_RESULT_APP_ROW: Int = 9
+        const val CONTAINER_WORKSPACE: Int = 0
+        const val CONTAINER_FOLDER: Int = 2
     }
 }
