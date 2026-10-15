@@ -32,6 +32,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_ARRANGEMENT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_FILL
@@ -72,11 +75,15 @@ object PrefsHelper {
             WIDGET_CLEAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                     PanelBackground.supported(getString(WIDGET_BACKGROUND)) == PanelBackground.OFF
 
+            ICON_BACKGROUND,
             FOLDER_BACKGROUND,
             WIDGET_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
             FOLDER_BACKGROUND_BLUR -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                     PanelBackground.supported(getString(FOLDER_BACKGROUND)) != PanelBackground.OFF
+
+            ICON_BACKGROUND_BLUR,
+            ICON_BACKGROUND_TINT -> PanelBackground.supported(getString(ICON_BACKGROUND)) != PanelBackground.OFF
 
             WIDGET_BLUR_RADIUS,
             WIDGET_BLUR_TINT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&

@@ -1,7 +1,11 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import android.os.Bundle
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
+import com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
 
 class IconsMods : ControlledPreferenceFragmentCompat() {
 
@@ -19,4 +23,15 @@ class IconsMods : ControlledPreferenceFragmentCompat() {
 
     override val themeResource: Int
         get() = R.style.PrefsThemeCollapsingToolbar
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        super.onCreatePreferences(savedInstanceState, rootKey)
+
+        if (PanelBackground.isLiquidSupported) return
+
+        findPreference<ListPreference>(ICON_BACKGROUND)?.apply {
+            entries = entries.take(2).toTypedArray()
+            entryValues = entryValues.take(2).toTypedArray()
+        }
+    }
 }

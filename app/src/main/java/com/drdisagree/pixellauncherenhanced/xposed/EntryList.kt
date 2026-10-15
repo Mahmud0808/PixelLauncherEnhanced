@@ -25,6 +25,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.HideApps
 import com.drdisagree.pixellauncherenhanced.xposed.mods.HideStatusbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.HomePreviewAccess
 import com.drdisagree.pixellauncherenhanced.xposed.mods.HotseatMod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.IconGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconLabels
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconTextSize
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherSettings
@@ -49,6 +50,7 @@ object EntryList {
         LauncherUtils::class.java,
         HomePreviewAccess::class.java,
         IconLabels::class.java,
+        IconGlass::class.java,
         ThemedIcons::class.java,
         ThemedIconsColor::class.java,
         OpacityModifier::class.java,

@@ -20,6 +20,8 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
 import java.io.File
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.min
@@ -33,28 +35,52 @@ object WallpaperGlass {
     private const val SHARP_WIDTH = 720
     private const val LIQUID_REFRACTION = 0.18f
     private const val SQRT_HALF = 0.70710677f
+    private const val MASK_BLUR = 0.3f
+    private const val MASK_RAMP = 1.7f
+    private const val MASK_PADDING = 8
+    private const val MASK_CACHE_SIZE = 8
     private const val LIQUID_SHADER = """
         uniform shader image;
         uniform float2 origin;
         uniform float2 size;
         uniform float radius;
         uniform float refraction;
+        uniform shader mask;
+        uniform float useMask;
+        uniform float2 maskOrigin;
+        uniform float maskScale;
+        uniform float maskRange;
 
         float roundedBox(float2 p, float2 halfSize, float r) {
             float2 q = abs(p) - halfSize + r;
             return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
         }
 
+        float maskDistance(float2 coord) {
+            float m = mask.eval((coord - maskOrigin) * maskScale).r;
+            return (0.5 - m) * 2.0 * maskRange;
+        }
+
         half4 main(float2 coord) {
             float2 halfSize = size * 0.5;
             float2 p = coord - origin - halfSize;
-            float d = roundedBox(p, halfSize, radius);
-
             float2 e = float2(1.0, 0.0);
-            float2 normal = float2(
-                roundedBox(p + e.xy, halfSize, radius) - roundedBox(p - e.xy, halfSize, radius),
-                roundedBox(p + e.yx, halfSize, radius) - roundedBox(p - e.yx, halfSize, radius)
-            );
+            float d;
+            float2 normal;
+
+            if (useMask > 0.5) {
+                d = maskDistance(coord);
+                normal = float2(
+                    maskDistance(coord + e.xy) - maskDistance(coord - e.xy),
+                    maskDistance(coord + e.yx) - maskDistance(coord - e.yx)
+                );
+            } else {
+                d = roundedBox(p, halfSize, radius);
+                normal = float2(
+                    roundedBox(p + e.xy, halfSize, radius) - roundedBox(p - e.xy, halfSize, radius),
+                    roundedBox(p + e.yx, halfSize, radius) - roundedBox(p - e.yx, halfSize, radius)
+                );
+            }
             normal = normal / max(length(normal), 0.0001);
 
             float band = clamp(1.0 + d / max(refraction, 1.0), 0.0, 1.0);
@@ -91,6 +117,15 @@ object WallpaperGlass {
     private val liquidPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val shapePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val measureRegion = Region()
+    private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    private val canvasInverse = Matrix()
+    private val canvasShaderMatrix = Matrix()
+    private var iconLiquidShader: RuntimeShader? = null
+    private val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() }
+    private val maskCache = LinkedHashMap<Any, Bitmap>()
+    private val emptyMaskShader by lazy {
+        BitmapShader(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    }
     private var liquidShader: RuntimeShader? = null
 
     @Volatile
@@ -104,7 +139,36 @@ object WallpaperGlass {
     private var loading = false
     private var liveWallpaper = false
     private var wallpaperChecked = false
-    private val listeners = mutableSetOf<View>()
+    private val listeners: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
+    private val lastPositions = WeakHashMap<View, Long>()
+    private val watchedRoots: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
+    private val trackLocation = IntArray(2)
+
+    private fun track(host: View) {
+        listeners.add(host)
+        host.getLocationInWindow(trackLocation)
+        lastPositions[host] = packPosition(trackLocation)
+
+        val root = host.rootView ?: return
+        if (!watchedRoots.add(root)) return
+        root.viewTreeObserver.addOnPreDrawListener {
+            listeners.toList().forEach { view ->
+                if (view.rootView !== root || !view.isAttachedToWindow) return@forEach
+                view.getLocationInWindow(trackLocation)
+                val position = packPosition(trackLocation)
+                if (lastPositions[view] != position) {
+                    lastPositions[view] = position
+                    view.background?.invalidateSelf()
+                    view.invalidate()
+                }
+            }
+            true
+        }
+    }
+
+    private fun packPosition(location: IntArray): Long {
+        return (location[0].toLong() shl 32) or (location[1].toLong() and 0xFFFFFFFFL)
+    }
 
     var offsetX = 0.5f
     var zoom = 0f
@@ -215,7 +279,7 @@ object WallpaperGlass {
         liquid: Boolean = false,
         shapeDrawer: ((Paint) -> Unit)? = null
     ): Boolean {
-        listeners.add(host)
+        track(host)
         checkWallpaper(host.context)
         if (!isAvailable()) return false
 
@@ -284,6 +348,106 @@ object WallpaperGlass {
         return true
     }
 
+    @Suppress("DEPRECATION")
+    fun canvasPaint(
+        host: View,
+        canvas: Canvas,
+        localRect: RectF,
+        corner: Float,
+        blurRadius: Float,
+        alpha: Float,
+        liquid: Boolean,
+        shapePath: Path? = null
+    ): Paint? {
+        track(host)
+        checkWallpaper(host.context)
+        if (!isAvailable()) return null
+
+        val screenWidth = host.resources.displayMetrics.widthPixels
+        val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val bitmap = if (useLiquid) {
+            blurredBitmap(true, (blurRadius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
+        } else {
+            blurredBitmap(false, max(1, (blurRadius * SAMPLE_WIDTH / screenWidth).roundToInt()))
+        } ?: return null
+
+        val screenHeight = host.rootView.height.takeIf { it > 0 } ?: host.resources.displayMetrics.heightPixels
+        val scale = max(screenWidth.toFloat() / bitmap.width, screenHeight.toFloat() / bitmap.height) *
+                (1f + (MAX_ZOOM_SCALE - 1f) * zoom.coerceIn(0f, 1f))
+        val drawnWidth = bitmap.width * scale
+        val drawnHeight = bitmap.height * scale
+        val wallpaperLeft = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
+        val wallpaperTop = -(drawnHeight - screenHeight) / 2f
+
+        host.getLocationInWindow(location)
+        if (!canvas.getMatrix().invert(canvasInverse)) return null
+
+        canvasShaderMatrix.setRectToRect(
+            RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()),
+            RectF(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight),
+            Matrix.ScaleToFit.FILL
+        )
+        canvasShaderMatrix.postTranslate(-location[0].toFloat(), -location[1].toFloat())
+        canvasShaderMatrix.postConcat(canvasInverse)
+
+        val image = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+            setLocalMatrix(canvasShaderMatrix)
+        }
+
+        val paint = if (useLiquid) {
+            val shader = iconLiquidShader ?: RuntimeShader(LIQUID_SHADER).also { iconLiquidShader = it }
+            shader.setInputShader("image", image)
+            shader.setFloatUniform("origin", localRect.left, localRect.top)
+            shader.setFloatUniform("size", localRect.width(), localRect.height())
+            shader.setFloatUniform("radius", corner)
+            val refraction = minOf(localRect.height(), localRect.width()) * LIQUID_REFRACTION
+            shader.setFloatUniform("refraction", refraction)
+            val mask = shapePath?.let { shapeMask(it, localRect, refraction) }
+            if (mask != null) {
+                shader.setInputShader("mask", BitmapShader(mask, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP))
+                shader.setFloatUniform("useMask", 1f)
+                shader.setFloatUniform("maskOrigin", localRect.left - MASK_PADDING, localRect.top - MASK_PADDING)
+                shader.setFloatUniform("maskScale", 1f)
+                shader.setFloatUniform("maskRange", maskBlurRadius(refraction) * MASK_RAMP)
+            } else {
+                disableMask(shader)
+            }
+            iconPaint.apply { this.shader = shader }
+        } else {
+            iconPaint.apply { this.shader = image }
+        }
+        paint.alpha = (alpha.coerceIn(0f, 1f) * 255).roundToInt()
+        return paint
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun disableMask(shader: RuntimeShader) {
+        shader.setInputShader("mask", emptyMaskShader)
+        shader.setFloatUniform("useMask", 0f)
+        shader.setFloatUniform("maskOrigin", 0f, 0f)
+        shader.setFloatUniform("maskScale", 1f)
+        shader.setFloatUniform("maskRange", 1f)
+    }
+
+    private fun maskBlurRadius(refraction: Float): Int = max(1, (refraction * MASK_BLUR).roundToInt())
+
+    private fun shapeMask(path: Path, bounds: RectF, refraction: Float): Bitmap {
+        val key = Triple(path, bounds.width().roundToInt(), bounds.height().roundToInt())
+        maskCache[key]?.let { return it }
+
+        val width = bounds.width().roundToInt() + MASK_PADDING * 2
+        val height = bounds.height().roundToInt() + MASK_PADDING * 2
+        val bitmap = Bitmap.createBitmap(max(1, width), max(1, height), Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).apply {
+            translate(MASK_PADDING - bounds.left, MASK_PADDING - bounds.top)
+            drawPath(path, maskPaint)
+        }
+        val blurred = boxBlur(bitmap, maskBlurRadius(refraction))
+        if (maskCache.size >= MASK_CACHE_SIZE) maskCache.remove(maskCache.keys.first())
+        maskCache[key] = blurred
+        return blurred
+    }
+
     fun pathCorner(path: Path, bounds: RectF): Float {
         if (bounds.isEmpty) return 0f
         val half = min(bounds.width(), bounds.height()) / 2f
@@ -335,6 +499,7 @@ object WallpaperGlass {
         shader.setFloatUniform("size", rect.width(), rect.height())
         shader.setFloatUniform("radius", corner)
         shader.setFloatUniform("refraction", minOf(rect.height(), rect.width()) * LIQUID_REFRACTION)
+        disableMask(shader)
 
         liquidPaint.shader = shader
         liquidPaint.alpha = (alpha.coerceIn(0f, 1f) * 255).roundToInt()
