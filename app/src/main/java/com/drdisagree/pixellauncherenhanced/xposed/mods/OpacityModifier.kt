@@ -1,23 +1,45 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.animation.Animator
+import android.animation.AnimatorSet
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
+import android.view.View
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_RECENTS_LIVE_TILE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_BACKGROUND_OPACITY
+import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FolderFrost
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -30,6 +52,11 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private var recentsBackgroundOpacity: Int = -1
     private var disableRecentsLiveTile: Boolean = false
     private var folderBackgroundOpacity: Int = -1
+    private var folderBackgroundBlur: Int = 0
+    private var folderLiquid = false
+    private var folderBlurAnimator: ValueAnimator? = null
+    private var folderFrost: FolderFrost? = null
+    private val previewRect = RectF()
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -37,6 +64,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
             recentsBackgroundOpacity = getSliderInt(RECENTS_BACKGROUND_OPACITY, -1) * 255 / 100
             disableRecentsLiveTile = getBoolean(DISABLE_RECENTS_LIVE_TILE, false)
             folderBackgroundOpacity = getSliderInt(FOLDER_BACKGROUND_OPACITY, -1) * 255 / 100
+            val folderBackground = PanelBackground.supported(getString(FOLDER_BACKGROUND, BACKGROUND_OFF))
+            val folderEnabled = folderBackground != BACKGROUND_OFF
+            folderBackgroundBlur = if (folderEnabled) getSliderInt(FOLDER_BACKGROUND_BLUR, 0) else 0
+            folderLiquid = folderBackground == BACKGROUND_LIQUID
         }
 
         if (key.firstOrNull() == FOLDER_BACKGROUND_OPACITY) reloadLauncher(mContext)
@@ -253,19 +284,155 @@ class OpacityModifier(context: Context) : ModPack(context) {
             .hookMethod("drawBackground")
             .suppressError()
             .runBefore { param ->
-                if (folderBackgroundOpacity < 0) return@runBefore
+                val glass = folderGlass()
+                if (folderBackgroundOpacity < 0 && !glass) return@runBefore
 
                 val color = param.thisObject.getFieldSilently("mBgColor") as? Int ?: return@runBefore
                 param.setObjectExtra(PREVIEW_ORIGINAL_COLOR, color)
-                param.thisObject.setFieldSilently(
-                    "mBgColor",
-                    ColorUtils.setAlphaComponent(color, Color.alpha(color) * folderBackgroundOpacity / 255)
-                )
+
+                val context = param.thisObject.getFieldSilently("mContext") as? Context
+                val base = context?.takeIf { glass }?.folderBackgroundColor() ?: color
+                val alpha = if (folderBackgroundOpacity >= 0) folderBackgroundOpacity else Color.alpha(base)
+                param.thisObject.setFieldSilently("mBgColor", ColorUtils.setAlphaComponent(base, alpha))
             }
             .runAfter { param ->
                 val color = param.getObjectExtra(PREVIEW_ORIGINAL_COLOR) as? Int ?: return@runAfter
                 param.thisObject.setFieldSilently("mBgColor", color)
             }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val folderClass = findClass("com.android.launcher3.folder.Folder")
+
+            folderClass
+                .hookMethod("animateOpen")
+                .suppressError()
+                .runAfter { param ->
+                    if (!folderGlass()) return@runAfter
+
+                    val folder = param.thisObject as View
+                    val dragLayer = folder.parent as? ViewGroup ?: return@runAfter
+                    val frosted = folder.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost
+                        ?: FolderFrost(folder).also { folder.setExtraField(FOLDER_FROST, it) }
+
+                    frosted.maxRadius = folderBackgroundBlur * folder.resources.displayMetrics.density
+                    frosted.liquid = folderLiquid
+                    frosted.start(folder.blurTargets(dragLayer), dragLayer.width, dragLayer.height)
+                    folderFrost = frosted
+                    animateFolderBlur(1f, folder.getFieldSilently("mCurrentAnimator") as? Animator)
+                }
+
+            folderClass
+                .hookMethod("dispatchDraw")
+                .suppressError()
+                .runBefore { param ->
+                    val frost = param.thisObject.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost
+                        ?: return@runBefore
+                    if (frost.progress <= 0f) return@runBefore
+
+                    val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
+                    val clip = param.thisObject.getFieldSilently("mClipPath").let {
+                        it as? Path ?: it.getFieldSilently("path") as? Path
+                    }
+                    val animating = (param.thisObject.getFieldSilently("mCurrentAnimator") as? Animator)
+                        ?.isRunning == true
+                    if (animating && (clip == null || clip.isEmpty)) return@runBefore
+                    val background = param.thisObject.getFieldSilently("mBackground") as? GradientDrawable
+                        ?: return@runBefore
+
+                    frost.draw(canvas, clip, background.bounds, background.cornerRadius)
+                }
+
+            findClass("com.android.launcher3.folder.FolderIcon")
+                .hookMethod("dispatchDraw")
+                .suppressError()
+                .runBefore { param ->
+                    if (!folderGlass()) return@runBefore
+
+                    val folderIcon = param.thisObject as View
+                    if (folderIcon.getFieldSilently("mBackgroundIsVisible") == false) {
+                        (folderIcon.getExtraFieldSilently(PREVIEW_BLUR) as? BlurPanel)?.markHidden()
+                        return@runBefore
+                    }
+
+                    val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
+                    val preview = folderIcon.getFieldSilently("mBackground") ?: return@runBefore
+                    val previewSize = preview.getFieldSilently("previewSize") as? Int ?: return@runBefore
+                    val radius = previewSize / 2
+                    val scaledRadius = preview.callMethodSilently("getScaledRadius") as? Int ?: radius
+                    val offsetX = (preview.getFieldSilently("basePreviewOffsetX") as? Int ?: return@runBefore) -
+                            (scaledRadius - radius)
+                    val offsetY = (preview.getFieldSilently("basePreviewOffsetY") as? Int ?: return@runBefore) -
+                            (scaledRadius - radius)
+
+                    previewRect.set(
+                        offsetX.toFloat(),
+                        offsetY.toFloat(),
+                        (offsetX + scaledRadius * 2).toFloat(),
+                        (offsetY + scaledRadius * 2).toFloat()
+                    )
+
+                    val blurRadius = folderBackgroundBlur * folderIcon.resources.displayMetrics.density
+                    val shape = folderIcon.folderShape()
+                    val shapeCorner = shape?.cornerRadius(scaledRadius.toFloat()) ?: scaledRadius.toFloat()
+                    if (WallpaperGlass.draw(
+                            host = folderIcon,
+                            canvas = canvas,
+                            rect = previewRect,
+                            corner = shapeCorner,
+                            bottomCorner = shapeCorner,
+                            blurRadius = blurRadius,
+                            tintColor = Color.TRANSPARENT,
+                            liquid = folderLiquid,
+                            shapeDrawer = shape?.let { shape ->
+                                { paint: Paint ->
+                                    shape.callMethodSilently(
+                                        "drawShape",
+                                        canvas,
+                                        offsetX.toFloat(),
+                                        offsetY.toFloat(),
+                                        scaledRadius.toFloat(),
+                                        paint
+                                    )
+                                }
+                            }
+                        )
+                    ) return@runBefore
+
+                    val panel = folderIcon.getExtraFieldSilently(PREVIEW_BLUR) as? BlurPanel
+                        ?: BlurPanel(folderIcon).also { folderIcon.setExtraField(PREVIEW_BLUR, it) }
+
+                    panel.draw(
+                        canvas = canvas,
+                        rect = previewRect,
+                        cornerRadius = scaledRadius.toFloat(),
+                        blurRadius = blurRadius,
+                        tintColor = Color.TRANSPARENT
+                    )
+                }
+
+            folderClass
+                .hookMethod("handleClose")
+                .suppressError()
+                .runAfter { param ->
+                    if (folderFrost == null) return@runAfter
+
+                    if (param.args.getOrNull(0) == true) {
+                        animateFolderBlur(
+                            0f,
+                            param.thisObject.getFieldSilently("mCurrentAnimator") as? Animator
+                        )
+                    } else {
+                        clearFolderBlur()
+                    }
+                }
+
+            folderClass
+                .hookMethod("onDetachedFromWindow")
+                .suppressError()
+                .runAfter {
+                    if (folderBlurAnimator?.isRunning != true) clearFolderBlur()
+                }
+        }
 
         val recentsViewClass = findClass("com.android.quickstep.views.RecentsView")
 
@@ -286,6 +453,77 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     }
                 )
             }
+    }
+
+    private fun View.folderShape(): Any? {
+        val themeManager = findClass("com.android.launcher3.graphics.ThemeManager", suppressError = true)
+            ?.getStaticFieldSilently("INSTANCE")
+            ?.callMethodSilently("get", context)
+            ?: return null
+        return themeManager.getFieldSilently("iconState")?.getFieldSilently("folderShape")
+    }
+
+    private fun Any.cornerRadius(radius: Float): Float {
+        (getFieldSilently("radiusRatio") as? Float)?.let { return radius * it }
+        if (javaClass.simpleName.endsWith("Circle")) return radius
+
+        val path = Path()
+        callMethodSilently("addToPath", 0f, 0f, radius, path)
+        val bounds = RectF().also { path.computeBounds(it, true) }
+        if (bounds.isEmpty) return radius
+        return WallpaperGlass.pathCorner(path, bounds)
+    }
+
+    @SuppressLint("DiscouragedApi")
+    private fun Context.folderBackgroundColor(): Int? {
+        val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+                Configuration.UI_MODE_NIGHT_YES
+        val name = if (night) "folder_background_dark" else "folder_background_light"
+        val id = resources.getIdentifier(name, "color", packageName).takeIf { it != 0 } ?: return null
+        return runCatching { getColor(id) }.getOrNull()
+    }
+
+    private fun folderGlass(): Boolean = folderBackgroundBlur > 0 || folderLiquid
+
+    private fun View.blurTargets(dragLayer: ViewGroup): List<View> {
+        return (0 until dragLayer.childCount)
+            .map { dragLayer.getChildAt(it) }
+            .filter { it !== this && BLUR_TARGET.containsMatchIn(it.javaClass.name) }
+    }
+
+    private fun animateFolderBlur(target: Float, source: Animator?) {
+        val frosted = folderFrost ?: return
+        val previous = folderBlurAnimator
+        folderBlurAnimator = null
+        previous?.cancel()
+
+        val duration = ((source as? AnimatorSet)?.totalDuration ?: source?.duration)
+            ?.takeIf { it > 0 }
+            ?: DEFAULT_FOLDER_ANIMATION_DURATION
+
+        folderBlurAnimator = ValueAnimator.ofFloat(frosted.progress, target).apply {
+            this.duration = duration
+            interpolator = source?.interpolator ?: DecelerateInterpolator()
+            addUpdateListener { frosted.progress = it.animatedValue as Float }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    BlurPanel.refreshAllSoon()
+                    if (folderBlurAnimator !== animation) return
+                    folderBlurAnimator = null
+                    if (target == 0f) clearFolderBlur()
+                }
+            })
+            start()
+        }
+    }
+
+    private fun clearFolderBlur() {
+        val previous = folderBlurAnimator
+        folderBlurAnimator = null
+        previous?.cancel()
+        folderFrost?.stop()
+        folderFrost = null
+        BlurPanel.refreshAllSoon()
     }
 
     private fun getScrimColors(
@@ -311,5 +549,11 @@ class OpacityModifier(context: Context) : ModPack(context) {
 
     companion object {
         private const val PREVIEW_ORIGINAL_COLOR = "plePreviewOriginalColor"
+        private const val FOLDER_FROST = "pleFolderFrost"
+        private const val BACKGROUND_OFF = "off"
+        private const val BACKGROUND_LIQUID = "liquid"
+        private const val PREVIEW_BLUR = "plePreviewBlur"
+        private const val DEFAULT_FOLDER_ANIMATION_DURATION = 300L
+        private val BLUR_TARGET = Regex("Workspace|Hotseat|PageIndicator|Qsb|SearchContainer")
     }
 }

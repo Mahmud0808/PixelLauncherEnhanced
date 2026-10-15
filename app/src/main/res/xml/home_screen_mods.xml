@@ -22,13 +22,6 @@
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:defaultValue="false"
-            android:key="xposed_freewidgetresize"
-            android:summary="@string/free_widget_resize_desc"
-            android:title="@string/free_widget_resize_title"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="true"
             android:key="xposed_allowwallpaperzooming"
             android:summary="@string/allow_wallpaper_zooming_summary"
@@ -116,6 +109,86 @@
             app:tickInterval="1"
             app:valueFormat="%" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="off"
+            android:dialogTitle="@string/folder_background_title"
+            android:entries="@array/panel_background_str"
+            android:entryValues="@array/panel_background_value"
+            android:key="xposed_folderbackground"
+            android:title="@string/folder_background_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderbackgroundblur"
+            android:summary="@string/folder_background_blur_desc"
+            android:title="@string/folder_background_blur_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_home_screen_widgets"
+        android:title="@string/section_widgets_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_freewidgetresize"
+            android:summary="@string/free_widget_resize_desc"
+            android:title="@string/free_widget_resize_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="off"
+            android:dialogTitle="@string/widget_background_title"
+            android:entries="@array/panel_background_str"
+            android:entryValues="@array/panel_background_value"
+            android:key="xposed_widgetbackground"
+            android:title="@string/widget_background_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetblurradius"
+            android:summary="@string/widget_blur_radius_desc"
+            android:title="@string/widget_blur_radius_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetblurtint"
+            android:title="@string/widget_blur_tint_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_widgetclearbackground"
+            android:summary="@string/widget_clear_background_desc"
+            android:title="@string/widget_clear_background_title"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
@@ -189,6 +262,105 @@
             android:title="@string/disable_dock_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_desktopsearchbar"
+            android:summary="@string/hide_desktop_search_bar_desc"
+            android:title="@string/hide_desktop_search_bar_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_desktopsearchbaropacity"
+            android:title="@string/search_bar_opacity_title"
+            app:defaultValue="100"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="off"
+            android:dialogTitle="@string/dock_background_title"
+            android:entries="@array/panel_background_str"
+            android:entryValues="@array/panel_background_value"
+            android:key="xposed_dockbackground"
+            android:title="@string/dock_background_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurradius"
+            android:summary="@string/dock_blur_radius_desc"
+            android:title="@string/dock_blur_radius_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurtint"
+            android:title="@string/dock_blur_tint_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="folder"
+            android:dialogTitle="@string/dock_blur_tint_color_title"
+            android:entries="@array/dock_blur_tint_color_str"
+            android:entryValues="@array/dock_blur_tint_color_value"
+            android:key="xposed_dockblurtintcolor"
+            android:title="@string/dock_blur_tint_color_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="floating"
+            android:dialogTitle="@string/dock_blur_style_title"
+            android:entries="@array/dock_blur_style_str"
+            android:entryValues="@array/dock_blur_style_value"
+            android:key="xposed_dockblurstyle"
+            android:title="@string/dock_blur_style_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurmargin"
+            android:title="@string/dock_blur_margin_title"
+            app:defaultValue="12"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="48"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurcorner"
+            android:title="@string/dock_blur_corner_title"
+            app:defaultValue="28"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="60"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_docktopspacing"
             android:summary="@string/dock_top_spacing_desc"
@@ -216,25 +388,6 @@
             app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="dp" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-            android:key="xposed_desktopsearchbar"
-            android:summary="@string/hide_desktop_search_bar_desc"
-            android:title="@string/hide_desktop_search_bar_title"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_desktopsearchbaropacity"
-            android:title="@string/search_bar_opacity_title"
-            app:defaultValue="100"
-            app:hideValueOnDefault="true"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:showDefaultIndicator="true"
-            app:showResetButton="true"
-            app:tickInterval="1"
-            app:valueFormat="%" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 

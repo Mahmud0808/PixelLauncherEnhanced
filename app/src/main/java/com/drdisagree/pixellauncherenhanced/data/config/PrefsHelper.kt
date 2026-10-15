@@ -2,12 +2,20 @@ package com.drdisagree.pixellauncherenhanced.data.config
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
 import androidx.preference.Preference
 import androidx.preference.PreferenceGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_CORNER
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_MARGIN
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_STYLE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT_COLOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BOTTOM_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_TOP_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_AT_BOTTOM
@@ -15,6 +23,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_EN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_DARK_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE
@@ -40,7 +50,12 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_COLOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_FG_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_FG_COLOR_LIGHT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_CLEAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
+import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getBoolean
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getSliderFloat
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getString
@@ -53,6 +68,29 @@ object PrefsHelper {
     fun isVisible(key: String?): Boolean {
         return when (key) {
             XPOSED_HOOK_CHECK -> false
+
+            WIDGET_CLEAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    PanelBackground.supported(getString(WIDGET_BACKGROUND)) == PanelBackground.OFF
+
+            FOLDER_BACKGROUND,
+            WIDGET_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+            FOLDER_BACKGROUND_BLUR -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    PanelBackground.supported(getString(FOLDER_BACKGROUND)) != PanelBackground.OFF
+
+            WIDGET_BLUR_RADIUS,
+            WIDGET_BLUR_TINT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    PanelBackground.supported(getString(WIDGET_BACKGROUND)) != PanelBackground.OFF
+
+            DOCK_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !getBoolean(DISABLE_DOCK)
+
+            DOCK_BLUR_RADIUS,
+            DOCK_BLUR_TINT,
+            DOCK_BLUR_TINT_COLOR,
+            DOCK_BLUR_CORNER,
+            DOCK_BLUR_STYLE,
+            DOCK_BLUR_MARGIN -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !getBoolean(DISABLE_DOCK) &&
+                    PanelBackground.supported(getString(DOCK_BACKGROUND)) != PanelBackground.OFF
 
             DEVELOPER_OPTIONS,
             RECENTS_DISABLE_SELECTION -> isPixelLauncher

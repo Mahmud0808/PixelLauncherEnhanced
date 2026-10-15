@@ -8,6 +8,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.DisableDock
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconPacks
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconShapes
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
+import com.drdisagree.pixellauncherenhanced.xposed.mods.BlurPanels
 import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsAppLock
 import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsMemInfo
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
@@ -51,6 +52,7 @@ object EntryList {
         ThemedIcons::class.java,
         ThemedIconsColor::class.java,
         OpacityModifier::class.java,
+        BlurPanels::class.java,
         GestureMod::class.java,
         HotseatMod::class.java,
         FreeformMod::class.java,

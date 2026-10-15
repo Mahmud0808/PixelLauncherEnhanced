@@ -9,20 +9,21 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_DATABASE_ICON_COUNT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_SCREENS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_FIRST_SCREEN
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
+import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.LOAD_TIME_KEY_KEY
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.PACKAGE_STRIKE_KEY_KEY
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 object SettingsBackup {
 
@@ -95,7 +96,12 @@ object SettingsBackup {
                     TYPE_INT -> editor.putInt(key, entry.getInt(KEY_VALUE))
                     TYPE_LONG -> editor.putLong(key, entry.getLong(KEY_VALUE))
                     TYPE_FLOAT -> editor.putFloat(key, entry.getDouble(KEY_VALUE).toFloat())
-                    TYPE_STRING -> editor.putString(key, entry.getString(KEY_VALUE))
+                    TYPE_STRING -> editor.putString(
+                        key,
+                        entry.getString(KEY_VALUE).let {
+                            if (key in PanelBackground.KEYS) PanelBackground.supported(it) else it
+                        }
+                    )
                     TYPE_STRING_SET -> {
                         val array = entry.getJSONArray(KEY_VALUE)
                         editor.putStringSet(key, (0 until array.length()).mapTo(HashSet()) { array.getString(it) })

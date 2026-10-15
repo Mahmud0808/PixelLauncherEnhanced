@@ -1,0 +1,121 @@
+package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
+
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.RenderEffect
+import android.graphics.RenderNode
+import android.graphics.Shader
+import android.graphics.drawable.Drawable
+import android.os.Build
+import android.view.View
+import androidx.annotation.RequiresApi
+import kotlin.math.min
+import kotlin.math.roundToInt
+
+@RequiresApi(Build.VERSION_CODES.S)
+class FolderFrost(private val host: View) {
+
+    private val roundPath = Path()
+    private val pathBounds = RectF()
+    private val blurBounds = Rect()
+    private val inverse = Matrix()
+    private var snapshot: RenderNode? = null
+    private var wallpaperBlur: Drawable? = null
+
+    var maxRadius = 0f
+    var liquid = false
+    var progress = 0f
+        set(value) {
+            field = value
+            host.invalidate()
+        }
+
+    fun start(targets: List<View>, width: Int, height: Int) {
+        snapshot?.discardDisplayList()
+        snapshot = RenderNode(NODE_NAME).apply {
+            setPosition(0, 0, width, height)
+            val canvas = beginRecording(width, height)
+            targets.filter { it.isShown && it.alpha > 0f }.forEach { target ->
+                canvas.save()
+                canvas.translate(target.left + target.translationX, target.top + target.translationY)
+                target.draw(canvas)
+                canvas.restore()
+            }
+            endRecording()
+        }
+
+        if (wallpaperBlur == null) {
+            wallpaperBlur = host.callMethodSilently("getViewRootImpl")
+                .callMethodSilently("createBackgroundBlurDrawable") as? Drawable
+        }
+    }
+
+    fun stop() {
+        snapshot?.discardDisplayList()
+        snapshot = null
+        progress = 0f
+    }
+
+    fun draw(canvas: Canvas, clipPath: Path?, backgroundBounds: Rect, cornerRadius: Float) {
+        val radius = maxRadius * progress
+        if (progress <= 0f || !canvas.isHardwareAccelerated) return
+
+        val clip = if (clipPath != null && !clipPath.isEmpty) {
+            clipPath.computeBounds(pathBounds, true)
+            clipPath
+        } else {
+            if (backgroundBounds.isEmpty) return
+            pathBounds.set(backgroundBounds)
+            roundPath.reset()
+            roundPath.addRoundRect(pathBounds, cornerRadius, cornerRadius, Path.Direction.CW)
+            roundPath
+        }
+        if (pathBounds.isEmpty) return
+
+        val corner = if (clip === clipPath) {
+            WallpaperGlass.pathCorner(clip, pathBounds)
+        } else {
+            min(cornerRadius, min(pathBounds.width(), pathBounds.height()) / 2f)
+        }
+        canvas.save()
+        canvas.clipPath(clip)
+        val glass = WallpaperGlass.draw(
+            host = host,
+            canvas = canvas,
+            rect = pathBounds,
+            corner = corner,
+            bottomCorner = corner,
+            blurRadius = maxRadius,
+            tintColor = 0,
+            liquid = liquid
+        )
+        canvas.restore()
+
+        if (!glass) wallpaperBlur?.apply {
+            pathBounds.roundOut(blurBounds)
+            setBounds(blurBounds)
+            callMethodSilently("setCornerRadius", corner)
+            callMethodSilently("setBlurRadius", radius.roundToInt())
+            draw(canvas)
+        }
+
+        snapshot?.let { node ->
+            node.setRenderEffect(
+                if (radius >= 0.5f) RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP) else null
+            )
+            canvas.save()
+            canvas.clipPath(clip)
+            if (host.matrix.invert(inverse)) canvas.concat(inverse)
+            canvas.translate(-host.left.toFloat(), -host.top.toFloat())
+            canvas.drawRenderNode(node)
+            canvas.restore()
+        }
+    }
+
+    companion object {
+        private const val NODE_NAME = "pleFolderFrost"
+    }
+}

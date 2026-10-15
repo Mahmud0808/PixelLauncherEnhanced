@@ -21,25 +21,31 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 <details>
 <summary>Home screen</summary>
 
-| Feature                 | Pixel Launcher | Launcher3 Launcher |
-|-------------------------|:--------------:|:------------------:|
-| Themed icons            |       ✅        |         ✅          |
-| Lock layout             |       ✅        |         ✅          |
-| Free widget resizing    |       ✅        |         ✅          |
-| Wallpaper zooming       |       ✅        |         ✅          |
-| Homescreen columns      |       ✅        |         ✅          |
-| Homescreen rows         |       ✅        |         ✅          |
-| Icon labels on desktop  |       ✅        |         ✅          |
-| Hide statusbar          |       ✅        |         ✅          |
-| Hide top shadow         |       ✅        |         ✅          |
-| Dark statusbar icon     |       ✅        |         ✅          |
-| Hide page indicator     |       ✅        |         ✅          |
-| Dark page indicator     |       ✅        |         ✅          |
-| Hide At A Glance        |       ✅        |         ✅          |
-| Disable dock            |       ✅        |         ✅          |
-| Dock spacing            |       ✅        |         ✅          |
-| Hide desktop search bar |       ✅        |         ✅          |
-| Search bar opacity      |       ✅        |         🚫          |
+| Feature                         | Pixel Launcher | Launcher3 Launcher |
+|---------------------------------|:--------------:|:------------------:|
+| Themed icons                    |       ✅        |         ✅          |
+| Lock layout                     |       ✅        |         ✅          |
+| Wallpaper zooming               |       ✅        |         ✅          |
+| Homescreen columns              |       ✅        |         ✅          |
+| Homescreen rows                 |       ✅        |         ✅          |
+| Icon labels on desktop          |       ✅        |         ✅          |
+| Folder columns and rows         |       ✅        |         ✅          |
+| Folder background opacity       |       ✅        |         ✅          |
+| Folder frosted and liquid glass |       ✅        |         ✅          |
+| Free widget resizing            |       ✅        |         ✅          |
+| Widget frosted and liquid glass |       ✅        |         ✅          |
+| Remove widget backgrounds       |       ✅        |         ✅          |
+| Hide statusbar                  |       ✅        |         ✅          |
+| Hide top shadow                 |       ✅        |         ✅          |
+| Dark statusbar icon             |       ✅        |         ✅          |
+| Hide page indicator             |       ✅        |         ✅          |
+| Dark page indicator             |       ✅        |         ✅          |
+| Hide At A Glance                |       ✅        |         ✅          |
+| Disable dock                    |       ✅        |         ✅          |
+| Hide desktop search bar         |       ✅        |         ✅          |
+| Search bar opacity              |       ✅        |         🚫          |
+| Dock frosted and liquid glass   |       ✅        |         ✅          |
+| Dock top and bottom spacing     |       ✅        |         ✅          |
 
 </details>
 
@@ -82,6 +88,8 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Icon size                      |       ✅        |         ✅          |
 | Text size                      |       ✅        |         ✅          |
 | Remove shortcut icon badge     |       ✅        |         ✅          |
+| Notification dot count         |       ✅        |         ✅          |
+| Hide notification dots per app |       ✅        |         ✅          |
 | Force themed icons             |       ✅        |         ✅          |
 | Custom themed icon color       |       ✅        |         ⚠️         |
 | Edit app in app popup          |       ✅        |         ✅          |

@@ -47,6 +47,38 @@
         <item>open_app</item>
     </string-array>
 
+    <string-array name="dock_blur_style_str" translatable="false">
+        <item>@string/dock_blur_style_floating</item>
+        <item>@string/dock_blur_style_attached</item>
+    </string-array>
+
+    <string-array name="dock_blur_style_value" translatable="false">
+        <item>floating</item>
+        <item>attached</item>
+    </string-array>
+
+    <string-array name="panel_background_str" translatable="false">
+        <item>@string/panel_background_off</item>
+        <item>@string/panel_background_frosted</item>
+        <item>@string/panel_background_liquid</item>
+    </string-array>
+
+    <string-array name="panel_background_value" translatable="false">
+        <item>off</item>
+        <item>frosted</item>
+        <item>liquid</item>
+    </string-array>
+
+    <string-array name="dock_blur_tint_color_str" translatable="false">
+        <item>@string/dock_blur_tint_color_folder</item>
+        <item>@string/dock_blur_tint_color_widget</item>
+    </string-array>
+
+    <string-array name="dock_blur_tint_color_value" translatable="false">
+        <item>folder</item>
+        <item>widget</item>
+    </string-array>
+
     <string-array name="no_drawer_arrangement_str" translatable="false">
         <item>@string/no_drawer_arrangement_sorted</item>
         <item>@string/no_drawer_arrangement_custom</item>
