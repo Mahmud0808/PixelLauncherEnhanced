@@ -434,6 +434,15 @@ class BlurPanels(context: Context) : ModPack(context) {
         canvas.restoreToCount(save)
     }
 
+    private fun View.setShapeShown(shown: Boolean) {
+        val alpha = if (shown) 255 else 0
+        if (this is ImageView && (isShapeImage() || drawable?.isPlainShape() == true)) {
+            if (imageAlpha != alpha) imageAlpha = alpha
+        } else {
+            background?.takeIf { it.alpha != alpha }?.let { background = it.mutate().apply { this.alpha = alpha } }
+        }
+    }
+
     private fun Drawable.isRoundedRect(): Boolean {
         return when (this) {
             is ColorDrawable -> true
@@ -487,6 +496,8 @@ class BlurPanels(context: Context) : ModPack(context) {
                     canvas.restore()
                 }
                 canvas.restoreToCount(layer)
+                target.post { target.setShapeShown(!drawn) }
+                return@BlurPanelDrawable
             }
             if (drawn) return@BlurPanelDrawable
 
@@ -674,6 +685,11 @@ class BlurPanels(context: Context) : ModPack(context) {
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             val isLarge = child.width * child.height >= hostArea * LARGE_BACKGROUND_RATIO
+
+            if (isLarge && child.shapeMask() != null && !WallpaperGlass.isAvailable()) {
+                if (child is ViewGroup) child.clearLargeBackgrounds(hostArea, colors)
+                continue
+            }
 
             if (isLarge) {
                 child.background?.takeIf { it.isFilled() }?.let { background ->
