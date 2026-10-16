@@ -342,6 +342,15 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     frost.draw(canvas, clip, background.bounds, background.cornerRadius)
                 }
 
+            findClass("com.android.launcher3.util.QuickstepBackgroundBlurHelper", suppressError = true)
+                .hookMethod("drawFolderBlur")
+                .suppressError()
+                .runBefore { param ->
+                    val folder = param.args.getOrNull(2) ?: return@runBefore
+                    val frost = folder.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost ?: return@runBefore
+                    if (folderGlass() && frost.progress > 0f) param.result = null
+                }
+
             findClass("com.android.launcher3.folder.FolderIcon")
                 .hookMethod("dispatchDraw")
                 .suppressError()
