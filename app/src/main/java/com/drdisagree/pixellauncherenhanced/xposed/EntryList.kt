@@ -4,6 +4,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerMode
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerTabs
+import com.drdisagree.pixellauncherenhanced.xposed.mods.AppSearchAlias
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DisableDock
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconPacks
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconShapes
@@ -63,6 +64,7 @@ object EntryList {
         HideStatusbar::class.java,
         TopShadow::class.java,
         LauncherSettings::class.java,
+        AppSearchAlias::class.java,
         LockLayout::class.java,
         WidgetResize::class.java,
         DrawerSearchbar::class.java,
