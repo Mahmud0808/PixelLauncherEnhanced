@@ -7,6 +7,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -43,6 +44,9 @@ class IconTextSize(context: Context) : ModPack(context) {
         )
 
         fun Any.hookDeviceProfile() {
+            val workspace = getAnyFieldSilently("mWorkspaceProfile", "workspaceProfile") ?: this
+            if (workspace.getExtraFieldSilently(SCALED) != true) IconFit.fitIconsToCells(this, mContext)
+
             if (getFieldSilently("iconSizePx") is Int) {
                 scaleOnce {
                     scaleField("iconSizePx", iconSizeModifier)
@@ -83,13 +87,7 @@ class IconTextSize(context: Context) : ModPack(context) {
         deviceProfileClass
             .hookConstructor()
             .runAfter { param ->
-                param.thisObject.apply {
-                    try {
-                        hookDeviceProfile()
-                    } finally {
-                        IconFit.fitIconsToCells(this, mContext)
-                    }
-                }
+                param.thisObject.hookDeviceProfile()
             }
 
         deviceProfileBuilderClass
@@ -97,7 +95,6 @@ class IconTextSize(context: Context) : ModPack(context) {
             .runAfter { param ->
                 try {
                     param.result.hookDeviceProfile()
-                    IconFit.fitIconsToCells(param.result, mContext)
                 } catch (_: Throwable) {
                 }
             }
