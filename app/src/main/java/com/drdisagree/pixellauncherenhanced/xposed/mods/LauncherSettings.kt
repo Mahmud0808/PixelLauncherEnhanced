@@ -169,7 +169,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 if (mContext.packageName == LAUNCHER3_PACKAGE) {
                     myPreference.callMethod(
                         "setIcon",
-                        modRes.getDrawable(R.drawable.ic_launcher_foreground)
+                        modRes.getDrawable(R.drawable.ic_launcher_settings)
                     )
 
                     val layoutResource = mContext.resources.getIdentifier(
@@ -263,7 +263,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                                 setField("label", modRes.getString(R.string.app_name_shortened))
                                 setField(
                                     "icon",
-                                    modRes.getDrawable(R.drawable.ic_launcher_foreground)
+                                    modRes.getDrawable(R.drawable.ic_launcher_settings)
                                 )
                                 setField("eventId", eventId)
                                 setField("clickListener", clickListener)
@@ -435,7 +435,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                                     )
                                     .newInstance(
                                         modRes.getString(R.string.app_name_shortened),
-                                        modRes.getDrawable(R.drawable.ic_launcher_foreground),
+                                        modRes.getDrawable(R.drawable.ic_launcher_settings),
                                         eventId,
                                         clickListener
                                     )
@@ -749,10 +749,10 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             createPopupData(
                                 label = modRes.getString(R.string.app_name_shortened),
                                 iconResId = if (usesLabelResId) {
-                                    injectedResId(R.drawable.ic_launcher_foreground)
+                                    injectedResId(R.drawable.ic_launcher_settings)
                                 } else {
                                     launcherDrawableId(
-                                        R.drawable.ic_launcher_foreground,
+                                        R.drawable.ic_launcher_settings,
                                         "ic_launcher_home_foreground",
                                         "ic_setting"
                                     )
