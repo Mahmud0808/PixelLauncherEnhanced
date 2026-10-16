@@ -1,17 +1,24 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.PorterDuff
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.RenderEffect
 import android.graphics.RenderNode
 import android.graphics.Shader
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.View
+import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.core.graphics.ColorUtils
+import java.lang.ref.WeakReference
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -24,6 +31,8 @@ class FolderFrost(private val host: View) {
     private val inverse = Matrix()
     private var snapshot: RenderNode? = null
     private var wallpaperBlur: Drawable? = null
+    private var scrimView: WeakReference<View>? = null
+    private val scrimPaint = Paint()
 
     var maxRadius = 0f
     var liquid = false
@@ -80,6 +89,7 @@ class FolderFrost(private val host: View) {
         } else {
             min(cornerRadius, min(pathBounds.width(), pathBounds.height()) / 2f)
         }
+        val dim = scrimColor() ?: 0
         canvas.save()
         canvas.clipPath(clip)
         val glass = WallpaperGlass.draw(
@@ -90,7 +100,8 @@ class FolderFrost(private val host: View) {
             bottomCorner = corner,
             blurRadius = maxRadius,
             tintColor = 0,
-            liquid = liquid
+            liquid = liquid,
+            dimColor = dim
         )
         canvas.restore()
 
@@ -108,11 +119,44 @@ class FolderFrost(private val host: View) {
             )
             canvas.save()
             canvas.clipPath(clip)
+            canvas.saveLayer(pathBounds, null)
             if (host.matrix.invert(inverse)) canvas.concat(inverse)
             canvas.translate(-host.left.toFloat(), -host.top.toFloat())
             canvas.drawRenderNode(node)
+            if (dim != 0) canvas.drawColor(dim, PorterDuff.Mode.SRC_ATOP)
+            canvas.restore()
             canvas.restore()
         }
+
+        if (!glass && dim != 0) {
+            scrimPaint.color = dim
+            canvas.save()
+            canvas.clipPath(clip)
+            canvas.drawPaint(scrimPaint)
+            canvas.restore()
+        }
+    }
+
+    private fun scrimColor(): Int? {
+        val scrim = scrimView?.get()?.takeIf { it.isAttachedToWindow && it.rootView === host.rootView }
+            ?: host.rootView.findScrimView()?.also { scrimView = WeakReference(it) }
+            ?: return null
+        if (scrim.visibility != View.VISIBLE || scrim.alpha <= 0f) return null
+
+        val color = scrim.getFieldSilently("mBackgroundColor") as? Int
+            ?: (scrim.background as? ColorDrawable)?.color
+            ?: return null
+        val alpha = (Color.alpha(color) * scrim.alpha).roundToInt().coerceIn(0, 255)
+        return if (alpha == 0) null else ColorUtils.setAlphaComponent(color, alpha)
+    }
+
+    private fun View.findScrimView(): View? {
+        if (javaClass.name.endsWith(".ScrimView")) return this
+        if (this !is ViewGroup) return null
+        for (i in 0 until childCount) {
+            getChildAt(i).findScrimView()?.let { return it }
+        }
+        return null
     }
 
     companion object {

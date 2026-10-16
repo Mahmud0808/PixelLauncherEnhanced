@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
@@ -14,6 +15,7 @@ import android.graphics.RectF
 import android.graphics.Region
 import android.graphics.RuntimeShader
 import android.graphics.Shader
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Process
 import android.view.View
@@ -50,6 +52,7 @@ object WallpaperGlass {
         uniform float2 maskOrigin;
         uniform float maskScale;
         uniform float maskRange;
+        uniform float4 dim;
 
         float roundedBox(float2 p, float2 halfSize, float r) {
             float2 q = abs(p) - halfSize + r;
@@ -97,6 +100,7 @@ object WallpaperGlass {
             color.g = image.eval(coord + offset).g;
             color.b = image.eval(coord + offset * 0.94).b;
             color.a = 1.0;
+            color.rgb = mix(color.rgb, half3(dim.rgb), half(dim.a));
 
             float rim = smoothstep(-2.5, 0.0, d);
             float light = clamp(dot(normal, normalize(float2(-0.5, -0.85))), 0.0, 1.0);
@@ -214,17 +218,33 @@ object WallpaperGlass {
 
         enqueueProxyCommand { proxy ->
             proxy.runCommand(
-                "cp /data/system/users/$userId/wallpaper '${copy.absolutePath}' && " +
+                "rm -f '${copy.absolutePath}'; cp /data/system/users/$userId/wallpaper '${copy.absolutePath}' && " +
                         "chown $uid:$uid '${copy.absolutePath}' && chmod 600 '${copy.absolutePath}'"
             )
-            decode(copy)
+            decode(copy, context.applicationContext)
         }
     }
 
-    private fun decode(copy: File) {
+    private fun builtInWallpaper(context: Context): Bitmap? {
+        val drawable = runCatching {
+            WallpaperManager.getInstance(context).getBuiltInDrawable(WallpaperManager.FLAG_SYSTEM)
+        }.getOrNull() ?: return null
+        (drawable as? BitmapDrawable)?.bitmap?.let { return it }
+
+        val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: return null
+        val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: return null
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also {
+            drawable.setBounds(0, 0, width, height)
+            drawable.draw(Canvas(it))
+        }
+    }
+
+    private fun decode(copy: File, context: Context) {
         executor.execute {
             val result = runCatching {
-                val bitmap = BitmapFactory.decodeFile(copy.absolutePath) ?: return@runCatching null
+                val bitmap = BitmapFactory.decodeFile(copy.absolutePath)
+                    ?: builtInWallpaper(context)
+                    ?: return@runCatching null
                 val aspect = bitmap.width.toFloat() / bitmap.height
                 val small = Bitmap.createScaledBitmap(
                     bitmap, SAMPLE_WIDTH, max(1, (SAMPLE_WIDTH / aspect).roundToInt()), true
@@ -282,7 +302,8 @@ object WallpaperGlass {
         tintColor: Int,
         alpha: Float = 1f,
         liquid: Boolean = false,
-        shapeDrawer: ((Paint) -> Unit)? = null
+        shapeDrawer: ((Paint) -> Unit)? = null,
+        dimColor: Int = 0
     ): Boolean {
         track(host)
         checkWallpaper(host.context)
@@ -323,7 +344,7 @@ object WallpaperGlass {
 
         if (shapeDrawer != null) {
             val paint = if (useLiquid) {
-                liquidPaint(bitmap, rect, corner, hostScale, alpha)
+                liquidPaint(bitmap, rect, corner, hostScale, alpha, dimColor)
             } else {
                 shapePaint.shader = wallpaperShader(bitmap, hostScale)
                 shapePaint.alpha = (alpha.coerceIn(0f, 1f) * 255).roundToInt()
@@ -334,7 +355,7 @@ object WallpaperGlass {
         }
 
         if (useLiquid) {
-            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, hostScale, alpha))
+            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, hostScale, alpha, dimColor))
             drawTint(canvas, tintColor, alpha)
             return true
         }
@@ -349,6 +370,7 @@ object WallpaperGlass {
         canvas.drawBitmap(bitmap, source, target, bitmapPaint)
         canvas.restore()
 
+        drawTint(canvas, dimColor, alpha)
         drawTint(canvas, tintColor, alpha)
         return true
     }
@@ -409,6 +431,7 @@ object WallpaperGlass {
             shader.setFloatUniform("radius", corner)
             val refraction = minOf(localRect.height(), localRect.width()) * LIQUID_REFRACTION
             shader.setFloatUniform("refraction", refraction)
+            setDim(shader, 0)
             val mask = shapePath?.let { path -> shapeMask(path, localRect, refraction) { it.drawPath(path, maskPaint) } }
                 ?: maskDrawer?.let { shapeMask(maskKey ?: it, localRect, refraction, it) }
             if (mask != null) {
@@ -439,6 +462,17 @@ object WallpaperGlass {
         shader.setFloatUniform("maskOrigin", 0f, 0f)
         shader.setFloatUniform("maskScale", 1f)
         shader.setFloatUniform("maskRange", 1f)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun setDim(shader: RuntimeShader, color: Int) {
+        shader.setFloatUniform(
+            "dim",
+            Color.red(color) / 255f,
+            Color.green(color) / 255f,
+            Color.blue(color) / 255f,
+            Color.alpha(color) / 255f
+        )
     }
 
     private fun maskBlurRadius(refraction: Float): Int = max(1, (refraction * MASK_BLUR).roundToInt())
@@ -504,7 +538,8 @@ object WallpaperGlass {
         rect: RectF,
         corner: Float,
         hostScale: Float,
-        alpha: Float
+        alpha: Float,
+        dimColor: Int
     ): Paint {
         val image = wallpaperShader(bitmap, hostScale)
 
@@ -514,6 +549,7 @@ object WallpaperGlass {
         shader.setFloatUniform("size", rect.width(), rect.height())
         shader.setFloatUniform("radius", corner)
         shader.setFloatUniform("refraction", minOf(rect.height(), rect.width()) * LIQUID_REFRACTION)
+        setDim(shader, dimColor)
         disableMask(shader)
 
         liquidPaint.shader = shader
