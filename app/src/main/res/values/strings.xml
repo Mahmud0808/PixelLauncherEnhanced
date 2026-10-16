@@ -481,6 +481,8 @@
     <string name="icon_background_title">Themed icon background</string>
     <string name="icon_background_blur_title">Themed icon background blur</string>
     <string name="icon_background_tint_title">Themed icon background tint</string>
+    <string name="panel_background_desc">Works best with a static wallpaper</string>
+    <string name="icon_background_desc">Works with static wallpapers only</string>
     <string name="panel_background_off">Off</string>
     <string name="panel_background_frosted">Frosted glass</string>
     <string name="panel_background_liquid">Liquid glass</string>

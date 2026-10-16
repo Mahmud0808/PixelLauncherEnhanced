@@ -115,6 +115,7 @@
             android:entries="@array/panel_background_str"
             android:entryValues="@array/panel_background_value"
             android:key="xposed_folderbackground"
+            android:summary="@string/panel_background_desc"
             android:title="@string/folder_background_title"
             app:iconSpaceReserved="false" />
 
@@ -152,6 +153,7 @@
             android:entries="@array/panel_background_str"
             android:entryValues="@array/panel_background_value"
             android:key="xposed_widgetbackground"
+            android:summary="@string/panel_background_desc"
             android:title="@string/widget_background_title"
             app:iconSpaceReserved="false" />
 
@@ -287,6 +289,7 @@
             android:entries="@array/panel_background_str"
             android:entryValues="@array/panel_background_value"
             android:key="xposed_dockbackground"
+            android:summary="@string/panel_background_desc"
             android:title="@string/dock_background_title"
             app:iconSpaceReserved="false" />
 
