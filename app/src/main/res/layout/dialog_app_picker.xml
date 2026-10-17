@@ -47,7 +47,7 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <FrameLayout
+    <com.drdisagree.pixellauncherenhanced.ui.widgets.FadingEdgeLayout
         android:layout_width="match_parent"
         android:layout_height="420dp"
         android:layout_marginTop="12dp">
@@ -57,6 +57,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
+            android:overScrollMode="never"
             android:paddingHorizontal="12dp"
             android:paddingBottom="8dp"
             android:scrollbars="none" />
@@ -69,6 +70,6 @@
             android:layout_gravity="center"
             android:indeterminate="true" />
 
-    </FrameLayout>
+    </com.drdisagree.pixellauncherenhanced.ui.widgets.FadingEdgeLayout>
 
 </LinearLayout>
