@@ -6,6 +6,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerMode
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerTabs
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppSearchAlias
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DisableDock
+import com.drdisagree.pixellauncherenhanced.xposed.mods.EndlessPages
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconPacks
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconShapes
 import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
@@ -66,6 +67,7 @@ object EntryList {
         LauncherSettings::class.java,
         AppSearchAlias::class.java,
         LockLayout::class.java,
+        EndlessPages::class.java,
         WidgetResize::class.java,
         DrawerSearchbar::class.java,
         DrawerScrollbar::class.java,

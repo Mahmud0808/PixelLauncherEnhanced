@@ -77,6 +77,7 @@ object Constants {
     const val ENTRY_IN_LAUNCHER_SETTINGS = "xposed_entryinlaunchersettings"
     const val ENTRY_IN_OPTIONS_POPUP = "xposed_entryinoptionspopup"
     const val LOCK_LAYOUT = "xposed_locklayout"
+    const val HOME_ENDLESS_SCROLLING = "xposed_homeendlessscrolling"
     const val FREE_WIDGET_RESIZE = "xposed_freewidgetresize"
     const val DRAWER_SEARCH_BAR = "xposed_drawersearchbar"
     const val HIDE_DRAWER_SCROLLBAR = "xposed_hidedrawerscrollbar"

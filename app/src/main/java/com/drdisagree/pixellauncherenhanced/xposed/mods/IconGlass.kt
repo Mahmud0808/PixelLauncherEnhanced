@@ -167,11 +167,11 @@ class IconGlass(context: Context) : ModPack(context) {
                     "mBackground",
                     FloatingGlassBackground(background, view).apply { bounds = background.bounds }
                 )
-                param.setObjectExtra(FLOATING_BACKGROUND, background)
             }
             .runAfter { param ->
-                val background = param.getObjectExtra(FLOATING_BACKGROUND) as? Drawable ?: return@runAfter
-                param.thisObject.setFieldSilently("mBackground", background)
+                val glass = param.thisObject.getFieldSilently("mBackground") as? FloatingGlassBackground
+                    ?: return@runAfter
+                param.thisObject.setFieldSilently("mBackground", glass.inner)
             }
 
         findClass("com.android.launcher3.icons.ThemedIconDrawable", suppressError = true)
@@ -373,7 +373,6 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     companion object {
-        private const val FLOATING_BACKGROUND = "pleFloatingBackground"
         private const val DEFAULT_VISIBLE_AREA = 0.92f
         private const val LEGACY_CORNER_RATIO = 0.25f
         private const val DEFAULT_BLUR = 12

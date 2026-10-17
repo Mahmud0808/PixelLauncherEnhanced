@@ -195,6 +195,8 @@
     <string name="hide_navigation_space_title">Hide navigation bar space</string>
     <string name="hide_navigation_space_desc">Remove empty space around the navigation bar</string>
     <string name="lock_layout_title">Lock layout</string>
+    <string name="endless_scrolling_title">Endless page scrolling</string>
+    <string name="endless_scrolling_desc">Swipe past the last page to go back to the first</string>
     <string name="lock_layout_desc_on">Icons and widgets can\'t be added, removed and moved on the homescreen</string>
     <string name="lock_layout_desc_off">Icons and widgets can be added, removed and moved on the homescreen</string>
     <string name="free_widget_resize_title">Free widget resizing</string>
