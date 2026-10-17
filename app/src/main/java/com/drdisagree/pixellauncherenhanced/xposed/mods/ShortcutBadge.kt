@@ -47,6 +47,15 @@ class ShortcutBadge(context: Context) : ModPack(context) {
                 param.thisObject.setField("mHideBadge", true)
             }
 
+        findClass("com.android.launcher3.views.FloatingIconView", suppressError = true)
+            .hookMethod("setIcon")
+            .suppressError()
+            .runBefore { param ->
+                if (!removeBadge || param.args.size < 2) return@runBefore
+
+                param.args[1] = null
+            }
+
         try {
             bitmapInfoClass
                 .hookMethod("applyFlags")
