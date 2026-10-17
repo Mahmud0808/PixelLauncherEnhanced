@@ -49,7 +49,10 @@ class FolderFrost(private val host: View) {
             val canvas = beginRecording(width, height)
             targets.filter { it.isShown && it.alpha > 0f }.forEach { target ->
                 canvas.save()
-                canvas.translate(target.left + target.translationX, target.top + target.translationY)
+                canvas.translate(
+                    target.left + target.translationX - target.scrollX,
+                    target.top + target.translationY - target.scrollY
+                )
                 target.draw(canvas)
                 canvas.restore()
             }
