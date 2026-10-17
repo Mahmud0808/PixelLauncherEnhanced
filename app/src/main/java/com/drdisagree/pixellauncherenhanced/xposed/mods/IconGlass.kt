@@ -14,6 +14,7 @@ import android.graphics.drawable.Drawable
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.graphics.ColorUtils
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
@@ -48,6 +49,7 @@ class IconGlass(context: Context) : ModPack(context) {
     }
     @Volatile
     private var sheetColor = 0
+    private var drawerOpacity = -1
     private val alphaMasks = WeakHashMap<Bitmap, Bitmap>()
     private val cornerCache = WeakHashMap<Path, Float>()
     private val boundsCache = WeakHashMap<Path, RectF>()
@@ -63,6 +65,7 @@ class IconGlass(context: Context) : ModPack(context) {
             liquid = background == PanelBackground.LIQUID
             blurRadius = getSliderInt(ICON_BACKGROUND_BLUR, DEFAULT_BLUR)
             tintOpacity = getSliderInt(ICON_BACKGROUND_TINT, DEFAULT_TINT)
+            drawerOpacity = getSliderInt(APP_DRAWER_BACKGROUND_OPACITY, -1) * 255 / 100
         }
 
         when (key.firstOrNull()) {
@@ -144,8 +147,12 @@ class IconGlass(context: Context) : ModPack(context) {
             .runAfter { param ->
                 if (!enabled) return@runAfter
                 val paint = param.thisObject.getFieldSilently("mHeaderPaint") as? Paint ?: return@runAfter
-                if (sheetColor != paint.color) {
-                    sheetColor = paint.color
+                var color = paint.color
+                if (drawerOpacity in 0..254 && param.thisObject.getFieldSilently("mScrimColor") !is Int) {
+                    color = ColorUtils.setAlphaComponent(color, android.graphics.Color.alpha(color) * drawerOpacity / 255)
+                }
+                if (sheetColor != color) {
+                    sheetColor = color
                     WallpaperGlass.onOffsetsChanged()
                 }
             }

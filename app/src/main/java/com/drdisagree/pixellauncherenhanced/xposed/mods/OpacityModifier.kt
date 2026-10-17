@@ -49,6 +49,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 class OpacityModifier(context: Context) : ModPack(context) {
 
     private var appDrawerBackgroundOpacity: Int = -1
+    private val sheetLayer = ThreadLocal<Int>()
     private var recentsBackgroundOpacity: Int = -1
     private var disableRecentsLiveTile: Boolean = false
     private var folderBackgroundOpacity: Int = -1
@@ -147,6 +148,27 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     param.result as Int,
                     appDrawerBackgroundOpacity
                 )
+            }
+
+        activityAllAppsContainerViewClass
+            .hookMethod("drawOnScrimWithScaleAndBottomOffset", "drawOnScrimWithScale")
+            .suppressError()
+            .runBefore { param ->
+                sheetLayer.remove()
+                if (appDrawerBackgroundOpacity !in 0..254) return@runBefore
+                if (param.thisObject.getFieldSilently("mScrimColor") is Int) return@runBefore
+
+                if (appDrawerBackgroundOpacity == 0) {
+                    param.result = null
+                    return@runBefore
+                }
+                val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
+                sheetLayer.set(canvas.saveLayerAlpha(null, appDrawerBackgroundOpacity))
+            }
+            .runAfter { param ->
+                val save = sheetLayer.get() ?: return@runAfter
+                sheetLayer.remove()
+                (param.args.getOrNull(0) as? Canvas)?.restoreToCount(save)
             }
 
         allAppsStateClass
