@@ -546,8 +546,8 @@ class BlurPanels(context: Context) : ModPack(context) {
 
         val margin = dockBlurMargin.dp(this)
         val padding = DOCK_PADDING.dp(this)
-        val panelBottom = if (dockAttached) height.toFloat() + windowGapBelow() else bottom + padding
         val panelTop = maxOf(top - padding, pageIndicatorBottom() + PAGE_INDICATOR_GAP.dp(this))
+        val panelBottom = if (dockAttached) height.toFloat() + windowGapBelow() else bottom + (top - panelTop).coerceAtLeast(0f)
         out.set(margin, panelTop, width - margin, panelBottom)
         return !out.isEmpty
     }
