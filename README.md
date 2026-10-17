@@ -30,7 +30,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Homescreen rows                 |       ✅        |         ✅          |
 | Icon labels on desktop          |       ✅        |         ✅          |
 | Folder columns and rows         |       ✅        |         ✅          |
-| Folder background opacity       |       ✅        |         ✅          |
+| Folder background tint          |       ✅        |         ✅          |
 | Folder frosted and liquid glass |       ✅        |         ✅          |
 | Free widget resizing            |       ✅        |         ✅          |
 | Widget frosted and liquid glass |       ✅        |         ✅          |

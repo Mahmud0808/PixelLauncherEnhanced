@@ -64,14 +64,16 @@ class OpacityModifier(context: Context) : ModPack(context) {
             appDrawerBackgroundOpacity = getSliderInt(APP_DRAWER_BACKGROUND_OPACITY, -1) * 255 / 100
             recentsBackgroundOpacity = getSliderInt(RECENTS_BACKGROUND_OPACITY, -1) * 255 / 100
             disableRecentsLiveTile = getBoolean(DISABLE_RECENTS_LIVE_TILE, false)
-            folderBackgroundOpacity = getSliderInt(FOLDER_BACKGROUND_OPACITY, -1) * 255 / 100
             val folderBackground = PanelBackground.supported(getString(FOLDER_BACKGROUND, BACKGROUND_OFF))
             val folderEnabled = folderBackground != BACKGROUND_OFF
-            folderBackgroundBlur = if (folderEnabled) getSliderInt(FOLDER_BACKGROUND_BLUR, 0) else 0
+            folderBackgroundBlur = if (folderEnabled) getSliderInt(FOLDER_BACKGROUND_BLUR, DEFAULT_FOLDER_BLUR) else 0
             folderLiquid = folderBackground == BACKGROUND_LIQUID
+            folderBackgroundOpacity = if (folderEnabled) {
+                getSliderInt(FOLDER_BACKGROUND_OPACITY, DEFAULT_FOLDER_TINT) * 255 / 100
+            } else -1
         }
 
-        if (key.firstOrNull() == FOLDER_BACKGROUND_OPACITY) reloadLauncher(mContext)
+        if (key.firstOrNull() in setOf(FOLDER_BACKGROUND_OPACITY, FOLDER_BACKGROUND)) reloadLauncher(mContext)
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
@@ -581,6 +583,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
     companion object {
         private const val PREVIEW_ORIGINAL_COLOR = "plePreviewOriginalColor"
         private const val FOLDER_FROST = "pleFolderFrost"
+        private const val DEFAULT_FOLDER_BLUR = 5
+        private const val DEFAULT_FOLDER_TINT = 40
         private const val BACKGROUND_OFF = "off"
         private const val BACKGROUND_LIQUID = "liquid"
         private const val PREVIEW_BLUR = "plePreviewBlur"

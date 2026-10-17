@@ -25,6 +25,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_BLUR
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE
@@ -82,6 +83,7 @@ object PrefsHelper {
             FOLDER_BACKGROUND,
             WIDGET_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
+            FOLDER_BACKGROUND_OPACITY,
             FOLDER_BACKGROUND_BLUR -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                     PanelBackground.supported(getString(FOLDER_BACKGROUND)) != PanelBackground.OFF
 

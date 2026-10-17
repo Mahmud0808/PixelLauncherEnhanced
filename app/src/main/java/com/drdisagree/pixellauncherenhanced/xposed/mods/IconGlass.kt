@@ -382,8 +382,8 @@ class IconGlass(context: Context) : ModPack(context) {
     companion object {
         private const val DEFAULT_VISIBLE_AREA = 0.92f
         private const val LEGACY_CORNER_RATIO = 0.25f
-        private const val DEFAULT_BLUR = 12
-        private const val DEFAULT_TINT = 30
+        private const val DEFAULT_BLUR = 5
+        private const val DEFAULT_TINT = 40
         private const val DEFAULT_DRAWER_BLUR = 30
     }
 }

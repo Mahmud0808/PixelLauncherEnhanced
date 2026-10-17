@@ -479,7 +479,7 @@
     <string name="section_folders_title">Folders</string>
     <string name="folder_columns_title">Folder columns</string>
     <string name="folder_rows_title">Folder rows</string>
-    <string name="folder_background_opacity_title">Folder background opacity</string>
+    <string name="folder_background_tint_title">Folder background tint</string>
     <string name="dock_blur_radius_title">Dock background blur</string>
     <string name="dock_blur_radius_desc">Frosted panel behind the dock and search bar</string>
     <string name="dock_blur_style_title">Dock background style</string>

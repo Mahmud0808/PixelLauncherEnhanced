@@ -85,22 +85,20 @@
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_iconbackgroundblur"
             android:title="@string/icon_background_blur_title"
-            app:defaultValue="12"
+            app:defaultValue="5"
             app:iconSpaceReserved="false"
             app:maxVal="30"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="dp" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_iconbackgroundtint"
             android:title="@string/icon_background_tint_title"
-            app:defaultValue="30"
+            app:defaultValue="40"
             app:iconSpaceReserved="false"
             app:maxVal="100"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="%" />
 

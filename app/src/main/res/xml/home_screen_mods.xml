@@ -112,19 +112,6 @@
             app:showResetButton="true"
             app:tickInterval="1" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_folderbackgroundopacity"
-            android:title="@string/folder_background_opacity_title"
-            app:defaultValue="100"
-            app:hideValueOnDefault="true"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:showDefaultIndicator="true"
-            app:showResetButton="true"
-            app:tickInterval="1"
-            app:valueFormat="%" />
-
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
             android:defaultValue="off"
             android:dialogTitle="@string/folder_background_title"
@@ -139,13 +126,22 @@
             android:key="xposed_folderbackgroundblur"
             android:summary="@string/folder_background_blur_desc"
             android:title="@string/folder_background_blur_title"
-            app:defaultValue="0"
+            app:defaultValue="5"
             app:iconSpaceReserved="false"
             app:maxVal="30"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderbackgroundopacity"
+            android:title="@string/folder_background_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:tickInterval="1"
+            app:valueFormat="%" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
@@ -175,22 +171,20 @@
             android:key="xposed_widgetblurradius"
             android:summary="@string/widget_blur_radius_desc"
             android:title="@string/widget_blur_radius_title"
-            app:defaultValue="0"
+            app:defaultValue="5"
             app:iconSpaceReserved="false"
             app:maxVal="30"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="dp" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_widgetblurtint"
             android:title="@string/widget_blur_tint_title"
-            app:defaultValue="0"
+            app:defaultValue="40"
             app:iconSpaceReserved="false"
             app:maxVal="100"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="%" />
 
@@ -306,22 +300,20 @@
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_searchbarblurradius"
             android:title="@string/search_bar_blur_title"
-            app:defaultValue="0"
+            app:defaultValue="5"
             app:iconSpaceReserved="false"
             app:maxVal="30"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="dp" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_searchbarblurtint"
             android:title="@string/search_bar_tint_title"
-            app:defaultValue="0"
+            app:defaultValue="40"
             app:iconSpaceReserved="false"
             app:maxVal="100"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="%" />
 
@@ -339,22 +331,20 @@
             android:key="xposed_dockblurradius"
             android:summary="@string/dock_blur_radius_desc"
             android:title="@string/dock_blur_radius_title"
-            app:defaultValue="0"
+            app:defaultValue="5"
             app:iconSpaceReserved="false"
             app:maxVal="30"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="dp" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_dockblurtint"
             android:title="@string/dock_blur_tint_title"
-            app:defaultValue="0"
+            app:defaultValue="40"
             app:iconSpaceReserved="false"
             app:maxVal="100"
             app:minVal="0"
-            app:showResetButton="true"
             app:tickInterval="1"
             app:valueFormat="%" />
 
