@@ -628,7 +628,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
             canvas.drawCircle(cx, height * 0.46f + size * 0.58f, size * 0.5f, shaderPaint)
             canvas.restore()
 
-            val pair = pairIndex(i)
+            val pair = UNTHEMED_PAIRS[i % UNTHEMED_PAIRS.size]
             val shape = ColorUtils.blendARGB(iconBackgrounds[pair], primaryContainer, themed)
             val glyph = ColorUtils.blendARGB(iconForegrounds[pair], onPrimaryContainer, themed)
             drawIconShape(canvas, cx, cy, size, shape, glyph, i, 1f)
@@ -1226,6 +1226,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
     companion object {
         private const val DEFAULT_COLUMNS = 4
         private const val GLYPH_COUNT = 12
+        private val UNTHEMED_PAIRS = intArrayOf(0, 4, 2, 1)
         private const val DEFAULT_BLUR = 5
         private const val DEFAULT_TINT = 40
         private const val REFERENCE_SCREEN_DP = 412f
