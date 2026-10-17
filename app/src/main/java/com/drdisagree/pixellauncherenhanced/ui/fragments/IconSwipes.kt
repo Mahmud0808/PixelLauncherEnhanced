@@ -56,6 +56,7 @@ class IconSwipes : Fragment() {
     private var items: List<Item> = emptyList()
     private var actions: Map<String, Map<IconSwipeActions.Direction, IconSwipeActions.Action>> = emptyMap()
     private var actionsBefore: Map<String, Map<IconSwipeActions.Direction, IconSwipeActions.Action>> = emptyMap()
+    private var configuredOnEntry: Set<String> = emptySet()
     private val adapter = SwipeAdapter()
     private val shortcutIcons = HashMap<String, Drawable?>()
 
@@ -85,6 +86,7 @@ class IconSwipes : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        configuredOnEntry = IconSwipeActions.parse(RPrefs.getString(ICON_SWIPE_ACTIONS)).filterValues { it.isNotEmpty() }.keys
 
         val searchSpace = dpToPx(SEARCH_HEIGHT_DP) + resources.getDimensionPixelSize(R.dimen.ui_container_margin_side) * 2
         binding.recyclerView.setPadding(0, searchSpace, 0, binding.recyclerView.paddingBottom)
@@ -162,7 +164,7 @@ class IconSwipes : Fragment() {
     private fun applyFilter() {
         val query = binding.search.text?.toString()?.trim()?.lowercase(Locale.getDefault()).orEmpty()
         fun List<Target>.filtered() = filter { query.isEmpty() || it.label.lowercase(Locale.getDefault()).contains(query) }
-            .sortedByDescending { actions[it.key]?.isNotEmpty() == true }
+            .sortedByDescending { it.key in configuredOnEntry }
 
         val shownShortcuts = shortcuts.filtered()
         val shownApps = apps.filtered()
