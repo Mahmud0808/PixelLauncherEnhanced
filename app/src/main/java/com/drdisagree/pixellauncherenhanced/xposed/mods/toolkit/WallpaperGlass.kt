@@ -220,11 +220,12 @@ object WallpaperGlass {
         val userId = Process.myUserHandle().hashCode()
         val uid = Process.myUid()
 
+        val path = copy.absolutePath
+        val script = "rm -f $path; cp /data/system/users/$userId/wallpaper $path && chown $uid:$uid $path && " +
+                "chmod 600 $path && chcon \"\$(stat -c %C ${copy.parent})\" $path"
+
         enqueueProxyCommand { proxy ->
-            proxy.runCommand(
-                "rm -f '${copy.absolutePath}'; cp /data/system/users/$userId/wallpaper '${copy.absolutePath}' && " +
-                        "chown $uid:$uid '${copy.absolutePath}' && chmod 600 '${copy.absolutePath}'"
-            )
+            proxy.runCommand("sh -c '$script'; [ -f $path ] || nsenter -t 1 -m -- sh -c '$script'")
             decode(copy, context.applicationContext)
         }
     }
