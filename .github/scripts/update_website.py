@@ -8,7 +8,10 @@ README = ROOT / "README.md"
 PAGE = ROOT / "docs" / "index.html"
 
 CATEGORIES = {
-    "Home screen": ("home", "Grid size, labels, the status bar and the dock: the parts you see every time you unlock."),
+    "Home screen": ("home", "Grid size, page transitions, endless scrolling and the status bar: the parts you see every time you unlock."),
+    "Dock": ("dock", "Frosted or liquid glass for the dock and search bar, with its shape, margins and spacing."),
+    "Folders": ("folders", "Bigger folder grids and a glass background that blurs the home screen behind it."),
+    "Widgets": ("widgets", "Resize any widget freely and give it a frosted or liquid glass background."),
     "App drawer": ("drawer", "Tabs, hidden apps and quick launch, in a layout sized for the apps you actually have."),
     "Icons": ("icons", "Icon packs with a fallback order, per-app overrides, custom shapes and themed colours."),
     "Gestures": ("gestures", "Double tap and pinch to do something useful, and take back the space under the gesture bar."),
