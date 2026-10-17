@@ -1,11 +1,11 @@
 package com.drdisagree.pixellauncherenhanced.ui.adapters
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
@@ -18,10 +18,9 @@ class AppPickerAdapter(
 
     private var visibleApps: List<AppInfoModel> = apps
 
-    @SuppressLint("NotifyDataSetChanged")
     fun filter(query: String) {
         val needle = query.trim().lowercase(Locale.getDefault())
-        visibleApps = if (needle.isEmpty()) {
+        val filtered = if (needle.isEmpty()) {
             apps
         } else {
             apps.filter {
@@ -29,7 +28,14 @@ class AppPickerAdapter(
                         it.packageName.lowercase(Locale.getDefault()).contains(needle)
             }
         }
-        notifyDataSetChanged()
+        val old = visibleApps
+        visibleApps = filtered
+        DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = old.size
+            override fun getNewListSize() = filtered.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) = old[oldPos].packageName == filtered[newPos].packageName
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) = old[oldPos].appName == filtered[newPos].appName
+        }).dispatchUpdatesTo(this)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

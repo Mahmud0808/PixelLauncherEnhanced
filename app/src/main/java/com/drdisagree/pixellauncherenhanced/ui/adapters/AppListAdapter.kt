@@ -8,6 +8,7 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
@@ -18,7 +19,7 @@ import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.google.android.material.materialswitch.MaterialSwitch
 
 class AppListAdapter(
-    private val appList: List<AppInfoModel>,
+    private var appList: List<AppInfoModel>,
     private val onSelectionChanged: (AppInfoModel) -> Unit = ::updateBlockList
 ) : RecyclerView.Adapter<AppListAdapter.ViewHolder>() {
 
@@ -69,6 +70,20 @@ class AppListAdapter(
 
     override fun getItemCount(): Int {
         return appList.size
+    }
+
+    fun submit(list: List<AppInfoModel>) {
+        val old = appList
+        appList = list
+        DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = old.size
+            override fun getNewListSize() = list.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) = old[oldPos].packageName == list[newPos].packageName
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+                (oldPos == 0) == (newPos == 0) &&
+                        (oldPos == old.size - 1) == (newPos == list.size - 1) &&
+                        old[oldPos].isSelected == list[newPos].isSelected
+        }).dispatchUpdatesTo(this)
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {

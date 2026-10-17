@@ -188,8 +188,13 @@ class HiddenApps : Fragment() {
         filteredList.addAll(startsWithPackageNameList)
         filteredList.addAll(containsPackageNameList)
 
-        adapter = newAdapter(filteredList)
-        binding.recyclerView.adapter = adapter
+        val current = adapter
+        if (current != null && binding.recyclerView.adapter === current) {
+            current.submit(filteredList)
+        } else {
+            adapter = newAdapter(filteredList)
+            binding.recyclerView.adapter = adapter
+        }
     }
 
     private fun newAdapter(apps: List<AppInfoModel>): AppListAdapter {
