@@ -6,6 +6,7 @@
         <item name="android:alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
         <item name="actionOverflowMenuStyle">@style/PopupMenu.Overflow</item>
         <item name="popupMenuStyle">@style/PopupMenu.Popup</item>
+        <item name="materialSwitchStyle">@style/Widget.App.Switch</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>

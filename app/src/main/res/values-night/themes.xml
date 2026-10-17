@@ -1,6 +1,7 @@
 <resources>
 
     <style name="Base.Theme.PixelLauncherEnhanced" parent="Theme.Material3Expressive.Dark.NoActionBar">
+        <item name="materialSwitchStyle">@style/Widget.App.Switch</item>
         <item name="materialAlertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
         <item name="alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
         <item name="android:alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>

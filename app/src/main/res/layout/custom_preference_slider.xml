@@ -4,6 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:clickable="true"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:layout_marginHorizontal="@dimen/ui_container_margin_side"
     android:layout_marginBottom="2dp"
     android:focusable="true"
@@ -28,6 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_toEndOf="@android:id/icon"
+        android:clipChildren="false"
         android:orientation="vertical">
 
         <LinearLayout
@@ -73,7 +76,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
+            android:clipChildren="false"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
@@ -87,7 +91,9 @@
 
             <com.google.android.material.slider.RangeSlider
                 android:id="@+id/slider"
-                style="@style/Widget.Material3Expressive.Slider.Xsmall"
+                style="@style/Widget.Material3Expressive.Slider.Small"
+                app:thumbHeight="40dp"
+                app:trackHeight="32dp"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />

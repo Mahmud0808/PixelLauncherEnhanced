@@ -7,6 +7,7 @@ import android.util.JsonReader
 import android.util.JsonWriter
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -16,6 +17,8 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
+import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.tickVibrate
+import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.LabelFormatter
 import com.google.android.material.slider.RangeSlider
@@ -199,6 +202,7 @@ class SliderPreference(
         if (showController) updateControllerButtons()
 
         handleResetButton()
+        alignTrackEdges()
 
         setFirstAndLastItemMargin(holder)
         setBackgroundResource(holder)
@@ -244,6 +248,15 @@ class SliderPreference(
 
     private fun handleResetButton() {
         mResetButton?.visibility = View.GONE
+    }
+
+    private fun alignTrackEdges() {
+        val slider = mSlider ?: return
+        val inset = if (showController) 0 else -dpToPx(TRACK_EDGE_INSET_DP)
+        slider.layoutParams = (slider.layoutParams as ViewGroup.MarginLayoutParams).apply {
+            marginStart = inset
+            marginEnd = inset
+        }
     }
 
     private fun resetToDefault(view: View) {
@@ -355,9 +368,10 @@ class SliderPreference(
     private var changeListener: RangeSlider.OnChangeListener =
         RangeSlider.OnChangeListener { slider: RangeSlider, _: Float, fromUser: Boolean ->
             if (key != slider.tag) return@OnChangeListener
-            if (updateConstantly && fromUser) {
-                savePrefs()
-            }
+            if (!fromUser) return@OnChangeListener
+            if (slider.stepSize > 0f) slider.tickVibrate()
+            updateOutput()
+            if (updateConstantly) savePrefs()
         }
 
     private var sliderTouchListener: RangeSlider.OnSliderTouchListener =
@@ -388,6 +402,7 @@ class SliderPreference(
 
     companion object {
         private val TAG: String = SliderPreference::class.java.simpleName
+        private const val TRACK_EDGE_INSET_DP = 8
 
         fun setValues(
             sharedPreferences: SharedPreferences,

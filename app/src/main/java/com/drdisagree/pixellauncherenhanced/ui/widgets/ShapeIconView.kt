@@ -6,6 +6,9 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
@@ -22,6 +25,9 @@ class ShapeIconView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+    }
     private val path = Path()
     private val scaleMatrix = Matrix()
     private var morph: Morph? = null
@@ -29,6 +35,14 @@ class ShapeIconView @JvmOverloads constructor(
     private var spin = 0f
     private var animator: ValueAnimator? = null
     private var icon: Drawable? = null
+    private var adaptiveBackground: Drawable? = null
+    private var adaptiveForeground: Drawable? = null
+
+    var shapeRotation = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     fun setShapes(rest: RoundedPolygon, pressed: RoundedPolygon) {
         morph = Morph(MaterialShapes.normalize(rest, true), MaterialShapes.normalize(pressed, true))
@@ -43,6 +57,12 @@ class ShapeIconView @JvmOverloads constructor(
 
     fun setIcon(drawable: Drawable?, tint: Int) {
         icon = drawable?.mutate()?.apply { setTint(tint) }
+        invalidate()
+    }
+
+    fun setAdaptiveIcon(drawable: AdaptiveIconDrawable) {
+        adaptiveBackground = drawable.background?.mutate()
+        adaptiveForeground = drawable.foreground?.mutate()
         invalidate()
     }
 
@@ -73,6 +93,26 @@ class ShapeIconView @JvmOverloads constructor(
         scaleMatrix.setScale(w, h)
         path.transform(scaleMatrix)
 
+        if (adaptiveBackground != null || adaptiveForeground != null) {
+            scaleMatrix.setRotate(spin + shapeRotation, w / 2f, h / 2f)
+            path.transform(scaleMatrix)
+            val layerSize = (minOf(w, h) * ADAPTIVE_LAYER_SCALE).toInt()
+            val left = ((w - layerSize) / 2f).toInt()
+            val top = ((h - layerSize) / 2f).toInt()
+            val mask = canvas.saveLayer(0f, 0f, w, h, null)
+            canvas.drawPath(path, paint)
+            canvas.saveLayer(0f, 0f, w, h, maskPaint)
+            adaptiveBackground?.setBounds(left, top, left + layerSize, top + layerSize)
+            adaptiveBackground?.draw(canvas)
+            canvas.restoreToCount(mask)
+            val foregroundSize = (minOf(w, h) * ADAPTIVE_FOREGROUND_SCALE).toInt()
+            val foregroundLeft = ((w - foregroundSize) / 2f).toInt()
+            val foregroundTop = ((h - foregroundSize) / 2f).toInt()
+            adaptiveForeground?.setBounds(foregroundLeft, foregroundTop, foregroundLeft + foregroundSize, foregroundTop + foregroundSize)
+            adaptiveForeground?.draw(canvas)
+            return
+        }
+
         canvas.withSave {
             rotate(spin, w / 2f, h / 2f)
             drawPath(path, paint)
@@ -89,6 +129,8 @@ class ShapeIconView @JvmOverloads constructor(
 
     companion object {
         private const val ICON_FRACTION = 0.46f
+        private const val ADAPTIVE_LAYER_SCALE = 1.5f
+        private const val ADAPTIVE_FOREGROUND_SCALE = 1.5f
         private const val SPIN_DEGREES = 30f
     }
 }

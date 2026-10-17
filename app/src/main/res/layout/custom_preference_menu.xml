@@ -8,6 +8,7 @@
     android:background="@drawable/container_mid"
     android:baselineAligned="false"
     android:clipToPadding="false"
+    android:foreground="?android:selectableItemBackgroundBorderless"
     android:gravity="center_vertical"
     android:minHeight="?android:attr/listPreferredItemHeight"
     android:orientation="horizontal"
@@ -49,12 +50,12 @@
 
     <ImageView
         android:id="@+id/end_arrow"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center"
-        android:layout_marginStart="18dp"
-        android:contentDescription="@string/icon"
-        android:src="@drawable/ic_arrow_end"
-        app:tint="@color/textColor" />
+        android:layout_marginStart="12dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_arrow_right"
+        app:tint="?attr/colorOnSurfaceVariant" />
 
 </LinearLayout>

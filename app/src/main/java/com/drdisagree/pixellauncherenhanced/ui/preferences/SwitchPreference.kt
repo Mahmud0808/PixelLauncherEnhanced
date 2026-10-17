@@ -17,14 +17,18 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.ui.views.RoundedBackgroundSpan
+import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.toggleVibrate
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlin.system.exitProcess
+import java.lang.ref.WeakReference
+import com.google.android.material.R as MaterialR
 
 class SwitchPreference : SwitchPreferenceCompat {
 
     private var showUnstableBadge = false
     private var unstableText: String = "Unstable"
+    private var boundView: WeakReference<View>? = null
 
     constructor(
         context: Context,
@@ -72,6 +76,7 @@ class SwitchPreference : SwitchPreferenceCompat {
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
 
+        boundView = WeakReference(holder.itemView)
         setFirstAndLastItemMargin(holder)
         setBackgroundResource(holder)
 
@@ -91,8 +96,8 @@ class SwitchPreference : SwitchPreferenceCompat {
 
         spannable.setSpan(
             RoundedBackgroundSpan(
-                backgroundColor = context.getColor(R.color.md_theme_errorContainer),
-                textColor = context.getColor(R.color.md_theme_onErrorContainer),
+                backgroundColor = MaterialColors.getColor(titleView, MaterialR.attr.colorErrorContainer),
+                textColor = MaterialColors.getColor(titleView, MaterialR.attr.colorOnErrorContainer),
                 paddingH = dpToPx(6),
                 paddingV = dpToPx(2),
                 radius = dpToPx(6),
@@ -121,6 +126,11 @@ class SwitchPreference : SwitchPreferenceCompat {
         )
 
         titleView.text = spannable
+    }
+
+    override fun onClick() {
+        super.onClick()
+        boundView?.get()?.toggleVibrate(isChecked)
     }
 
     private fun showUnstableDialog() {

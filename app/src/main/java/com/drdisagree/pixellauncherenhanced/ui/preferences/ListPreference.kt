@@ -3,8 +3,7 @@ package com.drdisagree.pixellauncherenhanced.ui.preferences
 import android.content.Context
 import android.util.AttributeSet
 import android.content.res.ColorStateList
-import android.graphics.Color
-import android.text.TextUtils
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.HorizontalScrollView
@@ -20,6 +19,7 @@ import com.google.android.material.color.MaterialColors
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
+import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.tickVibrate
 
 class ListPreference : ListPreference {
 
@@ -99,18 +99,11 @@ class ListPreference : ListPreference {
             group.clearOnButtonCheckedListeners()
             group.removeAllViews()
             labels.forEachIndexed { index, label ->
-                val button = MaterialButton(context, null, MaterialR.attr.materialButtonOutlinedStyle).apply {
+                val button = (LayoutInflater.from(group.context)
+                    .inflate(R.layout.view_choice_button, group, false) as MaterialButton).apply {
                     id = View.generateViewId()
                     text = label
                     tag = index
-                    maxLines = 1
-                    ellipsize = TextUtils.TruncateAt.END
-                    insetTop = 0
-                    insetBottom = 0
-                    minHeight = 0
-                    minimumHeight = 0
-                    val horizontal = (CHOICE_PADDING_DP * resources.displayMetrics.density).toInt()
-                    setPadding(horizontal, paddingTop, horizontal, paddingBottom)
                     applyChoiceColors(this)
                 }
                 group.addView(button, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
@@ -120,45 +113,82 @@ class ListPreference : ListPreference {
                 if (binding || !isChecked) return@addOnButtonCheckedListener
                 val index = toggleGroup.findViewById<View>(checkedId)?.tag as? Int ?: return@addOnButtonCheckedListener
                 val newValue = entryValues.getOrNull(index)?.toString() ?: return@addOnButtonCheckedListener
-                if (newValue != value && callChangeListener(newValue)) value = newValue
+                if (newValue != value && callChangeListener(newValue)) {
+                    toggleGroup.tickVibrate()
+                    value = newValue
+                }
             }
         }
 
         val selected = findIndexOfValue(value)
+        var selectedButton: MaterialButton? = null
         for (i in 0 until group.childCount) {
             val button = group.getChildAt(i) as MaterialButton
             button.isEnabled = isEnabled
             if (button.tag == selected) {
                 group.check(button.id)
-                scroll.post {
-                    val left = button.left - scroll.horizontalFadingEdgeLength
-                    val right = button.right + scroll.horizontalFadingEdgeLength - scroll.width
-                    when {
-                        left < scroll.scrollX -> scroll.scrollTo(left, 0)
-                        right > scroll.scrollX -> scroll.scrollTo(right, 0)
-                    }
-                }
+                selectedButton = button
             }
         }
         binding = false
+
+        scroll.post {
+            fitChoices(scroll, group)
+            scroll.post { revealChoice(scroll, selectedButton ?: return@post) }
+        }
+    }
+
+    private fun fitChoices(scroll: HorizontalScrollView, group: MaterialButtonToggleGroup) {
+        val buttons = (0 until group.childCount).map { group.getChildAt(it) as MaterialButton }
+        if (buttons.isEmpty()) return
+        val unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        val widest = buttons.maxOf { it.measure(unspecified, unspecified); it.measuredWidth }
+        val available = scroll.width - scroll.paddingStart - scroll.paddingEnd
+        val equal = widest * buttons.size + group.spacing * (buttons.size - 1) <= available
+
+        scroll.isFillViewport = equal
+        group.layoutParams = group.layoutParams.apply {
+            width = if (equal) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        buttons.forEach { button ->
+            button.layoutParams = (button.layoutParams as LinearLayout.LayoutParams).apply {
+                width = if (equal) 0 else ViewGroup.LayoutParams.WRAP_CONTENT
+                weight = if (equal) 1f else 0f
+            }
+        }
+    }
+
+    private fun revealChoice(scroll: HorizontalScrollView, button: MaterialButton) {
+        val left = button.left - scroll.horizontalFadingEdgeLength
+        val right = button.right + scroll.horizontalFadingEdgeLength - scroll.width
+        when {
+            button.left < scroll.scrollX -> scroll.scrollTo(left, 0)
+            button.right > scroll.scrollX + scroll.width -> scroll.scrollTo(right, 0)
+        }
     }
 
     private fun applyChoiceColors(button: MaterialButton) {
         val checked = intArrayOf(android.R.attr.state_checked)
         val disabled = intArrayOf(-android.R.attr.state_enabled)
-        val selectedFill = MaterialColors.getColor(button, MaterialR.attr.colorSecondaryContainer)
-        val selectedText = MaterialColors.getColor(button, MaterialR.attr.colorOnSecondaryContainer)
-        val idleText = MaterialColors.getColor(button, MaterialR.attr.colorOnSurfaceVariant)
-        val outline = MaterialColors.getColor(button, MaterialR.attr.colorOutlineVariant)
+        val selectedFill = MaterialColors.getColor(button, androidx.appcompat.R.attr.colorPrimary)
+        val selectedText = MaterialColors.getColor(button, MaterialR.attr.colorOnPrimary)
+        val idleFill = MaterialColors.getColor(button, MaterialR.attr.colorSecondaryContainer)
+        val idleText = MaterialColors.getColor(button, MaterialR.attr.colorOnSecondaryContainer)
         val faded = ColorUtils.setAlphaComponent(idleText, 0x61)
-        button.backgroundTintList = ColorStateList(arrayOf(checked, intArrayOf()), intArrayOf(selectedFill, Color.TRANSPARENT))
+        val fadedFill = ColorUtils.setAlphaComponent(idleFill, 0x61)
+        button.backgroundTintList = ColorStateList(
+            arrayOf(disabled, checked, intArrayOf()),
+            intArrayOf(fadedFill, selectedFill, idleFill)
+        )
         button.setTextColor(ColorStateList(arrayOf(disabled, checked, intArrayOf()), intArrayOf(faded, selectedText, idleText)))
-        button.strokeColor = ColorStateList(arrayOf(checked, intArrayOf()), intArrayOf(selectedFill, outline))
-        button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(selectedText, 0x1F))
+        button.strokeWidth = 0
+        button.rippleColor = ColorStateList(
+            arrayOf(checked, intArrayOf()),
+            intArrayOf(ColorUtils.setAlphaComponent(selectedText, 0x1F), ColorUtils.setAlphaComponent(idleText, 0x1F))
+        )
     }
 
     companion object {
         private const val MAX_INLINE_CHOICES = 5
-        private const val CHOICE_PADDING_DP = 20
     }
 }

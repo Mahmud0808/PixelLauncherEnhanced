@@ -1,90 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clickable="true"
     android:layout_marginHorizontal="@dimen/ui_container_margin_side"
     android:layout_marginBottom="2dp"
+    android:clickable="true"
     android:focusable="true"
     android:foreground="?android:selectableItemBackgroundBorderless"
+    android:gravity="center_vertical"
     android:minHeight="?android:attr/listPreferredItemHeight"
+    android:orientation="vertical"
     android:paddingHorizontal="@dimen/preference_padding_horizontal"
     android:paddingVertical="@dimen/preference_padding_vertical">
 
-    <ImageView
-        android:id="@android:id/icon"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="18dp"
-        android:contentDescription="@string/icon"
-        app:tint="?attr/colorPrimary" />
-
     <LinearLayout
-        android:id="@+id/text_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_toEndOf="@android:id/icon"
-        android:orientation="vertical">
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@android:id/icon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="18dp"
+            android:contentDescription="@string/icon"
+            app:tint="?attr/colorPrimary" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/text_container"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:baselineAligned="false"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@android:id/title"
+                    style="@style/Preference.TitleText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAlignment="viewStart"
+                    android:textColor="@color/text_color_primary" />
+
+                <TextView
+                    android:id="@+id/output"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:visibility="gone" />
+
+            </LinearLayout>
 
             <TextView
-                android:id="@android:id/title"
-                style="@style/Preference.TitleText"
-                android:layout_width="0dp"
+                android:id="@android:id/summary"
+                style="@style/Preference.SummaryText"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textAlignment="viewStart"
-                android:textColor="@color/text_color_primary" />
-
-            <TextView
-                android:id="@+id/output"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top"
-                android:layout_marginStart="12dp"
-                android:textAppearance="?attr/textAppearanceLabelMedium"
-                android:visibility="gone" />
+                android:textColor="@color/text_color_secondary" />
 
         </LinearLayout>
 
-        <TextView
-            android:id="@android:id/summary"
-            style="@style/Preference.SummaryText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAlignment="viewStart"
-            android:textColor="@color/text_color_secondary" />
-
-        <HorizontalScrollView
-            android:id="@+id/choice_scroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:fadingEdgeLength="28dp"
-
-            android:overScrollMode="never"
-            android:requiresFadingEdge="horizontal"
-            android:scrollbars="none"
-            android:visibility="gone">
-
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/choice_group"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:selectionRequired="true"
-                app:singleSelection="true" />
-
-        </HorizontalScrollView>
-
     </LinearLayout>
-</RelativeLayout>
+
+    <HorizontalScrollView
+        android:id="@+id/choice_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fadingEdgeLength="28dp"
+        android:overScrollMode="never"
+        android:requiresFadingEdge="horizontal"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/choice_group"
+            style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:selectionRequired="true"
+            app:singleSelection="true" />
+
+    </HorizontalScrollView>
+
+</LinearLayout>

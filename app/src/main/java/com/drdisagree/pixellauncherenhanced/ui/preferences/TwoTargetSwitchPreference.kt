@@ -14,6 +14,7 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.putBoolean
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
+import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.toggleVibrate
 import com.google.android.material.materialswitch.MaterialSwitch
 
 
@@ -70,6 +71,7 @@ class TwoTargetSwitchPreference : TwoTargetPreference {
                     mChecked = newChecked
 
                     putBoolean(key, newChecked)
+                    toggleVibrate(newChecked)
                 }
             }
 

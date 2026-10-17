@@ -36,37 +36,59 @@
                     android:layout_height="wrap_content"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:paddingHorizontal="20dp"
-                    android:paddingTop="28dp"
-                    android:paddingBottom="20dp">
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="24dp"
+                    android:paddingBottom="16dp">
 
-                    <ImageView
-                        android:id="@+id/app_icon"
-                        android:layout_width="88dp"
-                        android:layout_height="88dp"
-                        android:contentDescription="@string/app_name" />
+                    <FrameLayout
+                        android:layout_width="144dp"
+                        android:layout_height="144dp">
+
+                        <com.drdisagree.pixellauncherenhanced.ui.widgets.ShapeIconView
+                            android:id="@+id/icon_backdrop"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+
+                        <ImageView
+                            android:id="@+id/app_icon"
+                            android:layout_width="96dp"
+                            android:layout_height="96dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@string/app_name" />
+
+                    </FrameLayout>
 
                     <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:maxLines="1"
                         android:text="@string/app_name"
                         android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                        android:textColor="?attr/colorOnSurface" />
+                        android:textColor="?attr/colorOnSurface"
+                        app:autoSizeMaxTextSize="24sp"
+                        app:autoSizeMinTextSize="14sp"
+                        app:autoSizeStepGranularity="1sp"
+                        app:autoSizeTextType="uniform" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/version_code"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:layout_marginTop="10dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textColor="?attr/colorOnSecondaryContainer" />
 
-                    <LinearLayout
+                    <com.google.android.material.button.MaterialButtonGroup
+                        style="@style/Widget.Material3Expressive.MaterialButtonGroup.Connected"
                         android:layout_width="match_parent"
+                        android:baselineAligned="false"
+                        app:innerCornerSize="@xml/connected_button_inner_corner"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp"
-                        android:orientation="horizontal">
+                        android:layout_marginTop="24dp">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_news"
@@ -74,6 +96,9 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:maxLines="1"
                             android:paddingVertical="14dp"
                             android:text="@string/news"
                             app:icon="@drawable/ic_news"
@@ -85,8 +110,10 @@
                             style="@style/Widget.Material3Expressive.Button.TonalButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginHorizontal="8dp"
                             android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:maxLines="1"
                             android:paddingVertical="14dp"
                             android:text="@string/support"
                             app:icon="@drawable/ic_help"
@@ -99,13 +126,16 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:maxLines="1"
                             android:paddingVertical="14dp"
                             android:text="@string/github"
                             app:icon="@drawable/ic_github"
                             app:iconGravity="top"
                             app:iconSize="22dp" />
 
-                    </LinearLayout>
+                    </com.google.android.material.button.MaterialButtonGroup>
 
                 </LinearLayout>
 
@@ -123,105 +153,137 @@
                 android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
-            <LinearLayout
-                android:id="@+id/developer"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="@dimen/preference_padding_horizontal"
-                android:paddingVertical="@dimen/preference_padding_vertical">
-
-                <de.hdodenhof.circleimageview.CircleImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="16dp"
-                    android:src="@drawable/img_drdisagree" />
+                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardCornerRadius="32dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="8dp">
 
-                    <com.google.android.material.textview.MaterialTextView
-                        style="@style/Preference.TitleText"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:id="@+id/developer"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/dev_name"
-                        android:textColor="@color/text_color_primary" />
+                        android:background="@drawable/bg_about_developer"
+                        android:clipToOutline="true"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
 
-                    <com.google.android.material.textview.MaterialTextView
-                        style="@style/Preference.SummaryText"
-                        android:layout_width="wrap_content"
+                        <de.hdodenhof.circleimageview.CircleImageView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_marginEnd="16dp"
+                            android:src="@drawable/img_drdisagree" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/dev_name"
+                                android:textAppearance="?attr/textAppearanceTitleLarge"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                style="@style/Preference.SummaryText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/dev_bio"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/buymeacoffee"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/dev_bio"
-                        android:textColor="@color/text_color_secondary" />
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/bg_about_coffee"
+                        android:clipToOutline="true"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
+
+                        <FrameLayout
+                            android:layout_width="56dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="16dp">
+
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/icon"
+                                android:src="@drawable/buymeacoffee_bg"
+                                app:tint="?attr/colorOnTertiaryContainer" />
+
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/icon"
+                                android:src="@drawable/buymeacoffee_fg"
+                                app:tint="?attr/colorTertiary" />
+
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                style="@style/Preference.TitleText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/buymeacoffee_title"
+                                android:textColor="?attr/colorOnTertiaryContainer" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                style="@style/Preference.SummaryText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/buymeacoffee_desc"
+                                android:textColor="?attr/colorOnTertiaryContainer" />
+
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="12dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_open"
+                            app:tint="?attr/colorOnTertiaryContainer" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/buymeacoffee"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="@dimen/preference_padding_horizontal"
-                android:paddingVertical="@dimen/preference_padding_vertical">
-
-                <FrameLayout
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="16dp">
-
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="@string/icon"
-                        android:src="@drawable/buymeacoffee_bg"
-                        app:tint="?attr/colorOnSurface" />
-
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="@string/icon"
-                        android:src="@drawable/buymeacoffee_fg"
-                        app:tint="?attr/colorPrimary" />
-
-                </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        style="@style/Preference.TitleText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/buymeacoffee_title"
-                        android:textColor="@color/text_color_primary" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        style="@style/Preference.SummaryText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/buymeacoffee_desc"
-                        android:textColor="@color/text_color_secondary" />
-
-                </LinearLayout>
-
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
 
