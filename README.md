@@ -21,31 +21,58 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 <details>
 <summary>Home screen</summary>
 
+| Feature                     | Pixel Launcher | Launcher3 Launcher |
+|-----------------------------|:--------------:|:------------------:|
+| Homescreen columns and rows |       ✅        |         ✅          |
+| Icon labels on desktop      |       ✅        |         ✅          |
+| Page transitions            |       ✅        |         ✅          |
+| Endless page scrolling      |       ✅        |         ✅          |
+| Hide At A Glance            |       ✅        |         ✅          |
+| Lock layout                 |       ✅        |         ✅          |
+| Wallpaper zooming           |       ✅        |         ✅          |
+| Hide statusbar              |       ✅        |         ✅          |
+| Hide top shadow             |       ✅        |         ✅          |
+| Dark statusbar icon         |       ✅        |         ✅          |
+| Hide page indicator         |       ✅        |         ✅          |
+| Dark page indicator         |       ✅        |         ✅          |
+
+</details>
+
+<details>
+<summary>Dock</summary>
+
+| Feature                             | Pixel Launcher | Launcher3 Launcher |
+|-------------------------------------|:--------------:|:------------------:|
+| Disable dock                        |       ✅        |         ✅          |
+| Hide desktop search bar             |       ✅        |         ✅          |
+| Dock frosted and liquid glass       |       ✅        |         ✅          |
+| Dock tint color                     |       ✅        |         ✅          |
+| Floating or attached dock           |       ✅        |         ✅          |
+| Dock margin and corner radius       |       ✅        |         ✅          |
+| Dock top and bottom spacing         |       ✅        |         ✅          |
+| Search bar frosted and liquid glass |       ✅        |         🚫          |
+
+</details>
+
+<details>
+<summary>Folders</summary>
+
 | Feature                         | Pixel Launcher | Launcher3 Launcher |
 |---------------------------------|:--------------:|:------------------:|
-| Themed icons                    |       ✅        |         ✅          |
-| Lock layout                     |       ✅        |         ✅          |
-| Wallpaper zooming               |       ✅        |         ✅          |
-| Homescreen columns              |       ✅        |         ✅          |
-| Homescreen rows                 |       ✅        |         ✅          |
-| Icon labels on desktop          |       ✅        |         ✅          |
 | Folder columns and rows         |       ✅        |         ✅          |
-| Folder background tint          |       ✅        |         ✅          |
 | Folder frosted and liquid glass |       ✅        |         ✅          |
+| Folder background tint          |       ✅        |         ✅          |
+
+</details>
+
+<details>
+<summary>Widgets</summary>
+
+| Feature                         | Pixel Launcher | Launcher3 Launcher |
+|---------------------------------|:--------------:|:------------------:|
 | Free widget resizing            |       ✅        |         ✅          |
 | Widget frosted and liquid glass |       ✅        |         ✅          |
 | Remove widget backgrounds       |       ✅        |         ✅          |
-| Hide statusbar                  |       ✅        |         ✅          |
-| Hide top shadow                 |       ✅        |         ✅          |
-| Dark statusbar icon             |       ✅        |         ✅          |
-| Hide page indicator             |       ✅        |         ✅          |
-| Dark page indicator             |       ✅        |         ✅          |
-| Hide At A Glance                |       ✅        |         ✅          |
-| Disable dock                    |       ✅        |         ✅          |
-| Hide desktop search bar         |       ✅        |         ✅          |
-| Search bar opacity              |       ✅        |         🚫          |
-| Dock frosted and liquid glass   |       ✅        |         ✅          |
-| Dock top and bottom spacing     |       ✅        |         ✅          |
 
 </details>
 
@@ -54,21 +81,20 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 
 | Feature                                  | Pixel Launcher | Launcher3 Launcher |
 |------------------------------------------|:--------------:|:------------------:|
-| Disable app drawer                       |       ✅        |         ✅          |
-| App drawer tabs                          |       ✅        |         ✅          |
-| Tabs at the bottom                       |       ✅        |         ✅          |
-| Edit apps in built-in tabs               |       ✅        |         ✅          |
 | App drawer columns                       |       ✅        |         ✅          |
 | Row height multiplier                    |       ✅        |         ✅          |
 | Icon labels in app drawer                |       ✅        |         ✅          |
-| Themed icons                             |       ✅        |         ✅          |
+| Hide apps from app drawer                |       ✅        |         ✅          |
+| Search hidden apps                       |       ✅        |         ✅          |
+| Toggle hidden apps from homescreen popup |       ✅        |         ✅          |
 | App drawer background opacity            |       ✅        |         ✅          |
 | Hide scrollbar                           |       ✅        |         ✅          |
 | Toggle app search bar                    |       ✅        |         ✅          |
 | Quick launch                             |       ✅        |         ✅          |
-| Hide apps from app drawer                |       ✅        |         ✅          |
-| Search hidden apps                       |       ✅        |         ✅          |
-| Toggle hidden apps from homescreen popup |       ✅        |         ✅          |
+| App drawer tabs                          |       ✅        |         ✅          |
+| Tabs at the bottom                       |       ✅        |         ✅          |
+| Edit apps in built-in tabs               |       ✅        |         ✅          |
+| Disable app drawer                       |       ✅        |         ✅          |
 
 </details>
 
@@ -88,11 +114,13 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Icon size                      |       ✅        |         ✅          |
 | Text size                      |       ✅        |         ✅          |
 | Remove shortcut icon badge     |       ✅        |         ✅          |
-| Notification dot count         |       ✅        |         ✅          |
-| Hide notification dots per app |       ✅        |         ✅          |
+| Themed icons                   |       ✅        |         ✅          |
+| Themed icons in app drawer     |       ✅        |         ✅          |
 | Force themed icons             |       ✅        |         ✅          |
 | Frosted and liquid glass icons |       ✅        |         ✅          |
 | Custom themed icon color       |       ✅        |         ⚠️         |
+| Notification dot count         |       ✅        |         ✅          |
+| Hide notification dots per app |       ✅        |         ✅          |
 | Edit app in app popup          |       ✅        |         ✅          |
 | Kill app in app popup          |       ✅        |         ✅          |
 | Uninstall in app popup         |       ✅        |         ✅          |
