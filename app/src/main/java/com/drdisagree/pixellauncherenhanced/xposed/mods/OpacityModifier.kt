@@ -7,6 +7,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import android.graphics.Rect
+import android.graphics.PixelFormat
+import android.graphics.ColorFilter
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
@@ -304,6 +308,39 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     ?.alpha = folderBackgroundOpacity.takeIf { it >= 0 } ?: 255
             }
 
+        findClass("com.android.launcher3.views.ClipIconView", suppressError = true)
+            .hookMethod("draw")
+            .suppressError()
+            .runBefore { param ->
+                val view = param.thisObject as? View ?: return@runBefore
+                val original = (view.parent as? View)?.getFieldSilently("mOriginalIcon") as? View ?: return@runBefore
+                if (!original.javaClass.name.endsWith(".FolderIcon")) return@runBefore
+                val background = view.getFieldSilently("mBackground") as? Drawable ?: return@runBefore
+                if (background is FloatingFolderGlass) return@runBefore
+
+                val foreground = view.getFieldSilently("mForeground") as? Drawable
+                if (foreground != null && foreground !is LiveFolderPreview) {
+                    view.setFieldSilently(
+                        "mForeground",
+                        LiveFolderPreview(foreground, background, view, original).apply { bounds = foreground.bounds }
+                    )
+                }
+                if (folderGlass()) {
+                    view.setFieldSilently(
+                        "mBackground",
+                        FloatingFolderGlass(background, view, original).apply { bounds = background.bounds }
+                    )
+                }
+            }
+            .runAfter { param ->
+                (param.thisObject.getFieldSilently("mBackground") as? FloatingFolderGlass)?.let {
+                    param.thisObject.setFieldSilently("mBackground", it.inner)
+                }
+                (param.thisObject.getFieldSilently("mForeground") as? LiveFolderPreview)?.let {
+                    param.thisObject.setFieldSilently("mForeground", it.inner)
+                }
+            }
+
         findClass("com.android.launcher3.folder.PreviewBackground")
             .hookMethod("drawBackground")
             .suppressError()
@@ -514,6 +551,140 @@ class OpacityModifier(context: Context) : ModPack(context) {
         val name = if (night) "folder_background_dark" else "folder_background_light"
         val id = resources.getIdentifier(name, "color", packageName).takeIf { it != 0 } ?: return null
         return runCatching { getColor(id) }.getOrNull()
+    }
+
+    private inner class LiveFolderPreview(
+        val inner: Drawable,
+        private val background: Drawable,
+        private val host: View,
+        private val folderIcon: View
+    ) : Drawable() {
+
+        private val rect = RectF()
+
+        override fun draw(canvas: Canvas) {
+            val manager = folderIcon.getFieldSilently("mPreviewItemManager")
+            val preview = folderIcon.getFieldSilently("mBackground")
+            val previewSize = preview?.getFieldSilently("previewSize") as? Int ?: 0
+            val offsetX = preview?.getFieldSilently("basePreviewOffsetX") as? Int
+            val offsetY = preview?.getFieldSilently("basePreviewOffsetY") as? Int
+            rect.set(background.bounds)
+            rect.insetByRatio(folderIcon.previewRatio())
+            if (manager == null || previewSize <= 0 || offsetX == null || offsetY == null || rect.isEmpty) {
+                inner.draw(canvas)
+                return
+            }
+
+            val drawables = listOf("mCurrentPageParams", "mFirstPageParams")
+                .flatMap { (manager.getFieldSilently(it) as? List<*>).orEmpty() }
+                .mapNotNull { it?.getFieldSilently("drawable") as? Drawable }
+                .distinct()
+            val callbacks = drawables.map { it.callback }
+            drawables.forEach { it.callback = host }
+
+            val scale = rect.width() / previewSize
+            val saved = canvas.save()
+            canvas.translate(rect.left - offsetX * scale, rect.top - offsetY * scale)
+            canvas.scale(scale, scale)
+            runCatching { manager.callMethod("draw", canvas) }
+            canvas.restoreToCount(saved)
+
+            drawables.forEachIndexed { index, drawable -> drawable.callback = callbacks[index] }
+        }
+
+        override fun setAlpha(alpha: Int) {
+            inner.alpha = alpha
+        }
+
+        override fun getAlpha(): Int = inner.alpha
+
+        override fun setColorFilter(colorFilter: ColorFilter?) {
+            inner.colorFilter = colorFilter
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+        override fun onBoundsChange(bounds: Rect) {
+            inner.bounds = bounds
+        }
+    }
+
+    private fun RectF.insetByRatio(ratio: Float) {
+        if (ratio >= 1f) return
+        inset(width() * (1f - ratio) / 2f, height() * (1f - ratio) / 2f)
+    }
+
+    private fun View.previewRatio(): Float {
+        val previewSize = getFieldSilently("mBackground")?.getFieldSilently("previewSize") as? Int ?: return 1f
+        val iconSize = getFieldSilently("mFolderName")?.getFieldSilently("mIconSize") as? Int ?: return 1f
+        if (previewSize <= 0 || iconSize <= 0) return 1f
+        return (previewSize.toFloat() / iconSize).coerceIn(0.1f, 1f)
+    }
+
+    private inner class FloatingFolderGlass(
+        val inner: Drawable,
+        private val host: View,
+        private val folderIcon: View
+    ) : Drawable() {
+
+        private val rect = RectF()
+        private val shapePath = Path()
+
+        override fun draw(canvas: Canvas) {
+            rect.set(bounds)
+            rect.insetByRatio(folderIcon.previewRatio())
+            if (rect.isEmpty) {
+                inner.draw(canvas)
+                return
+            }
+            val corner = folderIcon.folderShape()?.cornerRadius(rect.width() / 2f) ?: (rect.width() / 2f)
+            val glass = WallpaperGlass.canvasPaint(
+                host = host,
+                canvas = canvas,
+                localRect = rect,
+                corner = corner,
+                blurRadius = folderBackgroundBlur * host.resources.displayMetrics.density,
+                alpha = inner.alpha / 255f,
+                liquid = folderLiquid
+            )
+            if (glass == null) {
+                inner.draw(canvas)
+                return
+            }
+
+            shapePath.reset()
+            shapePath.addRoundRect(rect, corner, corner, Path.Direction.CW)
+            val saved = canvas.save()
+            canvas.clipPath(shapePath)
+            canvas.drawPaint(glass)
+            val base = host.context.folderBackgroundColor()
+            if (base != null) {
+                val tint = if (folderBackgroundOpacity >= 0) folderBackgroundOpacity else Color.alpha(base)
+                tintPaint.color = ColorUtils.setAlphaComponent(base, tint * inner.alpha / 255)
+                canvas.drawPaint(tintPaint)
+            }
+            canvas.restoreToCount(saved)
+        }
+
+        private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        override fun setAlpha(alpha: Int) {
+            inner.alpha = alpha
+        }
+
+        override fun getAlpha(): Int = inner.alpha
+
+        override fun setColorFilter(colorFilter: ColorFilter?) {
+            inner.colorFilter = colorFilter
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+        override fun onBoundsChange(bounds: Rect) {
+            inner.bounds = bounds
+        }
     }
 
     private fun folderGlass(): Boolean = folderBackgroundBlur > 0 || folderLiquid
