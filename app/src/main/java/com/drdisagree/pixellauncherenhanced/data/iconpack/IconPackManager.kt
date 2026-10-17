@@ -85,6 +85,8 @@ object IconPackManager {
     private val packs = ConcurrentHashMap<String, IconPack>()
     private val failedPacks = ConcurrentHashMap.newKeySet<String>()
 
+    fun debugState(): String = "loaded=${packs.keys.sorted()}; failed=${failedPacks.sorted()}"
+
     fun installedIconPacks(context: Context) = queryPacks(context, iconPackActions)
 
     fun installedThemedIconPacks(context: Context) = queryPacks(context, listOf(THEMED_ICON_PACK_ACTION))

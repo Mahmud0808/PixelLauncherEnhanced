@@ -16,6 +16,7 @@ import de.robv.android.xposed.XposedHelpers.findAndHookMethod
 import de.robv.android.xposed.XposedHelpers.getStaticObjectField
 import de.robv.android.xposed.callbacks.XC_LayoutInflated
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
@@ -45,8 +46,12 @@ class XposedHook {
                     className,
                     loadPackageParam.classLoader
                 )
-                if (clazz != null) return clazz
+                if (clazz != null) {
+                    DebugRecorder.recordClassLookup(classNames, className, suppressError)
+                    return clazz
+                }
             }
+            DebugRecorder.recordClassLookup(classNames, null, suppressError)
 
             if (throwException) {
                 if (classNames.size == 1) {
@@ -130,169 +135,73 @@ class MethodHookHelper(
     }
 
     fun run(callback: XC_MethodHook): MethodHookHelper {
-        if (method != null) { // hooking directly via Method instance
-            hookMethod(method, callback)
-        } else if (methodNames.isNullOrEmpty()) { // hooking constructor
-            hookConstructor(callback)
-        } else { // hooking method
-            var foundAnyMethod = false
-
-            methodNames.forEach { methodName ->
-                if (isPattern) {
-                    val pattern = Pattern.compile(methodName)
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
-                                hookMethod(method, callback)
-                                foundAnyMethod = true
-                            }
-                        }
-                } else {
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
-                            hookMethod(method, callback)
-                            foundAnyMethod = true
-                        }
-                }
+        when {
+            method != null -> {
+                DebugRecorder.recordDirectHook(method, "raw")
+                hookMethod(method, callback)
             }
-
-            if (!foundAnyMethod) {
-                val errorMessage =
-                    "Method${if (methodNames.size == 1) "" else "s"} not found: ${methodNames.joinToString()} in class ${clazz?.simpleName}"
-
-                if (printError && clazz != null) {
-                    log(MethodHookHelper::class.simpleName.toString(), errorMessage)
-                } else if (throwError) {
-                    throw Throwable(errorMessage)
-                }
-            }
+            methodNames.isNullOrEmpty() -> hookConstructor(callback)
+            else -> resolveMethods("raw").forEach { (method, _) -> hookMethod(method, callback) }
         }
-
         return this
     }
 
     fun runBefore(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
-        if (method != null) { // hooking directly via Method instance
-            hookMethodBefore(method, callback)
-        } else if (methodNames.isNullOrEmpty()) { // hooking constructor
-            hookConstructorBefore(callback)
-        } else { // hooking method
-            var foundAnyMethod = false
-
-            methodNames.forEach { methodName ->
-                if (isPattern) {
-                    val pattern = Pattern.compile(methodName)
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
-                                hookMethodBefore(method, callback)
-                                foundAnyMethod = true
-                            }
-                        }
-                } else {
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
-                            hookMethodBefore(method, callback)
-                            foundAnyMethod = true
-                        }
-                }
-            }
-
-            if (!foundAnyMethod) {
-                val errorMessage =
-                    "Method${if (methodNames.size == 1) "" else "s"} not found: ${methodNames.joinToString()} in class ${clazz?.simpleName}"
-
-                if (printError && clazz != null) {
-                    log(MethodHookHelper::class.simpleName.toString(), errorMessage)
-                } else if (throwError) {
-                    throw Throwable(errorMessage)
-                }
-            }
+        when {
+            method != null -> hookMethodBefore(method, DebugRecorder.recordDirectHook(method, "before"), callback)
+            methodNames.isNullOrEmpty() -> hookConstructorBefore(callback)
+            else -> resolveMethods("before").forEach { (method, record) -> hookMethodBefore(method, record, callback) }
         }
-
         return this
     }
 
     fun runAfter(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
-        if (method != null) { // hooking directly via Method instance
-            hookMethodAfter(method, callback)
-        } else if (methodNames.isNullOrEmpty()) { // hooking constructor
-            hookConstructorAfter(callback)
-        } else { // hooking method
-            var foundAnyMethod = false
-
-            methodNames.forEach { methodName ->
-                if (isPattern) {
-                    val pattern = Pattern.compile(methodName)
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
-                                hookMethodAfter(method, callback)
-                                foundAnyMethod = true
-                            }
-                        }
-                } else {
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
-                            hookMethodAfter(method, callback)
-                            foundAnyMethod = true
-                        }
-                }
-            }
-
-            if (!foundAnyMethod) {
-                val errorMessage =
-                    "Method${if (methodNames.size == 1) "" else "s"} not found: ${methodNames.joinToString()} in class ${clazz?.simpleName}"
-
-                if (printError && clazz != null) {
-                    log(MethodHookHelper::class.simpleName.toString(), errorMessage)
-                } else if (throwError) {
-                    throw Throwable(errorMessage)
-                }
-            }
+        when {
+            method != null -> hookMethodAfter(method, DebugRecorder.recordDirectHook(method, "after"), callback)
+            methodNames.isNullOrEmpty() -> hookConstructorAfter(callback)
+            else -> resolveMethods("after").forEach { (method, record) -> hookMethodAfter(method, record, callback) }
         }
-
         return this
     }
 
     fun replace(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
-        if (method != null) { // hooking directly via Method instance
-            hookMethodReplace(method, callback)
-        } else {
-            methodNames?.forEach { methodName ->
-                if (isPattern) {
-                    val pattern = Pattern.compile(methodName)
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.forEach { method ->
-                            if (pattern.matcher(method.name).matches() && !Modifier.isAbstract(method.modifiers)) {
-                                hookMethodReplace(method, callback)
-                            }
-                        }
-                } else {
-                    clazz?.declaredMethods?.toList()?.union(clazz.methods.toList())
-                        ?.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) }?.let { method ->
-                            hookMethodReplace(method, callback)
-                        } ?: run {
-                        if (printError) {
-                            if (clazz != null && methodNames!!.size == 1) {
-                                log(
-                                    MethodHookHelper::class,
-                                    "Method not found: $methodName in ${clazz.simpleName}"
-                                )
-                            }
-                        } else if (throwError) {
-                            throw Throwable("Method not found: $methodName in ${clazz?.simpleName}")
-                        }
-                    }
-                }
+        when {
+            method != null -> hookMethodReplace(method, DebugRecorder.recordDirectHook(method, "replace"), callback)
+            else -> resolveMethods("replace").forEach { (method, record) -> hookMethodReplace(method, record, callback) }
+        }
+        return this
+    }
+
+    private fun resolveMethods(kind: String): List<Pair<Method, DebugRecorder.HookRecord>> {
+        val names = methodNames ?: return emptyList()
+        val candidates = clazz?.declaredMethods?.toList()?.union(clazz.methods.toList()).orEmpty()
+        val resolved = names.flatMap { methodName ->
+            if (isPattern) {
+                val pattern = Pattern.compile(methodName)
+                candidates.filter { pattern.matcher(it.name).matches() && !Modifier.isAbstract(it.modifiers) }
+            } else {
+                listOfNotNull(candidates.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) })
+            }
+        }
+        val record = DebugRecorder.recordHook(clazz, names, kind, isPattern, resolved, !printError)
+
+        if (resolved.isEmpty()) {
+            val errorMessage =
+                "Method${if (names.size == 1) "" else "s"} not found: ${names.joinToString()} in class ${clazz?.simpleName}"
+
+            if (printError && clazz != null) {
+                log(MethodHookHelper::class.simpleName.toString(), errorMessage)
+            } else if (throwError) {
+                throw Throwable(errorMessage)
             }
         }
 
-        return this
+        return resolved.map { it to record }
     }
 
     private fun hookConstructor(callback: XC_MethodHook): MethodHookHelper {
         if (clazz == null) return this
+        DebugRecorder.recordHook(clazz, null, "raw", false, clazz.declaredConstructors.toList(), !printError)
 
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, callback)
@@ -309,10 +218,12 @@ class MethodHookHelper(
 
     private fun hookConstructorBefore(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
         if (clazz == null) return this
+        val record = DebugRecorder.recordHook(clazz, null, "before", false, clazz.declaredConstructors.toList(), !printError)
 
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
+                    DebugRecorder.fired(record)
                     callback(param)
                 }
             })
@@ -322,6 +233,7 @@ class MethodHookHelper(
                 *parameterTypes!!,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
+                        DebugRecorder.fired(record)
                         callback(param)
                     }
                 }
@@ -333,10 +245,12 @@ class MethodHookHelper(
 
     private fun hookConstructorAfter(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
         if (clazz == null) return this
+        val record = DebugRecorder.recordHook(clazz, null, "after", false, clazz.declaredConstructors.toList(), !printError)
 
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
+                    DebugRecorder.fired(record)
                     callback(param)
                 }
             })
@@ -346,6 +260,7 @@ class MethodHookHelper(
                 *parameterTypes!!,
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
+                        DebugRecorder.fired(record)
                         callback(param)
                     }
                 }
@@ -357,11 +272,13 @@ class MethodHookHelper(
 
     private fun hookMethodBefore(
         method: Method,
+        record: DebugRecorder.HookRecord,
         callback: (XC_MethodHook.MethodHookParam) -> Unit
     ) {
         if (clazz == null) {
             hookMethod(method, object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
+                    DebugRecorder.fired(record)
                     callback(param)
                 }
             })
@@ -369,6 +286,7 @@ class MethodHookHelper(
             if (parameterTypes.isNullOrEmpty()) {
                 hookAllMethods(clazz, method.name, object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
+                        DebugRecorder.fired(record)
                         callback(param)
                     }
                 })
@@ -379,6 +297,7 @@ class MethodHookHelper(
                     *parameterTypes!!,
                     object : XC_MethodHook() {
                         override fun beforeHookedMethod(param: MethodHookParam) {
+                            DebugRecorder.fired(record)
                             callback(param)
                         }
                     }
@@ -389,11 +308,13 @@ class MethodHookHelper(
 
     private fun hookMethodAfter(
         method: Method,
+        record: DebugRecorder.HookRecord,
         callback: (XC_MethodHook.MethodHookParam) -> Unit
     ) {
         if (clazz == null) {
             hookMethod(method, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
+                    DebugRecorder.fired(record)
                     callback(param)
                 }
             })
@@ -401,6 +322,7 @@ class MethodHookHelper(
             if (parameterTypes.isNullOrEmpty()) {
                 hookAllMethods(clazz, method.name, object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
+                        DebugRecorder.fired(record)
                         callback(param)
                     }
                 })
@@ -411,6 +333,7 @@ class MethodHookHelper(
                     *parameterTypes!!,
                     object : XC_MethodHook() {
                         override fun afterHookedMethod(param: MethodHookParam) {
+                            DebugRecorder.fired(record)
                             callback(param)
                         }
                     }
@@ -421,11 +344,13 @@ class MethodHookHelper(
 
     private fun hookMethodReplace(
         method: Method,
+        record: DebugRecorder.HookRecord,
         callback: (XC_MethodHook.MethodHookParam) -> Unit
     ) {
         if (clazz == null) {
             hookMethod(method, object : XC_MethodReplacement() {
                 override fun replaceHookedMethod(param: MethodHookParam): Any? {
+                    DebugRecorder.fired(record)
                     callback(param)
                     return null
                 }
@@ -434,6 +359,7 @@ class MethodHookHelper(
             if (parameterTypes.isNullOrEmpty()) {
                 hookAllMethods(clazz, method.name, object : XC_MethodReplacement() {
                     override fun replaceHookedMethod(param: MethodHookParam): Any? {
+                        DebugRecorder.fired(record)
                         callback(param)
                         return null
                     }
@@ -445,6 +371,7 @@ class MethodHookHelper(
                     *parameterTypes!!,
                     object : XC_MethodReplacement() {
                         override fun replaceHookedMethod(param: MethodHookParam): Any? {
+                            DebugRecorder.fired(record)
                             callback(param)
                             return null
                         }
@@ -705,12 +632,14 @@ fun Any?.callMethod(methodName: String, parameterTypes: Array<Class<*>>, vararg 
 fun Any?.callMethodSilently(methodName: String): Any? {
     if (this == null) {
         log("callMethodSilently:noArgs", "Object is null, method=$methodName")
+        DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
 
     return try {
         XposedHelpers.callMethod(this, methodName)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("method"), this, methodName)
         null
     }
 }
@@ -718,12 +647,14 @@ fun Any?.callMethodSilently(methodName: String): Any? {
 fun Any?.callMethodSilently(methodName: String, vararg args: Any?): Any? {
     if (this == null) {
         log("callMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
 
     return try {
         XposedHelpers.callMethod(this, methodName, *args)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("method"), this, methodName)
         null
     }
 }
@@ -735,12 +666,14 @@ fun Any?.callMethodSilently(
 ): Any? {
     if (this == null) {
         log("callMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
 
     return try {
         XposedHelpers.callMethod(this, methodName, parameterTypes, *args)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("method"), this, methodName)
         null
     }
 }
@@ -779,12 +712,14 @@ fun Class<*>?.callStaticMethod(
 fun Class<*>?.callStaticMethodSilently(methodName: String): Any? {
     if (this == null) {
         log("callStaticMethodSilently:noArgs", "Object is null, method=$methodName")
+        DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
 
     return try {
         XposedHelpers.callStaticMethod(this, methodName)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("static-method"), this, methodName)
         null
     }
 }
@@ -792,12 +727,14 @@ fun Class<*>?.callStaticMethodSilently(methodName: String): Any? {
 fun Class<*>?.callStaticMethodSilently(methodName: String, vararg args: Any?): Any? {
     if (this == null) {
         log("callStaticMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
 
     return try {
         XposedHelpers.callStaticMethod(this, methodName, *args)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("static-method"), this, methodName)
         null
     }
 }
@@ -809,12 +746,14 @@ fun Class<*>?.callStaticMethodSilently(
 ): Any? {
     if (this == null) {
         log("callStaticMethodSilently:withArgs", "Object is null, method=$methodName, args=${args.size}")
+        DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
 
     return try {
         XposedHelpers.callStaticMethod(this, methodName, parameterTypes, *args)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("static-method"), this, methodName)
         null
     }
 }
@@ -830,7 +769,8 @@ fun Any?.getFieldSilently(fieldName: String): Any? {
 
     return try {
         XposedHelpers.getObjectField(this, fieldName)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("field"), this, fieldName)
         null
     }
 }
@@ -843,7 +783,8 @@ fun Any?.setFieldSilently(fieldName: String, value: Any?): Boolean {
     try {
         XposedHelpers.setObjectField(this, fieldName, value)
         return true
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("set-field"), this, fieldName)
     }
     return false
 }
@@ -859,7 +800,8 @@ fun Class<*>?.getStaticFieldSilently(fieldName: String): Any? {
 
     return try {
         getStaticObjectField(this, fieldName)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("static-field"), this, fieldName)
         null
     }
 }
@@ -871,29 +813,36 @@ fun Class<*>?.setStaticField(fieldName: String, value: Any?) {
 fun Class<*>?.setStaticFieldSilently(fieldName: String, value: Any?) {
     try {
         XposedHelpers.setStaticObjectField(this, fieldName, value)
-    } catch (_: Throwable) {
+    } catch (throwable: Throwable) {
+        DebugRecorder.recordMemberMiss(throwable.missKind("set-static-field"), this, fieldName)
     }
 }
 
 fun Any?.getAnyField(vararg fieldNames: String): Any? {
     fieldNames.forEach { fieldName ->
         try {
-            return XposedHelpers.getObjectField(this, fieldName)
+            return XposedHelpers.getObjectField(this, fieldName).also {
+                DebugRecorder.recordFieldFallback(this, fieldNames, fieldName)
+            }
         } catch (_: Throwable) {
         }
     }
 
+    DebugRecorder.recordMemberMiss("field", this, *fieldNames)
     throw NoSuchFieldError("Field not found: ${fieldNames.joinToString()}")
 }
 
 fun Any?.getAnyFieldSilently(vararg fieldNames: String): Any? {
     fieldNames.forEach { fieldName ->
         try {
-            return XposedHelpers.getObjectField(this, fieldName)
+            return XposedHelpers.getObjectField(this, fieldName).also {
+                DebugRecorder.recordFieldFallback(this, fieldNames, fieldName)
+            }
         } catch (_: Throwable) {
         }
     }
 
+    DebugRecorder.recordMemberMiss("field", this, *fieldNames)
     return null
 }
 
@@ -964,4 +913,10 @@ fun Any?.getExtraFieldSilently(fieldName: String): Any? {
 fun Any?.setExtraField(fieldName: String, value: Any?) {
     val fields = requireNotNull(this).extraFields(true) ?: return
     synchronized(extraFields) { fields[fieldName] = value }
+}
+
+private fun Throwable.missKind(base: String): String = when (this) {
+    is NoSuchFieldError, is NoSuchMethodError -> base
+    is XposedHelpers.InvocationTargetError -> "$base-threw:${cause?.javaClass?.simpleName}"
+    else -> "$base-failed:${javaClass.simpleName}"
 }

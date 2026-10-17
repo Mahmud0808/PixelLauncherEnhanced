@@ -1,5 +1,10 @@
 package com.drdisagree.pixellauncherenhanced.xposed
 
+import de.robv.android.xposed.XposedHelpers
+import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
+import android.os.SystemClock
 import android.app.Instrumentation
 import android.content.ComponentName
 import android.content.Context
@@ -126,27 +131,60 @@ class HookEntry : ServiceConnection {
             forceConnectRootService()
         }
 
+        if (EntryList.getEntries(loadPackageParam.packageName).isNotEmpty()) {
+            DebugRecorder.attach(mContext, loadPackageParam.packageName)
+            registerDebugProbes(loadPackageParam.packageName)
+        }
+
         for (mod in EntryList.getEntries(loadPackageParam.packageName)) {
-            try {
-                val modInstance = mod.getConstructor(Context::class.java).newInstance(mContext)
+            val startedAt = SystemClock.elapsedRealtime()
+            var prefsError: Throwable? = null
+            var loadError: Throwable? = null
+            DebugRecorder.withOwner(mod.simpleName) {
+                try {
+                    val modInstance = mod.getConstructor(Context::class.java).newInstance(mContext)
 
-                if (XprefsIsInitialized) {
-                    try {
-                        modInstance.updatePrefs()
-                    } catch (throwable: Throwable) {
-                        log(this@HookEntry, "Failed to update prefs in ${mod.name}")
-                        log(this@HookEntry, throwable)
+                    if (XprefsIsInitialized) {
+                        try {
+                            modInstance.updatePrefs()
+                        } catch (throwable: Throwable) {
+                            prefsError = throwable
+                            log(this@HookEntry, "Failed to update prefs in ${mod.name}")
+                            log(this@HookEntry, throwable)
+                        }
                     }
-                }
 
-                modInstance.handleLoadPackage(loadPackageParam)
-                runningMods.add(modInstance)
-            } catch (invocationTargetException: InvocationTargetException) {
-                log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
-                log(this@HookEntry, invocationTargetException.cause)
-            } catch (throwable: Throwable) {
-                log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
-                log(this@HookEntry, throwable)
+                    modInstance.handleLoadPackage(loadPackageParam)
+                    runningMods.add(modInstance)
+                } catch (invocationTargetException: InvocationTargetException) {
+                    loadError = invocationTargetException.cause ?: invocationTargetException
+                    log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
+                    log(this@HookEntry, invocationTargetException.cause)
+                } catch (throwable: Throwable) {
+                    loadError = throwable
+                    log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
+                    log(this@HookEntry, throwable)
+                }
+            }
+            DebugRecorder.recordModResult(mod.simpleName, SystemClock.elapsedRealtime() - startedAt, prefsError, loadError)
+        }
+    }
+
+    private fun registerDebugProbes(packageName: String) {
+        DebugRecorder.registerProbe("rootProxyConnected") { rootProxyIPC != null }
+        DebugRecorder.registerProbe("xprefsInitialized") { XprefsIsInitialized }
+        DebugRecorder.registerProbe("bootLoopStrikes") {
+            Xprefs.getInt("${BootLoopProtector.PACKAGE_STRIKE_KEY_KEY}$packageName", 0)
+        }
+        DebugRecorder.registerProbe("runningMods") { runningMods.joinToString { it.javaClass.simpleName } }
+        DebugRecorder.registerModInstances { runningMods.toList() }
+        DebugRecorder.registerProbe("wallpaperGlass") { WallpaperGlass.debugState() }
+        DebugRecorder.registerProbe("iconPacks") { IconPackManager.debugState() }
+        DebugRecorder.registerProbe("activities") {
+            val thread = XposedHelpers.callStaticMethod(Class.forName("android.app.ActivityThread"), "currentActivityThread")
+            (XposedHelpers.getObjectField(thread, "mActivities") as? Map<*, *>)?.values?.joinToString { record ->
+                val activity = XposedHelpers.getObjectField(record, "activity")
+                "${activity?.javaClass?.name} paused=${XposedHelpers.getObjectField(record, "paused")}"
             }
         }
     }

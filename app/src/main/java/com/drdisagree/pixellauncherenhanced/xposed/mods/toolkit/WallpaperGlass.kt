@@ -146,6 +146,9 @@ object WallpaperGlass {
     private val clearCache = HashMap<Int, Bitmap>()
     private val pendingBlurs = HashSet<Pair<Boolean, Int>>()
     private var loading = false
+    private var lastCopyOutput: String? = null
+    private var lastDecode: String? = null
+    private var lastCopyPath: String? = null
     private var liveWallpaper = false
     private var wallpaperChecked = false
     private val listeners: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
@@ -188,6 +191,21 @@ object WallpaperGlass {
 
     fun isAvailable(): Boolean = !liveWallpaper && smallBase != null
 
+    fun debugState(): String = listOf(
+        "available=${isAvailable()}",
+        "checked=$wallpaperChecked",
+        "liveWallpaper=$liveWallpaper",
+        "loading=$loading",
+        "copyPath=$lastCopyPath",
+        "decode=$lastDecode",
+        "frostedRadii=${frostedCache.keys.sorted()}",
+        "clearRadii=${clearCache.keys.sorted()}",
+        "trackedViews=${listeners.size}",
+        "offsetX=$offsetX",
+        "zoom=$zoom",
+        "copyOutput=$lastCopyOutput"
+    ).joinToString("; ")
+
     fun invalidateWallpaper(context: Context) {
         smallBase = null
         sharpBase = null
@@ -224,8 +242,11 @@ object WallpaperGlass {
         val script = "rm -f $path; cp /data/system/users/$userId/wallpaper $path && chown $uid:$uid $path && " +
                 "chmod 600 $path && chcon \"\$(stat -c %C ${copy.parent})\" $path"
 
+        lastCopyPath = path
         enqueueProxyCommand { proxy ->
-            proxy.runCommand("sh -c '$script'; [ -f $path ] || nsenter -t 1 -m -- sh -c '$script'")
+            lastCopyOutput = proxy.runCommand(
+                "sh -c '$script' 2>&1; [ -f $path ] || nsenter -t 1 -m -- sh -c '$script' 2>&1; ls -lZ $path 2>&1"
+            ).joinToString(" / ")
             decode(copy, context.applicationContext)
         }
     }
@@ -259,6 +280,8 @@ object WallpaperGlass {
                 ).copy(Bitmap.Config.ARGB_8888, false)
                 small to sharp
             }.onFailure { log(this, it) }.getOrNull()
+            lastDecode = result?.let { "small=${it.first.width}x${it.first.height} sharp=${it.second.width}x${it.second.height}" }
+                ?: "failed (copy exists=${copy.exists()} size=${copy.length()} readable=${copy.canRead()})"
 
             mainHandler.post {
                 loading = false

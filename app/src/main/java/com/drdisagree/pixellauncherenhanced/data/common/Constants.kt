@@ -25,6 +25,8 @@ object Constants {
     const val ICON_SWIPE_ACTIONS = "xposed_iconswipeactions"
     const val SHORTCUTS_REQUEST = "xposed_shortcutsrequest"
     const val SHORTCUTS_RESPONSE = "xposed_shortcutsresponse"
+    const val DEBUG_REPORT_REQUEST = "xposed_debugreportrequest"
+    const val DEBUG_REPORT_RESPONSE = "xposed_debugreportresponse"
     const val SHORTCUT_LABELS = "xposed_shortcutlabels"
     const val FOLDER_TAP_FIRST_APP = "xposed_foldertapfirstapp"
     const val FOLDER_COVER = "xposed_foldercover"
@@ -164,5 +166,7 @@ object Constants {
         BootLoopProtector.PACKAGE_STRIKE_KEY_KEY,
         SHORTCUTS_RESPONSE,
         SHORTCUT_LABELS,
+        DEBUG_REPORT_REQUEST,
+        DEBUG_REPORT_RESPONSE,
     )
 }

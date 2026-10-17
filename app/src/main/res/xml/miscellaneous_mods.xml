@@ -41,4 +41,18 @@
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_misc_troubleshooting"
+        android:title="@string/section_troubleshooting_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_debug_report_page"
+            android:summary="@string/debug_report_summary"
+            android:title="@string/debug_report_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.DebugReportPage"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
 </PreferenceScreen>
