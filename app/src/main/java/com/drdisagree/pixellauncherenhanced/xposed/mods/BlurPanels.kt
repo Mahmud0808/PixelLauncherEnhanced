@@ -923,7 +923,7 @@ class BlurPanels(context: Context) : ModPack(context) {
 
                 val area = child.width * child.height
                 val isPanel = child.hasPanel()
-                if (isPanel && area >= hostArea * LARGE_BACKGROUND_RATIO && area > bestArea) {
+                if (isPanel && area >= hostArea * LARGE_BACKGROUND_RATIO && area >= bestArea) {
                     best = child
                     bestArea = area
                 }
