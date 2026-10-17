@@ -11,6 +11,8 @@ import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ScrollView
+import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.RecyclerView
 
 class FadingEdgeLayout @JvmOverloads constructor(
@@ -33,16 +35,20 @@ class FadingEdgeLayout @JvmOverloads constructor(
 
     override fun onViewAdded(child: View) {
         super.onViewAdded(child)
-        if (child is RecyclerView && scrollingChild == null) {
-            scrollingChild = child
-            child.addOnScrollListener(scrollListener)
+        if (scrollingChild != null) return
+        when (child) {
+            is RecyclerView -> child.addOnScrollListener(scrollListener)
+            is ScrollView, is NestedScrollView -> child.setOnScrollChangeListener { _, _, _, _, _ -> invalidate() }
+            else -> return
         }
+        scrollingChild = child
     }
 
     override fun onViewRemoved(child: View) {
         super.onViewRemoved(child)
         if (child === scrollingChild) {
             (child as? RecyclerView)?.removeOnScrollListener(scrollListener)
+            if (child !is RecyclerView) child.setOnScrollChangeListener(null)
             scrollingChild = null
         }
     }

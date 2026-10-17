@@ -120,7 +120,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Themed icons in app drawer     |       ✅        |         ✅          |
 | Force themed icons             |       ✅        |         ✅          |
 | Frosted and liquid glass icons |       ✅        |         ✅          |
-| Custom themed icon color       |       ✅        |         ⚠️         |
+| Custom themed icon color       |       ✅        |         ✅          |
 | Notification dot count         |       ✅        |         ✅          |
 | Hide notification dots per app |       ✅        |         ✅          |
 | Edit app in app popup          |       ✅        |         ✅          |
