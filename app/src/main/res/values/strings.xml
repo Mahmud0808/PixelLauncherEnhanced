@@ -487,6 +487,17 @@
     <string name="reset_value_desc">%1$s, tap to reset</string>
     <string name="themed_icons_enable_title">Enable themed icons</string>
     <string name="themed_icons_drawer_title">Apply to app drawer</string>
+    <string name="swipe_actions_title">Swipe actions</string>
+    <string name="swipe_up_title">Swipe up</string>
+    <string name="swipe_down_title">Swipe down</string>
+    <string name="swipe_open_app">Open %1$s</string>
+    <string name="folder_tap_first_app_title">Tap folder to open first app</string>
+    <string name="folder_tap_first_app_desc">Swipe up on the folder to open it</string>
+    <string name="fragment_icon_swipes_title">Icon swipe actions</string>
+    <string name="icon_swipes_page_desc">Swipe up or down on an app icon</string>
+    <string name="icon_swipes_none">No swipe actions</string>
+    <string name="folder_cover_title">Cover mode</string>
+    <string name="folder_cover_desc">Show the first app icon on the folder</string>
     <string name="dashboard_dock_short">Search bar and glass</string>
     <string name="dashboard_folders_short">Grid and glass</string>
     <string name="dashboard_widgets_short">Resize and glass</string>

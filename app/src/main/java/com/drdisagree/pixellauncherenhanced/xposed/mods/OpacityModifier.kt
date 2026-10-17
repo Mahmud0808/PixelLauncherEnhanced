@@ -382,7 +382,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     if (!folderGlass()) return@runBefore
 
                     val folderIcon = param.thisObject as View
-                    if (folderIcon.getFieldSilently("mBackgroundIsVisible") == false) {
+                    if (folderIcon.getFieldSilently("mBackgroundIsVisible") == false || GestureMod.coversFolder(folderIcon)) {
                         (folderIcon.getExtraFieldSilently(PREVIEW_BLUR) as? BlurPanel)?.markHidden()
                         return@runBefore
                     }

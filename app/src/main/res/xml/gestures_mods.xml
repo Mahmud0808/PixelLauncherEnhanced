@@ -41,6 +41,13 @@
             android:title="@string/gesture_pinch_out_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_icon_swipes_page"
+            android:summary="@string/icon_swipes_page_desc"
+            android:title="@string/fragment_icon_swipes_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.IconSwipes"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory

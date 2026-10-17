@@ -9,6 +9,8 @@ import androidx.preference.PreferenceGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FORCE_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_COVER
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_TAP_FIRST_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
@@ -45,7 +47,6 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_SWIPE_ACTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.POPUP_EDIT_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_DISABLE_SELECTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_MEMINFO
@@ -86,6 +87,8 @@ object PrefsHelper {
             FORCE_THEMED_ICONS,
             THEMED_ICON_CUSTOM_COLOR -> getBoolean(HOME_THEMED_ICONS)
 
+            FOLDER_COVER -> getBoolean(FOLDER_TAP_FIRST_APP)
+
             ICON_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && getBoolean(HOME_THEMED_ICONS)
 
             FOLDER_BACKGROUND,
@@ -117,8 +120,6 @@ object PrefsHelper {
             RECENTS_DISABLE_SELECTION -> isPixelLauncher
 
             FIXED_RECENTS_BUTTONS_WIDTH -> getBoolean(RECENTS_CLEAR_ALL_BUTTON)
-
-            POPUP_EDIT_APP -> getBoolean(ICON_PACKS_ENABLED)
 
             RECENTS_MEMINFO_ZRAM,
             RECENTS_MEMINFO_CHIP -> getBoolean(RECENTS_MEMINFO)

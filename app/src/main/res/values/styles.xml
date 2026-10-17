@@ -115,6 +115,22 @@
         <item name="backgroundTint">?attr/colorSurfaceContainerHigh</item>
     </style>
 
+    <style name="ShapeAppearance.SwipeRow.Top" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">20dp</item>
+        <item name="cornerSizeTopRight">20dp</item>
+        <item name="cornerSizeBottomLeft">4dp</item>
+        <item name="cornerSizeBottomRight">4dp</item>
+    </style>
+
+    <style name="ShapeAppearance.SwipeRow.Bottom" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">4dp</item>
+        <item name="cornerSizeTopRight">4dp</item>
+        <item name="cornerSizeBottomLeft">20dp</item>
+        <item name="cornerSizeBottomRight">20dp</item>
+    </style>
+
     <style name="ShapeAppearance.Dialog" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">32dp</item>

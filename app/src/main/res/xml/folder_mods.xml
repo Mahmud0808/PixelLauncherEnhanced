@@ -38,6 +38,27 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_folder_general_section"
+        android:title="@string/section_general_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_foldertapfirstapp"
+            android:summary="@string/folder_tap_first_app_desc"
+            android:title="@string/folder_tap_first_app_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_foldercover"
+            android:summary="@string/folder_cover_desc"
+            android:title="@string/folder_cover_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_folder_background_section"
         android:title="@string/section_background_title"
         app:iconSpaceReserved="false">

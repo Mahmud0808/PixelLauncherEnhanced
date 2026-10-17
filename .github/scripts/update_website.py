@@ -10,11 +10,11 @@ PAGE = ROOT / "docs" / "index.html"
 CATEGORIES = {
     "Home screen": ("home", "Grid size, page transitions, endless scrolling and the status bar: the parts you see every time you unlock."),
     "Dock": ("dock", "Frosted or liquid glass for the dock and search bar, with its shape, margins and spacing."),
-    "Folders": ("folders", "Bigger folder grids and a glass background that blurs the home screen behind it."),
+    "Folders": ("folders", "Bigger folder grids, Nova-style cover mode and a glass background that blurs the home screen behind it."),
     "Widgets": ("widgets", "Resize any widget freely and give it a frosted or liquid glass background."),
     "App drawer": ("drawer", "Tabs, hidden apps and quick launch, in a layout sized for the apps you actually have."),
     "Icons": ("icons", "Icon packs with a fallback order, per-app overrides, custom shapes and themed colours."),
-    "Gestures": ("gestures", "Double tap and pinch to do something useful, and take back the space under the gesture bar."),
+    "Gestures": ("gestures", "Double tap, pinch and swipe on icons to do something useful, and take back the space under the gesture bar."),
     "Recents": ("recents", "Kill, uninstall or lock apps, check memory at a glance and drop the buttons you never tap."),
     "Backup & restore": ("backup", "Save your home screen, app drawer and settings, then bring them back after a reset or a new phone."),
     "Advanced": ("advanced", "Launcher-level switches, and quicker ways back into the module from the launcher itself."),

@@ -60,6 +60,8 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Feature                         | Pixel Launcher | Launcher3 Launcher |
 |---------------------------------|:--------------:|:------------------:|
 | Folder columns and rows         |       ✅        |         ✅          |
+| Tap folder to open first app    |       ✅        |         ✅          |
+| Folder cover mode               |       ✅        |         ✅          |
 | Folder frosted and liquid glass |       ✅        |         ✅          |
 | Folder background tint          |       ✅        |         ✅          |
 
@@ -130,12 +132,13 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 <details>
 <summary>Gestures</summary>
 
-| Feature                   | Pixel Launcher | Launcher3 Launcher |
-|---------------------------|:--------------:|:------------------:|
-| Double tap actions        |       ✅        |         ✅          |
-| Pinch in and out actions  |       ✅        |         ✅          |
-| Hide gesture indicator    |       ✅        |         ✅          |
-| Hide navigation bar space |       ✅        |         ✅          |
+| Feature                        | Pixel Launcher | Launcher3 Launcher |
+|--------------------------------|:--------------:|:------------------:|
+| Double tap actions             |       ✅        |         ✅          |
+| Pinch in and out actions       |       ✅        |         ✅          |
+| Icon swipe up and down actions |       ✅        |         ✅          |
+| Hide gesture indicator         |       ✅        |         ✅          |
+| Hide navigation bar space      |       ✅        |         ✅          |
 
 </details>
 
