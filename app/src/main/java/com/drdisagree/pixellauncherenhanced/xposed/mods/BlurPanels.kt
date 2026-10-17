@@ -200,7 +200,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val view = param.thisObject as View
                 view.installFloatingWidgetPanel()
-                if (widgetClearBackground && widgetBlurRadius > 0) {
+                if (widgetClearBackground || widgetUsesGlass()) {
                     (view.getFieldSilently("mFallbackDrawable") as? Drawable)?.alpha = 0
                 }
             }
@@ -516,15 +516,30 @@ class BlurPanels(context: Context) : ModPack(context) {
         hosts.add(this)
 
         background = BlurPanelDrawable(background, onShown = { panel().refreshSoon() }) { canvas ->
-            if (widgetBlurRadius <= 0 && widgetBlurTint <= 0) return@BlurPanelDrawable
+            if (widgetBlurRadius <= 0 && widgetBlurTint <= 0 && !widgetLiquid) return@BlurPanelDrawable
             if (width <= 0 || height <= 0) return@BlurPanelDrawable
 
             rect.set(0f, 0f, width.toFloat(), height.toFloat())
+            val cornerRadius = (getFieldSilently("mOutlineRadius") as? Float)?.takeIf { it > 0f }
+                ?: widgetCornerRadius()
+            val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
+
+            if (widgetUsesGlass() && WallpaperGlass.draw(
+                    host = this,
+                    canvas = canvas,
+                    rect = rect,
+                    corner = corner,
+                    bottomCorner = corner,
+                    blurRadius = widgetBlurRadius.dp(this),
+                    tintColor = tint(widgetBlurTint),
+                    liquid = widgetLiquid
+                )
+            ) return@BlurPanelDrawable
+
             panel().draw(
                 canvas = canvas,
                 rect = rect,
-                cornerRadius = (getFieldSilently("mOutlineRadius") as? Float)?.takeIf { it > 0f }
-                    ?: widgetCornerRadius(),
+                cornerRadius = cornerRadius,
                 blurRadius = widgetBlurRadius.dp(this),
                 tintColor = tint(widgetBlurTint)
             )
