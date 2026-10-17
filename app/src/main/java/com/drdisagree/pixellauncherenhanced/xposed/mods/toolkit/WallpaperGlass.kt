@@ -150,6 +150,7 @@ object WallpaperGlass {
     private var wallpaperChecked = false
     private val listeners: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val lastPositions = WeakHashMap<View, Long>()
+    private val lastScales = WeakHashMap<View, Float>()
     private val watchedRoots: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val trackLocation = IntArray(2)
 
@@ -157,6 +158,7 @@ object WallpaperGlass {
         listeners.add(host)
         host.getLocationInWindow(trackLocation)
         lastPositions[host] = packPosition(trackLocation)
+        lastScales[host] = host.cumulativeScale()
 
         val root = host.rootView ?: return
         if (!watchedRoots.add(root)) return
@@ -165,8 +167,10 @@ object WallpaperGlass {
                 if (view.rootView !== root || !view.isAttachedToWindow) return@forEach
                 view.getLocationInWindow(trackLocation)
                 val position = packPosition(trackLocation)
-                if (lastPositions[view] != position) {
+                val scale = view.cumulativeScale()
+                if (lastPositions[view] != position || lastScales[view] != scale) {
                     lastPositions[view] = position
+                    lastScales[view] = scale
                     view.background?.invalidateSelf()
                     view.invalidate()
                 }
@@ -417,6 +421,8 @@ object WallpaperGlass {
             Matrix.ScaleToFit.FILL
         )
         canvasShaderMatrix.postTranslate(-location[0].toFloat(), -location[1].toFloat())
+        val hostScale = host.cumulativeScale()
+        canvasShaderMatrix.postScale(1f / hostScale, 1f / hostScale)
         canvasShaderMatrix.postConcat(canvasInverse)
 
         val image = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
