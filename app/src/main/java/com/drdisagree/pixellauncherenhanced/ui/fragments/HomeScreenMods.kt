@@ -9,6 +9,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGRO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
 import com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
@@ -38,7 +39,7 @@ class HomeScreenMods : ControlledPreferenceFragmentCompat() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
 
-        listOf(DOCK_BACKGROUND, WIDGET_BACKGROUND, FOLDER_BACKGROUND).forEach { key ->
+        listOf(DOCK_BACKGROUND, WIDGET_BACKGROUND, FOLDER_BACKGROUND, SEARCH_BAR_BACKGROUND).forEach { key ->
             findPreference<ListPreference>(key)?.apply {
                 entries = entries.take(2).toTypedArray()
                 entryValues = entryValues.take(2).toTypedArray()

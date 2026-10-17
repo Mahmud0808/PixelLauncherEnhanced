@@ -55,6 +55,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_FG_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_CLEAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
@@ -115,6 +118,18 @@ object PrefsHelper {
             THEMED_ICON_CUSTOM_BG_COLOR_DARK,
             FOLDER_CUSTOM_COLOR_LIGHT,
             FOLDER_CUSTOM_COLOR_DARK -> getBoolean(THEMED_ICON_CUSTOM_COLOR)
+
+            SEARCH_BAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    isPixelLauncher &&
+                    !getBoolean(DESKTOP_SEARCH_BAR) &&
+                    !getBoolean(DISABLE_DOCK)
+
+            SEARCH_BAR_BLUR_RADIUS,
+            SEARCH_BAR_BLUR_TINT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    isPixelLauncher &&
+                    !getBoolean(DESKTOP_SEARCH_BAR) &&
+                    !getBoolean(DISABLE_DOCK) &&
+                    PanelBackground.supported(getString(SEARCH_BAR_BACKGROUND)) != PanelBackground.OFF
 
             DESKTOP_SEARCH_BAR_OPACITY -> isPixelLauncher &&
                     !getBoolean(DESKTOP_SEARCH_BAR) &&

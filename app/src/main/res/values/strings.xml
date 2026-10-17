@@ -485,6 +485,9 @@
     <string name="dock_blur_style_title">Dock background style</string>
     <string name="dock_background_title">Dock background</string>
     <string name="widget_background_title">Widget background</string>
+    <string name="search_bar_background_title">Search bar background</string>
+    <string name="search_bar_blur_title">Search bar background blur</string>
+    <string name="search_bar_tint_title">Search bar background tint</string>
     <string name="folder_background_title">Folder background</string>
     <string name="icon_background_title">Themed icon background</string>
     <string name="icon_background_blur_title">Themed icon background blur</string>

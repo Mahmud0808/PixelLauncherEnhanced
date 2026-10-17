@@ -40,6 +40,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_RADI
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_STYLE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT_COLOR
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_TINT
@@ -81,6 +84,10 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var widgetBlurRadius = 0
     private var widgetBlurTint = 0
     private var widgetClearBackground = false
+    private var searchBlurRadius = 0
+    private var searchBlurTint = 0
+    private var searchLiquid = false
+    private val hotseatClass: Class<*>? by lazy { findClass("com.android.launcher3.Hotseat", suppressError = true) }
     private val hosts: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val rect = RectF()
     private var wallpaperIsLight: Boolean? = null
@@ -104,6 +111,11 @@ class BlurPanels(context: Context) : ModPack(context) {
             widgetBlurTint = if (widgetEnabled) getSliderInt(WIDGET_BLUR_TINT, 0) else 0
             widgetLiquid = widgetBackground == BACKGROUND_LIQUID
             widgetClearBackground = widgetEnabled || getBoolean(WIDGET_CLEAR_BACKGROUND, false)
+            val searchBackground = PanelBackground.supported(getString(SEARCH_BAR_BACKGROUND, BACKGROUND_OFF))
+            val searchEnabled = searchBackground != BACKGROUND_OFF
+            searchBlurRadius = if (searchEnabled) getSliderInt(SEARCH_BAR_BLUR_RADIUS, 0) else 0
+            searchBlurTint = if (searchEnabled) getSliderInt(SEARCH_BAR_BLUR_TINT, 0) else 0
+            searchLiquid = searchBackground == BACKGROUND_LIQUID
         }
 
         when (key.firstOrNull()) {
@@ -115,7 +127,9 @@ class BlurPanels(context: Context) : ModPack(context) {
             DOCK_BACKGROUND,
             DOCK_BLUR_MARGIN,
             WIDGET_BLUR_RADIUS,
-            WIDGET_BLUR_TINT -> hosts.toList().forEach {
+            WIDGET_BLUR_TINT,
+            SEARCH_BAR_BLUR_RADIUS,
+            SEARCH_BAR_BLUR_TINT -> hosts.toList().forEach {
                 it.post {
                     it.background?.invalidateSelf()
                     it.invalidate()
@@ -123,6 +137,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             }
 
             WIDGET_BACKGROUND,
+            SEARCH_BAR_BACKGROUND,
             WIDGET_CLEAR_BACKGROUND -> reloadLauncher(mContext)
         }
     }
@@ -153,7 +168,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 if (param.args.getOrNull(0) != View.LAYER_TYPE_HARDWARE) return@runBefore
-                if (dockBlurRadius <= 0 && widgetBlurRadius <= 0) return@runBefore
+                if (dockBlurRadius <= 0 && widgetBlurRadius <= 0 && searchBlurRadius <= 0) return@runBefore
                 if (WallpaperGlass.isAvailable()) return@runBefore
 
                 val name = param.thisObject.javaClass.name
@@ -219,10 +234,9 @@ class BlurPanels(context: Context) : ModPack(context) {
             .hookMethod("updateAppWidget")
             .suppressError()
             .runAfter { param ->
-                if (!widgetClearBackground) return@runAfter
-
                 val widget = param.thisObject as? ViewGroup ?: return@runAfter
-                if (widgetHostClass?.isInstance(widget) != true || widget.isSearchBar()) return@runAfter
+                if (widgetHostClass?.isInstance(widget) != true || widget.isSkippedSearchBar()) return@runAfter
+                if (!widget.panelClear()) return@runAfter
                 widget.post { widget.clearLargeBackgrounds(widget.width * widget.height) }
             }
 
@@ -232,14 +246,14 @@ class BlurPanels(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val widget = param.thisObject as ViewGroup
                 widget.installWidgetPanel()
-                if (widget.isSearchBar()) return@runAfter
+                if (widget.isSkippedSearchBar()) return@runAfter
 
                 val target = widget.findPanelTarget()
                 if (target !== widget.getExtraFieldSilently(PANEL_TARGET)) {
                     widget.setExtraField(PANEL_TARGET, target)
                     widget.invalidate()
                 }
-                if (!widgetClearBackground) return@runAfter
+                if (!widget.panelClear()) return@runAfter
 
                 widget.clearLargeBackgrounds(widget.width * widget.height)
             }
@@ -404,7 +418,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             canvas = canvas,
             localRect = rect,
             corner = 0f,
-            blurRadius = widgetBlurRadius.dp(this),
+            blurRadius = panelBlur().dp(this),
             alpha = 1f,
             liquid = true,
             maskKey = mask,
@@ -412,7 +426,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         ) ?: return false
 
         canvas.drawRect(rect, paint)
-        val tintColor = tint(widgetBlurTint)
+        val tintColor = panelTintColor(panelTint())
         if (Color.alpha(tintColor) != 0) {
             tintPaint.color = tintColor
             canvas.drawRect(rect, tintPaint)
@@ -459,8 +473,11 @@ class BlurPanels(context: Context) : ModPack(context) {
         hosts.add(this)
 
         background = BlurPanelDrawable(background, onShown = { panel().refreshSoon() }) { canvas ->
-            if (widgetBlurRadius <= 0 && widgetBlurTint <= 0 && !widgetLiquid) return@BlurPanelDrawable
-            if (isSearchBar()) return@BlurPanelDrawable
+            if (isSkippedSearchBar()) return@BlurPanelDrawable
+            val blurRadius = panelBlur()
+            val blurTint = panelTint()
+            val liquid = panelLiquid()
+            if (blurRadius <= 0 && blurTint <= 0 && !liquid) return@BlurPanelDrawable
 
             val target = panelTarget()
             if (target == null || !targetBounds(target, rect)) {
@@ -476,7 +493,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             val mask = target.shapeMask()
             val layer = if (mask != null) canvas.saveLayer(rect, null) else -1
 
-            val drawn = widgetUsesGlass() && if (mask != null && widgetLiquid) {
+            val drawn = (blurRadius > 0 || liquid) && if (mask != null && liquid) {
                 drawMaskedLiquid(canvas, target, mask)
             } else WallpaperGlass.draw(
                 host = this,
@@ -484,9 +501,9 @@ class BlurPanels(context: Context) : ModPack(context) {
                 rect = rect,
                 corner = corner,
                 bottomCorner = corner,
-                blurRadius = widgetBlurRadius.dp(this),
-                tintColor = tint(widgetBlurTint),
-                liquid = widgetLiquid
+                blurRadius = blurRadius.dp(this),
+                tintColor = panelTintColor(blurTint),
+                liquid = liquid
             )
 
             if (mask != null) {
@@ -505,8 +522,8 @@ class BlurPanels(context: Context) : ModPack(context) {
                 canvas = canvas,
                 rect = rect,
                 cornerRadius = cornerRadius,
-                blurRadius = widgetBlurRadius.dp(this),
-                tintColor = tint(widgetBlurTint)
+                blurRadius = blurRadius.dp(this),
+                tintColor = panelTintColor(blurTint)
             )
         }
     }
@@ -676,6 +693,39 @@ class BlurPanels(context: Context) : ModPack(context) {
         }
     }
 
+    private fun View.isHotseatSearchBar(): Boolean {
+        if (id != View.NO_ID) {
+            val name = runCatching { resources.getResourceEntryName(id) }.getOrNull()
+            if (name == HOTSEAT_SEARCH_ID) return true
+        }
+        val hotseat = hotseatClass ?: return false
+        var current = parent
+        while (current is View) {
+            if (hotseat.isInstance(current)) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    private fun View.isSkippedSearchBar(): Boolean = isSearchBar() && !isHotseatSearchBar()
+
+    private fun View.panelBlur(): Int = if (isHotseatSearchBar()) searchBlurRadius else widgetBlurRadius
+
+    private fun View.panelTint(): Int = if (isHotseatSearchBar()) searchBlurTint else widgetBlurTint
+
+    private fun View.panelLiquid(): Boolean = if (isHotseatSearchBar()) searchLiquid else widgetLiquid
+
+    private fun View.panelTintColor(opacity: Int): Int {
+        val original = (getExtraFieldSilently(PANEL_COLOR) as? Int)?.takeIf { isHotseatSearchBar() }
+            ?: return tint(opacity)
+        return ColorUtils.setAlphaComponent(original, opacity.coerceIn(0, 100) * 255 / 100)
+    }
+
+    private fun View.panelClear(): Boolean {
+        return if (isHotseatSearchBar()) searchBlurRadius > 0 || searchLiquid || searchBlurTint > 0
+        else widgetClearBackground
+    }
+
     private fun View.isSearchBar(): Boolean {
         if (id == View.NO_ID) return false
         val name = runCatching { resources.getResourceEntryName(id) }.getOrNull() ?: return false
@@ -691,9 +741,12 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun ViewGroup.clearLargeBackgrounds(hostArea: Int) {
         if (hostArea <= 0) return
 
-        val colors = mutableSetOf<Int>()
+        val colors = linkedSetOf<Int>()
         clearLargeBackgrounds(hostArea, colors)
-        if (colors.isNotEmpty()) clearMatchingBackgrounds(colors)
+        if (colors.isNotEmpty()) {
+            colors.maxByOrNull { Color.alpha(it) }?.let { setExtraField(PANEL_COLOR, it) }
+            clearMatchingBackgrounds(colors)
+        }
     }
 
     private fun ViewGroup.clearLargeBackgrounds(hostArea: Int, colors: MutableSet<Int>) {
@@ -708,18 +761,19 @@ class BlurPanels(context: Context) : ModPack(context) {
 
             if (isLarge) {
                 child.background?.takeIf { it.isFilled() }?.let { background ->
-                    background.fillColor()?.let { colors.add(it) }
+                    (child.backgroundTintList?.defaultColor ?: background.fillColor())?.let { colors.add(it) }
                     child.background = background.mutate().apply { alpha = 0 }
                     child.setExtraField(CLEARED, true)
                 }
 
                 if (child.isShapeImage() && (child as ImageView).imageAlpha != 0) {
+                    child.imageTintList?.defaultColor?.let { colors.add(it) }
                     child.imageAlpha = 0
                     child.setExtraField(CLEARED, true)
                 } else if (child is ImageView && child.imageAlpha != 0 && child.drawable?.isPlainShape() == true &&
                     child.drawable?.isFilled() == true
                 ) {
-                    child.drawable?.fillColor()?.let { colors.add(it) }
+                    (child.imageTintList?.defaultColor ?: child.drawable?.fillColor())?.let { colors.add(it) }
                     child.imageAlpha = 0
                     child.setExtraField(CLEARED, true)
                 }
@@ -875,6 +929,8 @@ class BlurPanels(context: Context) : ModPack(context) {
     companion object {
         private const val BLUR_PANEL = "pleBlurPanel"
         private const val PANEL_TARGET = "plePanelTarget"
+        private const val HOTSEAT_SEARCH_ID = "search_container_hotseat"
+        private const val PANEL_COLOR = "plePanelColor"
         private const val SHAPE_MASK = "pleShapeMask"
         private const val CLEARED = "pleCleared"
         private const val COLOR_TOLERANCE = 6

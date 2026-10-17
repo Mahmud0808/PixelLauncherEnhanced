@@ -4,6 +4,7 @@ import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
 
 object PanelBackground {
@@ -12,7 +13,7 @@ object PanelBackground {
     const val FROSTED = "frosted"
     const val LIQUID = "liquid"
 
-    val KEYS = setOf(DOCK_BACKGROUND, WIDGET_BACKGROUND, FOLDER_BACKGROUND, ICON_BACKGROUND)
+    val KEYS = setOf(DOCK_BACKGROUND, WIDGET_BACKGROUND, FOLDER_BACKGROUND, ICON_BACKGROUND, SEARCH_BAR_BACKGROUND)
 
     val isBlurSupported: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
