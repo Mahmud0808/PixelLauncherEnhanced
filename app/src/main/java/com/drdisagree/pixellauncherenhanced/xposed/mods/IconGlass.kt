@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
@@ -23,6 +25,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
@@ -130,6 +133,30 @@ class IconGlass(context: Context) : ModPack(context) {
                 param.result = null
             }
 
+        findClass("com.android.launcher3.views.ClipIconView", suppressError = true)
+            .hookMethod("draw")
+            .suppressError()
+            .runBefore { param ->
+                if (!enabled) return@runBefore
+                val view = param.thisObject as? View ?: return@runBefore
+                val background = view.getFieldSilently("mBackground") as? Drawable ?: return@runBefore
+                if (background is FloatingGlassBackground) return@runBefore
+
+                val original = (view.parent as? View)?.getFieldSilently("mOriginalIcon") as? View
+                    ?: return@runBefore
+                if (!original.getFieldSilently("mIcon").isGlassIcon()) return@runBefore
+
+                view.setFieldSilently(
+                    "mBackground",
+                    FloatingGlassBackground(background, view).apply { bounds = background.bounds }
+                )
+                param.setObjectExtra(FLOATING_BACKGROUND, background)
+            }
+            .runAfter { param ->
+                val background = param.getObjectExtra(FLOATING_BACKGROUND) as? Drawable ?: return@runAfter
+                param.thisObject.setFieldSilently("mBackground", background)
+            }
+
         findClass("com.android.launcher3.icons.ThemedIconDrawable", suppressError = true)
             .hookMethod("drawInternal")
             .suppressError()
@@ -173,6 +200,71 @@ class IconGlass(context: Context) : ModPack(context) {
                 canvas.drawBitmap(monoIcon, null, bounds, monoPaint)
                 param.result = null
             }
+    }
+
+    private fun Any?.isGlassIcon(): Boolean {
+        if (this !is Drawable) return false
+        if (javaClass.name.endsWith(".ThemedIconDrawable")) return true
+        return getFieldSilently("delegate")?.javaClass?.name?.endsWith(".ThemedIconDelegate") == true
+    }
+
+    private inner class FloatingGlassBackground(
+        val inner: Drawable,
+        private val host: View
+    ) : Drawable() {
+
+        private val rect = RectF()
+
+        override fun draw(canvas: Canvas) {
+            val clip = host.getFieldSilently("mClipPath")?.let {
+                it as? Path ?: it.getFieldSilently("path") as? Path
+            }
+            if (clip != null && !clip.isEmpty) clip.computeBounds(rect, true) else rect.set(bounds)
+            if (rect.isEmpty) {
+                inner.draw(canvas)
+                return
+            }
+
+            val glass = WallpaperGlass.canvasPaint(
+                host = host,
+                canvas = canvas,
+                localRect = rect,
+                corner = if (clip != null && !clip.isEmpty) WallpaperGlass.pathCorner(clip, rect) else 0f,
+                blurRadius = host.glassBlurRadius(),
+                alpha = inner.alpha / 255f,
+                liquid = liquid
+            )
+            if (glass == null) {
+                inner.draw(canvas)
+                return
+            }
+
+            canvas.drawPaint(glass)
+            val tintAlpha = tintOpacity.coerceIn(0, 100) * 255 / 100
+            if (tintAlpha > 0) {
+                val previous = inner.alpha
+                inner.alpha = previous * tintAlpha / 255
+                inner.draw(canvas)
+                inner.alpha = previous
+            }
+        }
+
+        override fun setAlpha(alpha: Int) {
+            inner.alpha = alpha
+        }
+
+        override fun getAlpha(): Int = inner.alpha
+
+        override fun setColorFilter(colorFilter: ColorFilter?) {
+            inner.colorFilter = colorFilter
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+        override fun onBoundsChange(bounds: Rect) {
+            inner.bounds = bounds
+        }
     }
 
     private fun drawDrawerScrim(canvas: Canvas, host: View) {
@@ -253,6 +345,7 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private const val FLOATING_BACKGROUND = "pleFloatingBackground"
         private const val DEFAULT_VISIBLE_AREA = 0.92f
         private const val LEGACY_CORNER_RATIO = 0.25f
         private const val DEFAULT_BLUR = 12
