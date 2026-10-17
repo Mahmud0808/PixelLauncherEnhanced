@@ -43,6 +43,11 @@ class IconGlass(context: Context) : ModPack(context) {
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var scrimView: WeakReference<View>? = null
     private var drawerBlur: Float? = null
+    private val allAppsContainerClass: Class<*>? by lazy {
+        findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView", suppressError = true)
+    }
+    @Volatile
+    private var sheetColor = 0
     private val alphaMasks = WeakHashMap<Bitmap, Bitmap>()
     private val cornerCache = WeakHashMap<Path, Float>()
     private val boundsCache = WeakHashMap<Path, RectF>()
@@ -133,6 +138,18 @@ class IconGlass(context: Context) : ModPack(context) {
                 param.result = null
             }
 
+        findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView", suppressError = true)
+            .hookMethod("drawOnScrimWithScaleAndBottomOffset", "drawOnScrimWithScale")
+            .suppressError()
+            .runAfter { param ->
+                if (!enabled) return@runAfter
+                val paint = param.thisObject.getFieldSilently("mHeaderPaint") as? Paint ?: return@runAfter
+                if (sheetColor != paint.color) {
+                    sheetColor = paint.color
+                    WallpaperGlass.onOffsetsChanged()
+                }
+            }
+
         findClass("com.android.launcher3.views.ClipIconView", suppressError = true)
             .hookMethod("draw")
             .suppressError()
@@ -186,9 +203,12 @@ class IconGlass(context: Context) : ModPack(context) {
 
                 val mask = alphaMask(bgBitmap)
                 canvas.drawBitmap(mask, null, bounds, glass)
-                drawerScrimColor(host)?.let {
-                    scrimPaint.color = it
-                    canvas.drawBitmap(mask, null, bounds, scrimPaint)
+                if (host.isInDrawer()) {
+                    listOfNotNull(drawerScrimColor(host), sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 })
+                        .forEach {
+                            scrimPaint.color = it
+                            canvas.drawBitmap(mask, null, bounds, scrimPaint)
+                        }
                 }
                 val tintAlpha = tintOpacity.coerceIn(0, 100) * 255 / 100
                 if (tintAlpha > 0) {
@@ -268,9 +288,15 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     private fun drawDrawerScrim(canvas: Canvas, host: View) {
-        val color = drawerScrimColor(host) ?: return
-        scrimPaint.color = color
-        canvas.drawPaint(scrimPaint)
+        if (!host.isInDrawer()) return
+        drawerScrimColor(host)?.let {
+            scrimPaint.color = it
+            canvas.drawPaint(scrimPaint)
+        }
+        sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 }?.let {
+            scrimPaint.color = it
+            canvas.drawPaint(scrimPaint)
+        }
     }
 
     private fun drawerScrimColor(host: View): Int? {
@@ -306,8 +332,10 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     private fun View.isInDrawer(): Boolean {
+        val containerClass = allAppsContainerClass
         var current = parent
         while (current is View) {
+            if (containerClass?.isInstance(current) == true) return true
             if (current.javaClass.name.contains("AllApps")) return true
             current = current.parent
         }
