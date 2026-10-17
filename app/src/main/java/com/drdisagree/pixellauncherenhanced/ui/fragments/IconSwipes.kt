@@ -16,6 +16,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
@@ -30,6 +31,7 @@ import com.drdisagree.pixellauncherenhanced.utils.IconPackStore
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
+import com.drdisagree.pixellauncherenhanced.utils.ShortcutPicker
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textview.MaterialTextView
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +55,7 @@ class IconSwipes : Fragment() {
     private var shortcuts: List<Target> = emptyList()
     private var items: List<Item> = emptyList()
     private var actions: Map<String, Map<IconSwipeActions.Direction, IconSwipeActions.Action>> = emptyMap()
+    private var actionsBefore: Map<String, Map<IconSwipeActions.Direction, IconSwipeActions.Action>> = emptyMap()
     private val adapter = SwipeAdapter()
     private val shortcutIcons = HashMap<String, Drawable?>()
 
@@ -163,7 +166,8 @@ class IconSwipes : Fragment() {
 
         val shownShortcuts = shortcuts.filtered()
         val shownApps = apps.filtered()
-        items = buildList {
+        val old = items
+        val updated = buildList {
             if (shownShortcuts.isNotEmpty()) {
                 add(Item.Section(R.string.per_app_icons_shortcuts))
                 shownShortcuts.forEachIndexed { index, target -> add(Item.Row(target, index, shownShortcuts.size)) }
@@ -171,8 +175,25 @@ class IconSwipes : Fragment() {
             }
             shownApps.forEachIndexed { index, target -> add(Item.Row(target, index, shownApps.size)) }
         }
-        @Suppress("NotifyDataSetChanged")
-        adapter.notifyDataSetChanged()
+        items = updated
+        DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = old.size
+            override fun getNewListSize() = updated.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) = old[oldPos].key() == updated[newPos].key()
+            override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean {
+                val before = old[oldPos]
+                val after = updated[newPos]
+                if (before !is Item.Row || after !is Item.Row) return true
+                return before.index == after.index && before.count == after.count &&
+                        actionsBefore[before.target.key] == actions[after.target.key]
+            }
+        }).dispatchUpdatesTo(adapter)
+        actionsBefore = actions
+    }
+
+    private fun Item.key(): String = when (this) {
+        is Item.Section -> "section:$title"
+        is Item.Row -> "row:${target.key}"
     }
 
     private fun summary(target: Target): String {
@@ -186,6 +207,9 @@ class IconSwipes : Fragment() {
     }
 
     private fun actionLabel(action: IconSwipeActions.Action): String {
+        if (action.type == GestureAction.OPEN_SHORTCUT) {
+            ShortcutPicker.label(requireContext(), action.app)?.let { return it }
+        }
         if (action.type == GestureAction.OPEN_APP) {
             val label = action.app?.let { pkg -> apps.firstOrNull { it.component.packageName == pkg }?.label ?: pkg }.orEmpty()
             return getString(R.string.swipe_open_app, label)

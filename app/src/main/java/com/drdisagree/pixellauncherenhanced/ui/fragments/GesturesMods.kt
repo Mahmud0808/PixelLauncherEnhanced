@@ -20,6 +20,7 @@ import com.drdisagree.pixellauncherenhanced.ui.adapters.AppPickerAdapter
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
 import com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
 import com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+import com.drdisagree.pixellauncherenhanced.utils.ShortcutPicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -64,6 +65,13 @@ class GesturesMods : ControlledPreferenceFragmentCompat() {
                     if (newValue == GestureAction.OPEN_APP.value) {
                         pickApp(this, gesture)
                         false
+                    } else if (newValue == GestureAction.OPEN_SHORTCUT.value) {
+                        ShortcutPicker.show(requireContext(), viewLifecycleOwner.lifecycleScope) { target ->
+                            RPrefs.putString(gesture.appKey, target)
+                            value = GestureAction.OPEN_SHORTCUT.value
+                            updateSummary(this, gesture, GestureAction.OPEN_SHORTCUT.value)
+                        }
+                        false
                     } else {
                         updateSummary(this, gesture, newValue as String)
                         true
@@ -92,7 +100,13 @@ class GesturesMods : ControlledPreferenceFragmentCompat() {
                 }.getOrNull()
             }
 
-        preference.summary = if (appLabel != null) {
+        val shortcutLabel = RPrefs.getString(gesture.appKey)
+            ?.takeIf { value == GestureAction.OPEN_SHORTCUT.value }
+            ?.let { ShortcutPicker.label(requireContext(), it) }
+
+        preference.summary = if (shortcutLabel != null) {
+            getString(R.string.gesture_opens_app, shortcutLabel)
+        } else if (appLabel != null) {
             getString(R.string.gesture_opens_app, appLabel)
         } else {
             getString(gesture.descriptionRes())

@@ -111,6 +111,13 @@
     <string name="gesture_action_flashlight">Toggle flashlight</string>
     <string name="gesture_action_assistant">Open assistant</string>
     <string name="gesture_action_open_app">Open app</string>
+    <string name="gesture_action_open_shortcut">Open shortcut</string>
+    <string name="gesture_choose_shortcut">Choose shortcut</string>
+    <string name="shortcut_not_supported">This shortcut is not supported for gestures</string>
+    <string name="shortcut_count">%1$d shortcuts</string>
+    <string name="shortcut_count_one">1 shortcut</string>
+    <string name="shortcuts_unavailable">Couldn\'t load shortcuts. Make sure the launcher is running with the module.</string>
+    <string name="shortcut_target_label">%1$s › %2$s</string>
     <string name="gesture_choose_app">Choose app</string>
     <string name="gesture_opens_app">Opens %1$s</string>
     <string name="allow_wallpaper_zooming">Wallpaper zooming</string>

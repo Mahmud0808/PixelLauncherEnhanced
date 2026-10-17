@@ -8,18 +8,28 @@ object IconSwipeActions {
     enum class Direction(val key: String) { UP("up"), DOWN("down") }
 
     data class Action(val type: GestureAction, val app: String? = null) {
-        fun encode(): String = if (type == GestureAction.OPEN_APP && app != null) "$OPEN_APP_PREFIX$app" else type.value
+        fun encode(): String = when {
+            type == GestureAction.OPEN_APP && app != null -> "$OPEN_APP_PREFIX$app"
+            type == GestureAction.OPEN_SHORTCUT && app != null -> "$OPEN_SHORTCUT_PREFIX$app"
+            else -> type.value
+        }
     }
 
     private const val OPEN_APP_PREFIX = "open_app:"
+    private const val OPEN_SHORTCUT_PREFIX = "open_shortcut:"
 
     fun decode(value: String?): Action {
         if (value == null) return Action(GestureAction.NONE)
+        if (value.startsWith(OPEN_SHORTCUT_PREFIX)) {
+            val target = value.removePrefix(OPEN_SHORTCUT_PREFIX).takeIf { ShortcutCatalog.isValidTarget(it) }
+            return if (target != null) Action(GestureAction.OPEN_SHORTCUT, target) else Action(GestureAction.NONE)
+        }
         if (value.startsWith(OPEN_APP_PREFIX)) {
             val app = value.removePrefix(OPEN_APP_PREFIX).takeIf { it.isNotEmpty() }
             return if (app != null) Action(GestureAction.OPEN_APP, app) else Action(GestureAction.NONE)
         }
-        return Action(GestureAction.fromValue(value).takeIf { it != GestureAction.OPEN_APP } ?: GestureAction.NONE)
+        val type = GestureAction.fromValue(value)
+        return Action(type.takeIf { it != GestureAction.OPEN_APP && it != GestureAction.OPEN_SHORTCUT } ?: GestureAction.NONE)
     }
 
     fun parse(json: String?): Map<String, Map<Direction, Action>> {

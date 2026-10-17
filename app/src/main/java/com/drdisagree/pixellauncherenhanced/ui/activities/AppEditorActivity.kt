@@ -26,6 +26,7 @@ import com.drdisagree.pixellauncherenhanced.data.enums.GestureAction
 import com.drdisagree.pixellauncherenhanced.ui.adapters.AppPickerAdapter
 import com.drdisagree.pixellauncherenhanced.ui.fragments.HiddenApps
 import com.drdisagree.pixellauncherenhanced.ui.preferences.ValuePill
+import com.drdisagree.pixellauncherenhanced.utils.ShortcutPicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
@@ -148,6 +149,9 @@ class AppEditorActivity : AppCompatActivity() {
     }
 
     private fun actionLabel(action: IconSwipeActions.Action): String {
+        if (action.type == GestureAction.OPEN_SHORTCUT) {
+            ShortcutPicker.label(this, action.app)?.let { return it }
+        }
         if (action.type == GestureAction.OPEN_APP) {
             val label = action.app?.let { pkg ->
                 runCatching { packageManager.getApplicationInfo(pkg, 0).loadLabel(packageManager).toString() }.getOrNull() ?: pkg
@@ -167,6 +171,11 @@ class AppEditorActivity : AppCompatActivity() {
                 if (type == GestureAction.OPEN_APP) {
                     pickApp { pkg ->
                         saveAction(direction, IconSwipeActions.Action(GestureAction.OPEN_APP, pkg))
+                        done()
+                    }
+                } else if (type == GestureAction.OPEN_SHORTCUT) {
+                    ShortcutPicker.show(this, lifecycleScope) { target ->
+                        saveAction(direction, IconSwipeActions.Action(GestureAction.OPEN_SHORTCUT, target))
                         done()
                     }
                 } else {

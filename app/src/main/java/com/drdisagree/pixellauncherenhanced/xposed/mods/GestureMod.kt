@@ -3,6 +3,9 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.LauncherApps
+import android.graphics.Bitmap
+import android.os.Process
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
@@ -20,7 +23,10 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOUBLE_TAP_TO_
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_COVER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_TAP_FIRST_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_SWIPE_ACTIONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SHORTCUTS_REQUEST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SHORTCUTS_RESPONSE
 import com.drdisagree.pixellauncherenhanced.data.common.IconSwipeActions
+import com.drdisagree.pixellauncherenhanced.data.common.ShortcutCatalog
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.data.enums.GestureAction
 import com.drdisagree.pixellauncherenhanced.data.enums.HomeGesture
@@ -99,6 +105,9 @@ class GestureMod(context: Context) : ModPack(context) {
                 apps[gesture] = getString(gesture.appKey, null)
             }
             swipeActions = IconSwipeActions.parse(getString(ICON_SWIPE_ACTIONS, null))
+            if (key.firstOrNull() == SHORTCUTS_REQUEST) {
+                ShortcutCatalog.decodeRequest(getString(SHORTCUTS_REQUEST, null))?.let { exportShortcuts(it) }
+            }
             folderTapFirstApp = getBoolean(FOLDER_TAP_FIRST_APP, false)
             folderCover = folderTapFirstApp && getBoolean(FOLDER_COVER, false)
         }
@@ -538,6 +547,7 @@ class GestureMod(context: Context) : ModPack(context) {
             GestureAction.APP_DRAWER -> openAllApps()
             GestureAction.FLASHLIGHT -> toggleFlashlight()
             GestureAction.OPEN_APP -> openApp(app)
+            GestureAction.OPEN_SHORTCUT -> openShortcut(app)
         }
     }
 
@@ -596,6 +606,55 @@ class GestureMod(context: Context) : ModPack(context) {
         runCatching {
             context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }.onFailure { log(this@GestureMod, it) }
+    }
+
+    private fun openShortcut(target: String?) {
+        ShortcutCatalog.decodeIntent(target)?.let { intent ->
+            val context = launcherRef?.get() as? Context ?: mContext
+            runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                .onFailure { log(this@GestureMod, it) }
+            return
+        }
+        val shortcut = ShortcutCatalog.decodeTarget(target) ?: return
+        val launcherApps = mContext.getSystemService(LauncherApps::class.java) ?: return
+        runCatching {
+            launcherApps.startShortcut(shortcut.packageName, shortcut.id, null, null, Process.myUserHandle())
+        }.onFailure { log(this@GestureMod, it) }
+    }
+
+    private fun exportShortcuts(request: ShortcutCatalog.Request) {
+        Thread {
+            val launcherApps = mContext.getSystemService(LauncherApps::class.java) ?: return@Thread
+            if (!runCatching { launcherApps.hasShortcutHostPermission() }.getOrDefault(false)) return@Thread
+
+            val query = LauncherApps.ShortcutQuery().setQueryFlags(
+                LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                        LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                        LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
+            )
+            val packageName = request.packageName
+            if (packageName != null) query.setPackage(packageName)
+            val shortcuts = runCatching { launcherApps.getShortcuts(query, Process.myUserHandle()) }
+                .getOrNull().orEmpty()
+                .filter { it.isEnabled }
+                .distinctBy { it.`package` to it.id }
+
+            val response = if (packageName == null) {
+                ShortcutCatalog.encodeCounts(request.token, shortcuts.groupingBy { it.`package` }.eachCount())
+            } else {
+                val size = (mContext.resources.displayMetrics.density * SHORTCUT_ICON_DP).toInt()
+                val entries = shortcuts.sortedBy { it.rank }.map { info ->
+                    val icon = runCatching {
+                        launcherApps.getShortcutIconDrawable(info, mContext.resources.configuration.densityDpi)
+                    }.getOrNull()?.let { drawable ->
+                        IconPackManager.encodeBitmap(IconPackManager.renderShortcutIcon(drawable, size))
+                    }
+                    ShortcutCatalog.Entry(info.id, (info.shortLabel ?: info.longLabel ?: info.id).toString(), icon)
+                }
+                ShortcutCatalog.encodeShortcuts(request.token, packageName, entries)
+            }
+            runCatching { Xprefs.edit().putString(SHORTCUTS_RESPONSE, response).apply() }
+        }.start()
     }
 
     private fun registerTorchCallback() {
@@ -691,6 +750,7 @@ class GestureMod(context: Context) : ModPack(context) {
         private const val PINCH_OUT_RATIO = 1.4f
         private const val SWIPE_DIRECTION_RATIO = 1.2f
         private const val ITEM_TYPE_APPLICATION = 0
+        private const val SHORTCUT_ICON_DP = 40
         private const val ITEM_TYPE_SHORTCUT = 1
         private const val ITEM_TYPE_DEEP_SHORTCUT = 6
         private const val EXTRA_SHORTCUT_ID = "shortcut_id"

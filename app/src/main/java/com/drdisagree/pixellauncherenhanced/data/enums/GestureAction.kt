@@ -10,7 +10,8 @@ enum class GestureAction(val value: String) {
     SCREENSHOT("screenshot"),
     FLASHLIGHT("flashlight"),
     ASSISTANT("assistant"),
-    OPEN_APP("open_app");
+    OPEN_APP("open_app"),
+    OPEN_SHORTCUT("open_shortcut");
 
     companion object {
         fun fromValue(value: String?): GestureAction =

@@ -804,10 +804,7 @@ class IconPacks(context: Context) : ModPack(context) {
                 val icon = runCatching {
                     launcherApps.getShortcutIconDrawable(shortcut, mContext.resources.configuration.densityDpi)
                 }.getOrNull()?.let { drawable ->
-                    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-                    drawable.setBounds(0, 0, size, size)
-                    drawable.draw(Canvas(bitmap))
-                    IconPackManager.encodeBitmap(bitmap)
+                    IconPackManager.encodeBitmap(IconPackManager.renderShortcutIcon(drawable, size))
                 }
                 IconPackManager.PinnedShortcut(
                     packageName = shortcut.`package`,

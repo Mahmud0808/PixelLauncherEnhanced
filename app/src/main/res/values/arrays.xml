@@ -32,6 +32,7 @@
         <item>@string/gesture_action_flashlight</item>
         <item>@string/gesture_action_assistant</item>
         <item>@string/gesture_action_open_app</item>
+        <item>@string/gesture_action_open_shortcut</item>
     </string-array>
 
     <string-array name="gesture_action_value" translatable="false">
@@ -45,6 +46,7 @@
         <item>flashlight</item>
         <item>assistant</item>
         <item>open_app</item>
+        <item>open_shortcut</item>
     </string-array>
 
     <string-array name="dock_blur_style_str" translatable="false">

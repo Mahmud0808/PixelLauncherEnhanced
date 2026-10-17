@@ -23,6 +23,9 @@ object Constants {
     const val APP_DRAWER_THEMED_ICONS = "xposed_appdrawerthemedicons"
     const val HOME_THEMED_ICONS = "xposed_homethemedicons"
     const val ICON_SWIPE_ACTIONS = "xposed_iconswipeactions"
+    const val SHORTCUTS_REQUEST = "xposed_shortcutsrequest"
+    const val SHORTCUTS_RESPONSE = "xposed_shortcutsresponse"
+    const val SHORTCUT_LABELS = "xposed_shortcutlabels"
     const val FOLDER_TAP_FIRST_APP = "xposed_foldertapfirstapp"
     const val FOLDER_COVER = "xposed_foldercover"
     const val APP_DRAWER_BACKGROUND_OPACITY = "xposed_appdrawerbackgroundopacity"
@@ -159,5 +162,7 @@ object Constants {
     val PREF_UPDATE_EXCLUSIONS = listOf(
         BootLoopProtector.LOAD_TIME_KEY_KEY,
         BootLoopProtector.PACKAGE_STRIKE_KEY_KEY,
+        SHORTCUTS_RESPONSE,
+        SHORTCUT_LABELS,
     )
 }

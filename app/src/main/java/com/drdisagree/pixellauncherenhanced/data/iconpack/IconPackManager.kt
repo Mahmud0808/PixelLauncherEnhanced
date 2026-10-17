@@ -68,6 +68,8 @@ object IconPackManager {
         "com.dlto.atom.launcher.THEME"
     )
 
+    private const val LEGACY_SHORTCUT_INSET = 0.18f
+
     private const val THEMED_ICON_PACK_ACTION = "app.lawnchair.icons.THEMED_ICON"
     private const val THEMED_ICON_INSET = 0.28f
     private const val SHORTCUT_PREFIX = "shortcut:"
@@ -335,6 +337,22 @@ object IconPackManager {
     fun customIconKey(component: String) = CUSTOM_ICON_KEY_PREFIX + hash(component).take(16)
 
     fun isCustomIconKey(key: String) = key.startsWith(CUSTOM_ICON_KEY_PREFIX)
+
+    fun renderShortcutIcon(drawable: Drawable, size: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
+            drawable.setBounds(0, 0, size, size)
+            drawable.draw(canvas)
+            return bitmap
+        }
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+        val inset = (size * LEGACY_SHORTCUT_INSET).toInt()
+        drawable.setBounds(inset, inset, size - inset, size - inset)
+        drawable.draw(canvas)
+        return bitmap
+    }
 
     fun encodeBitmap(bitmap: Bitmap): String {
         val output = java.io.ByteArrayOutputStream()
