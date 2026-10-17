@@ -1141,9 +1141,6 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
                 stroke.strokeWidth = 1.5f * density
                 canvas.drawRoundRect(bounds, radius, radius, stroke)
                 stroke.shader = null
-                fill.color = withAlpha(Color.WHITE, 0.18f)
-                inner.set(bounds.left + radius * 0.5f, bounds.top + bounds.height() * 0.08f, bounds.right - radius * 0.5f, bounds.top + bounds.height() * 0.2f)
-                canvas.drawRoundRect(inner, inner.height() / 2, inner.height() / 2, fill)
             }
 
             else -> if (native) {
