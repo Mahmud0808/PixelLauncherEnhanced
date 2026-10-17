@@ -95,12 +95,8 @@ class AppEditorActivity : AppCompatActivity() {
             } else false
         }
 
-        val shortcut = IconPackManager.isShortcut(component)
-        binding.swipeSection.visibility = if (shortcut) View.GONE else View.VISIBLE
-        if (!shortcut) {
-            bindSwipe(binding.swipeUpRow, binding.swipeUpValue, IconSwipeActions.Direction.UP)
-            bindSwipe(binding.swipeDownRow, binding.swipeDownValue, IconSwipeActions.Direction.DOWN)
-        }
+        bindSwipe(binding.swipeUpRow, binding.swipeUpValue, IconSwipeActions.Direction.UP)
+        bindSwipe(binding.swipeDownRow, binding.swipeDownValue, IconSwipeActions.Direction.DOWN)
 
         binding.iconContainer.setOnClickListener { openEditor(binding) }
         binding.moreButton.setOnClickListener { openEditor(binding) }

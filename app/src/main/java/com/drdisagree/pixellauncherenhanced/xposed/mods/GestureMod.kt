@@ -21,6 +21,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_COVER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_TAP_FIRST_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_SWIPE_ACTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.IconSwipeActions
+import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.data.enums.GestureAction
 import com.drdisagree.pixellauncherenhanced.data.enums.HomeGesture
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.connectRootProxy
@@ -419,7 +420,7 @@ class GestureMod(context: Context) : ModPack(context) {
 
     private fun hasSwipe(target: View): Boolean {
         if (folderIconClass?.isInstance(target) == true) return folderTapFirstApp
-        val key = appComponent(target)?.flattenToString() ?: return false
+        val key = swipeKey(target) ?: return false
         return swipeActions[key]?.isNotEmpty() == true
     }
 
@@ -434,15 +435,33 @@ class GestureMod(context: Context) : ModPack(context) {
                 }
             }
         }
-        val key = appComponent(target)?.flattenToString() ?: return null
+        val key = swipeKey(target) ?: return null
         val action = swipeActions[key]?.get(direction) ?: return null
         return { runAction(action.type, action.app) }
     }
 
-    private fun appComponent(view: View): ComponentName? {
+    private fun swipeKey(view: View): String? {
         val info = view.tag ?: return null
-        if (info.getFieldSilently("itemType") != ITEM_TYPE_APPLICATION) return null
-        return info.callMethodSilently("getTargetComponent") as? ComponentName
+        val target = info.callMethodSilently("getTargetComponent") as? ComponentName
+        val intent = info.getFieldSilently("intent") as? Intent
+        val packageName = target?.packageName ?: intent?.component?.packageName ?: intent?.`package`
+
+        return when (info.getFieldSilently("itemType")) {
+            ITEM_TYPE_APPLICATION -> target?.flattenToString()
+            ITEM_TYPE_DEEP_SHORTCUT -> {
+                val id = intent?.getStringExtra(EXTRA_SHORTCUT_ID)
+                    ?: info.callMethodSilently("getDeepShortcutId") as? String
+                    ?: return null
+                IconPackManager.shortcutComponent(packageName ?: return null, id).flattenToString()
+            }
+
+            ITEM_TYPE_SHORTCUT -> {
+                val uri = intent?.toUri(0) ?: return null
+                IconPackManager.shortcutComponent(packageName ?: return null, IconPackManager.legacyShortcutId(uri)).flattenToString()
+            }
+
+            else -> null
+        }
     }
 
     private fun firstFolderItem(folderIcon: View): View? =
@@ -659,6 +678,9 @@ class GestureMod(context: Context) : ModPack(context) {
         private const val PINCH_OUT_RATIO = 1.4f
         private const val SWIPE_DIRECTION_RATIO = 1.2f
         private const val ITEM_TYPE_APPLICATION = 0
+        private const val ITEM_TYPE_SHORTCUT = 1
+        private const val ITEM_TYPE_DEEP_SHORTCUT = 6
+        private const val EXTRA_SHORTCUT_ID = "shortcut_id"
         private val CONSUMED = Any()
     }
 }
