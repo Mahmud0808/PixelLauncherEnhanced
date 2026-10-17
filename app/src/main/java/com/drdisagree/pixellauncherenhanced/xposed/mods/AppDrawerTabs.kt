@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
@@ -410,6 +411,26 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         return source
     }
 
+    private var searchShown = 1f
+    private var lastSearching = false
+    private var searchAnimator: ValueAnimator? = null
+
+    private fun updateSearchFade(container: ViewGroup) {
+        val searching = container.getFieldSilently("mIsSearching") == true
+        if (searching == lastSearching) return
+        lastSearching = searching
+
+        searchAnimator?.cancel()
+        searchAnimator = ValueAnimator.ofFloat(searchShown, if (searching) 0f else 1f).apply {
+            duration = SEARCH_FADE_MS
+            addUpdateListener {
+                searchShown = it.animatedValue as Float
+                container.invalidate()
+            }
+            start()
+        }
+    }
+
     private fun syncBar(container: ViewGroup, bar: TabBar) {
         if (visibleTabs().size <= 1) {
             if (bar.visibility != View.GONE) bar.visibility = View.GONE
@@ -417,7 +438,9 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         }
 
         val source = appsSource(container)
-        val alpha = if (source == null || source.visibility == View.VISIBLE) source?.alpha ?: 1f else 0f
+        updateSearchFade(container)
+        val sourceAlpha = if (source == null || source.visibility == View.VISIBLE) source?.alpha ?: 1f else 0f
+        val alpha = sourceAlpha * searchShown
         val visibility = if (alpha > 0f) View.VISIBLE else View.INVISIBLE
 
         if (bar.alpha != alpha) bar.alpha = alpha
@@ -539,7 +562,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             addView(track, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
         }
         private val trackFrame = FrameLayout(context).apply {
-            background = nativeStrip?.background?.constantState?.newDrawable(context.resources)?.mutate()
+            background = nativeStrip?.background?.constantState?.newDrawable(context.resources, context.theme)?.mutate()
                 ?: GradientDrawable().apply {
                     cornerRadius = context.dp(CHIP_HEIGHT_DP).toFloat()
                     setColor(
@@ -646,7 +669,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                 isFocusable = true
 
                 if (template != null) {
-                    background = template.background?.constantState?.newDrawable(context.resources)?.mutate()
+                    background = template.background?.constantState?.newDrawable(context.resources, context.theme)?.mutate()
                     setTextColor(template.textColors)
                     setTextSize(TypedValue.COMPLEX_UNIT_PX, template.textSize)
                     typeface = template.typeface
@@ -741,6 +764,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private const val SEARCH_FADE_MS = 200L
         private const val BAR_BOTTOM_GAP_DP = 8
         private const val CHIP_HEIGHT_DP = 36
         private const val MIN_TAB_RADIUS_DP = 4
