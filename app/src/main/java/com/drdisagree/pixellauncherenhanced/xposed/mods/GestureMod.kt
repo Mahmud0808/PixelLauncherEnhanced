@@ -81,6 +81,7 @@ class GestureMod(context: Context) : ModPack(context) {
     private var pendingSwipe: (() -> Unit)? = null
     private var bubbleTextViewClass: Class<*>? = null
     private var folderIconClass: Class<*>? = null
+    private var folderClass: Class<*>? = null
 
     private var torchCameraId: String? = null
     private var torchOn = false
@@ -116,6 +117,7 @@ class GestureMod(context: Context) : ModPack(context) {
         systemUiProxyClass = findClass("com.android.quickstep.SystemUiProxy", suppressError = true)
         bubbleTextViewClass = findClass("com.android.launcher3.BubbleTextView", suppressError = true)
         folderIconClass = findClass("com.android.launcher3.folder.FolderIcon", suppressError = true)
+        folderClass = findClass("com.android.launcher3.folder.Folder", suppressError = true)
 
         findClass("com.android.launcher3.folder.Folder", suppressError = true)
             .hookMethod("animateOpen")
@@ -333,7 +335,8 @@ class GestureMod(context: Context) : ModPack(context) {
                 swipeTarget = null
                 rememberLauncher(dragLayer.getAnyField("mContainer", "mActivity"))
 
-                val target = iconAt(dragLayer, event.rawX, event.rawY)?.takeIf { hasSwipe(it) } ?: return null
+                val root = openFolder() ?: dragLayer
+                val target = iconAt(root, event.rawX, event.rawY)?.takeIf { hasSwipe(it) } ?: return null
                 swipeTarget = WeakReference(target)
                 swipeDownX = event.rawX
                 swipeDownY = event.rawY
@@ -641,12 +644,22 @@ class GestureMod(context: Context) : ModPack(context) {
         return state === normal
     }
 
+    private fun openFolder(): ViewGroup? {
+        val launcher = launcherRef?.get() ?: return null
+        val top = floatingViewClass.callStaticMethodSilently("getTopOpenView", launcher) ?: return null
+        return top.takeIf { folderClass?.isInstance(it) == true } as? ViewGroup
+    }
+
     private fun isHomeReadyForIcons(): Boolean {
         val launcher = launcherRef?.get() ?: return false
         val inNormal = isNormalState(launcher)
         val topOpenView = floatingViewClass.callStaticMethodSilently("getTopOpenView", launcher)
 
-        return inNormal && (topOpenView == null || topOpenView.javaClass.simpleName.startsWith("Floating"))
+        return inNormal && (
+                topOpenView == null ||
+                        topOpenView.javaClass.simpleName.startsWith("Floating") ||
+                        folderClass?.isInstance(topOpenView) == true
+                )
     }
 
     private fun isHomeIdle(): Boolean {
