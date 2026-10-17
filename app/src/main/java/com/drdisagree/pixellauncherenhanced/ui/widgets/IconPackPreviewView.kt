@@ -95,7 +95,7 @@ class IconPackPreviewView(context: Context) : FrameLayout(context) {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         glowPaint.shader = RadialGradient(
-            w / 2f, h / 2f, minOf(w, h) * 0.6f,
+            w / 2f, h / 2f, minOf(w, h) * 0.5f,
             intArrayOf(ColorUtils.setAlphaComponent(primary, 0x38), ColorUtils.setAlphaComponent(primary, 0x14), Color.TRANSPARENT),
             floatArrayOf(0f, 0.55f, 1f),
             Shader.TileMode.CLAMP
