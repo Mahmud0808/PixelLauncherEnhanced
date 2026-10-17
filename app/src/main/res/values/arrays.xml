@@ -107,4 +107,20 @@
         <item>5</item>
     </string-array>
 
+    <string-array name="page_transition_str" translatable="false">
+        <item>@string/page_transition_none</item>
+        <item>@string/page_transition_cube</item>
+        <item>@string/page_transition_stack</item>
+        <item>@string/page_transition_fade</item>
+        <item>@string/page_transition_zoom</item>
+    </string-array>
+
+    <string-array name="page_transition_value" translatable="false">
+        <item>none</item>
+        <item>cube</item>
+        <item>stack</item>
+        <item>fade</item>
+        <item>zoom</item>
+    </string-array>
+
 </resources>

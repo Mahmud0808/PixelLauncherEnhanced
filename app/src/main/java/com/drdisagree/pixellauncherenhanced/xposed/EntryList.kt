@@ -35,6 +35,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LockLayout
 import com.drdisagree.pixellauncherenhanced.xposed.mods.NotificationDots
 import com.drdisagree.pixellauncherenhanced.xposed.mods.OpacityModifier
+import com.drdisagree.pixellauncherenhanced.xposed.mods.PageTransitions
 import com.drdisagree.pixellauncherenhanced.xposed.mods.QuickLaunch
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ShortcutBadge
 import com.drdisagree.pixellauncherenhanced.xposed.mods.SmartSpace
@@ -68,6 +69,7 @@ object EntryList {
         AppSearchAlias::class.java,
         LockLayout::class.java,
         EndlessPages::class.java,
+        PageTransitions::class.java,
         WidgetResize::class.java,
         DrawerSearchbar::class.java,
         DrawerScrollbar::class.java,

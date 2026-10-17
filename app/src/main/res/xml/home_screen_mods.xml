@@ -28,6 +28,15 @@
             android:title="@string/endless_scrolling_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/page_transition_title"
+            android:entries="@array/page_transition_str"
+            android:entryValues="@array/page_transition_value"
+            android:key="xposed_homepagetransition"
+            android:title="@string/page_transition_title"
+            app:iconSpaceReserved="false" />
+
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="true"
             android:key="xposed_allowwallpaperzooming"
