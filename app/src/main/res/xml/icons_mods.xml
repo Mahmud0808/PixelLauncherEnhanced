@@ -2,6 +2,10 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PageHeaderPreference
+        android:key="page_header_icons"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_icon_packs_category"
         android:title="@string/section_icon_packs_title"
@@ -65,6 +69,19 @@
         android:key="xposed_icons_themed"
         android:title="@string/section_themed_icons_title"
         app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_homethemedicons"
+            android:summary="@string/home_themed_icons_desc"
+            android:title="@string/themed_icons_enable_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_appdrawerthemedicons"
+            android:summary="@string/themed_icons_drawer_desc"
+            android:title="@string/themed_icons_drawer_title"
+            app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_forcethemedicons"

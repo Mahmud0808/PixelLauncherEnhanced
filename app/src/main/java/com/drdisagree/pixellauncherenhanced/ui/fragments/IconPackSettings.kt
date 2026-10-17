@@ -37,7 +37,9 @@ import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.syncAppBarWithList
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.drdisagree.pixellauncherenhanced.ui.widgets.IconPackPreviewView
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Collections
@@ -56,6 +58,7 @@ class IconPackSettings : Fragment() {
 
         data class Mask(val enabled: Boolean) : Entry()
         data object PerAppIcons : Entry()
+        data object Preview : Entry()
     }
 
     private class PackStats(val coverage: Int, val samples: List<Drawable>)
@@ -73,6 +76,9 @@ class IconPackSettings : Fragment() {
     private val stats = HashMap<String, PackStats>()
     private val maskablePacks = HashSet<String>()
     private var entries: List<Entry> = emptyList()
+    private var previewApps: List<Pair<CharSequence, Drawable>> = emptyList()
+    private var previewJob: Job? = null
+    private var previewConfig: IconPackManager.Config? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentIconPacksBinding.inflate(inflater, container, false)
@@ -252,7 +258,7 @@ class IconPackSettings : Fragment() {
     }
 
     private fun rebuild() {
-        val result = mutableListOf<Entry>()
+        val result = mutableListOf<Entry>(Entry.Preview)
 
         if (themedPacks.isNotEmpty()) {
             result.add(Entry.Section(R.string.themed_icon_packs_title, R.string.themed_icon_packs_desc))
@@ -274,6 +280,7 @@ class IconPackSettings : Fragment() {
 
         val old = entries
         entries = result
+        refreshPreview()
 
         DiffUtil.calculateDiff(object : DiffUtil.Callback() {
             override fun getOldListSize() = old.size
@@ -283,11 +290,38 @@ class IconPackSettings : Fragment() {
         }).dispatchUpdatesTo(adapter)
     }
 
+    private fun refreshPreview() {
+        if (launcherApps.isEmpty()) return
+        val config = IconPackStore.config()
+        if (config == previewConfig) return
+        previewConfig = config
+        previewJob?.cancel()
+        previewJob = viewLifecycleOwner.lifecycleScope.launch {
+            val context = requireContext()
+            val apps = previewCandidates()
+            val result = withContext(Dispatchers.IO) {
+                apps.map { app -> app.label as CharSequence to IconPackStore.previewIcon(context, app, config) }
+            }
+            previewApps = result
+            val index = entries.indexOf(Entry.Preview)
+            if (index >= 0) adapter.notifyItemChanged(index)
+        }
+    }
+
+    private fun previewCandidates(): List<IconPackStore.LauncherApp> {
+        val count = IconPackPreviewView.COLUMNS * IconPackPreviewView.ROWS
+        val preferred = PREVIEW_PACKAGES.mapNotNull { pkg -> launcherApps.firstOrNull { it.component.packageName == pkg } }
+        return (preferred + launcherApps.filter { it !in preferred }.sortedBy { it.label.lowercase() })
+            .distinctBy { it.component.packageName }
+            .take(count)
+    }
+
     private fun Entry.key(): String = when (this) {
         is Entry.Section -> "section:$title:$description"
         is Entry.Pack -> "pack:$themed:${info.packageName}"
         is Entry.Mask -> "mask"
         Entry.PerAppIcons -> "perapp"
+        Entry.Preview -> "preview"
     }
 
     private fun packEntries(
@@ -345,9 +379,19 @@ class IconPackSettings : Fragment() {
 
         override fun getItemCount() = entries.size
 
-        override fun getItemViewType(position: Int) = if (entries[position] is Entry.Section) TYPE_SECTION else TYPE_ROW
+        override fun getItemViewType(position: Int) = when (entries[position]) {
+            is Entry.Section -> TYPE_SECTION
+            Entry.Preview -> TYPE_PREVIEW
+            else -> TYPE_ROW
+        }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            if (viewType == TYPE_PREVIEW) {
+                val preview = IconPackPreviewView(parent.context).apply {
+                    layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(PREVIEW_HEIGHT_DP))
+                }
+                return object : RecyclerView.ViewHolder(preview) {}
+            }
             val layout = if (viewType == TYPE_SECTION) R.layout.view_drawer_tab_section else R.layout.view_icon_pack
             return object : RecyclerView.ViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false)) {}
         }
@@ -414,6 +458,8 @@ class IconPackSettings : Fragment() {
                     rebuild()
                     updateApplyButton()
                 }
+
+                Entry.Preview -> (view as? IconPackPreviewView)?.setApps(previewApps)
 
                 Entry.PerAppIcons -> {
                     val count = IconPackStore.config().let { config ->
@@ -525,6 +571,20 @@ class IconPackSettings : Fragment() {
         private const val SAMPLE_GAP_DP = 6
         private const val TYPE_SECTION = 0
         private const val TYPE_ROW = 1
+        private const val TYPE_PREVIEW = 2
+        private const val PREVIEW_HEIGHT_DP = 220
+        private val PREVIEW_PACKAGES = listOf(
+            "com.google.android.dialer",
+            "com.google.android.apps.messaging",
+            "com.android.chrome",
+            "com.google.android.GoogleCamera",
+            "com.google.android.apps.photos",
+            "com.google.android.gm",
+            "com.google.android.apps.maps",
+            "com.google.android.youtube",
+            "com.android.vending",
+            "com.android.settings"
+        )
     }
 }
 

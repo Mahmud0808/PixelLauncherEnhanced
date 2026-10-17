@@ -13,6 +13,10 @@ import com.drdisagree.pixellauncherenhanced.ui.fragments.HomeScreenMods
 import com.drdisagree.pixellauncherenhanced.ui.fragments.IconsMods
 import com.drdisagree.pixellauncherenhanced.ui.fragments.MiscellaneousMods
 import com.drdisagree.pixellauncherenhanced.ui.fragments.RecentsMods
+import com.drdisagree.pixellauncherenhanced.ui.fragments.WidgetMods
+import com.drdisagree.pixellauncherenhanced.ui.fragments.FolderMods
+import com.drdisagree.pixellauncherenhanced.ui.fragments.DockSpacingMods
+import com.drdisagree.pixellauncherenhanced.ui.fragments.DockMods
 import org.xmlpull.v1.XmlPullParser
 import java.util.Locale
 
@@ -22,6 +26,10 @@ object SettingsIndex {
 
     private val screens = listOf(
         SettingsScreen(R.xml.home_screen_mods, R.string.fragment_home_screen_title, HomeScreenMods::class.java),
+        SettingsScreen(R.xml.dock_mods, R.string.fragment_dock_title, DockMods::class.java),
+        SettingsScreen(R.xml.dock_spacing_mods, R.string.fragment_dock_spacing_title, DockSpacingMods::class.java),
+        SettingsScreen(R.xml.folder_mods, R.string.fragment_folders_title, FolderMods::class.java),
+        SettingsScreen(R.xml.widget_mods, R.string.fragment_widgets_title, WidgetMods::class.java),
         SettingsScreen(R.xml.app_drawer_mods, R.string.fragment_app_drawer_title, AppDrawerMods::class.java),
         SettingsScreen(R.xml.icons_mods, R.string.fragment_icons_title, IconsMods::class.java),
         SettingsScreen(R.xml.gestures_mods, R.string.fragment_gestures_title, GesturesMods::class.java),

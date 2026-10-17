@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">Rimuovi badge icona scorciatoia</string>
     <string name="launcher_icon_size_title">Dimensione icona</string>
     <string name="launcher_text_size_title">Dimensione testo</string>
-    <string name="app_drawer_themed_icons_title">Icone a tema</string>
-    <string name="app_drawer_themed_icons_desc">Abilita icone a tema nel menu app</string>
     <string name="double_tap_to_sleep_title">Doppio tocco per spegnere lo schermo</string>
     <string name="double_tap_to_sleep_desc">Doppio tocco sullo spazio vuoto della schermata home per spegnere lo schermo</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
     <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Etichette delle icone sul desktop</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">Nascondi barra di stato</string>
     <string name="hide_launcher_statusbar_desc">Espandi il pannello delle impostazioni rapide una volta se la barra di stato non è nascosta</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
-    <string name="value_output">Value: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>

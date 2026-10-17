@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">移除快捷方式图标角标</string>
     <string name="launcher_icon_size_title">图标尺寸</string>
     <string name="launcher_text_size_title">字体大小</string>
-    <string name="app_drawer_themed_icons_title">主题色图标</string>
-    <string name="app_drawer_themed_icons_desc">在应用程序抽屉内使用主题色图标</string>
     <string name="double_tap_to_sleep_title">双击息屏</string>
     <string name="double_tap_to_sleep_desc">双击桌面屏幕空白区域关闭屏幕</string>
     <string name="fragment_gestures_actions_desc">桌面手势和导航栏</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">壁纸缩放</string>
     <string name="allow_wallpaper_zooming_summary">在使用抽屉或在最近任务界面的应用时放大或缩小壁纸</string>
     <string name="desktop_icon_labels_title">桌面图标标签</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">隐藏状态栏</string>
     <string name="hide_launcher_statusbar_desc">如果状态栏没有被隐藏则展开快速设置面板</string>
@@ -382,8 +379,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">可能需要进行手动重启来启动选取壁纸颜色的更新</string>
     <string name="hide_apps">隐藏app</string>
     <string name="unhide_apps">显示隐藏app</string>
-    <string name="value_output">值大小: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">开发者</string>
     <string name="unstable">不稳定</string>
     <string name="unstable_dialog_title">不稳定的功能</string>

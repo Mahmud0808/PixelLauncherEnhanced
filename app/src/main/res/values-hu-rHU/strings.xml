@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">Remove shortcut icon badge</string>
     <string name="launcher_icon_size_title">Icon size</string>
     <string name="launcher_text_size_title">Text size</string>
-    <string name="app_drawer_themed_icons_title">Themed icons</string>
-    <string name="app_drawer_themed_icons_desc">Enable themed icons on app drawer</string>
     <string name="double_tap_to_sleep_title">Double tap to sleep</string>
     <string name="double_tap_to_sleep_desc">Double tap on home screen empty space to turn off the screen</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
     <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Icon labels on desktop</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">Hide statusbar</string>
     <string name="hide_launcher_statusbar_desc">Expand quick settings panel once if status bar is not hidden</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
-    <string name="value_output">Value: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>

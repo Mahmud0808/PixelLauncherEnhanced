@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">Удаление значка ярлыка</string>
     <string name="launcher_icon_size_title">Размер иконок</string>
     <string name="launcher_text_size_title">Размер текста</string>
-    <string name="app_drawer_themed_icons_title">Тематические значки</string>
-    <string name="app_drawer_themed_icons_desc">Тематические значки в меню приложений</string>
     <string name="double_tap_to_sleep_title">Двойное нажатие</string>
     <string name="double_tap_to_sleep_desc">Дважды нажмите на пустое место на главном экране, чтобы выключить экран</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">Масштабирование обоев</string>
     <string name="allow_wallpaper_zooming_summary">Увеличение или уменьшение обоев в меню приложений и в списке недавних приложений</string>
     <string name="desktop_icon_labels_title">Подпись иконок на рабочем столе</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">Скрыть строку состояния</string>
     <string name="hide_launcher_statusbar_desc">Раскроет панель быстрых настроек, если строка состояния не скрыта</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
-    <string name="value_output">Значение: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>

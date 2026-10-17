@@ -81,8 +81,6 @@ Tolong matikan dan paksa berhenti launcher.</string>
     <string name="remove_shortcut_badge_title">Hapus lencana ikon pada pintasan</string>
     <string name="launcher_icon_size_title">Ukuran ikon</string>
     <string name="launcher_text_size_title">Ukuran teks</string>
-    <string name="app_drawer_themed_icons_title">Ikon bertema</string>
-    <string name="app_drawer_themed_icons_desc">Hidupkan ikon bertema di daftar aplikasi</string>
     <string name="double_tap_to_sleep_title">Ketuk dua kali untuk tidur</string>
     <string name="double_tap_to_sleep_desc">Ketuk dua kali pada area kosong di layar utama untuk mematikan layar</string>
     <string name="fragment_gestures_actions_desc">Gerakan layar utama dan navigasi</string>
@@ -107,7 +105,6 @@ Tolong matikan dan paksa berhenti launcher.</string>
     <string name="allow_wallpaper_zooming">Animasi wallpaper di layar utama</string>
     <string name="allow_wallpaper_zooming_summary">Memperkecil atau memperbesar wallpaper saat menggunakan daftar aplikasi dan aplikasi terbaru</string>
     <string name="desktop_icon_labels_title">Nama ikon di layar utama</string>
-    <string name="home_themed_icons_title">Ikon bertema</string>
     <string name="home_themed_icons_desc">Sama seperti ikon bertema di Wallpaper &amp; gaya</string>
     <string name="hide_launcher_statusbar_title">Sembunyikan bilah status</string>
     <string name="hide_launcher_statusbar_desc">Buka panel pengaturan cepat sekali jika bilah status tidak disembunyikan</string>
@@ -382,8 +379,6 @@ Tolong matikan dan paksa berhenti launcher.</string>
     <string name="prevent_wallpaper_dimming_restart_summary">Penyegaran warna wallpaper hidup pada launcher mungkin memerlukan pemulaian ulang secara manual</string>
     <string name="hide_apps">Sembunyikan aplikasi</string>
     <string name="unhide_apps">Tampilkan aplikasi tersembunyi</string>
-    <string name="value_output">Nilai: %s</string>
-    <string name="selected_output">Dipilih: %s</string>
     <string name="developer">Pengembang</string>
     <string name="unstable">Tidak stabil</string>
     <string name="unstable_dialog_title">Fitur tidak stabil</string>

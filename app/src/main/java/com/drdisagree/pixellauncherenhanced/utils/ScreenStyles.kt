@@ -11,13 +11,25 @@ object ScreenStyles {
         R.string.fragment_home_screen_title, R.drawable.ic_home_screen,
         TilePalette.PRIMARY, MaterialShapes.COOKIE_9, MaterialShapes.CLOVER_8
     )
+    val DOCK = ScreenStyle(
+        R.string.fragment_dock_title, R.drawable.ic_dock,
+        TilePalette.SECONDARY, MaterialShapes.SLANTED_SQUARE, MaterialShapes.ARCH
+    )
+    val FOLDERS = ScreenStyle(
+        R.string.fragment_folders_title, R.drawable.ic_folder,
+        TilePalette.TERTIARY, MaterialShapes.COOKIE_4, MaterialShapes.CLOVER_4
+    )
+    val WIDGETS = ScreenStyle(
+        R.string.fragment_widgets_title, R.drawable.ic_widgets,
+        TilePalette.TERTIARY, MaterialShapes.PILL, MaterialShapes.OVAL
+    )
     val APP_DRAWER = ScreenStyle(
         R.string.fragment_app_drawer_title, R.drawable.ic_app_drawer,
         TilePalette.SECONDARY, MaterialShapes.SUNNY, MaterialShapes.VERY_SUNNY
     )
     val ICONS = ScreenStyle(
         R.string.fragment_icons_title, R.drawable.ic_icons,
-        TilePalette.TERTIARY, MaterialShapes.COOKIE_6, MaterialShapes.FLOWER
+        TilePalette.SECONDARY, MaterialShapes.COOKIE_6, MaterialShapes.FLOWER
     )
     val GESTURES = ScreenStyle(
         R.string.fragment_gestures_title, R.drawable.ic_gestures,
@@ -25,7 +37,7 @@ object ScreenStyles {
     )
     val RECENTS = ScreenStyle(
         R.string.fragment_recents_title, R.drawable.ic_recents,
-        TilePalette.SECONDARY, MaterialShapes.GEM, MaterialShapes.PENTAGON
+        TilePalette.TERTIARY, MaterialShapes.GEM, MaterialShapes.PENTAGON
     )
     val BACKUP = ScreenStyle(
         R.string.fragment_backup_title, R.drawable.ic_backup_restore,

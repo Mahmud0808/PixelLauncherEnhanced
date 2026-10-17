@@ -49,6 +49,7 @@
     <string name="fragment_gestures_title">Gestures</string>
     <string name="fragment_gestures_desc">Double tap and navigation</string>
     <string name="fragment_backup_title">Backup &amp; restore</string>
+    <string name="dashboard_backup_short">Backup</string>
     <string name="fragment_backup_desc">Home layout, app drawer and settings</string>
     <string name="fragment_advanced_title">Advanced</string>
     <string name="fragment_advanced_desc">Entry points, fixes and developer options</string>
@@ -72,7 +73,7 @@
     <string name="backup_card_drawer_desc">Tabs and hidden apps</string>
     <string name="backup_card_settings_desc">Every option in this app</string>
     <string name="dashboard_search_hint">Search settings</string>
-    <string name="dashboard_home_screen_desc">Grid, dock, page indicator and more</string>
+    <string name="dashboard_home_screen_desc">Grid, pages, transitions and more</string>
     <string name="dashboard_app_drawer_desc">Tabs, layout and hidden apps</string>
     <string name="dashboard_icons_desc">Icon packs, size and themed icons</string>
     <string name="dashboard_recents_desc">Overview actions and look</string>
@@ -91,8 +92,6 @@
     <string name="remove_shortcut_badge_title">Remove shortcut icon badge</string>
     <string name="launcher_icon_size_title">Icon size</string>
     <string name="launcher_text_size_title">Text size</string>
-    <string name="app_drawer_themed_icons_title">Themed icons</string>
-    <string name="app_drawer_themed_icons_desc">Enable themed icons on app drawer</string>
     <string name="double_tap_to_sleep_title">Double tap to sleep</string>
     <string name="double_tap_to_sleep_desc">Double tap on home screen empty space to turn off the screen</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -117,7 +116,6 @@
     <string name="allow_wallpaper_zooming">Wallpaper zooming</string>
     <string name="allow_wallpaper_zooming_summary">Zoom in or out the wallpaper when using drawer or recent apps</string>
     <string name="desktop_icon_labels_title">Icon labels on desktop</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">Hide statusbar</string>
     <string name="hide_launcher_statusbar_desc">Expand quick settings panel once if status bar is not hidden</string>
@@ -403,8 +401,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
-    <string name="value_output">Value: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>
@@ -476,6 +472,27 @@
     <string name="no_drawer_auto_fill_desc">Shift icons on the added pages to fill gaps left by moved or uninstalled apps</string>
 
     <string name="section_folders_title">Folders</string>
+    <string name="section_pages_title">Pages</string>
+    <string name="section_background_title">Background</string>
+    <string name="section_dock_background_title">Dock background</string>
+    <string name="section_dock_position_title">Position</string>
+    <string name="fragment_dock_title">Dock</string>
+    <string name="fragment_folders_title">Folders</string>
+    <string name="fragment_widgets_title">Widgets</string>
+    <string name="fragment_dock_spacing_title">Spacing &amp; position</string>
+    <string name="dock_spacing_page_desc">Style, margins, corners and spacing</string>
+    <string name="dashboard_folders_desc">Grid and background</string>
+    <string name="dashboard_widgets_desc">Resizing and background</string>
+    <string name="themed_icons_drawer_desc">Theme app drawer icons too</string>
+    <string name="reset_value_desc">%1$s, tap to reset</string>
+    <string name="themed_icons_enable_title">Enable themed icons</string>
+    <string name="themed_icons_drawer_title">Apply to app drawer</string>
+    <string name="dashboard_dock_short">Search bar and glass</string>
+    <string name="dashboard_folders_short">Grid and glass</string>
+    <string name="dashboard_widgets_short">Resize and glass</string>
+    <string name="dashboard_app_drawer_short">Tabs and layout</string>
+    <string name="dashboard_gestures_short">Swipes and taps</string>
+    <string name="dashboard_recents_short">Overview look</string>
     <string name="folder_columns_title">Folder columns</string>
     <string name="folder_rows_title">Folder rows</string>
     <string name="folder_background_tint_title">Folder background tint</string>

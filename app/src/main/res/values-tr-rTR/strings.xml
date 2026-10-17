@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">Kısayol rozetini kaldır</string>
     <string name="launcher_icon_size_title">Simge boyutu</string>
     <string name="launcher_text_size_title">Yazı boyutu</string>
-    <string name="app_drawer_themed_icons_title">Temalı simgeler</string>
-    <string name="app_drawer_themed_icons_desc">Temalı simgeleri uygulama çekmecesinde de kullan</string>
     <string name="double_tap_to_sleep_title">Çift dokunarak kilitle</string>
     <string name="double_tap_to_sleep_desc">Ekranı kapatmak için ana ekrandaki boş bir alana iki kez dokunun</string>
     <string name="fragment_gestures_actions_desc">Ana ekran hareketleri ve gezinme kontrolleri</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">Duvar kâğıdı yakınlaştırma</string>
     <string name="allow_wallpaper_zooming_summary">Çekmece veya son uygulamalar açılırken duvar kâğıdını yakınlaştırıp uzaklaştırır</string>
     <string name="desktop_icon_labels_title">Ana ekranda simge adları</string>
-    <string name="home_themed_icons_title">Temalı simgeler</string>
     <string name="home_themed_icons_desc">Duvar Kâğıdı ve Stil bölümündeki Temalı Simgeler ayarıyla aynıdır</string>
     <string name="hide_launcher_statusbar_title">Durum çubuğunu gizle</string>
     <string name="hide_launcher_statusbar_desc">Durum çubuğu hemen gizlenmezse bildirim panelini bir kez aşağı çekin</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">Canlı Duvar Kâğıdı renk değişikliklerinin algılanması için başlatıcıyı el ile yeniden başlatmanız gerekebilir</string>
     <string name="hide_apps">Uygulamaları gizle</string>
     <string name="unhide_apps">Gizli uygulamaları göster</string>
-    <string name="value_output">Değer: %s</string>
-    <string name="selected_output">Seçilen: %s</string>
     <string name="developer">Geliştirici</string>
     <string name="unstable">Deneysel</string>
     <string name="unstable_dialog_title">Deneysel özellik</string>

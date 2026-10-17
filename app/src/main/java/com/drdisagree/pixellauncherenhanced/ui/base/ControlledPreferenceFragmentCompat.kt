@@ -7,6 +7,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
@@ -27,6 +28,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.core.animation.doOnEnd
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceGroup
+import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceScreen
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
@@ -38,6 +40,7 @@ import com.drdisagree.pixellauncherenhanced.data.config.PrefsHelper
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.ui.drawables.SegmentedRowDrawable
+import com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
@@ -48,7 +51,9 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
 
     private val changeListener =
         OnSharedPreferenceChangeListener { _: SharedPreferences, key: String? ->
+            val before = preferenceScreen?.visibleKeys()
             updateScreen(key)
+            if (before != null && before != preferenceScreen?.visibleKeys()) refreshSegments()
         }
 
     abstract val title: String
@@ -217,6 +222,7 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
     }
 
     public override fun onCreateAdapter(preferenceScreen: PreferenceScreen): RecyclerView.Adapter<*> {
+        preferenceManager.preferenceComparisonCallback = PreferenceManager.SimplePreferenceComparisonCallback()
         RPrefs.registerOnSharedPreferenceChangeListener(changeListener)
 
         updateScreen(null)
@@ -239,6 +245,35 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
         PrefsHelper.setupAllPreferences(this.preferenceScreen)
     }
 
+    private fun PreferenceGroup.visibleKeys(): List<String> {
+        val keys = ArrayList<String>()
+        for (i in 0 until preferenceCount) {
+            val preference = getPreference(i)
+            if (!preference.isVisible) continue
+            preference.key?.let { keys.add(it) }
+            if (preference is PreferenceGroup) keys.addAll(preference.visibleKeys())
+        }
+        return keys
+    }
+
+    private fun refreshSegments() {
+        val list = listView ?: return
+        list.post {
+            val adapter = list.adapter ?: return@post
+            adapter.notifyItemRangeChanged(0, adapter.itemCount, SEGMENT_PAYLOAD)
+        }
+    }
+
+    protected fun hideLiquidBelowTiramisu(vararg keys: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
+        keys.forEach { key ->
+            findPreference<ListPreference>(key)?.apply {
+                entries = entries.take(2).toTypedArray()
+                entryValues = entryValues.take(2).toTypedArray()
+            }
+        }
+    }
+
     override fun setDivider(divider: Drawable?) {
         super.setDivider(Color.TRANSPARENT.toDrawable())
     }
@@ -258,6 +293,7 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
         private val TAG = ControlledPreferenceFragmentCompat::class.java.simpleName
         private const val HIGHLIGHT_DELAY_MS = 120L
         private const val ENTER_SETTLE_MS = 460L
+        private const val SEGMENT_PAYLOAD = "segment"
         private const val SCROLL_SPEED_MS_PER_INCH = 70f
         private const val HIGHLIGHT_DURATION_MS = 1600L
         private const val HIGHLIGHT_ALPHA = 64

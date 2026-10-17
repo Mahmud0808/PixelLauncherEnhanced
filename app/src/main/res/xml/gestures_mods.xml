@@ -2,6 +2,10 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PageHeaderPreference
+        android:key="page_header_gestures"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_gestures_home"
         android:title="@string/section_home_gestures_title"

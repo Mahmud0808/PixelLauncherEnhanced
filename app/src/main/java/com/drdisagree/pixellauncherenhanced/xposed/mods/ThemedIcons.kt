@@ -45,9 +45,9 @@ class ThemedIcons(context: Context) : ModPack(context) {
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
-            forceThemedIcons = getBoolean(FORCE_THEMED_ICONS, false)
-            appDrawerThemedIcons = getBoolean(APP_DRAWER_THEMED_ICONS, false)
             homeThemedIcons = getBoolean(HOME_THEMED_ICONS, false)
+            forceThemedIcons = homeThemedIcons && getBoolean(FORCE_THEMED_ICONS, false)
+            appDrawerThemedIcons = homeThemedIcons && getBoolean(APP_DRAWER_THEMED_ICONS, false)
         }
 
         when (key.firstOrNull()) {
@@ -58,6 +58,7 @@ class ThemedIcons(context: Context) : ModPack(context) {
                 if (Xprefs.contains(HOME_THEMED_ICONS) && systemThemedIcons() != homeThemedIcons) {
                     setSystemThemedIcons(homeThemedIcons)
                 }
+                reloadIcons()
             }
         }
     }

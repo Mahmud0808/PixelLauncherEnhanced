@@ -4,7 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceGroup
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_THEMED_ICONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FORCE_THEMED_ICONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
@@ -78,7 +82,12 @@ object PrefsHelper {
             WIDGET_CLEAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                     PanelBackground.supported(getString(WIDGET_BACKGROUND)) == PanelBackground.OFF
 
-            ICON_BACKGROUND,
+            APP_DRAWER_THEMED_ICONS,
+            FORCE_THEMED_ICONS,
+            THEMED_ICON_CUSTOM_COLOR -> getBoolean(HOME_THEMED_ICONS)
+
+            ICON_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && getBoolean(HOME_THEMED_ICONS)
+
             FOLDER_BACKGROUND,
             WIDGET_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
@@ -87,7 +96,8 @@ object PrefsHelper {
                     PanelBackground.supported(getString(FOLDER_BACKGROUND)) != PanelBackground.OFF
 
             ICON_BACKGROUND_BLUR,
-            ICON_BACKGROUND_TINT -> PanelBackground.supported(getString(ICON_BACKGROUND)) != PanelBackground.OFF
+            ICON_BACKGROUND_TINT -> getBoolean(HOME_THEMED_ICONS) &&
+                    PanelBackground.supported(getString(ICON_BACKGROUND)) != PanelBackground.OFF
 
             WIDGET_BLUR_RADIUS,
             WIDGET_BLUR_TINT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -118,7 +128,7 @@ object PrefsHelper {
             THEMED_ICON_CUSTOM_FG_COLOR_DARK,
             THEMED_ICON_CUSTOM_BG_COLOR_DARK,
             FOLDER_CUSTOM_COLOR_LIGHT,
-            FOLDER_CUSTOM_COLOR_DARK -> getBoolean(THEMED_ICON_CUSTOM_COLOR)
+            FOLDER_CUSTOM_COLOR_DARK -> getBoolean(HOME_THEMED_ICONS) && getBoolean(THEMED_ICON_CUSTOM_COLOR)
 
             SEARCH_BAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                     isPixelLauncher &&
@@ -201,6 +211,10 @@ object PrefsHelper {
 
                 if (thisPreference is PreferenceGroup) {
                     setupAllPreferences(thisPreference)
+                    if (thisPreference is PreferenceCategory && thisPreference.isVisible) {
+                        thisPreference.isVisible = (0 until thisPreference.preferenceCount)
+                            .any { thisPreference.getPreference(it).isVisible }
+                    }
                 } else if (thisPreference is TwoTargetSwitchPreference) {
                     val switchPreference: TwoTargetSwitchPreference = thisPreference
                     switchPreference.isChecked = getBoolean(switchPreference.key)

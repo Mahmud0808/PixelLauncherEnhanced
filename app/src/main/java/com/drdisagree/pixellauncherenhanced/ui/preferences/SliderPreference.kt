@@ -145,26 +145,7 @@ class SliderPreference(
         mPlusButton = holder.itemView.findViewById(R.id.plus_button)
         mResetButton = holder.itemView.findViewById(R.id.reset_button)
 
-        if (showResetButton && defaultValue.isNotEmpty()) {
-            mResetButton!!.visibility = View.VISIBLE
-            mResetButton!!.isEnabled = isEnabled && !defaultValue.containsAll(mSlider!!.values)
-
-            mResetButton!!.setOnClickListener { v: View ->
-                handleResetButton()
-                v.weakVibrate()
-
-                mSlider!!.values = defaultValue
-                mResetButton!!.isEnabled = false
-
-                mOutputView!!.text = getOutputText()
-
-                if (showController) updateControllerButtons()
-
-                savePrefs()
-            }
-        } else {
-            mResetButton!!.visibility = View.GONE
-        }
+        mResetButton!!.visibility = View.GONE
 
         if (showController) {
             mMinusButton!!.visibility = View.VISIBLE
@@ -177,7 +158,7 @@ class SliderPreference(
 
                 val newValue = (currentValue - tickInterval).coerceAtLeast(valueFrom)
                 mSlider!!.values = listOf(newValue)
-                mOutputView!!.text = getOutputText()
+                updateOutput()
 
                 updateControllerButtons()
                 handleResetButton()
@@ -191,7 +172,7 @@ class SliderPreference(
 
                 val newValue = (currentValue + tickInterval).coerceAtMost(valueTo)
                 mSlider!!.values = listOf(newValue)
-                mOutputView!!.text = getOutputText()
+                updateOutput()
 
                 updateControllerButtons()
                 handleResetButton()
@@ -212,7 +193,7 @@ class SliderPreference(
 
         syncState()
 
-        mOutputView!!.text = getOutputText()
+        updateOutput()
 
 
         if (showController) updateControllerButtons()
@@ -223,13 +204,26 @@ class SliderPreference(
         setBackgroundResource(holder)
     }
 
-    private fun getOutputText(): String {
-        val outputValue = mSlider!!.values.joinToString(separator = " - ") { sliderValue ->
-            labelFormatter.getFormattedValue(sliderValue)
+    private fun updateOutput() {
+        val slider = mSlider ?: return
+        val hasDefault = showResetButton || showDefaultIndicator || hideValueOnDefault
+        val isDefault = hasDefault && defaultValue.isNotEmpty() && defaultValue.containsAll(slider.values)
+        val text = if (isDefault && hideValueOnDefault) {
+            context.getString(R.string.opt_default).replace("[()]".toRegex(), "")
+        } else {
+            slider.values.joinToString(separator = " - ") { formatValue(it) } + (valueFormat ?: "")
         }
+        val canReset = showResetButton && defaultValue.isNotEmpty() && !isDefault && isEnabled
+        ValuePill.bind(mOutputView, text, isDefault, if (canReset) ::resetToDefault else null)
+    }
 
-        return if (showValueLabel) context.getString(R.string.value_output, outputValue)
-        else outputValue
+    private fun formatValue(value: Float): String {
+        val blankFormat = valueFormat != null && valueFormat!!.isBlank()
+        return when {
+            isDecimalFormat -> DecimalFormat(decimalFormat).format((value / outputScale).toDouble())
+            blankFormat -> (value / outputScale).toInt().toString()
+            else -> value.toInt().toString()
+        }
     }
 
     fun setMin(value: Float) {
@@ -249,17 +243,16 @@ class SliderPreference(
     }
 
     private fun handleResetButton() {
-        if (mResetButton == null) return
+        mResetButton?.visibility = View.GONE
+    }
 
-        if (showResetButton) {
-            mResetButton!!.visibility = View.VISIBLE
-
-            if (mSlider!!.values.isNotEmpty()) {
-                mResetButton!!.isEnabled = isEnabled && !defaultValue.containsAll(mSlider!!.values)
-            }
-        } else {
-            mResetButton!!.visibility = View.GONE
-        }
+    private fun resetToDefault(view: View) {
+        val slider = mSlider ?: return
+        view.weakVibrate()
+        slider.values = defaultValue
+        updateOutput()
+        if (showController) updateControllerButtons()
+        savePrefs()
     }
 
     private fun syncState() {
@@ -376,7 +369,7 @@ class SliderPreference(
             override fun onStopTrackingTouch(slider: RangeSlider) {
                 if (key != slider.tag) return
 
-                mOutputView?.text = getOutputText()
+                updateOutput()
 
                 if (showController) updateControllerButtons()
 

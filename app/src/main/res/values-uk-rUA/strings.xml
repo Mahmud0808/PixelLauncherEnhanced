@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">Видалити значок ярлика</string>
     <string name="launcher_icon_size_title">Розмір іконок</string>
     <string name="launcher_text_size_title">Розмір тексту</string>
-    <string name="app_drawer_themed_icons_title">Тематичні іконки</string>
-    <string name="app_drawer_themed_icons_desc">Увімкнути тематичні іконки в меню додатків</string>
     <string name="double_tap_to_sleep_title">Подвійне натискання для сну</string>
     <string name="double_tap_to_sleep_desc">Подвійне натискання на головному екрані для вимкнення екрана</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">Масштабування шпалер</string>
     <string name="allow_wallpaper_zooming_summary">Збільшувати або зменшувати шпалери при використанні меню додатків або нещодавніх додатків</string>
     <string name="desktop_icon_labels_title">Назви іконок на головному екрані</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">Приховати рядок стану</string>
     <string name="hide_launcher_statusbar_desc">Розгортати панель швидких налаштувань коли рядок стану не прихований</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
-    <string name="value_output">Значення: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>

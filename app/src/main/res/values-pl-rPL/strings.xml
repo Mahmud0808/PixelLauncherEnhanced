@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">Usuń ikonę aplikacji ze skrótów na ekranie głównym</string>
     <string name="launcher_icon_size_title">Rozmiar ikon</string>
     <string name="launcher_text_size_title">Rozmiar czcionki</string>
-    <string name="app_drawer_themed_icons_title">Ikony tematyczne</string>
-    <string name="app_drawer_themed_icons_desc">Włącz ikony tematyczne w szufladzie aplikacji</string>
     <string name="double_tap_to_sleep_title">Dwukrotnie naciśnij, aby uśpić</string>
     <string name="double_tap_to_sleep_desc">Dwukrotnie naciśnij pustą przestrzeń na ekranie głównym, aby wyłączyć ekran</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">Powiększaj tapetę</string>
     <string name="allow_wallpaper_zooming_summary">Powiększ lub pomniejsz tapetę podczas korzystania z szuflady lub ostatnio używanych aplikacji</string>
     <string name="desktop_icon_labels_title">Etykiety ikon na pulpicie</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">Ukryj pasek stanu</string>
     <string name="hide_launcher_statusbar_desc">Rozwiń panel szybkich ustawień jeden raz, jeśli pasek stanu nie jest ukryty</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">Może być konieczny ręczny restart launchera w celu pobrania aktualizacji kolorów tapety na żywo</string>
     <string name="hide_apps">Ukryj aplikacje</string>
     <string name="unhide_apps">Pokaż ukryte aplikacje</string>
-    <string name="value_output">Wartość: %s</string>
-    <string name="selected_output">Wybrano: %s</string>
     <string name="developer">Programista</string>
     <string name="unstable">Niestabilne</string>
     <string name="unstable_dialog_title">Funkcja niestabilna</string>

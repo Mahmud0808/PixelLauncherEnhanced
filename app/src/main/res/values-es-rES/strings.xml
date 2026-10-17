@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">Eliminar insignia de icono de acceso directo</string>
     <string name="launcher_icon_size_title">Tamaño de los iconos</string>
     <string name="launcher_text_size_title">Tamaño del texto</string>
-    <string name="app_drawer_themed_icons_title">Iconos tematizados</string>
-    <string name="app_drawer_themed_icons_desc">Activar iconos temáticos en el cajón de aplicaciones</string>
     <string name="double_tap_to_sleep_title">Doble toque para apagar pantalla</string>
     <string name="double_tap_to_sleep_desc">Doble toque en un espacio vacío de la pantalla de inicio para apagar la pantalla</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">Zoom del fondo de pantalla</string>
     <string name="allow_wallpaper_zooming_summary">Acercar o alejar el fondo de pantalla al usar el cajón o aplicaciones recientes</string>
     <string name="desktop_icon_labels_title">Etiquetas de iconos en el escritorio</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">Ocultar la barra de estado</string>
     <string name="hide_launcher_statusbar_desc">Expandir panel de ajustes rápidos una vez si la barra de estado no está oculta</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
-    <string name="value_output">Valor: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>

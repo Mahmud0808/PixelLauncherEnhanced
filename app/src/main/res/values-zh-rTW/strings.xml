@@ -80,8 +80,6 @@
     <string name="remove_shortcut_badge_title">隱藏捷徑標誌圖示</string>
     <string name="launcher_icon_size_title">圖示大小</string>
     <string name="launcher_text_size_title">文字大小</string>
-    <string name="app_drawer_themed_icons_title">已套用主題色的圖示</string>
-    <string name="app_drawer_themed_icons_desc">於應用程式抽屜圖示套用主題色</string>
     <string name="double_tap_to_sleep_title">雙擊即可休眠</string>
     <string name="double_tap_to_sleep_desc">輕觸兩下螢幕即可關閉螢幕</string>
     <string name="fragment_gestures_actions_desc">Home gestures and navigation</string>
@@ -106,7 +104,6 @@
     <string name="allow_wallpaper_zooming">桌布縮放</string>
     <string name="allow_wallpaper_zooming_summary">在開啟應用程式抽屜及總覽時縮放桌布</string>
     <string name="desktop_icon_labels_title">主畫面的圖示名稱</string>
-    <string name="home_themed_icons_title">Themed icons</string>
     <string name="home_themed_icons_desc">Same as Themed icons in Wallpaper &amp; style</string>
     <string name="hide_launcher_statusbar_title">隱藏狀態欄</string>
     <string name="hide_launcher_statusbar_desc">顯示狀態欄時展開快速設定</string>
@@ -381,8 +378,6 @@
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
-    <string name="value_output">Value: %s</string>
-    <string name="selected_output">Selected: %s</string>
     <string name="developer">Developer</string>
     <string name="unstable">Unstable</string>
     <string name="unstable_dialog_title">Unstable feature</string>
