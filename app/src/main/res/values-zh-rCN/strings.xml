@@ -378,7 +378,6 @@
     <string name="icon_background_color_dark_title">深色模式下的背景颜色</string>
     <string name="folder_color_light_title">浅色模式下的文件夹颜色</string>
     <string name="folder_color_dark_title">深色模式下的文件夹颜色</string>
-    <string name="search_bar_opacity_title">搜索栏透明度</string>
     <string name="prevent_wallpaper_dimming_restart_title">防止壁纸因导致调暗从而重启</string>
     <string name="prevent_wallpaper_dimming_restart_summary">可能需要进行手动重启来启动选取壁纸颜色的更新</string>
     <string name="hide_apps">隐藏app</string>

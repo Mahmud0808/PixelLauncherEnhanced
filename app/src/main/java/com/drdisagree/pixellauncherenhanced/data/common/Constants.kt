@@ -145,7 +145,6 @@ object Constants {
     const val THEMED_ICON_CUSTOM_BG_COLOR_DARK = "xposed_themediconcustombgcolordark"
     const val FOLDER_CUSTOM_COLOR_LIGHT = "xposed_foldercustomcolorlight"
     const val FOLDER_CUSTOM_COLOR_DARK = "xposed_foldercustomcolordark"
-    const val DESKTOP_SEARCH_BAR_OPACITY = "xposed_desktopsearchbaropacity"
     const val FREEFORM_GESTURE = "xposed_startfreeformbygesture"
     const val FREEFORM_MODE = "xposed_freeform_mode"
     const val FREEFORM_GESTURE_PROGRESS = "xposed_startfreeformprogress"

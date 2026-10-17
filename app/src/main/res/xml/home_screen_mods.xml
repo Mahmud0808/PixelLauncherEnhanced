@@ -274,19 +274,6 @@
             android:title="@string/hide_desktop_search_bar_title"
             app:iconSpaceReserved="false" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_desktopsearchbaropacity"
-            android:title="@string/search_bar_opacity_title"
-            app:defaultValue="100"
-            app:hideValueOnDefault="true"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:showDefaultIndicator="true"
-            app:showResetButton="true"
-            app:tickInterval="1"
-            app:valueFormat="%" />
-
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
             android:defaultValue="off"
             android:dialogTitle="@string/search_bar_background_title"

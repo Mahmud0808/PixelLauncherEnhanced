@@ -6,7 +6,6 @@ import android.os.Build
 import androidx.preference.Preference
 import androidx.preference.PreferenceGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEVELOPER_OPTIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_CORNER
@@ -132,10 +131,6 @@ object PrefsHelper {
                     !getBoolean(DESKTOP_SEARCH_BAR) &&
                     !getBoolean(DISABLE_DOCK) &&
                     PanelBackground.supported(getString(SEARCH_BAR_BACKGROUND)) != PanelBackground.OFF
-
-            DESKTOP_SEARCH_BAR_OPACITY -> isPixelLauncher &&
-                    !getBoolean(DESKTOP_SEARCH_BAR) &&
-                    !getBoolean(DISABLE_DOCK)
 
             DESKTOP_SEARCH_BAR,
             DOCK_BOTTOM_SPACING,

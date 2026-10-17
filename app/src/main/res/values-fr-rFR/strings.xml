@@ -377,7 +377,6 @@
     <string name="icon_background_color_dark_title">Couleur d\'arrière-plan en mode sombre</string>
     <string name="folder_color_light_title">Couleur de dossier en mode clair</string>
     <string name="folder_color_dark_title">Couleur de dossier en mode sombre</string>
-    <string name="search_bar_opacity_title">Opacité de la barre de recherche</string>
     <string name="prevent_wallpaper_dimming_restart_title">Empêcher l\'atténuation du fond d\'écran après un redémarrage</string>
     <string name="prevent_wallpaper_dimming_restart_summary">Peut nécessite un redémarrage manuel pour que le launcher puisse récupérer la mise à jour live de la couleur de fond d\'écran</string>
     <string name="hide_apps">Cacher les applications</string>

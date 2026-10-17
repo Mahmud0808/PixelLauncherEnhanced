@@ -5,7 +5,6 @@ import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BOTTOM_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_TOP_SPACING
@@ -36,7 +35,6 @@ class HotseatMod(context: Context) : ModPack(context) {
     private var dockBottomSpacing = 0
     private var dockTopSpacing = 0
     private val inProfileCopy = ThreadLocal<Boolean>()
-    private var desktopSearchBarOpacity = 100
     private var mQuickSearchBar: View? = null
     private val workspaceInsets = Rect()
 
@@ -47,7 +45,6 @@ class HotseatMod(context: Context) : ModPack(context) {
             hidePageIndicator = getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR, false)
             dockBottomSpacing = getSliderInt(DOCK_BOTTOM_SPACING, 0)
             dockTopSpacing = getSliderInt(DOCK_TOP_SPACING, 0)
-            desktopSearchBarOpacity = getSliderInt(DESKTOP_SEARCH_BAR_OPACITY, 100)
         }
 
         when (key.firstOrNull()) {
@@ -66,8 +63,6 @@ class HotseatMod(context: Context) : ModPack(context) {
             }
 
             LAUNCHER_HIDE_PAGE_INDICATOR -> if (dockDisabled) reloadLauncher(mContext)
-
-            DESKTOP_SEARCH_BAR_OPACITY -> updateSearchBarOpacity()
         }
     }
 
@@ -80,7 +75,6 @@ class HotseatMod(context: Context) : ModPack(context) {
             .runAfter { param ->
                 mQuickSearchBar = param.thisObject.getField("mQsb") as View
                 triggerSearchBarVisibility()
-                updateSearchBarOpacity()
             }
 
         hotseatClass
@@ -88,7 +82,6 @@ class HotseatMod(context: Context) : ModPack(context) {
             .runAfter { param ->
                 mQuickSearchBar = param.thisObject.getField("mQsb") as View
                 triggerSearchBarVisibility()
-                updateSearchBarOpacity()
             }
 
         hotseatClass
@@ -204,10 +197,6 @@ class HotseatMod(context: Context) : ModPack(context) {
 
     private fun triggerSearchBarVisibility() {
         mQuickSearchBar?.visibility = if (hideDesktopSearchBar || dockDisabled) View.GONE else View.VISIBLE
-    }
-
-    private fun updateSearchBarOpacity() {
-        mQuickSearchBar?.background?.alpha = desktopSearchBarOpacity * 255 / 100
     }
 
     private class HotseatFields(
