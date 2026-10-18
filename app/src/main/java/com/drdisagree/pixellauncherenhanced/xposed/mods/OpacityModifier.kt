@@ -186,7 +186,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 val isTablet = (deviceProfile.getFieldSilently("isTablet") as? Boolean
                     ?: deviceProfile
                         .getAnyFieldSilently("mDeviceProperties", "deviceProperties")
-                        .getFieldSilently("isTablet") as? Boolean) == true
+                        .getAnyFieldSilently("isTablet", "isLargeScreen") as? Boolean) == true
 
                 if (!isTablet) {
                     if (param.result is Int) {
