@@ -391,10 +391,9 @@ class IconPacks(context: Context) : ModPack(context) {
                 if (param.args.getOrNull(0) !is PackIconDrawable) return@runBefore
 
                 val options = param.args.getOrNull(1) ?: return@runBefore
-                val previous = OPTION_FIELDS.associateWith { options.getFieldSilently(it) }
-                OPTION_FIELDS.forEach { field ->
-                    if (options.javaClass.hasField(field)) options.setField(field, java.lang.Boolean.FALSE)
-                }
+                val fields = OPTION_FIELDS.filter { options.javaClass.hasField(it) }
+                val previous = fields.associateWith { options.getFieldSilently(it) }
+                fields.forEach { field -> options.setField(field, java.lang.Boolean.FALSE) }
                 skippedWrap.set(options to previous)
             }
             .runAfter {
