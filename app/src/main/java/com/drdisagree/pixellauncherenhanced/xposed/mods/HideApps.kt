@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
@@ -29,7 +30,6 @@ class HideApps(context: Context) : ModPack(context) {
 
     private var appBlockList: Set<String> = mutableSetOf()
     private var searchHiddenApps: Boolean = false
-    private var invariantDeviceProfileInstance: Any? = null
 
     companion object {
         var HIDE_APPS_ENABLED = false
@@ -70,7 +70,6 @@ class HideApps(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
-        val invariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")
         val activityAllAppsContainerViewClass =
             findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView")
         val hotseatPredictionControllerClass =
@@ -94,20 +93,22 @@ class HideApps(context: Context) : ModPack(context) {
         val allAppsListClass = findClass("com.android.launcher3.model.AllAppsList")
         val launcherModelClass = findClass("com.android.launcher3.LauncherModel")
 
-        invariantDeviceProfileClass
-            .hookConstructor()
-            .runAfter { param -> invariantDeviceProfileInstance = param.thisObject }
-
         activityAllAppsContainerViewClass
             .hookConstructor()
             .runAfter { param -> activityAllAppsContainerViewInstance = param.thisObject }
 
+        DebugRecorder.registerHealth("Hotseat predictions captured") {
+            if (!HIDE_APPS_ENABLED) null else hotseatPredictionControllerInstance != null
+        }
+
         hotseatPredictionControllerClass
             .hookConstructor()
+            .capability("Hotseat predictions")
             .runAfter { param -> hotseatPredictionControllerInstance = param.thisObject }
 
         hybridHotseatOrganizerClass
             .hookConstructor()
+            .capability("Hotseat organizer")
             .runAfter { param -> hybridHotseatOrganizerClassInstance = param.thisObject }
 
         predictionRowViewClass
@@ -116,6 +117,7 @@ class HideApps(context: Context) : ModPack(context) {
 
         quickstepLauncherClass
             .hookMethod("onCreate")
+            .capability("Hotseat predictions,Hotseat organizer")
             .runAfter { param ->
                 if (hotseatPredictionControllerInstance == null) {
                     hotseatPredictionControllerInstance =

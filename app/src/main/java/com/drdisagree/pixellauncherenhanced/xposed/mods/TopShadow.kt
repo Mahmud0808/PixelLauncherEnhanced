@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
@@ -48,8 +49,11 @@ class TopShadow(context: Context) : ModPack(context) {
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val sysUiScrimClass = findClass("com.android.launcher3.graphics.SysUiScrim")
 
+        DebugRecorder.registerHealth("Top shadow scrim captured") { sysUiScrimInstance != null }
+
         sysUiScrimClass
             .hookConstructor()
+            .capability("Top shadow scrim")
             .runAfter { param ->
                 sysUiScrimInstance = param.thisObject
                 hideScrim()

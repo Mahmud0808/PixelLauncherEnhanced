@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -43,8 +44,12 @@ class LauncherUtils(context: Context) : ModPack(context) {
             suppressError = true
         )
 
+        DebugRecorder.registerHealth("Device profile captured") { invariantDeviceProfileInstance != null }
+        DebugRecorder.registerHealth("Icon cache captured") { iconCacheInstance != null }
+
         InvariantDeviceProfileClass
             .hookConstructor()
+            .capability("Device profile")
             .runAfter { param ->
                 invariantDeviceProfileInstance = param.thisObject
             }
@@ -57,6 +62,7 @@ class LauncherUtils(context: Context) : ModPack(context) {
 
         LauncherAppStateClass
             .hookConstructor()
+            .capability("Device profile")
             .runAfter { param ->
                 mModel = param.thisObject.getAnyField("mModel", "model")
                 if (invariantDeviceProfileInstance == null) {

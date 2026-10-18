@@ -246,6 +246,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
 
         optionItemClass
             .hookConstructor()
+            .capability("Popup entries")
             .runBefore { param ->
                 if (!entryInPopup && !toggleHideAppsInPopup) return@runBefore
 
@@ -320,6 +321,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
             @Suppress("UNCHECKED_CAST")
             optionsPopupViewClass
                 .hookMethod("getOptions")
+                .capability("Popup entries")
                 .runAfter { param ->
                     if (!entryInPopup && !toggleHideAppsInPopup) return@runAfter
 
@@ -703,6 +705,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
             if (workspaceLongPressOptionsClass != null && popupDataConstructor != null) {
                 workspaceLongPressOptionsClass
                     .hookMethod("getAll")
+                    .capability("Popup entries")
                     .suppressError()
                     .runAfter { param ->
                         if (!entryInPopup && !toggleHideAppsInPopup) return@runAfter

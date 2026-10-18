@@ -124,6 +124,7 @@ class SmartSpace(context: Context) : ModPack(context) {
 
         modelCallbacksClass
             .hookConstructor()
+            .capability("Hide At a Glance")
             .runAfter { param ->
                 if (!hideQuickspace) return@runAfter
 
@@ -716,6 +717,7 @@ class SmartSpace(context: Context) : ModPack(context) {
 
         loaderCursorClass
             .hookMethod("checkAndAddItem")
+            .capability("Hide At a Glance")
             .runBefore { param ->
                 if (!hideQuickspace) return@runBefore
 

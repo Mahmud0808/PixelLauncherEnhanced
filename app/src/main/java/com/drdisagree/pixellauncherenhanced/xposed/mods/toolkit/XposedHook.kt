@@ -22,6 +22,8 @@ import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.ConcurrentHashMap
 
 class XposedHook {
     companion object {
@@ -127,6 +129,12 @@ class MethodHookHelper(
     private var parameterTypes: Array<Any?>? = null
     private var printError: Boolean = true
     private var throwError: Boolean = false
+    private var capability: String? = null
+
+    fun capability(name: String): MethodHookHelper {
+        capability = name
+        return this
+    }
 
     @Suppress("UNCHECKED_CAST")
     fun parameters(vararg parameterTypes: Any?): MethodHookHelper {
@@ -183,7 +191,7 @@ class MethodHookHelper(
                 listOfNotNull(candidates.find { it.name == methodName && !Modifier.isAbstract(it.modifiers) })
             }
         }
-        val record = DebugRecorder.recordHook(clazz, names, kind, isPattern, resolved, !printError)
+        val record = DebugRecorder.recordHook(clazz, names, kind, isPattern, resolved, !printError, capability)
 
         if (resolved.isEmpty()) {
             val errorMessage =
@@ -201,7 +209,7 @@ class MethodHookHelper(
 
     private fun hookConstructor(callback: XC_MethodHook): MethodHookHelper {
         if (clazz == null) return this
-        DebugRecorder.recordHook(clazz, null, "raw", false, clazz.declaredConstructors.toList(), !printError)
+        DebugRecorder.recordHook(clazz, null, "raw", false, clazz.declaredConstructors.toList(), !printError, capability)
 
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, callback)
@@ -218,7 +226,7 @@ class MethodHookHelper(
 
     private fun hookConstructorBefore(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
         if (clazz == null) return this
-        val record = DebugRecorder.recordHook(clazz, null, "before", false, clazz.declaredConstructors.toList(), !printError)
+        val record = DebugRecorder.recordHook(clazz, null, "before", false, clazz.declaredConstructors.toList(), !printError, capability)
 
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, object : XC_MethodHook() {
@@ -245,7 +253,7 @@ class MethodHookHelper(
 
     private fun hookConstructorAfter(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
         if (clazz == null) return this
-        val record = DebugRecorder.recordHook(clazz, null, "after", false, clazz.declaredConstructors.toList(), !printError)
+        val record = DebugRecorder.recordHook(clazz, null, "after", false, clazz.declaredConstructors.toList(), !printError, capability)
 
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, object : XC_MethodHook() {
@@ -635,11 +643,12 @@ fun Any?.callMethodSilently(methodName: String): Any? {
         DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
+    if (knownMiss(missingMethods, javaClass, methodName)) return null
 
     return try {
         XposedHelpers.callMethod(this, methodName)
     } catch (throwable: Throwable) {
-        DebugRecorder.recordMemberMiss(throwable.missKind("method"), this, methodName)
+        rememberMiss(missingMethods, javaClass, methodName, "method", this, throwable)
         null
     }
 }
@@ -715,11 +724,12 @@ fun Class<*>?.callStaticMethodSilently(methodName: String): Any? {
         DebugRecorder.recordMemberMiss("null-receiver", null, methodName)
         return null
     }
+    if (knownMiss(missingMethods, this, methodName)) return null
 
     return try {
         XposedHelpers.callStaticMethod(this, methodName)
     } catch (throwable: Throwable) {
-        DebugRecorder.recordMemberMiss(throwable.missKind("static-method"), this, methodName)
+        rememberMiss(missingMethods, this, methodName, "static-method", this, throwable)
         null
     }
 }
@@ -766,11 +776,12 @@ fun Any?.getField(fieldName: String): Any {
 
 fun Any?.getFieldSilently(fieldName: String): Any? {
     if (this == null) return null
+    if (knownMiss(missingFields, javaClass, fieldName)) return null
 
     return try {
         XposedHelpers.getObjectField(this, fieldName)
     } catch (throwable: Throwable) {
-        DebugRecorder.recordMemberMiss(throwable.missKind("field"), this, fieldName)
+        rememberMiss(missingFields, javaClass, fieldName, "field", this, throwable)
         null
     }
 }
@@ -780,13 +791,19 @@ fun Any?.setField(fieldName: String, value: Any?) {
 }
 
 fun Any?.setFieldSilently(fieldName: String, value: Any?): Boolean {
-    try {
-        XposedHelpers.setObjectField(this, fieldName, value)
-        return true
-    } catch (throwable: Throwable) {
-        DebugRecorder.recordMemberMiss(throwable.missKind("set-field"), this, fieldName)
+    if (this == null) {
+        DebugRecorder.recordMemberMiss("null-receiver", null, fieldName)
+        return false
     }
-    return false
+    if (knownMiss(missingFields, javaClass, fieldName)) return false
+
+    return try {
+        XposedHelpers.setObjectField(this, fieldName, value)
+        true
+    } catch (throwable: Throwable) {
+        rememberMiss(missingFields, javaClass, fieldName, "set-field", this, throwable)
+        false
+    }
 }
 
 fun Class<*>?.getStaticField(fieldName: String): Any {
@@ -797,11 +814,12 @@ fun Class<*>?.getStaticField(fieldName: String): Any {
 
 fun Class<*>?.getStaticFieldSilently(fieldName: String): Any? {
     if (this == null) return null
+    if (knownMiss(missingFields, this, fieldName)) return null
 
     return try {
         getStaticObjectField(this, fieldName)
     } catch (throwable: Throwable) {
-        DebugRecorder.recordMemberMiss(throwable.missKind("static-field"), this, fieldName)
+        rememberMiss(missingFields, this, fieldName, "static-field", this, throwable)
         null
     }
 }
@@ -811,38 +829,47 @@ fun Class<*>?.setStaticField(fieldName: String, value: Any?) {
 }
 
 fun Class<*>?.setStaticFieldSilently(fieldName: String, value: Any?) {
+    if (this == null) return
+    if (knownMiss(missingFields, this, fieldName)) return
+
     try {
         XposedHelpers.setStaticObjectField(this, fieldName, value)
     } catch (throwable: Throwable) {
-        DebugRecorder.recordMemberMiss(throwable.missKind("set-static-field"), this, fieldName)
+        rememberMiss(missingFields, this, fieldName, "set-static-field", this, throwable)
     }
 }
 
 fun Any?.getAnyField(vararg fieldNames: String): Any? {
-    fieldNames.forEach { fieldName ->
-        try {
-            return XposedHelpers.getObjectField(this, fieldName).also {
-                DebugRecorder.recordFieldFallback(this, fieldNames, fieldName)
-            }
-        } catch (_: Throwable) {
-        }
-    }
+    resolveAnyField(fieldNames)?.let { return it.value }
 
     DebugRecorder.recordMemberMiss("field", this, *fieldNames)
     throw NoSuchFieldError("Field not found: ${fieldNames.joinToString()}")
 }
 
 fun Any?.getAnyFieldSilently(vararg fieldNames: String): Any? {
-    fieldNames.forEach { fieldName ->
-        try {
-            return XposedHelpers.getObjectField(this, fieldName).also {
-                DebugRecorder.recordFieldFallback(this, fieldNames, fieldName)
-            }
-        } catch (_: Throwable) {
-        }
-    }
+    resolveAnyField(fieldNames)?.let { return it.value }
 
     DebugRecorder.recordMemberMiss("field", this, *fieldNames)
+    return null
+}
+
+private class FieldValue(val value: Any?)
+
+private fun Any?.resolveAnyField(fieldNames: Array<out String>): FieldValue? {
+    if (this == null) return null
+    val type = javaClass
+    fieldNames.forEach { fieldName ->
+        if (missingFields[type]?.containsKey(fieldName) == true) return@forEach
+        try {
+            return FieldValue(XposedHelpers.getObjectField(this, fieldName)).also {
+                DebugRecorder.recordFieldFallback(this, fieldNames, fieldName)
+            }
+        } catch (throwable: Throwable) {
+            if (throwable is NoSuchFieldError) {
+                missingFields.getOrPut(type) { ConcurrentHashMap() }.putIfAbsent(fieldName, AtomicLong())
+            }
+        }
+    }
     return null
 }
 
@@ -919,4 +946,31 @@ private fun Throwable.missKind(base: String): String = when (this) {
     is NoSuchFieldError, is NoSuchMethodError -> base
     is XposedHelpers.InvocationTargetError -> "$base-threw:${cause?.javaClass?.simpleName}"
     else -> "$base-failed:${javaClass.simpleName}"
+}
+
+private val missingFields = ConcurrentHashMap<Class<*>, ConcurrentHashMap<String, AtomicLong>>()
+private val missingMethods = ConcurrentHashMap<Class<*>, ConcurrentHashMap<String, AtomicLong>>()
+
+private fun knownMiss(
+    cache: ConcurrentHashMap<Class<*>, ConcurrentHashMap<String, AtomicLong>>,
+    type: Class<*>,
+    name: String
+): Boolean {
+    val counter = cache[type]?.get(name) ?: return false
+    counter.incrementAndGet()
+    return true
+}
+
+private fun rememberMiss(
+    cache: ConcurrentHashMap<Class<*>, ConcurrentHashMap<String, AtomicLong>>,
+    type: Class<*>,
+    name: String,
+    kind: String,
+    target: Any?,
+    throwable: Throwable
+) {
+    val counter = DebugRecorder.recordMemberMiss(throwable.missKind(kind), target, name)
+    if (throwable is NoSuchFieldError || throwable is NoSuchMethodError) {
+        cache.getOrPut(type) { ConcurrentHashMap() }[name] = counter
+    }
 }

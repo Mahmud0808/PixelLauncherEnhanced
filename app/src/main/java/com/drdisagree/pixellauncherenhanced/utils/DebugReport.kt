@@ -389,16 +389,52 @@ class DebugReport(private val context: Context) {
                 )
             )
         }
-        val missingHooks = runtime.optJSONArray("hooks")?.objects()
-            ?.filter { (it.optJSONArray("resolved")?.length() ?: 0) == 0 && !it.isNull("class") && !it.optBoolean("suppressed") }.orEmpty()
+        val health = runtime.optJSONArray("health")?.objects().orEmpty()
+        val failedHealth = health.filter { it.opt("result") == false }
+        if (failedHealth.isNotEmpty()) {
+            findings.add(
+                0,
+                Finding(
+                    Severity.ERROR,
+                    "${failedHealth.size} health ${plural(failedHealth.size, "check", "checks")} failed",
+                    failedHealth.joinToString("\n") { "${it.optString("owner")}: ${it.optString("name")}" }
+                )
+            )
+        }
+        val brokenHealth = health.filter { !it.isNull("error") }
+        if (brokenHealth.isNotEmpty()) {
+            findings.add(
+                Finding(
+                    Severity.WARNING,
+                    "${brokenHealth.size} health ${plural(brokenHealth.size, "check", "checks")} could not run",
+                    brokenHealth.joinToString("\n") { "${it.optString("owner")}: ${it.optString("name")}: ${it.optString("error")}" }
+                )
+            )
+        }
+        val hooks = runtime.optJSONArray("hooks")?.objects().orEmpty()
+        val workingCapabilities = workingCapabilities(hooks)
+        val missingHooks = hooks.filter {
+            (it.optJSONArray("resolved")?.length() ?: 0) == 0 && !it.isNull("class") && !it.optBoolean("suppressed") &&
+                    !isCovered(it, workingCapabilities)
+        }
         if (missingHooks.isNotEmpty()) {
             findings.add(
                 Finding(
                     Severity.WARNING,
-                    "${missingHooks.size} required ${plural(missingHooks.size, "hook", "hooks")} found no method",
+                    "${missingHooks.size} required ${plural(missingHooks.size, "hook", "hooks")} found no method and have no working fallback",
                     missingHooks.joinToString("\n") { hook ->
                         "${hook.optString("owner")}: ${hook.optString("class").substringAfterLast('.')}.${hook.optJSONArray("requested")?.strings()?.joinToString("|")}"
                     }
+                )
+            )
+        }
+        val uncaptured = uncapturedObjects(runtime)
+        if (uncaptured.isNotEmpty()) {
+            findings.add(
+                Finding(
+                    Severity.INFO,
+                    "${uncaptured.size} captured ${plural(uncaptured.size, "object is", "objects are")} still empty",
+                    uncaptured.joinToString("\n") + "\nSome are captured only after their screen opens"
                 )
             )
         }
@@ -423,7 +459,7 @@ class DebugReport(private val context: Context) {
             findings.add(
                 Finding(
                     Severity.INFO,
-                    "${misses.size} runtime ${plural(misses.size, "lookup", "lookups")} failed",
+                    "${misses.size} runtime ${plural(misses.size, "lookup", "lookups")} missed (version differences, fine unless a health check fails)",
                     misses.groupBy { it.optString("owner") }.entries.joinToString("\n") { (owner, list) -> "$owner: ${list.size}" }
                 )
             )
@@ -431,6 +467,49 @@ class DebugReport(private val context: Context) {
     }
 
     private fun plural(count: Int, one: String, many: String) = if (count == 1) one else many
+
+    private fun capabilities(hook: JSONObject): List<String> {
+        if (hook.isNull("capability")) return emptyList()
+        return hook.optString("capability").split(',').map { "${hook.optString("owner")}|${it.trim()}" }.filter { it.isNotBlank() }
+    }
+
+    private fun workingCapabilities(hooks: List<JSONObject>): Map<String, JSONObject> {
+        val working = HashMap<String, JSONObject>()
+        hooks.filter { (it.optJSONArray("resolved")?.length() ?: 0) > 0 }.forEach { hook ->
+            capabilities(hook).forEach { capability ->
+                val current = working[capability]
+                if (current == null || hook.optLong("fired") > current.optLong("fired")) working[capability] = hook
+            }
+        }
+        return working
+    }
+
+    private fun isCovered(hook: JSONObject, working: Map<String, JSONObject>): Boolean {
+        val capabilities = capabilities(hook)
+        return capabilities.isNotEmpty() && capabilities.all { it in working }
+    }
+
+    private fun coveringHook(hook: JSONObject, working: Map<String, JSONObject>): String? {
+        val capabilities = capabilities(hook)
+        if (capabilities.isEmpty() || !capabilities.all { it in working }) return null
+        return capabilities.mapNotNull { working[it] }.distinct().joinToString(", ") { cover ->
+            "${cover.optString("class").substringAfterLast('.')}.${cover.optJSONArray("requested")?.strings()?.joinToString("|")}"
+        }
+    }
+
+    private fun uncapturedObjects(runtime: JSONObject): List<String> {
+        val states = runtime.optJSONObject("modState") ?: return emptyList()
+        val result = ArrayList<String>()
+        states.keys().forEach { owner ->
+            val state = states.optJSONObject(owner) ?: return@forEach
+            state.keys().forEach { field ->
+                if (!field.endsWith("Instance") && !field.endsWith("Ref")) return@forEach
+                val value = state.opt(field)
+                if (value == JSONObject.NULL || value == null || value.toString() == "ref(null)") result.add("$owner.$field")
+            }
+        }
+        return result
+    }
 
     private fun collectLauncherState(includeData: Boolean): String {
         val packageName = launcherPackage!!
@@ -758,6 +837,8 @@ class DebugReport(private val context: Context) {
         val misses = runtime.optJSONArray("memberMisses")?.objects().orEmpty()
         val fallbacks = runtime.optJSONArray("fieldFallbacks")?.objects().orEmpty()
         val errors = runtime.optJSONArray("errors")?.objects().orEmpty()
+        val health = runtime.optJSONArray("health")?.objects().orEmpty()
+        val working = workingCapabilities(hooks)
         val known = mods.map { it.optString("name") }
         fun ownerOf(record: JSONObject): String = record.optString("owner").takeIf {
             !record.isNull("owner") && it.isNotEmpty() && it in known
@@ -790,12 +871,26 @@ class DebugReport(private val context: Context) {
                         appendLine("  [$state] ${candidates.joinToString(" | ")}")
                     }
                 }
+                health.filter { ownerOf(it) == owner }.takeIf { it.isNotEmpty() }?.let { list ->
+                    appendLine("Health:")
+                    list.forEach { check ->
+                        val state = when {
+                            !check.isNull("error") -> "ERROR ${check.optString("error")}"
+                            check.opt("result") == true -> "ok"
+                            check.opt("result") == false -> "FAILED"
+                            else -> "not in use"
+                        }
+                        appendLine("  [$state] ${check.optString("name")}")
+                    }
+                }
                 hooks.filter { ownerOf(it) == owner }.takeIf { it.isNotEmpty() }?.let { list ->
                     appendLine("Hooks:")
                     list.forEach { hook ->
                         val resolved = hook.optJSONArray("resolved")?.strings().orEmpty()
                         val requested = hook.optJSONArray("requested")?.strings().orEmpty()
+                        val cover = coveringHook(hook, working)
                         val state = when {
+                            resolved.isEmpty() && cover != null -> "MISSING, covered by $cover"
                             resolved.isEmpty() -> if (hook.optBoolean("suppressed")) "MISSING, optional" else "MISSING"
                             requested.size > 1 && resolved.size < requested.size -> "PARTIAL"
                             hook.optLong("fired") == 0L -> "never fired"

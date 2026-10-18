@@ -23,6 +23,7 @@ object DebugRecorder {
     private const val MAX_ERRORS = 200
     private const val MAX_STACK_FRAMES = 24
     private const val MAX_ITEMS = 12
+    private val IGNORED_FIELDS = setOf("Companion", "INSTANCE", "\$stable")
     private val IDENTIFIER = Regex("[A-Za-z0-9_.$:/#-]{0,160}")
     private const val MOD_PACKAGE = "com.drdisagree.pixellauncherenhanced.xposed.mods."
     private const val TOOLKIT_PACKAGE = "com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit."
@@ -36,7 +37,8 @@ object DebugRecorder {
         val kind: String,
         val pattern: Boolean,
         val resolved: List<String>,
-        val suppressed: Boolean
+        val suppressed: Boolean,
+        val capability: String?
     ) {
         @JvmField
         var fired = 0L
@@ -63,6 +65,9 @@ object DebugRecorder {
     private val modResults = ArrayList<ModResult>()
     private val errors = ArrayDeque<ErrorRecord>()
     private val probes = ConcurrentHashMap<String, () -> Any?>()
+    private val healthChecks = ArrayList<HealthCheck>()
+
+    class HealthCheck(val owner: String?, val name: String, val check: () -> Boolean?)
     private var modInstances: () -> List<Any> = { emptyList() }
     private val executor = Executors.newSingleThreadExecutor()
     private val processStart = System.currentTimeMillis() - (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime())
@@ -90,6 +95,10 @@ object DebugRecorder {
         probes[name] = probe
     }
 
+    fun registerHealth(name: String, check: () -> Boolean?) {
+        synchronized(healthChecks) { healthChecks.add(HealthCheck(owner(), name, check)) }
+    }
+
     fun registerModInstances(provider: () -> List<Any>) {
         modInstances = provider
     }
@@ -112,10 +121,11 @@ object DebugRecorder {
         kind: String,
         pattern: Boolean,
         resolved: List<Member>,
-        suppressed: Boolean
+        suppressed: Boolean,
+        capability: String? = null
     ): HookRecord {
         val names = requested?.toList() ?: listOf("<init>")
-        val key = "${clazz?.name}#${names.joinToString(",")}#$kind#${resolved.size}"
+        val key = "${clazz?.name}#${names.joinToString(",")}#$kind#${resolved.size}#$capability"
         return hooks.getOrPut(key) {
             HookRecord(
                 owner(),
@@ -124,7 +134,8 @@ object DebugRecorder {
                 kind,
                 pattern,
                 resolved.map { it.signature() },
-                suppressed
+                suppressed,
+                capability
             )
         }
     }
@@ -132,7 +143,7 @@ object DebugRecorder {
     fun recordDirectHook(member: Member, kind: String): HookRecord {
         val key = "${member.declaringClass.name}#${member.signature()}#$kind"
         return hooks.getOrPut(key) {
-            HookRecord(owner(), member.declaringClass.name, listOf(member.name), kind, false, listOf(member.signature()), false)
+            HookRecord(owner(), member.declaringClass.name, listOf(member.name), kind, false, listOf(member.signature()), false, null)
         }
     }
 
@@ -140,19 +151,16 @@ object DebugRecorder {
         if (record.fired++ == 0L) record.firstFiredAt = System.currentTimeMillis()
     }
 
-    fun recordMemberMiss(kind: String, target: Any?, vararg names: String) {
+    fun recordMemberMiss(kind: String, target: Any?, vararg names: String): AtomicLong {
         val className = when (target) {
             null -> "<null>"
             is Class<*> -> target.name
             else -> target.javaClass.name
         }
         val key = "$kind|$className|${names.joinToString(",")}"
-        val existing = memberMisses[key]
-        if (existing != null) {
-            existing.count.incrementAndGet()
-            return
-        }
-        memberMisses.getOrPut(key) { MemberMiss(kind, className, names.toList(), owner()) }.count.incrementAndGet()
+        val record = memberMisses[key] ?: memberMisses.getOrPut(key) { MemberMiss(kind, className, names.toList(), owner()) }
+        record.count.incrementAndGet()
+        return record.count
     }
 
     fun recordFieldFallback(target: Any?, candidates: Array<out String>, resolved: String) {
@@ -235,7 +243,7 @@ object DebugRecorder {
             hooks.values.sortedWith(compareBy({ it.resolved.isNotEmpty() }, { it.owner }, { it.className })).forEach {
                 put(JSONObject().put("owner", it.owner).put("class", it.className)
                     .put("requested", JSONArray(it.requested)).put("kind", it.kind).put("pattern", it.pattern)
-                    .put("resolved", JSONArray(it.resolved)).put("suppressed", it.suppressed)
+                    .put("resolved", JSONArray(it.resolved)).put("suppressed", it.suppressed).put("capability", it.capability)
                     .put("fired", it.fired).put("firstFiredAt", it.firstFiredAt))
             }
         })
@@ -264,6 +272,16 @@ object DebugRecorder {
                 put(name, runCatching { probe()?.toString() }.getOrElse { "error: ${it.describe()}" })
             }
         })
+        root.put("health", JSONArray().apply {
+            synchronized(healthChecks) {
+                healthChecks.forEach { health ->
+                    val result = runCatching { health.check() }
+                    put(JSONObject().put("owner", health.owner).put("name", health.name)
+                        .put("result", result.getOrNull() ?: JSONObject.NULL)
+                        .put("error", result.exceptionOrNull()?.describe()))
+                }
+            }
+        })
         root.put("modState", JSONObject().apply {
             runCatching { modInstances() }.getOrDefault(emptyList()).forEach { mod ->
                 put(mod.javaClass.simpleName, runCatching { describeFields(mod) }.getOrElse { JSONObject().put("error", it.describe()) })
@@ -277,9 +295,15 @@ object DebugRecorder {
         var type: Class<*>? = instance.javaClass
         while (type != null && type != Any::class.java && !type.name.startsWith("android.")) {
             type.declaredFields.forEach { field ->
-                if (java.lang.reflect.Modifier.isStatic(field.modifiers) || field.isSynthetic || fields.has(field.name)) return@forEach
+                val modifiers = field.modifiers
+                val static = java.lang.reflect.Modifier.isStatic(modifiers)
+                if (field.isSynthetic || fields.has(field.name) || field.name in IGNORED_FIELDS) return@forEach
+                if (static && java.lang.reflect.Modifier.isFinal(modifiers) &&
+                    (field.type.isPrimitive || field.type == String::class.java)
+                ) return@forEach
                 field.isAccessible = true
-                fields.put(field.name, describeValue(runCatching { field.get(instance) }.getOrElse { "<${it.javaClass.simpleName}>" }))
+                val value = runCatching { field.get(if (static) null else instance) }.getOrElse { "<${it.javaClass.simpleName}>" }
+                fields.put(field.name, describeValue(value))
             }
             type = type.superclass
         }
