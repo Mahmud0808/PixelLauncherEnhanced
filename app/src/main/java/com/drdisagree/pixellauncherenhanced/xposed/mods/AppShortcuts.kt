@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Process
 import android.os.UserHandle
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -131,6 +132,18 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 }
                 param.result = null
             }
+
+        listOf("com.android.launcher3.popup.SystemShortcut", appInfoShortcutClass!!.name).forEach { className ->
+            findClass(className, suppressError = true)
+                .hookMethod("createAccessibilityAction")
+                .suppressError()
+                .runBefore { param ->
+                    val action = getAdditionalInstanceField(param.thisObject, ACTION_KEY) as? Action
+                        ?: return@runBefore
+                    val id = param.thisObject.getFieldSilently("mAccessibilityActionId") as? Int ?: return@runBefore
+                    param.result = AccessibilityNodeInfo.AccessibilityAction(id, modRes.getString(action.labelRes))
+                }
+        }
 
         hookAppIconPopup()
         hookRecentsMenu()
