@@ -9,6 +9,8 @@ import android.net.Uri
 import android.os.Process
 import android.os.UserHandle
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
@@ -105,6 +107,27 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 )
                 if (action == Action.KILL) {
                     dismissTaskView(param.thisObject.getFieldSilently("mOriginalView") as? View)
+                }
+                param.result = null
+            }
+
+        findClass("com.android.launcher3.popup.SystemShortcut", suppressError = true)
+            .hookMethod("setIconAndLabelFor", "setIconAndContentDescriptionFor")
+            .runBefore { param ->
+                val action = getAdditionalInstanceField(param.thisObject, ACTION_KEY) as? Action
+                    ?: return@runBefore
+                val icon = runCatching { modRes.getDrawable(action.iconRes, null) }.getOrNull()
+                    ?: return@runBefore
+                val label = modRes.getString(action.labelRes)
+
+                if (param.method.name == "setIconAndLabelFor") {
+                    (param.args[0] as? View)?.background = icon
+                    (param.args[1] as? TextView)?.text = label
+                } else {
+                    (param.args[0] as? ImageView)?.apply {
+                        setImageDrawable(icon)
+                        contentDescription = label
+                    }
                 }
                 param.result = null
             }
