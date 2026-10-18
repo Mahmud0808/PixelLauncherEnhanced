@@ -48,15 +48,12 @@ object IconFit {
         deviceProfile.apply {
             val workspace = getAnyFieldSilently("mWorkspaceProfile", "workspaceProfile")
             val hotseat = getAnyFieldSilently("mHotseatProfile", "hotseatProfile")
-            val hotseatWidth = if (hotseat != null) {
-                hotseat.getFieldSilently("widthPx") as? Int ?: 0
-            } else {
-                (getFieldSilently("availableWidthPx") as? Int ?: 0) -
+            val hotseatWidth = hotseat?.getFieldSilently("widthPx") as? Int
+                ?: ((getFieldSilently("availableWidthPx") as? Int ?: 0) -
                         (getFieldSilently("hotseatBarSidePaddingStartPx") as? Int ?: 0) -
-                        (getFieldSilently("hotseatBarSidePaddingEndPx") as? Int ?: 0)
-            }
-            val hotseatCount = (hotseat ?: this)
-                .getAnyFieldSilently("numShownIcons", "numShownHotseatIcons") as? Int ?: 0
+                        (getFieldSilently("hotseatBarSidePaddingEndPx") as? Int ?: 0))
+            val hotseatCount = hotseat?.getFieldSilently("numShownIcons") as? Int
+                ?: getFieldSilently("numShownHotseatIcons") as? Int ?: 0
             val hotseatPitch = if (hotseatWidth > 0 && hotseatCount > 0) hotseatWidth / hotseatCount else null
 
             val folderProfile = getAnyFieldSilently("mFolderProfile", "folderProfile")
@@ -64,8 +61,10 @@ object IconFit {
 
             val scale = (workspace ?: this).fitIconSize(WORKSPACE_FIELDS, minGap, hotseatPitch)
             if (scale < 1f) {
-                folder.scaleIntField("folderIconSizePx", scale)
-                folder.scaleIntField("folderIconOffsetYPx", scale)
+                listOf("folderIconSizePx", "folderIconOffsetYPx").forEach { field ->
+                    val owner = if (folder.getFieldSilently(field) is Int) folder else this
+                    owner.scaleIntField(field, scale)
+                }
             }
 
             folder.fitIconSize(if (folderProfile != null) FOLDER_PROFILE_FIELDS else LEGACY_FOLDER_FIELDS, minGap, null)
@@ -78,7 +77,8 @@ object IconFit {
 
     private fun Any.allAppsPitch(allApps: Any?, context: Context): Int? {
         val profile = allApps ?: this
-        val columns = profile.getFieldSilently("numShownAllAppsColumns") as? Int ?: return null
+        val columns = profile.getFieldSilently("numShownAllAppsColumns") as? Int
+            ?: getFieldSilently("numShownAllAppsColumns") as? Int ?: return null
         if (columns <= 0) return null
 
         val properties = getAnyFieldSilently("mDeviceProperties", "deviceProperties") ?: this
