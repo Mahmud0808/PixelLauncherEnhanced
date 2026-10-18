@@ -30,11 +30,18 @@ class LockLayout(context: Context) : ModPack(context) {
         }
     }
 
+    private fun showLayoutLockedToast() {
+        Toast.makeText(
+            mContext,
+            modRes.getString(R.string.layout_is_locked),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val dragControllerClass = findClass("com.android.launcher3.dragndrop.DragController")
         val launcherAppWidgetHostViewClass =
             findClass("com.android.launcher3.widget.LauncherAppWidgetHostView")
-        val systemShortcutClass = findClass("com.android.launcher3.popup.SystemShortcut")
         val launcherPopupItemDragHandlerClass = findClass(
             $$"com.android.launcher3.popup.PopupContainerWithArrow$LauncherPopupItemDragHandler",
             "com.android.launcher3.popup.LauncherPopupItemDragHandler",
@@ -99,13 +106,41 @@ class LockLayout(context: Context) : ModPack(context) {
                 param.result = true
             }
 
-        systemShortcutClass
-            .hookMethod("onClick")
-            .runBefore { param ->
-                if (!lockLayout) return@runBefore
+        listOf("Widgets", "AddToHomeScreen", "RemoveApp").forEach { name ->
+            findClass($$"com.android.launcher3.popup.SystemShortcut$$$name", suppressError = true)
+                .hookMethod("onClick")
+                .suppressError()
+                .runBefore { param ->
+                    if (!lockLayout) return@runBefore
 
-                param.result = null
-            }
+                    showLayoutLockedToast()
+                    param.result = null
+                }
+        }
+
+        listOf(
+            "com.android.launcher3.DropTargetHandler" to "onDeleteComplete",
+            "com.android.launcher3.dragndrop.ItemDeleteHandler" to "completeDelete"
+        ).forEach { (className, completeMethod) ->
+            val deleteHandlerClass = findClass(className, suppressError = true)
+
+            deleteHandlerClass
+                .hookMethod("prepareToUndoDelete")
+                .suppressError()
+                .runBefore { param ->
+                    if (lockLayout) param.result = null
+                }
+
+            deleteHandlerClass
+                .hookMethod(completeMethod)
+                .suppressError()
+                .runBefore { param ->
+                    if (!lockLayout) return@runBefore
+
+                    showLayoutLockedToast()
+                    param.result = null
+                }
+        }
 
         launcherPopupItemDragHandlerClass
             .hookMethod("onLongClick")
@@ -133,14 +168,6 @@ class LockLayout(context: Context) : ModPack(context) {
             .runBefore { param ->
                 if (lockLayout) param.result = null
             }
-
-        fun showLayoutLockedToast() {
-            Toast.makeText(
-                mContext,
-                modRes.getString(R.string.layout_is_locked),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
 
         if (optionsPopupViewClass.hasMethod("openWidgets")) {
             optionsPopupViewClass
