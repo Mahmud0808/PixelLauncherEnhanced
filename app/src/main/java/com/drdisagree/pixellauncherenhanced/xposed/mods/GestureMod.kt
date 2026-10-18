@@ -374,7 +374,7 @@ class GestureMod(context: Context) : ModPack(context) {
                 val direction = if (dy < 0) IconSwipeActions.Direction.UP else IconSwipeActions.Direction.DOWN
                 val run = swipeRunnable(target, direction)
                 swipeTarget = null
-                if (run == null || !isHomeReadyForIcons()) return null
+                if (run == null || !isReadyForIcon(target)) return null
 
                 swipeConsumed = true
                 pendingSwipe = run
@@ -391,7 +391,7 @@ class GestureMod(context: Context) : ModPack(context) {
                     folderTapFirstApp && folderIconClass?.isInstance(tapped) == true &&
                     event.eventTime - swipeDownTime < ViewConfiguration.getLongPressTimeout() &&
                     hypot(event.rawX - swipeDownX, event.rawY - swipeDownY) < ViewConfiguration.get(mContext).scaledTouchSlop &&
-                    isHomeReadyForIcons()
+                    isReadyForIcon(tapped)
                 ) {
                     tapped.cancelLongPress()
                     tapped.isPressed = false
@@ -697,6 +697,23 @@ class GestureMod(context: Context) : ModPack(context) {
         if (launcher != null && launcherRef?.get() !== launcher) {
             launcherRef = WeakReference(launcher)
         }
+    }
+
+    private fun isReadyForIcon(target: View): Boolean =
+        isHomeReadyForIcons() || (folderIconClass?.isInstance(target) == true && isDrawerFolder(target))
+
+    private fun isDrawerFolder(folderIcon: View): Boolean {
+        val launcher = launcherRef?.get() ?: return false
+        val allApps = launcherStateClass.getStaticFieldSilently("ALL_APPS") ?: return false
+        val stateManager = launcher.callMethodSilently("getStateManager") ?: launcher.getFieldSilently("mStateManager")
+        if (stateManager?.getFieldSilently("mState") !== allApps) return false
+        if (floatingViewClass.callStaticMethodSilently("getTopOpenView", launcher) != null) return false
+        var parent = folderIcon.parent
+        while (parent is View) {
+            if (parent.javaClass.name.endsWith("AllAppsContainerView") || parent.javaClass.name.endsWith("SearchContainerView")) return true
+            parent = parent.parent
+        }
+        return false
     }
 
     private fun isNormalState(launcher: Any): Boolean {
