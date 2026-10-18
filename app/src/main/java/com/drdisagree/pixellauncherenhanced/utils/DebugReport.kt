@@ -59,6 +59,7 @@ import java.util.UUID
 import java.util.zip.Deflater
 import java.util.zip.GZIPInputStream
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.coroutines.resume
 
@@ -269,26 +270,16 @@ class DebugReport(private val context: Context) {
         ).joinToString("; ") { "$it 2>&1" }
         writeText("root/environment.txt", runCommand(script, true))
         val modules = runCommand(
-            "for d in /data/adb/modules/*; do [ -d \"\$d\" ] || continue; r=0; " +
-                    "grep -qiE '$RELEVANT_MODULES' \"\$d/module.prop\" 2>/dev/null && r=1; " +
-                    "[ \$r = 0 ] && [ -n \"\$(find \"\$d/system\" \"\$d/product\" \"\$d/system_ext\" " +
-                    "\\( -iname '*overlay*' -o -iname '*launcher*' -o -iname '*systemui*' -o -iname 'framework-res*' \\) 2>/dev/null | head -n 1)\" ] && r=1; " +
-                    "if [ \$r = 1 ]; then echo \"== \$d\"; cat \"\$d/module.prop\" 2>&1; " +
-                    "for f in disable remove update skip_mount; do [ -e \"\$d/\$f\" ] && echo \"flag=\$f\"; done; " +
-                    "else echo '$OTHER_MODULE'; fi; done",
+            "for d in /data/adb/modules/*; do echo \"== \$d\"; cat \"\$d/module.prop\" 2>&1; " +
+                    "for f in disable remove update skip_mount; do [ -e \"\$d/\$f\" ] && echo \"flag=\$f\"; done; done",
             true
         )
-        val others = modules.lines().count { it == OTHER_MODULE }
-        writeText(
-            "root/modules.txt",
-            modules.lines().filter { it != OTHER_MODULE }.joinToString("\n") + "\n\n$others other modules not related to the launcher are not listed"
-        )
+        writeText("root/modules.txt", modules)
         val names = Regex("^name=(.*)$", RegexOption.MULTILINE).findAll(modules).map { it.groupValues[1].trim() }.toList()
         report.put("rootModules", JSONArray(names))
-        report.put("otherRootModules", others)
         val selinux = runCommand("getenforce", true).trim()
         report.put("selinux", selinux)
-        return "${names.size + others} modules, SELinux $selinux"
+        return "${names.size} modules, SELinux $selinux"
     }
 
     private fun collectLauncher(): String {
@@ -739,7 +730,10 @@ class DebugReport(private val context: Context) {
             "logs/lsposed.txt",
             "for f in /data/adb/lspd/log/modules_*.log /data/adb/lspd/log/verbose_*.log /data/adb/lspd/log.old/modules_*.log; do " +
                     "[ -f \"\$f\" ] || continue; " +
-                    "echo \"== \$(basename \$f): warnings and errors\"; grep -iE '$modulePattern' \"\$f\" | grep -E ' [EWF]/' | awk '!seen[\$0]++' | tail -n $MAX_LSPOSED_PROBLEMS; " +
+                    "echo \"== \$(basename \$f): warnings and errors\"; " +
+                    "awk -v pat='${modulePattern.lowercase()}' '{ l = tolower(\$0) } " +
+                    "l ~ pat && \$0 ~ / [EWF]\\// { p = 1; print; next } " +
+                    "p && (\$0 ~ /^[ \\t]/ || \$0 ~ /^Caused by/ || \$0 !~ /^\\[/) { print; next } { p = 0 }' \"\$f\" | tail -n $MAX_LSPOSED_PROBLEMS; " +
                     "echo \"== \$(basename \$f): recent\"; grep -iE '$modulePattern' \"\$f\" | tail -n $MAX_LSPOSED_LINES; done"
         )
         return "${launcherPids.size} launcher processes, LSPosed log"
@@ -829,7 +823,7 @@ class DebugReport(private val context: Context) {
         appendLine("Build: ${system?.optString("fingerprint")}")
         appendLine("ROM: ${system?.optString("display")}")
         appendLine("Root: ${if (rooted) "granted" else "not granted"}, SELinux ${report.optString("selinux", "unknown")}")
-        appendLine("Root modules: ${report.optJSONArray("rootModules")?.strings()?.joinToString().orEmpty()} (+${report.optInt("otherRootModules")} unrelated)")
+        appendLine("Root modules: ${report.optJSONArray("rootModules")?.strings()?.joinToString().orEmpty()}")
         appendLine("Module: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}, ${BuildConfig.BUILD_TYPE})")
         val launchers = report.optJSONObject("launchers")
         appendLine("Launcher: ${launchers?.optString("target")} ${launcherInfo?.versionName} (${launcherInfo?.longVersionCode}), default home ${launchers?.optString("defaultHome")}")
@@ -977,11 +971,15 @@ class DebugReport(private val context: Context) {
 
     private fun loadPackageVisibility() {
         val applications = runCatching {
-            context.packageManager.getInstalledApplications(PackageManager.MATCH_DISABLED_COMPONENTS)
+            context.packageManager.getInstalledApplications(PackageManager.MATCH_DISABLED_COMPONENTS or PackageManager.GET_META_DATA)
         }.getOrDefault(emptyList())
         applications.forEach { application ->
             val system = application.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-            if (system) publicPackages.add(application.packageName) else privatePackages.add(application.packageName)
+            if (system || application.isXposedModule()) {
+                publicPackages.add(application.packageName)
+            } else {
+                privatePackages.add(application.packageName)
+            }
         }
         val kept = KEPT_PACKAGES + BuildConfig.APPLICATION_ID + listOf(ICON_PACKS, THEMED_ICON_PACKS).flatMap { key ->
             PACKAGE_LIKE.findAll(RPrefs.all[key]?.toString().orEmpty()).map { it.value }.toList()
@@ -990,7 +988,19 @@ class DebugReport(private val context: Context) {
         privatePackages.removeAll(kept.toSet())
     }
 
-    private fun anonymize(text: String, strict: Boolean = false): String = PACKAGE_LIKE.replace(text) { match ->
+    private fun ApplicationInfo.isXposedModule(): Boolean {
+        if (metaData?.containsKey(XPOSED_META) == true) return true
+        return runCatching { ZipFile(sourceDir).use { it.getEntry(XPOSED_INIT) != null } }.getOrDefault(false)
+    }
+
+    private fun anonymize(text: String, strict: Boolean = false): String {
+        if (strict) return anonymizeNames(text, true)
+        return text.lineSequence().joinToString("\n") { line ->
+            if (CODE_LINE.containsMatchIn(line)) line else anonymizeNames(line, false)
+        }
+    }
+
+    private fun anonymizeNames(text: String, strict: Boolean): String = PACKAGE_LIKE.replace(text) { match ->
         val name = match.value
         val segments = name.split('.')
         for (count in segments.size downTo 2) {
@@ -1089,8 +1099,9 @@ class DebugReport(private val context: Context) {
         private const val RUNTIME_TIMEOUT_MS = 12000L
         private const val SHARED_OWNER = "Shared"
         private const val TOKEN_LENGTH = 6
-        private const val OTHER_MODULE = "== other"
-        private const val RELEVANT_MODULES = "lsposed|lspd|vector|xposed|zygisk|riru|shamiko|launcher|quickstep|quickswitch|systemui|pixel|monet|overlay"
+        private const val XPOSED_META = "xposedmodule"
+        private const val XPOSED_INIT = "META-INF/xposed/java_init.list"
+        private val CODE_LINE = Regex("^\\s*(at |Caused by:|Suppressed:)|\\b[\\w$.]+(Exception|Error)\\b")
         private val PACKAGE_LIKE = Regex("(?<![\\w.])[a-zA-Z][a-zA-Z0-9_]*(?:\\.[a-zA-Z0-9_]+)+")
         private val KEPT_PACKAGES = listOf(
             PIXEL_LAUNCHER_PACKAGE, LAUNCHER3_PACKAGE, "org.lsposed.manager", "com.topjohnwu.magisk",
