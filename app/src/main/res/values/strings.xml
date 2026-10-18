@@ -557,7 +557,7 @@
     <string name="debug_report_title">Debug report</string>
     <string name="debug_report_summary">Collect details and logs for the developer</string>
     <string name="debug_report_intro">Creates one zip with device details, module status, launcher state and logs. Share it with the developer when something does not work.</string>
-    <string name="debug_report_privacy">Personal details are removed before packing: contact and shortcut names, emails, phone numbers, links, network addresses and text you typed in settings. App names and system logs stay. Only share it with the developer.</string>
+    <string name="debug_report_privacy">Your privacy is protected. Contact and shortcut names, emails, phone numbers, links, network addresses and text you typed in settings are removed, and app names are replaced with random codes.</string>
     <string name="debug_report_description_hint">What went wrong?</string>
     <string name="debug_report_description_helper">What you did, what you expected and when it started</string>
     <string name="debug_report_add_attachments">Add screenshots or recordings</string>

@@ -5,6 +5,7 @@ import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -27,6 +28,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_DRAWER_
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_HOME_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_SETTINGS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LABEL_OVERRIDES
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS_REQUEST
@@ -89,6 +92,10 @@ class DebugReport(private val context: Context) {
     private var launcherPackage: String? = null
     private var launcherInfo: PackageInfo? = null
     private var runtime: JSONObject? = null
+    private val salt = UUID.randomUUID().toString()
+    private val privatePackages = HashSet<String>()
+    private val publicPackages = HashSet<String>()
+    private val tokens = HashMap<String, String>()
 
     suspend fun build(options: Options, onStep: (Step, Status, String?) -> Unit): Result = withContext(Dispatchers.IO) {
         workDir.deleteRecursively()
@@ -96,6 +103,7 @@ class DebugReport(private val context: Context) {
         outputDir.mkdirs()
         RootShell.init()
         rooted = RootShell.isRootShell()
+        loadPackageVisibility()
         try {
             collectAll(options, onStep)
         } finally {
@@ -230,7 +238,9 @@ class DebugReport(private val context: Context) {
             put("navigationMode", secureInt("navigation_mode"))
             put("animatorScale", Settings.Global.getString(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE))
             put("transitionScale", Settings.Global.getString(context.contentResolver, Settings.Global.TRANSITION_ANIMATION_SCALE))
-            put("liveWallpaper", runCatching { WallpaperManager.getInstance(context).wallpaperInfo?.component?.flattenToString() }.getOrNull())
+            val liveWallpaper = runCatching { WallpaperManager.getInstance(context).wallpaperInfo }.getOrNull()
+            put("liveWallpaper", liveWallpaper?.component?.flattenToString())
+            put("liveWallpaperSystem", liveWallpaper?.let { it.packageName in publicPackages })
             put("themeOverlays", Settings.Secure.getString(context.contentResolver, "theme_customization_overlay_packages"))
         })
         report.put("module", JSONObject().apply {
@@ -259,16 +269,26 @@ class DebugReport(private val context: Context) {
         ).joinToString("; ") { "$it 2>&1" }
         writeText("root/environment.txt", runCommand(script, true))
         val modules = runCommand(
-            "for d in /data/adb/modules/*; do echo \"== \$d\"; cat \"\$d/module.prop\" 2>&1; " +
-                    "for f in disable remove update skip_mount; do [ -e \"\$d/\$f\" ] && echo \"flag=\$f\"; done; done",
+            "for d in /data/adb/modules/*; do [ -d \"\$d\" ] || continue; r=0; " +
+                    "grep -qiE '$RELEVANT_MODULES' \"\$d/module.prop\" 2>/dev/null && r=1; " +
+                    "[ \$r = 0 ] && [ -n \"\$(find \"\$d/system\" \"\$d/product\" \"\$d/system_ext\" " +
+                    "\\( -iname '*overlay*' -o -iname '*launcher*' -o -iname '*systemui*' -o -iname 'framework-res*' \\) 2>/dev/null | head -n 1)\" ] && r=1; " +
+                    "if [ \$r = 1 ]; then echo \"== \$d\"; cat \"\$d/module.prop\" 2>&1; " +
+                    "for f in disable remove update skip_mount; do [ -e \"\$d/\$f\" ] && echo \"flag=\$f\"; done; " +
+                    "else echo '$OTHER_MODULE'; fi; done",
             true
         )
-        writeText("root/modules.txt", modules)
+        val others = modules.lines().count { it == OTHER_MODULE }
+        writeText(
+            "root/modules.txt",
+            modules.lines().filter { it != OTHER_MODULE }.joinToString("\n") + "\n\n$others other modules not related to the launcher are not listed"
+        )
         val names = Regex("^name=(.*)$", RegexOption.MULTILINE).findAll(modules).map { it.groupValues[1].trim() }.toList()
         report.put("rootModules", JSONArray(names))
+        report.put("otherRootModules", others)
         val selinux = runCommand("getenforce", true).trim()
         report.put("selinux", selinux)
-        return "${names.size} modules, SELinux $selinux"
+        return "${names.size + others} modules, SELinux $selinux"
     }
 
     private fun collectLauncher(): String {
@@ -676,7 +696,9 @@ class DebugReport(private val context: Context) {
                             if (column == "intent") {
                                 val intent = runCatching { Intent.parseUri(cursor.getString(index), 0) }.getOrNull()
                                 row.put("component", intent?.component?.flattenToShortString())
-                                row.put("package", intent?.`package` ?: intent?.component?.packageName)
+                                val target = intent?.`package` ?: intent?.component?.packageName
+                                row.put("package", target)
+                                row.put("systemApp", target?.let { it in publicPackages })
                                 row.put("hasData", intent?.data != null)
                             } else {
                                 row.put(column, cursor.getString(index))
@@ -729,7 +751,8 @@ class DebugReport(private val context: Context) {
             if (key in EXCLUDED_SETTINGS || EXCLUDED_SETTING_PREFIXES.any { key.startsWith(it) }) return@forEach
             settings.put(key, when {
                 key in PRIVATE_SETTINGS -> "<redacted, ${value.toString().length} chars>"
-                value is Set<*> -> JSONArray(value.toList())
+                value is Set<*> -> JSONArray(value.map { anonymize(it.toString(), strict = true) })
+                value is String -> anonymize(value, strict = true)
                 else -> value
             })
         }
@@ -806,7 +829,7 @@ class DebugReport(private val context: Context) {
         appendLine("Build: ${system?.optString("fingerprint")}")
         appendLine("ROM: ${system?.optString("display")}")
         appendLine("Root: ${if (rooted) "granted" else "not granted"}, SELinux ${report.optString("selinux", "unknown")}")
-        appendLine("Root modules: ${report.optJSONArray("rootModules")?.strings()?.joinToString().orEmpty()}")
+        appendLine("Root modules: ${report.optJSONArray("rootModules")?.strings()?.joinToString().orEmpty()} (+${report.optInt("otherRootModules")} unrelated)")
         appendLine("Module: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}, ${BuildConfig.BUILD_TYPE})")
         val launchers = report.optJSONObject("launchers")
         appendLine("Launcher: ${launchers?.optString("target")} ${launcherInfo?.versionName} (${launcherInfo?.longVersionCode}), default home ${launchers?.optString("defaultHome")}")
@@ -952,6 +975,40 @@ class DebugReport(private val context: Context) {
         }
     }
 
+    private fun loadPackageVisibility() {
+        val applications = runCatching {
+            context.packageManager.getInstalledApplications(PackageManager.MATCH_DISABLED_COMPONENTS)
+        }.getOrDefault(emptyList())
+        applications.forEach { application ->
+            val system = application.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+            if (system) publicPackages.add(application.packageName) else privatePackages.add(application.packageName)
+        }
+        val kept = KEPT_PACKAGES + BuildConfig.APPLICATION_ID + listOf(ICON_PACKS, THEMED_ICON_PACKS).flatMap { key ->
+            PACKAGE_LIKE.findAll(RPrefs.all[key]?.toString().orEmpty()).map { it.value }.toList()
+        }
+        publicPackages.addAll(kept)
+        privatePackages.removeAll(kept.toSet())
+    }
+
+    private fun anonymize(text: String, strict: Boolean = false): String = PACKAGE_LIKE.replace(text) { match ->
+        val name = match.value
+        val segments = name.split('.')
+        for (count in segments.size downTo 2) {
+            val full = segments.take(count).joinToString(".")
+            val base = full.length - segments[count - 1].length
+            val cuts = segments[count - 1].indices.filter { segments[count - 1][it] == '_' }.map { full.substring(0, base + it) }
+            (listOf(full) + cuts.reversed()).forEach { prefix ->
+                if (prefix in publicPackages) return@replace name
+                if (prefix in privatePackages) return@replace token(prefix) + name.substring(prefix.length)
+            }
+        }
+        if (strict && PUBLIC_PREFIXES.none { name.startsWith(it) }) token(name) else name
+    }
+
+    private fun token(packageName: String): String = tokens.getOrPut(packageName) {
+        "app_" + sha256((salt + packageName).byteInputStream()).take(TOKEN_LENGTH)
+    }
+
     private fun secureInt(key: String): Int? = runCatching { Settings.Secure.getInt(context.contentResolver, key) }.getOrNull()
 
     private fun displayName(uri: Uri): String? = runCatching {
@@ -963,7 +1020,7 @@ class DebugReport(private val context: Context) {
     private fun writeText(name: String, text: String) {
         val file = File(workDir, name)
         file.parentFile?.mkdirs()
-        file.writeText(text)
+        file.writeText(if (name.startsWith("user/")) text else anonymize(text))
         entries[name] = file
     }
 
@@ -1031,6 +1088,15 @@ class DebugReport(private val context: Context) {
         private const val WORK_DIR = "debug_report_work"
         private const val RUNTIME_TIMEOUT_MS = 12000L
         private const val SHARED_OWNER = "Shared"
+        private const val TOKEN_LENGTH = 6
+        private const val OTHER_MODULE = "== other"
+        private const val RELEVANT_MODULES = "lsposed|lspd|vector|xposed|zygisk|riru|shamiko|launcher|quickstep|quickswitch|systemui|pixel|monet|overlay"
+        private val PACKAGE_LIKE = Regex("(?<![\\w.])[a-zA-Z][a-zA-Z0-9_]*(?:\\.[a-zA-Z0-9_]+)+")
+        private val KEPT_PACKAGES = listOf(
+            PIXEL_LAUNCHER_PACKAGE, LAUNCHER3_PACKAGE, "org.lsposed.manager", "com.topjohnwu.magisk",
+            "io.github.huskydg.magisk", "me.weishu.kernelsu", "me.bmax.apatch"
+        )
+        private val PUBLIC_PREFIXES = listOf("android.", "com.android.", "com.google.android.", "java.", "javax.", "kotlin.", "androidx.", "dalvik.")
         private const val MB = 1024L * 1024L
         private const val KB = 1024L
         private const val KEPT_REPORTS = 3
