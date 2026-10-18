@@ -108,7 +108,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 thisObject.setField(
                     "mScrimColor",
                     ColorUtils.setAlphaComponent(
-                        result as Int,
+                        mScrimColor,
                         appDrawerBackgroundOpacity
                     )
                 )
