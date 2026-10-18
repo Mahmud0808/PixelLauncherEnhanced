@@ -499,12 +499,17 @@ class DebugReport(private val context: Context) {
 
     private fun uncapturedObjects(runtime: JSONObject): List<String> {
         val states = runtime.optJSONObject("modState") ?: return emptyList()
+        val notNeeded = runtime.optJSONArray("captures")?.objects().orEmpty()
+            .filter { !it.optBoolean("needed", true) }
+            .map { "${it.optString("owner")}.${it.optString("field")}" }
+            .toSet()
         val result = ArrayList<String>()
         states.keys().forEach { owner ->
             val state = states.optJSONObject(owner) ?: return@forEach
             state.keys().forEach { field ->
                 if (!field.endsWith("Instance") && !field.endsWith("Ref")) return@forEach
                 val value = state.opt(field)
+                if ("$owner.$field" in notNeeded) return@forEach
                 if (value == JSONObject.NULL || value == null || value.toString() == "ref(null)") result.add("$owner.$field")
             }
         }

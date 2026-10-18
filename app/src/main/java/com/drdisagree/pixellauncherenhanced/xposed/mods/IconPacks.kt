@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -214,6 +215,8 @@ class IconPacks(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        DebugRecorder.registerCapture("modelCallbacksRef") { launcherModelRef?.get() == null }
+
         registerPackReceiver()
 
         findClass("com.android.launcher3.LauncherModel", suppressError = true)
@@ -419,13 +422,16 @@ class IconPacks(context: Context) : ModPack(context) {
                 param.result = transparentAdaptiveIcon(param.args.getOrNull(0) as? Drawable) ?: return@runBefore
             }
 
+        val itemInfoWithIconClass = findClass("com.android.launcher3.model.data.ItemInfoWithIcon", suppressError = true)
+
         listOf("com.android.launcher3.graphics.IconLoader", "com.android.launcher3.Utilities").forEach { className ->
             findClass(className, suppressError = true)
                 .hookMethod("getFullDrawable")
                 .suppressError()
                 .runBefore { param ->
-                    val bitmap = param.args.firstNotNullOfOrNull {
-                        it.getFieldSilently("bitmap").getFieldSilently("icon") as? Bitmap
+                    val bitmap = param.args.firstNotNullOfOrNull { arg ->
+                        if (arg == null || itemInfoWithIconClass?.isInstance(arg) == false) return@firstNotNullOfOrNull null
+                        arg.getFieldSilently("bitmap").getFieldSilently("icon") as? Bitmap
                     }
                     fullDrawableBitmap.set(bitmap)
                 }

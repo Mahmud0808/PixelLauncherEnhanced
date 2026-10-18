@@ -9,6 +9,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Compa
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
@@ -33,6 +34,8 @@ class DrawerScrollbar(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        DebugRecorder.registerCapture("scrollerRef") { hideScrollbar }
+
         drawerClass = findClass(
             "com.android.launcher3.allapps.ActivityAllAppsContainerView",
             suppressError = true

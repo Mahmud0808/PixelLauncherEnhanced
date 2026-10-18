@@ -60,6 +60,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     private var modelUpdateTaskClass: Class<*>? = null
     private var callbackTaskClass: Class<*>? = null
     private var invariantDeviceProfileClass: Class<*>? = null
+    private var itemInfoClass: Class<*>? = null
     private val privateProfiles = ConcurrentHashMap<UserHandle, Boolean>()
 
     override fun updatePrefs(vararg key: String) {
@@ -85,6 +86,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val launcherModelClass = findClass("com.android.launcher3.LauncherModel") ?: return
+        itemInfoClass = findClass("com.android.launcher3.model.data.ItemInfo", suppressError = true)
         modelUpdateTaskClass = findClass(
             $$"com.android.launcher3.LauncherModel$ModelUpdateTask",
             suppressError = true
@@ -688,9 +690,9 @@ class AppDrawerMode(context: Context) : ModPack(context) {
     private fun scheduleResortIfManaged(args: Array<Any?>) {
         val touchesManagedItem = args.any { arg ->
             when (arg) {
-                is Collection<*> -> arg.any { it?.isManagedPosition() == true }
+                is Collection<*> -> arg.any { it.isItemInfo() && it?.isManagedPosition() == true }
                 null -> false
-                else -> arg.isManagedPosition()
+                else -> arg.isItemInfo() && arg.isManagedPosition()
             }
         }
         if (touchesManagedItem) scheduleResort()
@@ -934,6 +936,8 @@ class AppDrawerMode(context: Context) : ModPack(context) {
                     other.appKey() == key
         }
     }
+
+    private fun Any?.isItemInfo(): Boolean = this != null && itemInfoClass?.isInstance(this) != false
 
     private fun Any.isAutoAdded(): Boolean {
         return (getFieldSilently("intent") as? Intent)?.getBooleanExtra(AUTO_ADDED_EXTRA, false) == true

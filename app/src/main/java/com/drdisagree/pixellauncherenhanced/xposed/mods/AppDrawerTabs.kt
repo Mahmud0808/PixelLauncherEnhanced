@@ -44,6 +44,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
@@ -91,6 +92,8 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        DebugRecorder.registerCapture("appsSourceRef") { tabsEnabled }
+
         val containerClass = findClass(
             "com.android.launcher3.allapps.ActivityAllAppsContainerView",
             suppressError = true

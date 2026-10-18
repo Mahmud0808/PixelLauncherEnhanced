@@ -59,6 +59,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
     private var recentsLockApp = false
 
     private var appInfoShortcutClass: Class<*>? = null
+    private var itemInfoClass: Class<*>? = null
     private var appInfoShortcutConstructor: Constructor<*>? = null
     private val popupFactories = HashMap<Action, Any>()
 
@@ -74,6 +75,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        itemInfoClass = findClass("com.android.launcher3.model.data.ItemInfo", suppressError = true)
         appInfoShortcutClass = findClass(
             $$"com.android.launcher3.popup.SystemShortcut$AppInfo",
             suppressError = true
@@ -187,8 +189,12 @@ class AppShortcuts(context: Context) : ModPack(context) {
             }
     }
 
+    private fun Array<out Any?>.itemInfo(): Any? = firstOrNull { arg ->
+        arg != null && itemInfoClass?.isInstance(arg) ?: (arg.getFieldSilently("itemType") != null)
+    }
+
     private fun lockAction(args: Array<out Any?>): Action {
-        val itemInfo = args.firstOrNull { it?.getFieldSilently("itemType") != null }
+        val itemInfo = args.itemInfo()
         val packageName = itemInfo.packageName() ?: return Action.LOCK
         val locked = LockedApps.isLocked(mContext, packageName, itemInfo.user().userId())
         return if (locked) Action.UNLOCK else Action.LOCK
@@ -196,7 +202,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
 
     private fun createShortcut(action: Action, args: Array<out Any?>): Any? {
         val constructor = appInfoShortcutConstructor ?: return null
-        val itemInfo = args.firstOrNull { it?.getFieldSilently("itemType") != null } ?: return null
+        val itemInfo = args.itemInfo() ?: return null
         val packageName = itemInfo.packageName() ?: return null
 
         if (packageName == mContext.packageName) return null

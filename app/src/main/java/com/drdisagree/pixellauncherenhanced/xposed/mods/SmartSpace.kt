@@ -726,8 +726,9 @@ class SmartSpace(context: Context) : ModPack(context) {
                     return@runBefore
                 }
 
-                val dataModel = param.args[1]
-                dataModel.setFieldSilently("isFirstPagePinnedItemEnabled", false)
+                if (!isLegacySmartspaceModel) return@runBefore
+                param.args.firstOrNull { bgDataModelClass?.isInstance(it) == true }
+                    ?.setFieldSilently("isFirstPagePinnedItemEnabled", false)
             }
 
         val loaderTask = findClass("com.android.launcher3.model.LoaderTask")
@@ -735,7 +736,7 @@ class SmartSpace(context: Context) : ModPack(context) {
         loaderTask
             .hookMethod("loadWorkspace", "loadWorkspaceImpl")
             .runAfter { param ->
-                if (!hideQuickspace) return@runAfter
+                if (!hideQuickspace || !isLegacySmartspaceModel) return@runAfter
 
                 val mBgDataModel = param.thisObject.getField("mBgDataModel")
                 mBgDataModel.setFieldSilently("isFirstPagePinnedItemEnabled", false)

@@ -68,6 +68,10 @@ object DebugRecorder {
     private val healthChecks = ArrayList<HealthCheck>()
 
     class HealthCheck(val owner: String?, val name: String, val check: () -> Boolean?)
+
+    private val captures = ArrayList<CaptureNeed>()
+
+    class CaptureNeed(val owner: String?, val field: String, val needed: () -> Boolean)
     private var modInstances: () -> List<Any> = { emptyList() }
     private val executor = Executors.newSingleThreadExecutor()
     private val processStart = System.currentTimeMillis() - (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime())
@@ -97,6 +101,10 @@ object DebugRecorder {
 
     fun registerHealth(name: String, check: () -> Boolean?) {
         synchronized(healthChecks) { healthChecks.add(HealthCheck(owner(), name, check)) }
+    }
+
+    fun registerCapture(field: String, needed: () -> Boolean) {
+        synchronized(captures) { captures.add(CaptureNeed(owner(), field, needed)) }
     }
 
     fun registerModInstances(provider: () -> List<Any>) {
@@ -279,6 +287,14 @@ object DebugRecorder {
                     put(JSONObject().put("owner", health.owner).put("name", health.name)
                         .put("result", result.getOrNull() ?: JSONObject.NULL)
                         .put("error", result.exceptionOrNull()?.describe()))
+                }
+            }
+        })
+        root.put("captures", JSONArray().apply {
+            synchronized(captures) {
+                captures.forEach { capture ->
+                    put(JSONObject().put("owner", capture.owner).put("field", capture.field)
+                        .put("needed", runCatching { capture.needed() }.getOrDefault(true)))
                 }
             }
         })

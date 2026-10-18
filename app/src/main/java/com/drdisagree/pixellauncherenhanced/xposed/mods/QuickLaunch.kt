@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
@@ -51,6 +52,8 @@ class QuickLaunch(context: Context) : ModPack(context) {
 	}
 
 	override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
+		DebugRecorder.registerCapture("recyclerRef") { quickLaunch && containerRef?.get() == null }
+
 		// Core: hook container inflation & keep lightweight references to list / recycler / search box
 		listOf(
 			"com.google.android.apps.nexuslauncher.allapps.SearchContainerView", // Pixel specific
