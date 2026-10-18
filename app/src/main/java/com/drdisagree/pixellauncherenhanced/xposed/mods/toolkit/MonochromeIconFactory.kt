@@ -24,6 +24,7 @@ import android.graphics.ColorFilter
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.Picture
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -100,8 +101,18 @@ open class MonochromeIconFactory internal constructor(
     }
 
     private fun drawDrawable(drawable: Drawable?) {
-        drawable?.setBounds(0, 0, mBitmapSize, mBitmapSize)
-        drawable?.draw(mFlatCanvas)
+        drawable ?: return
+        drawable.setBounds(0, 0, mBitmapSize, mBitmapSize)
+        try {
+            drawable.draw(mFlatCanvas)
+        } catch (_: IllegalArgumentException) {
+            val picture = Picture()
+            drawable.draw(picture.beginRecording(mBitmapSize, mBitmapSize))
+            picture.endRecording()
+            val software = Bitmap.createBitmap(picture, mBitmapSize, mBitmapSize, Bitmap.Config.ARGB_8888)
+            mFlatCanvas.drawBitmap(software, 0f, 0f, null)
+            software.recycle()
+        }
     }
 
     /**
