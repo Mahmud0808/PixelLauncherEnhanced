@@ -17,6 +17,7 @@ import android.view.animation.DecelerateInterpolator
 import androidx.annotation.RequiresApi
 import java.util.Collections
 import java.util.WeakHashMap
+import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -133,7 +134,9 @@ class BlurPanel(private val host: View) {
         val visibleAlpha = alpha * fade
         val visibleBlurRadius = blurRadius * fade
 
-        if (visibleBlurRadius >= 0.5f) {
+        val regionAlpha = visibleAlpha * (1f - launcherBlur)
+
+        if (visibleBlurRadius >= 0.5f && regionAlpha > 0f) {
             val blur = wallpaperBlur ?: (host.callMethodSilently("getViewRootImpl")
                 .callMethodSilently("createBackgroundBlurDrawable") as? Drawable)
                 ?.also { wallpaperBlur = it }
@@ -163,7 +166,7 @@ class BlurPanel(private val host: View) {
                     nudge = false
                     host.postInvalidateOnAnimation()
                 }
-                this.alpha = (visibleAlpha * 255).roundToInt()
+                this.alpha = (regionAlpha * 255).roundToInt()
                 draw(canvas)
             }
         }
@@ -202,6 +205,18 @@ class BlurPanel(private val host: View) {
         private const val MAX_RECHECKS = 100
         private const val FADE_IN_DURATION = 250L
         private const val LONG_HIDE = 1000L
+        private const val BLUR_STEP = 0.01f
+
+        @Volatile
+        private var launcherBlur = 0f
+
+        fun setLauncherBlur(fraction: Float) {
+            val value = fraction.coerceIn(0f, 1f)
+            if (abs(value - launcherBlur) < BLUR_STEP && value != 0f && value != 1f) return
+            if (value == launcherBlur) return
+            launcherBlur = value
+            refreshAll()
+        }
 
         fun refreshAll() {
             panels.toList().forEach { it.refresh() }

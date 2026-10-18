@@ -166,6 +166,21 @@ class BlurPanels(context: Context) : ModPack(context) {
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
 
+        listOf(
+            "com.android.quickstep.util.BaseDepthControllerImpl",
+            "com.android.quickstep.util.BaseDepthController",
+            "com.android.launcher3.statehandlers.DepthController"
+        ).forEach { className ->
+            findClass(className, suppressError = true)
+                .hookMethod("applyDepthAndBlur")
+                .suppressError()
+                .runAfter { param ->
+                    val current = param.thisObject.getFieldSilently("mCurrentBlur") as? Int ?: return@runAfter
+                    val max = param.thisObject.getFieldSilently("mMaxBlurRadius") as? Int ?: return@runAfter
+                    BlurPanel.setLauncherBlur(if (max > 0) current.toFloat() / max else 0f)
+                }
+        }
+
         findClass("com.android.launcher3.Launcher", suppressError = true)
             .hookMethod("onResume")
             .suppressError()
