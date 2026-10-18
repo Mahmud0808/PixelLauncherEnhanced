@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.utils
 
+import android.app.WallpaperInfo
 import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
@@ -14,6 +15,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.Process
+import android.util.Xml
 import android.view.Display
 import android.view.SurfaceControlViewHost
 import androidx.annotation.RequiresApi
@@ -26,7 +28,9 @@ import com.drdisagree.pixellauncherenhanced.data.model.HomePreview
 import com.drdisagree.pixellauncherenhanced.utils.AppUtils.isLauncher3
 import com.drdisagree.pixellauncherenhanced.utils.AppUtils.isPixelLauncher
 import com.topjohnwu.superuser.Shell
+import org.xmlpull.v1.XmlPullParser
 import java.io.File
+import java.io.StringReader
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -134,21 +138,74 @@ object HomePreviewLoader {
         if (key == wallpaperKey) return wallpaper
 
         wallpaper = if (info != null) {
-            runCatching { info.loadThumbnail(context.packageManager) }.getOrNull()
+            readLiveWallpaper(context, info, width, height)
+                ?: runCatching { info.loadThumbnail(context.packageManager) }.getOrNull()
         } else {
-            readStaticWallpaper(context, width, height)
+            readRootImage(context, width, height) { "cat '$systemDir/wallpaper' > '$it'" }
         }
         wallpaperKey = key
         return wallpaper
     }
 
-    private fun readStaticWallpaper(context: Context, width: Int, height: Int): Drawable? {
+    private val userId get() = Process.myUid() / PER_USER_RANGE
+
+    private val systemDir get() = "/data/system/users/$userId"
+
+    private fun readLiveWallpaper(context: Context, info: WallpaperInfo, width: Int, height: Int): Drawable? {
+        if (info.packageName == EFFECTS_PACKAGE) {
+            val dir = "/data/user_de/$userId/$EFFECTS_PACKAGE"
+            val prefs = "$dir/shared_prefs/$EFFECTS_PREFS"
+            readRootImage(context, width, height) { out ->
+                "id=\$(sed -n 's/.*name=\"$EFFECTS_ACTIVE_ASSET\" value=\"\\([0-9]*\\)\".*/\\1/p' '$prefs'); " +
+                        "for f in $EFFECTS_IMAGES; do " +
+                        "[ -n \"\$id\" ] && [ -s \"$dir/files/\$id/\$f\" ] && cat \"$dir/files/\$id/\$f\" > '$out' && break; " +
+                        "done"
+            }?.let { return it }
+        }
+
+        val thumbnail = descriptionThumbnail() ?: return null
+        return readRootImage(context, width, height) { out ->
+            if (thumbnail.scheme == "file") {
+                "cat '${thumbnail.path.orEmpty().shellQuoted()}' > '$out'"
+            } else {
+                "content read --user $userId --uri '${thumbnail.toString().shellQuoted()}' > '$out'"
+            }
+        }
+    }
+
+    private fun descriptionThumbnail(): Uri? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return null
+        val file = "$systemDir/wallpaper_info.xml"
+        val xml = Shell.cmd("abx2xml '$file' - 2>/dev/null || cat '$file'").exec().out.joinToString("\n")
+        if (xml.isBlank()) return null
+
+        return runCatching {
+            val parser = Xml.newPullParser().apply { setInput(StringReader(xml)) }
+            var inSystem = false
+            while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                if (parser.eventType == XmlPullParser.END_TAG && parser.name == TAG_SYSTEM_WALLPAPER) inSystem = false
+                if (parser.eventType != XmlPullParser.START_TAG) continue
+                if (parser.name == TAG_SYSTEM_WALLPAPER) inSystem = true
+                if (inSystem && parser.name == TAG_DESCRIPTION) {
+                    return@runCatching parser.getAttributeValue(null, ATTR_THUMBNAIL)
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { Uri.parse(it) }
+                        ?.takeIf { it.scheme == "content" || it.scheme == "file" }
+                }
+            }
+            null
+        }.getOrNull()
+    }
+
+    private fun String.shellQuoted() = replace("'", "'\\''")
+
+    private fun readRootImage(context: Context, width: Int, height: Int, command: (String) -> String): Drawable? {
         val file = File(context.cacheDir, WALLPAPER_FILE)
 
         return try {
             file.delete()
             file.createNewFile()
-            Shell.cmd("cat '/data/system/users/${Process.myUid() / PER_USER_RANGE}/wallpaper' > '${file.path}'").exec()
+            Shell.cmd(command(file.path)).exec()
             if (file.length() == 0L) return null
 
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -181,4 +238,11 @@ object HomePreviewLoader {
     private const val RENDER_DELAY_MS = 300L
     private const val WALLPAPER_FILE = "home_preview_wallpaper"
     private const val PER_USER_RANGE = 100000
+    private const val EFFECTS_PACKAGE = "com.google.android.wallpaper.effects"
+    private const val EFFECTS_PREFS = "cinematic_preferences.xml"
+    private const val EFFECTS_ACTIVE_ASSET = "active_persistent_asset_id"
+    private const val EFFECTS_IMAGES = "original.jpg thumbnail.jpg"
+    private const val TAG_SYSTEM_WALLPAPER = "wp"
+    private const val TAG_DESCRIPTION = "description"
+    private const val ATTR_THUMBNAIL = "thumbnail"
 }
