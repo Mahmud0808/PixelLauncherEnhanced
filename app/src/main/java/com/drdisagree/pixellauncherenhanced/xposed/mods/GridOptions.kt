@@ -79,7 +79,7 @@ class GridOptions(context: Context) : ModPack(context) {
 
             if (hotseatIcons != 0) {
                 setFieldSilently("numShownHotseatIcons", hotseatIcons)
-                mHotseatProfile?.setField("numShownIcons", hotseatIcons)
+                mHotseatProfile?.setFieldSilently("numShownIcons", hotseatIcons)
             }
 
             if (appDrawerGridColumns != 0) {
