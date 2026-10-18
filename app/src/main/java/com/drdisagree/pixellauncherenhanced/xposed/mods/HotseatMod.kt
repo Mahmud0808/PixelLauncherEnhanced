@@ -17,6 +17,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceHookMana
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
@@ -161,11 +162,14 @@ class HotseatMod(context: Context) : ModPack(context) {
 
         if ((hideDesktopSearchBar || dockDisabled) && !qsbInline) {
             val qsbSpace = getFieldSilently(fields.qsbSpace) as? Int ?: 0
-            val qsbVisualHeight = getFieldSilently(fields.qsbVisualHeight) as? Int ?: 0
+            val visualOwner = if (getFieldSilently(fields.qsbVisualHeight) is Int) this
+            else getAnyFieldSilently("mHotseatProfile", "hotseatProfile")
+            val visualField = if (visualOwner === this) fields.qsbVisualHeight else PROFILE_FIELDS.qsbVisualHeight
+            val qsbVisualHeight = visualOwner?.getFieldSilently(visualField) as? Int ?: 0
 
             barSize -= qsbSpace + qsbVisualHeight
             setFieldSilently(fields.qsbSpace, 0)
-            setFieldSilently(fields.qsbVisualHeight, 0)
+            visualOwner?.setFieldSilently(visualField, 0)
         }
 
         val originalBottomSpace = getExtraFieldSilently(ORIGINAL_BOTTOM_SPACE) as? Int
