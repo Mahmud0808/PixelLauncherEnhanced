@@ -39,6 +39,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.folderPreviewBounds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
@@ -77,6 +78,7 @@ class GestureMod(context: Context) : ModPack(context) {
     private var folderTapFirstApp = false
     private var folderCover = false
     private val coverBounds = Rect()
+    private val previewBounds = Rect()
     private var coverHiddenPreview: WeakReference<View>? = null
     private var allowFolderOpen = false
     private var swipeTarget: WeakReference<View>? = null
@@ -161,7 +163,7 @@ class GestureMod(context: Context) : ModPack(context) {
                 .runBefore { param ->
                     if (!folderCover) return@runBefore
                     val folderIcon = param.thisObject.getFieldSilently("mInvalidateDelegate") as? View ?: return@runBefore
-                    if (folderIconClass?.isInstance(folderIcon) != true || coverDrawable(folderIcon) == null) return@runBefore
+                    if (folderIconClass?.isInstance(folderIcon) != true || !canCover(folderIcon)) return@runBefore
                     param.result = null
                 }
         }
@@ -173,7 +175,7 @@ class GestureMod(context: Context) : ModPack(context) {
                 coverHiddenPreview = null
                 if (!folderCover) return@runBefore
                 val folderIcon = param.thisObject as? View ?: return@runBefore
-                if (coverDrawable(folderIcon) == null) return@runBefore
+                if (!canCover(folderIcon)) return@runBefore
                 if (folderIcon.getFieldSilently("mBackgroundIsVisible") != true) return@runBefore
                 folderIcon.getFieldSilently("mPreviewItemManager").callMethodSilently("recomputePreviewDrawingParams")
                 folderIcon.setFieldSilently("mBackgroundIsVisible", false)
@@ -483,16 +485,14 @@ class GestureMod(context: Context) : ModPack(context) {
     private fun drawFolderCover(folderIcon: View, canvas: Canvas) {
         val icon = coverDrawable(folderIcon) ?: return
         val background = folderIcon.getFieldSilently("mBackground") ?: return
-        val left = background.getFieldSilently("basePreviewOffsetX") as? Int ?: return
-        val top = background.getFieldSilently("basePreviewOffsetY") as? Int ?: return
-        val size = background.getFieldSilently("previewSize") as? Int ?: return
-        if (size <= 0) return
+        if (!background.folderPreviewBounds(previewBounds)) return
+        val size = previewBounds.width()
 
         val iconSize = (folderIcon.getFieldSilently("mFolderName")?.getFieldSilently("mIconSize") as? Int)?.takeIf { it > 0 } ?: size
         val scale = background.getFieldSilently("mScale") as? Float ?: 1f
         val scaled = (iconSize * scale).toInt()
-        val centerX = left + size / 2
-        val centerY = top + size / 2
+        val centerX = previewBounds.centerX()
+        val centerY = previewBounds.centerY()
         coverBounds.set(centerX - scaled / 2, centerY - scaled / 2, centerX - scaled / 2 + scaled, centerY - scaled / 2 + scaled)
 
         val previous = Rect(icon.bounds)
@@ -504,6 +504,9 @@ class GestureMod(context: Context) : ModPack(context) {
     private fun firstPreviewParams(folderIcon: View): Any? =
         (folderIcon.getFieldSilently("mPreviewItemManager")?.getFieldSilently("mFirstPageParams") as? List<*>)
             ?.firstOrNull { it?.getFieldSilently("drawable") is Drawable && it.getFieldSilently("item") != null }
+
+    private fun canCover(folderIcon: View): Boolean =
+        coverDrawable(folderIcon) != null && folderIcon.getFieldSilently("mBackground").folderPreviewBounds(previewBounds)
 
     private fun coverDrawable(folderIcon: View): Drawable? {
         firstPreviewParams(folderIcon)?.let { return it.getFieldSilently("drawable") as? Drawable }
@@ -740,7 +743,7 @@ class GestureMod(context: Context) : ModPack(context) {
 
         fun coversFolder(folderIcon: View): Boolean {
             val mod = instance?.get() ?: return false
-            return mod.folderCover && mod.folderIconClass?.isInstance(folderIcon) == true && mod.coverDrawable(folderIcon) != null
+            return mod.folderCover && mod.folderIconClass?.isInstance(folderIcon) == true && mod.canCover(folderIcon)
         }
 
         private const val DOUBLE_TAP_TIMEOUT = 400L

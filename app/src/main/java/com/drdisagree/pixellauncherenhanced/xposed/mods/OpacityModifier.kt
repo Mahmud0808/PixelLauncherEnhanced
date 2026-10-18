@@ -39,6 +39,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilent
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.folderPreviewBounds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -62,6 +63,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private var folderBlurAnimator: ValueAnimator? = null
     private var folderFrost: FolderFrost? = null
     private val previewRect = RectF()
+    private val previewBounds = Rect()
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -426,13 +428,12 @@ class OpacityModifier(context: Context) : ModPack(context) {
 
                     val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
                     val preview = folderIcon.getFieldSilently("mBackground") ?: return@runBefore
-                    val previewSize = preview.getFieldSilently("previewSize") as? Int ?: return@runBefore
+                    if (!preview.folderPreviewBounds(previewBounds)) return@runBefore
+                    val previewSize = previewBounds.width()
                     val radius = previewSize / 2
                     val scaledRadius = preview.callMethodSilently("getScaledRadius") as? Int ?: radius
-                    val offsetX = (preview.getFieldSilently("basePreviewOffsetX") as? Int ?: return@runBefore) -
-                            (scaledRadius - radius)
-                    val offsetY = (preview.getFieldSilently("basePreviewOffsetY") as? Int ?: return@runBefore) -
-                            (scaledRadius - radius)
+                    val offsetX = previewBounds.left - (scaledRadius - radius)
+                    val offsetY = previewBounds.top - (scaledRadius - radius)
 
                     previewRect.set(
                         offsetX.toFloat(),
@@ -561,16 +562,17 @@ class OpacityModifier(context: Context) : ModPack(context) {
     ) : Drawable() {
 
         private val rect = RectF()
+        private val bounds = Rect()
 
         override fun draw(canvas: Canvas) {
             val manager = folderIcon.getFieldSilently("mPreviewItemManager")
-            val preview = folderIcon.getFieldSilently("mBackground")
-            val previewSize = preview?.getFieldSilently("previewSize") as? Int ?: 0
-            val offsetX = preview?.getFieldSilently("basePreviewOffsetX") as? Int
-            val offsetY = preview?.getFieldSilently("basePreviewOffsetY") as? Int
+            val hasBounds = folderIcon.getFieldSilently("mBackground").folderPreviewBounds(bounds)
+            val previewSize = bounds.width()
+            val offsetX = bounds.left
+            val offsetY = bounds.top
             rect.set(background.bounds)
             rect.insetByRatio(folderIcon.previewRatio())
-            if (manager == null || previewSize <= 0 || offsetX == null || offsetY == null || rect.isEmpty) {
+            if (manager == null || !hasBounds || rect.isEmpty) {
                 inner.draw(canvas)
                 return
             }
