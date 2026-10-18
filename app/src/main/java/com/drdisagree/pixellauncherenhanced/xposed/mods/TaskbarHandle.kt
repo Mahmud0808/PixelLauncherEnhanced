@@ -57,11 +57,21 @@ class TaskbarHandle(context: Context) : ModPack(context) {
             "com.android.launcher3.taskbar.TaskbarManagerImpl",
             "com.android.launcher3.taskbar.TaskbarManager"
         ).forEach { className ->
-            findClass(className, suppressError = true)
-                ?.takeUnless { it.isInterface }
+            val managerClass = findClass(className, suppressError = true)?.takeUnless { it.isInterface }
+
+            managerClass
                 .hookConstructor()
                 .suppressError()
+                .capability("Taskbar manager")
                 .runAfter { param -> taskbarManagerRef = WeakReference(param.thisObject) }
+
+            managerClass
+                .hookMethod("createTaskbarActivityContext", "setUiController", "recreateTaskbars")
+                .suppressError()
+                .capability("Taskbar manager")
+                .runAfter { param ->
+                    if (taskbarManagerRef?.get() !== param.thisObject) taskbarManagerRef = WeakReference(param.thisObject)
+                }
         }
 
         val stashedHandleViewClass = findClass("com.android.launcher3.taskbar.StashedHandleView")
