@@ -101,26 +101,25 @@ class IconLabels(context: Context) : ModPack(context) {
         bubbleTextViewClass
             .hookMethod("onMeasure")
             .suppressError()
-            .runBefore { param ->
+            .runAround(before = { param ->
                 val view = param.thisObject as View
-                if (!view.isDrawerIconWithoutLabel()) return@runBefore
-                if (view.getFieldSilently("mCenterVertically") != true) return@runBefore
+                if (!view.isDrawerIconWithoutLabel()) return@runAround
+                if (view.getFieldSilently("mCenterVertically") != true) return@runAround
 
                 view.setField("mCenterVertically", false)
                 param.setObjectExtra(CENTER_VERTICALLY, true)
-            }
-            .runAfter { param ->
-                if (param.getObjectExtra(CENTER_VERTICALLY) != true) return@runAfter
+            }, after = { param ->
+                if (param.getObjectExtra(CENTER_VERTICALLY) != true) return@runAround
 
                 val view = param.thisObject as View
                 view.setField("mCenterVertically", true)
 
-                val iconSize = view.getFieldSilently("mIconSize") as? Int ?: return@runAfter
+                val iconSize = view.getFieldSilently("mIconSize") as? Int ?: return@runAround
                 val paddingTop = ((view.measuredHeight - iconSize) / 2).coerceAtLeast(0)
                 if (view.paddingTop != paddingTop) {
                     view.setPadding(view.paddingLeft, paddingTop, view.paddingRight, view.paddingBottom)
                 }
-            }
+            })
 
         try {
             bubbleTextViewClass

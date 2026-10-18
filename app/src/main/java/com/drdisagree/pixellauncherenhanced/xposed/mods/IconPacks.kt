@@ -287,15 +287,14 @@ class IconPacks(context: Context) : ModPack(context) {
             ?.filter { it.name == "newIcon" }
             ?.forEach { method ->
                 MethodHookHelper(method)
-                    .runBefore { param ->
-                        val home = homeBitmapFor(param.thisObject) ?: return@runBefore
+                    .runAround(before = { param ->
+                        val home = homeBitmapFor(param.thisObject) ?: return@runAround
                         param.setObjectExtra(HOME_ORIGINAL_BITMAP, param.thisObject.getFieldSilently("bitmap"))
                         param.thisObject.setField("bitmap", home)
-                    }
-                    .runAfter { param ->
-                        val original = param.getObjectExtra(HOME_ORIGINAL_BITMAP) ?: return@runAfter
+                    }, after = { param ->
+                        val original = param.getObjectExtra(HOME_ORIGINAL_BITMAP) ?: return@runAround
                         param.thisObject.setField("bitmap", original)
-                    }
+                    })
             }
 
         LauncherApps::class.java

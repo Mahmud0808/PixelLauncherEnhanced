@@ -348,22 +348,21 @@ class OpacityModifier(context: Context) : ModPack(context) {
         findClass("com.android.launcher3.folder.PreviewBackground")
             .hookMethod("drawBackground")
             .suppressError()
-            .runBefore { param ->
+            .runAround(before = { param ->
                 val glass = folderGlass()
-                if (folderBackgroundOpacity < 0 && !glass) return@runBefore
+                if (folderBackgroundOpacity < 0 && !glass) return@runAround
 
-                val color = param.thisObject.getFieldSilently("mBgColor") as? Int ?: return@runBefore
+                val color = param.thisObject.getFieldSilently("mBgColor") as? Int ?: return@runAround
                 param.setObjectExtra(PREVIEW_ORIGINAL_COLOR, color)
 
                 val context = param.thisObject.getFieldSilently("mContext") as? Context
                 val base = context?.takeIf { glass }?.folderBackgroundColor() ?: color
                 val alpha = if (folderBackgroundOpacity >= 0) folderBackgroundOpacity else Color.alpha(base)
                 param.thisObject.setFieldSilently("mBgColor", ColorUtils.setAlphaComponent(base, alpha))
-            }
-            .runAfter { param ->
-                val color = param.getObjectExtra(PREVIEW_ORIGINAL_COLOR) as? Int ?: return@runAfter
+            }, after = { param ->
+                val color = param.getObjectExtra(PREVIEW_ORIGINAL_COLOR) as? Int ?: return@runAround
                 param.thisObject.setFieldSilently("mBgColor", color)
-            }
+            })
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val folderClass = findClass("com.android.launcher3.folder.Folder")

@@ -69,8 +69,6 @@ class DrawerFolders(context: Context) : ModPack(context) {
     private var createdHolders = 0
     private var failedHolders = 0
     private val previewBounds = Rect()
-    private val pendingEntries = ThreadLocal<List<FolderEntry>?>()
-    private val originalApps = ThreadLocal<Any?>()
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -173,28 +171,26 @@ class DrawerFolders(context: Context) : ModPack(context) {
         listClass
             .hookMethod("updateAdapterItems")
             .capability("Drawer folders")
-            .runBefore { param ->
+            .runAround(before = { param ->
                 appLists.add(param.thisObject)
 
-                val original = param.thisObject.getFieldSilently("mApps") as? List<*> ?: return@runBefore
+                val original = param.thisObject.getFieldSilently("mApps") as? List<*> ?: return@runAround
                 val apps = original.filterNotNull()
                 val entries = buildEntries(param.thisObject, apps)
                 shownFolders = entries.size
-                if (entries.isEmpty()) return@runBefore
+                if (entries.isEmpty()) return@runAround
 
                 val remaining = apps.withoutFoldered(entries)
                 val section = remaining.firstOrNull()?.getFieldSilently("sectionName")
                 val placeholders = entries.mapNotNull { entry ->
                     createPlaceholder(entry)?.apply { section?.let { setFieldSilently("sectionName", it) } }
                 }
-                originalApps.set(original)
+                param.setObjectExtra(ORIGINAL_APPS, original)
                 param.thisObject.setFieldSilently("mApps", ArrayList(placeholders + remaining))
-            }
-            .runAfter { param ->
-                val original = originalApps.get() ?: return@runAfter
-                originalApps.remove()
+            }, after = { param ->
+                val original = param.getObjectExtra(ORIGINAL_APPS) ?: return@runAround
                 param.thisObject.setFieldSilently("mApps", original)
-            }
+            })
 
         adapterItemClass
             .hookMethod("asApp")
@@ -209,27 +205,26 @@ class DrawerFolders(context: Context) : ModPack(context) {
         listClass
             .hookMethod("addAppsWithSections")
             .capability("Drawer folders")
-            .runBefore { param ->
+            .runAround(before = { param ->
                 appLists.add(param.thisObject)
 
-                val listIndex = param.args.indexOfFirst { it is List<*> }.takeIf { it >= 0 } ?: return@runBefore
+                val listIndex = param.args.indexOfFirst { it is List<*> }.takeIf { it >= 0 } ?: return@runAround
                 val apps = (param.args[listIndex] as List<*>).filterNotNull()
                 val entries = buildEntries(param.thisObject, apps)
                 shownFolders = entries.size
-                if (entries.isEmpty()) return@runBefore
+                if (entries.isEmpty()) return@runAround
 
                 param.args[listIndex] = apps.withoutFoldered(entries)
-                pendingEntries.set(entries)
-            }
-            .runAfter { param ->
-                val entries = pendingEntries.get() ?: return@runAfter
-                pendingEntries.remove()
-                val start = param.args.firstOrNull { it is Int } as? Int ?: return@runAfter
-                val end = param.result as? Int ?: return@runAfter
+                param.setObjectExtra(PENDING_ENTRIES, entries)
+            }, after = { param ->
+                @Suppress("UNCHECKED_CAST")
+                val entries = param.getObjectExtra(PENDING_ENTRIES) as? List<FolderEntry> ?: return@runAround
+                val start = param.args.firstOrNull { it is Int } as? Int ?: return@runAround
+                val end = param.result as? Int ?: return@runAround
 
                 @Suppress("UNCHECKED_CAST")
-                val items = param.thisObject.getFieldSilently("mAdapterItems") as? MutableList<Any?> ?: return@runAfter
-                if (start !in 0..items.size) return@runAfter
+                val items = param.thisObject.getFieldSilently("mAdapterItems") as? MutableList<Any?> ?: return@runAround
+                if (start !in 0..items.size) return@runAround
 
                 (items.getOrNull(start)?.getFieldSilently("viewType") as? Int)
                     ?.takeIf { it and FOLDER_VIEW_TYPE == 0 }
@@ -238,7 +233,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
                 val folderItems = entries.mapNotNull { entry ->
                     createPlaceholder(entry)?.let { createAdapterItem(entry, it) }
                 }
-                if (folderItems.isEmpty()) return@runAfter
+                if (folderItems.isEmpty()) return@runAround
 
                 items.addAll(start, folderItems)
                 (param.thisObject.getFieldSilently("mFastScrollerSections") as? List<*>)?.forEach { section ->
@@ -246,7 +241,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
                     if (position >= start) section.setFieldSilently("position", position + folderItems.size)
                 }
                 param.result = end + folderItems.size
-            }
+            })
     }
 
     private fun createPlaceholder(entry: FolderEntry): Any? = runCatching {
@@ -748,5 +743,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
         private const val MAX_FOLDER_ID = 1_000_000
         private const val FOLDER_ENTRY = "pleDrawerFolderEntry"
         private const val FOLDER_ID = "pleDrawerFolderId"
+        private const val PENDING_ENTRIES = "pleDrawerFolderPending"
+        private const val ORIGINAL_APPS = "pleDrawerFolderOriginalApps"
     }
 }

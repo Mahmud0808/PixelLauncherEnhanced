@@ -172,6 +172,46 @@ class MethodHookHelper(
         return this
     }
 
+    fun runAround(
+        before: (XC_MethodHook.MethodHookParam) -> Unit,
+        after: (XC_MethodHook.MethodHookParam) -> Unit
+    ): MethodHookHelper {
+        fun around(record: DebugRecorder.HookRecord) = object : XC_MethodHook() {
+            override fun beforeHookedMethod(param: MethodHookParam) {
+                DebugRecorder.fired(record)
+                before(param)
+            }
+
+            override fun afterHookedMethod(param: MethodHookParam) {
+                after(param)
+            }
+        }
+
+        when {
+            method != null -> hookMethod(method, around(DebugRecorder.recordDirectHook(method, "around")))
+            methodNames.isNullOrEmpty() -> {
+                if (clazz == null) return this
+                val record = DebugRecorder.recordHook(
+                    clazz, null, "around", false, clazz.declaredConstructors.toList(), !printError, capability
+                )
+                if (parameterTypes.isNullOrEmpty()) {
+                    hookAllConstructors(clazz, around(record))
+                } else {
+                    findAndHookConstructor(clazz, *parameterTypes!!, around(record))
+                }
+            }
+
+            else -> resolveMethods("around").forEach { (method, record) ->
+                when {
+                    clazz == null -> hookMethod(method, around(record))
+                    parameterTypes.isNullOrEmpty() -> hookAllMethods(clazz, method.name, around(record))
+                    else -> findAndHookMethod(clazz, method.name, *parameterTypes!!, around(record))
+                }
+            }
+        }
+        return this
+    }
+
     fun replace(callback: (XC_MethodHook.MethodHookParam) -> Unit): MethodHookHelper {
         when {
             method != null -> hookMethodReplace(method, DebugRecorder.recordDirectHook(method, "replace"), callback)
