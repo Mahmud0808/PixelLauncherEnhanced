@@ -16,6 +16,8 @@ import com.google.android.material.R as MaterialR
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
@@ -29,7 +31,7 @@ class ListPreference : ListPreference {
         defStyleAttr: Int,
         defStyleRes: Int
     ) : super(context, attrs, defStyleAttr, defStyleRes) {
-        initResource()
+        initResource(attrs)
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
@@ -37,19 +39,24 @@ class ListPreference : ListPreference {
         attrs,
         defStyleAttr
     ) {
-        initResource()
+        initResource(attrs)
     }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        initResource()
+        initResource(attrs)
     }
 
     constructor(context: Context) : super(context) {
-        initResource()
+        initResource(null)
     }
 
-    private fun initResource() {
+    private var summaryWarning = false
+
+    private fun initResource(attrs: AttributeSet?) {
         layoutResource = R.layout.custom_preference_list
+        context.withStyledAttributes(attrs, R.styleable.ListPreference) {
+            summaryWarning = getBoolean(R.styleable.ListPreference_summaryWarning, false)
+        }
     }
 
     private var binding = false
@@ -80,8 +87,32 @@ class ListPreference : ListPreference {
             value == defaultEntryValue
         )
 
+        bindSummaryWarning(holder.findViewById(android.R.id.summary) as? TextView)
+
         setFirstAndLastItemMargin(holder)
         setBackgroundResource(holder)
+    }
+
+    private fun bindSummaryWarning(summary: TextView?) {
+        summary ?: return
+        val normalColors = summary.getTag(R.id.tag_summary_colors) as? ColorStateList
+            ?: summary.textColors.also { summary.setTag(R.id.tag_summary_colors, it) }
+
+        if (!summaryWarning) {
+            summary.setTextColor(normalColors)
+            summary.setCompoundDrawablesRelative(null, null, null, null)
+            return
+        }
+
+        val warning = MaterialColors.harmonizeWithPrimary(summary.context, summary.context.getColor(R.color.warning))
+        val size = summary.textSize.toInt()
+        val icon = AppCompatResources.getDrawable(summary.context, R.drawable.ic_debug_warning)?.mutate()?.apply {
+            setTint(warning)
+            setBounds(0, 0, size, size)
+        }
+        summary.setTextColor(warning)
+        summary.compoundDrawablePadding = (summary.resources.displayMetrics.density * 6).toInt()
+        summary.setCompoundDrawablesRelative(icon, null, null, null)
     }
 
     private fun bindChoices(scroll: HorizontalScrollView?, inline: Boolean) {

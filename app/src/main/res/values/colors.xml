@@ -5,6 +5,7 @@
     <color name="transparent">#00000000</color>
     <color name="textColor">@color/black</color>
     <color name="textColorInverse">@color/white</color>
+    <color name="warning">#C25E00</color>
 
     <color name="md_theme_primary">#415F91</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>

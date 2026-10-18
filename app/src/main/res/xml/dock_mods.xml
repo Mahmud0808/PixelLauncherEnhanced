@@ -37,6 +37,7 @@
             android:entryValues="@array/panel_background_value"
             android:key="xposed_dockbackground"
             android:summary="@string/panel_background_desc"
+            app:summaryWarning="true"
             android:title="@string/dock_background_title"
             app:iconSpaceReserved="false" />
 
@@ -91,6 +92,7 @@
             android:entryValues="@array/panel_background_value"
             android:key="xposed_searchbarbackground"
             android:summary="@string/panel_background_desc"
+            app:summaryWarning="true"
             android:title="@string/search_bar_background_title"
             app:iconSpaceReserved="false" />
 

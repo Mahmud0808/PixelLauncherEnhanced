@@ -96,6 +96,7 @@
             android:entryValues="@array/panel_background_value"
             android:key="xposed_iconbackground"
             android:summary="@string/icon_background_desc"
+            app:summaryWarning="true"
             android:title="@string/icon_background_title"
             app:iconSpaceReserved="false" />
 

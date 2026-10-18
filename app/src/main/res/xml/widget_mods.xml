@@ -32,6 +32,7 @@
             android:entryValues="@array/panel_background_value"
             android:key="xposed_widgetbackground"
             android:summary="@string/panel_background_desc"
+            app:summaryWarning="true"
             android:title="@string/widget_background_title"
             app:iconSpaceReserved="false" />
 
