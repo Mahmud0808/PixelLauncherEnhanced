@@ -61,7 +61,12 @@ class TopShadow(context: Context) : ModPack(context) {
 
         sysUiScrimClass
             .hookMethod("onViewAttachedToWindow", "onViewDetachedFromWindow")
+            .capability("Top shadow scrim")
             .runBefore { param ->
+                if (sysUiScrimInstance !== param.thisObject) {
+                    sysUiScrimInstance = param.thisObject
+                    hideScrim()
+                }
                 if (!removeTopShadow) return@runBefore
 
                 if (param.method.name == "onViewAttachedToWindow") {
@@ -73,7 +78,9 @@ class TopShadow(context: Context) : ModPack(context) {
         sysUiScrimClass
             .hookMethod("createDitheredAlphaMask")
             .suppressError()
+            .capability("Top shadow scrim")
             .runAfter { param ->
+                if (sysUiScrimInstance == null) sysUiScrimInstance = param.thisObject
                 if (!removeTopShadow) return@runAfter
 
                 val original = param.result as? Bitmap ?: return@runAfter
