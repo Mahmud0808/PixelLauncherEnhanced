@@ -18,7 +18,6 @@
         app:contentInsetStartWithNavigation="0dp"
         app:maxLines="1"
         app:navigationIconTint="@null"
-        app:popupTheme="@style/PopupMenu"
         app:title="@string/app_name"
         app:titleTextAppearance="@style/Toolbar.TitleText"
         app:titleTextEllipsize="end"

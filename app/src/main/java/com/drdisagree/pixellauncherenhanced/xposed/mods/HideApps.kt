@@ -28,10 +28,14 @@ import java.util.Collections
 
 class HideApps(context: Context) : ModPack(context) {
 
-    private var appBlockList: Set<String> = mutableSetOf()
     private var searchHiddenApps: Boolean = false
 
     companion object {
+        private var appBlockList: Set<String> = mutableSetOf()
+
+        fun isHidden(packageName: String?): Boolean =
+            !(packageName.isNullOrEmpty() || SHOULD_UNHIDE_ALL_APPS) && appBlockList.contains(packageName)
+
         var HIDE_APPS_ENABLED = false
         var REVEAL_HIDDEN_APPS = false
         val SHOULD_UNHIDE_ALL_APPS: Boolean

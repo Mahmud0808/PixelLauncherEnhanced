@@ -27,6 +27,7 @@ import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_DRAWER_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_HOME_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.BACKUP_SETTINGS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_FOLDERS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
@@ -1143,7 +1144,7 @@ class DebugReport(private val context: Context) {
             PINNED_SHORTCUTS_REQUEST, BACKUP_HOME_LAYOUT, BACKUP_DRAWER_LAYOUT, BACKUP_SETTINGS
         )
         private val EXCLUDED_SETTING_PREFIXES = listOf("xposed_customicon_")
-        private val PRIVATE_SETTINGS = setOf(SHORTCUT_LABELS, LABEL_OVERRIDES, PINNED_SHORTCUTS, DRAWER_TABS)
+        private val PRIVATE_SETTINGS = setOf(SHORTCUT_LABELS, LABEL_OVERRIDES, PINNED_SHORTCUTS, DRAWER_TABS, DRAWER_FOLDERS)
         private val SENSITIVE_PROP = Regex("serial|imei|meid|iccid|mac|bt\\.addr|wifi\\.addr|ssid|android_id|bootid|cpuid|uuid", RegexOption.IGNORE_CASE)
         private val KEY_VALUE_SANITIZER = Regex("(?i)\\b(dat|data|title|label|text|name|account|ssid|bssid)=([^,;}\\]\\n]+)")
         private val SANITIZERS = listOf(

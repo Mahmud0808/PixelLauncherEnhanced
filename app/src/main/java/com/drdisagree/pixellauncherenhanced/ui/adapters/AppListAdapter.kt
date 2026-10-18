@@ -40,7 +40,7 @@ class AppListAdapter(
 
         holder.appIcon.setImageDrawable(appInfo.appIcon)
         holder.appName.text = appInfo.appName
-        holder.packageName.text = appInfo.packageName
+        holder.packageName.text = appInfo.note ?: appInfo.packageName
         holder.switchView.isChecked = appInfo.isSelected
         holder.recommended.visibility = if (appInfo.recommended) View.VISIBLE else View.GONE
 
@@ -49,12 +49,14 @@ class AppListAdapter(
 
             appInfo.isSelected = isChecked
             onSelectionChanged(appInfo)
+            holder.packageName.text = appInfo.note ?: appInfo.packageName
         }
 
         holder.container.setOnClickListener {
             appInfo.isSelected = !appInfo.isSelected
             holder.switchView.isChecked = appInfo.isSelected
             onSelectionChanged(appInfo)
+            holder.packageName.text = appInfo.note ?: appInfo.packageName
         }
 
         setItemBackground(holder)

@@ -6,10 +6,12 @@ import android.provider.DocumentsContract
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_FOLDERS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
+import com.drdisagree.pixellauncherenhanced.data.model.DrawerFolder
 import com.drdisagree.pixellauncherenhanced.data.model.DrawerTab
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,6 +35,7 @@ object DrawerLayoutBackup {
                 .put(KEY_FORMAT_VERSION, FORMAT_VERSION)
                 .put(KEY_APP_VERSION, BuildConfig.VERSION_NAME)
                 .put(KEY_TABS, JSONArray(DrawerTab.serialize(DrawerTabsStore.load())))
+                .put(KEY_FOLDERS, JSONArray(DrawerFolder.serialize(DrawerFoldersStore.load())))
 
             if (includeHiddenApps) {
                 root.put(KEY_HIDDEN_APPS, JSONArray(RPrefs.getStringSet(APP_BLOCK_LIST, emptySet()).orEmpty().sorted()))
@@ -71,6 +74,9 @@ object DrawerLayoutBackup {
 
         val editor = RPrefs.getPrefs.edit()
         editor.putString(DRAWER_TABS, DrawerTab.serialize(DrawerTab.parse(root.getJSONArray(KEY_TABS).toString())))
+        root.optJSONArray(KEY_FOLDERS)?.let { folders ->
+            editor.putString(DRAWER_FOLDERS, DrawerFolder.serialize(DrawerFolder.parse(folders.toString())))
+        }
 
         root.optJSONArray(KEY_HIDDEN_APPS)?.let { hiddenApps ->
             editor.putStringSet(APP_BLOCK_LIST, (0 until hiddenApps.length()).mapTo(HashSet()) { hiddenApps.getString(it) })
@@ -88,6 +94,7 @@ object DrawerLayoutBackup {
     private const val KEY_FORMAT_VERSION = "formatVersion"
     private const val KEY_APP_VERSION = "appVersion"
     private const val KEY_TABS = "tabs"
+    private const val KEY_FOLDERS = "folders"
     private const val KEY_HIDDEN_APPS = "hiddenApps"
     private const val KEY_HIDE_APPS_ENABLED = "hideAppsEnabled"
     private const val KEY_SEARCH_HIDDEN_APPS = "searchHiddenApps"

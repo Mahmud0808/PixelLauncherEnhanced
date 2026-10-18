@@ -7,6 +7,7 @@ import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_DATABASE_ICON_COUNT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_FOLDERS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_SCREENS
@@ -152,6 +153,7 @@ object SettingsBackup {
         HIDE_APPS_FROM_APP_DRAWER,
         SEARCH_HIDDEN_APPS,
         DRAWER_TABS,
+        DRAWER_FOLDERS,
         XPOSED_HOOK_CHECK,
         NO_DRAWER_FIRST_SCREEN,
         NO_DRAWER_AUTO_SCREENS

@@ -49,6 +49,11 @@
         <item name="android:dropDownVerticalOffset">4dp</item>
     </style>
 
+    <style name="PopupMenu.ListView" parent="Widget.AppCompat.ListView.DropDown">
+        <item name="android:listSelector">@drawable/ripple_popup_item</item>
+        <item name="android:divider">@null</item>
+    </style>
+
     <style name="PopupMenu.Popup" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
         <item name="android:popupElevation">6dp</item>
@@ -78,6 +83,11 @@
     </style>
 
     <style name="Toolbar.TitleText" parent="TextAppearance.Material3.TitleLarge" />
+
+    <style name="Toolbar.OverflowButton" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:background">@drawable/ripple_toolbar_action</item>
+        <item name="tint">?attr/colorOnSurface</item>
+    </style>
 
     <style name="Toolbar.TitleText.Collapsed">
         <item name="android:textSize">22sp</item>

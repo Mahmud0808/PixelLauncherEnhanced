@@ -4,7 +4,9 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -377,7 +379,11 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     val frosted = folder.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost
                         ?: FolderFrost(folder).also { folder.setExtraField(FOLDER_FROST, it) }
 
-                    frosted.maxRadius = folderBackgroundBlur * folder.resources.displayMetrics.density
+                    val ownBlur = folderBackgroundBlur * folder.resources.displayMetrics.density
+                    val inDrawer = folder.getFieldSilently("mInfo").getFieldSilently("container") == CONTAINER_ALL_APPS
+                    frosted.maxRadius = ownBlur
+                    frosted.backdropRadius = if (inDrawer) IconGlass.drawerBlur(folder, ownBlur) else null
+                    frosted.backdropTint = if (inDrawer) IconGlass.drawerBackdropTint(folder) ?: 0 else 0
                     frosted.liquid = folderLiquid
                     frosted.start(folder.blurTargets(dragLayer), dragLayer.width, dragLayer.height)
                     folderFrost = frosted
@@ -442,7 +448,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         (offsetY + scaledRadius * 2).toFloat()
                     )
 
-                    val blurRadius = folderBackgroundBlur * folderIcon.resources.displayMetrics.density
+                    val inDrawer = folderIcon.tag.getFieldSilently("container") == CONTAINER_ALL_APPS
+                    val ownBlur = folderBackgroundBlur * folderIcon.resources.displayMetrics.density
+                    val blurRadius = if (inDrawer) IconGlass.drawerGlassBlur(folderIcon, ownBlur) else ownBlur
+                    val tint = if (inDrawer) IconGlass.drawerGlassTint(folderIcon) ?: Color.TRANSPARENT else Color.TRANSPARENT
                     val shape = folderIcon.folderShape()
                     val shapeCorner = shape?.cornerRadius(scaledRadius.toFloat()) ?: scaledRadius.toFloat()
                     if (WallpaperGlass.draw(
@@ -452,7 +461,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                             corner = shapeCorner,
                             bottomCorner = shapeCorner,
                             blurRadius = blurRadius,
-                            tintColor = Color.TRANSPARENT,
+                            tintColor = tint,
                             liquid = folderLiquid,
                             shapeDrawer = shape?.let { shape ->
                                 { paint: Paint ->
@@ -468,6 +477,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                             }
                         )
                     ) return@runBefore
+                    if (inDrawer) return@runBefore
 
                     val panel = folderIcon.getExtraFieldSilently(PREVIEW_BLUR) as? BlurPanel
                         ?: BlurPanel(folderIcon).also { folderIcon.setExtraField(PREVIEW_BLUR, it) }
@@ -692,6 +702,11 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private fun folderGlass(): Boolean = folderBackgroundBlur > 0 || folderLiquid
 
     private fun View.blurTargets(dragLayer: ViewGroup): List<View> {
+        if (getFieldSilently("mInfo").getFieldSilently("container") == CONTAINER_ALL_APPS) {
+            var launcher: Context? = context
+            while (launcher is ContextWrapper && launcher !is Activity) launcher = launcher.baseContext
+            return listOfNotNull(launcher.getFieldSilently("mAppsView") as? View)
+        }
         return (0 until dragLayer.childCount)
             .map { dragLayer.getChildAt(it) }
             .filter { it !== this && BLUR_TARGET.containsMatchIn(it.javaClass.name) }
@@ -754,6 +769,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private const val CONTAINER_ALL_APPS = -104
         private const val PREVIEW_ORIGINAL_COLOR = "plePreviewOriginalColor"
         private const val FOLDER_FROST = "pleFolderFrost"
         private const val DEFAULT_FOLDER_BLUR = 5

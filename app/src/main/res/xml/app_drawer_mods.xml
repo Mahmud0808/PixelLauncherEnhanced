@@ -139,6 +139,20 @@
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_app_drawer_folders"
+        android:title="@string/section_drawer_folders_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.TwoTargetSwitchPreference
+            android:key="xposed_drawerfoldersenabled"
+            android:summary="@string/drawer_folders_desc"
+            android:title="@string/drawer_folders_switch_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.DrawerFolders"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_general"
         android:title="@string/section_drawer_mode_title"
         app:iconSpaceReserved="false">

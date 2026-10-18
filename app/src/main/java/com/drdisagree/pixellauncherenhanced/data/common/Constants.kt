@@ -137,6 +137,8 @@ object Constants {
     const val PINNED_SHORTCUTS = "xposed_pinnedshortcuts"
     const val PINNED_SHORTCUTS_REQUEST = "xposed_pinnedshortcutsrequest"
     const val DRAWER_TABS = "xposed_drawertablist"
+    const val DRAWER_FOLDERS = "xposed_drawerfolders"
+    const val DRAWER_FOLDERS_ENABLED = "xposed_drawerfoldersenabled"
     const val DRAWER_TABS_AT_BOTTOM = "xposed_drawertabsatbottom"
     const val NO_DRAWER_SWIPE_ACTION = "xposed_nodrawerswipeaction"
     const val NO_DRAWER_ARRANGEMENT = "xposed_nodrawerarrangement"

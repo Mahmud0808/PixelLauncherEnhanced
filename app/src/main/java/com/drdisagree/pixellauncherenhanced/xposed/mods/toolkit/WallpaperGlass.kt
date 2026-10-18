@@ -35,7 +35,7 @@ object WallpaperGlass {
     private const val MAX_ZOOM_SCALE = 1.1f
     private const val WALLPAPER_COPY = "ple_wallpaper"
     private const val SHARP_WIDTH = 720
-    private const val LIQUID_REFRACTION = 0.18f
+    const val LIQUID_REFRACTION = 0.18f
     private const val SQRT_HALF = 0.70710677f
     private const val MASK_BLUR = 0.3f
     private const val MASK_RAMP = 1.7f

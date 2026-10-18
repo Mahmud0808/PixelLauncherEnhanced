@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
@@ -35,6 +36,7 @@ import java.util.WeakHashMap
 class IconGlass(context: Context) : ModPack(context) {
 
     private var enabled = false
+    private var folderGlass = false
     private var liquid = false
     private var blurRadius = 0
     private var tintOpacity = DEFAULT_TINT
@@ -58,10 +60,15 @@ class IconGlass(context: Context) : ModPack(context) {
             .getStaticFieldSilently("ICON_VISIBLE_AREA_FACTOR") as? Float ?: DEFAULT_VISIBLE_AREA
     }
 
+    init {
+        instance = WeakReference(this)
+    }
+
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             val background = PanelBackground.supported(getString(ICON_BACKGROUND, PanelBackground.OFF))
             enabled = background != PanelBackground.OFF
+            folderGlass = PanelBackground.supported(getString(FOLDER_BACKGROUND, PanelBackground.OFF)) != PanelBackground.OFF
             liquid = background == PanelBackground.LIQUID
             blurRadius = getSliderInt(ICON_BACKGROUND_BLUR, DEFAULT_BLUR)
             tintOpacity = getSliderInt(ICON_BACKGROUND_TINT, DEFAULT_TINT)
@@ -145,7 +152,7 @@ class IconGlass(context: Context) : ModPack(context) {
             .hookMethod("drawOnScrimWithScaleAndBottomOffset", "drawOnScrimWithScale")
             .suppressError()
             .runAfter { param ->
-                if (!enabled) return@runAfter
+                if (!enabled && !folderGlass) return@runAfter
                 val paint = param.thisObject.getFieldSilently("mHeaderPaint") as? Paint ?: return@runAfter
                 var color = paint.color
                 if (drawerOpacity in 0..254 && param.thisObject.getFieldSilently("mScrimColor") !is Int) {
@@ -306,8 +313,18 @@ class IconGlass(context: Context) : ModPack(context) {
         }
     }
 
-    private fun drawerScrimColor(host: View): Int? {
-        if (!host.isInDrawer()) return null
+    private fun drawerTint(host: View, anywhere: Boolean = false): Int? {
+        if (!anywhere && !host.isInDrawer()) return null
+        val sheet = sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 }
+        val scrim = drawerScrimColor(host, anywhere)
+        return when {
+            scrim != null && sheet != null -> ColorUtils.compositeColors(sheet, scrim)
+            else -> sheet ?: scrim
+        }
+    }
+
+    private fun drawerScrimColor(host: View, anywhere: Boolean = false): Int? {
+        if (!anywhere && !host.isInDrawer()) return null
         val scrim = scrimView?.get()?.takeIf { it.isAttachedToWindow && it.rootView === host.rootView }
             ?: host.rootView.findScrimView()?.also { scrimView = WeakReference(it) }
             ?: return null
@@ -380,6 +397,22 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private var instance: WeakReference<IconGlass>? = null
+
+        fun drawerGlassBlur(host: View, own: Float): Float {
+            val glass = instance?.get() ?: return own
+            return with(glass) { if (host.isInDrawer()) maxOf(own, host.drawerBlurRadius()) else own }
+        }
+
+        fun drawerGlassTint(host: View): Int? = instance?.get()?.drawerTint(host)
+
+        fun drawerBackdropTint(host: View): Int? = instance?.get()?.drawerTint(host, anywhere = true)
+
+        fun drawerBlur(host: View, own: Float): Float {
+            val glass = instance?.get() ?: return own
+            return maxOf(own, with(glass) { host.drawerBlurRadius() })
+        }
+
         private const val DEFAULT_VISIBLE_AREA = 0.92f
         private const val LEGACY_CORNER_RATIO = 0.25f
         private const val DEFAULT_BLUR = 5

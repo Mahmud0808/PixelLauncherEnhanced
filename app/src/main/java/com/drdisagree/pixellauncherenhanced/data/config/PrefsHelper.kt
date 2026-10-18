@@ -161,7 +161,8 @@ object PrefsHelper {
             NO_DRAWER_AUTO_FILL -> getBoolean(NO_DRAWER_MODE)
 
             DRAWER_TABS_ENABLED,
-            "xposed_app_drawer_tabs" -> !getBoolean(NO_DRAWER_MODE)
+            "xposed_app_drawer_tabs",
+            "xposed_app_drawer_folders" -> !getBoolean(NO_DRAWER_MODE)
 
             DRAWER_TABS_AT_BOTTOM -> getBoolean(DRAWER_TABS_ENABLED) && !getBoolean(NO_DRAWER_MODE)
 

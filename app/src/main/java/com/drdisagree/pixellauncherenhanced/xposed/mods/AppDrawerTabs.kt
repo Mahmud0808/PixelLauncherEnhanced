@@ -72,6 +72,10 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val applicationInfoCache = ConcurrentHashMap<String, Any>()
+
+    init {
+        instance = WeakReference(this)
+    }
     private val noApplicationInfo = Any()
 
     private val barActive: Boolean
@@ -767,6 +771,11 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private var instance: WeakReference<AppDrawerTabs>? = null
+
+        fun activeTabId(): String? = instance?.get()?.takeIf { it.barActive }?.selectedTab()
+            ?.takeIf { it.type != DrawerTab.Type.ALL }?.id
+
         private const val SEARCH_FADE_MS = 200L
         private const val BAR_BOTTOM_GAP_DP = 8
         private const val CHIP_HEIGHT_DP = 36

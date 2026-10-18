@@ -23,6 +23,7 @@ import com.drdisagree.pixellauncherenhanced.data.model.DrawerTab
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentDrawerTabsBinding
 import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.ui.adapters.DrawerTabAdapter
+import com.drdisagree.pixellauncherenhanced.utils.DrawerFoldersStore
 import com.drdisagree.pixellauncherenhanced.utils.DrawerTabsStore
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
@@ -173,6 +174,7 @@ class DrawerTabs : Fragment() {
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.drawer_tabs_delete) { _, _ ->
                 DrawerTabsStore.save(DrawerTabsStore.load().filterNot { it.id == tab.id })
+                DrawerFoldersStore.deleteForTab(tab.id)
                 adapter.submit(DrawerTabsStore.load())
             }
             .show()
@@ -202,6 +204,7 @@ class DrawerTabs : Fragment() {
             context: Context,
             @StringRes title: Int,
             initialName: String,
+            @StringRes hint: Int = R.string.drawer_tabs_new_hint,
             onSave: (String) -> Unit
         ) {
             val input = TextInputEditText(context).apply {
@@ -210,7 +213,7 @@ class DrawerTabs : Fragment() {
                 isSingleLine = true
             }
             val inputLayout = TextInputLayout(context, null, com.google.android.material.R.attr.textInputOutlinedStyle).apply {
-                hint = context.getString(R.string.drawer_tabs_new_hint)
+                this.hint = context.getString(hint)
                 val radius = dpToPx(16).toFloat()
                 setBoxCornerRadii(radius, radius, radius, radius)
                 addView(input)
