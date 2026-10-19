@@ -689,10 +689,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
         callMethodSilently("close", false)
     }
 
-    private fun Array<Any?>.drawerFolderItem(): Any? = firstOrNull { arg ->
-        val container = arg.getFieldSilently("container") as? Int ?: return@firstOrNull false
-        container in (FOLDER_ID_BASE - MAX_FOLDER_ID)..<FOLDER_ID_BASE
-    }
+    private fun Array<Any?>.drawerFolderItem(): Any? = firstOrNull { isDrawerFolderItem(it) }
 
     private fun refreshLists() {
         appLists.toList().forEach { it.callMethodSilently("onAppsUpdated") }
@@ -725,6 +722,11 @@ class DrawerFolders(context: Context) : ModPack(context) {
     }
 
     companion object {
+        fun isDrawerFolderItem(item: Any?): Boolean {
+            val container = item.getFieldSilently("container") as? Int ?: return false
+            return container in (FOLDER_ID_BASE - MAX_FOLDER_ID)..<FOLDER_ID_BASE
+        }
+
         private const val DEFAULT_ICON_VIEW_TYPE = 1 shl 1
         private const val FOLDER_VIEW_TYPE = 1 shl 24
         private const val CONTAINER_ALL_APPS = -104

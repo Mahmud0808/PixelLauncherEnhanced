@@ -63,11 +63,7 @@ class IconLabels(context: Context) : ModPack(context) {
                 itemInfo.setField("title", null)
             }
 
-            if (mDisplay.isDesktop() && !showDesktopLabels && !mDisplay.isNativelyHandled()) {
-                removeLabel()
-            } else if (mDisplay.isDrawer() && !showDrawerLabels) {
-                removeLabel()
-            }
+            if (itemInfo.hidesLabel(mDisplay)) removeLabel()
         }
 
         fun XC_MethodHook.MethodHookParam.afterHookedLabel() {
@@ -81,20 +77,17 @@ class IconLabels(context: Context) : ModPack(context) {
                 }
             }
 
-            if (mDisplay.isDesktop() && !showDesktopLabels && !mDisplay.isNativelyHandled()) {
-                reAddLabel()
-            } else if (mDisplay.isDrawer() && !showDrawerLabels) {
-                reAddLabel()
-            }
+            if (itemInfo.hidesLabel(mDisplay)) reAddLabel()
         }
 
         findClass("com.android.launcher3.ShortcutAndWidgetContainer")
             .hookMethod("measureChild")
             .suppressError()
             .runAfter { param ->
-                if (showDesktopLabels) return@runAfter
-
                 val child = param.args.getOrNull(0) as? View ?: return@runAfter
+                val showLabels = if (DrawerFolders.isDrawerFolderItem(child.tag)) showDrawerLabels else showDesktopLabels
+                if (showLabels) return@runAfter
+
                 centerIconWithoutLabel(param.thisObject as View, child)
             }
 
@@ -171,6 +164,12 @@ class IconLabels(context: Context) : ModPack(context) {
         return runCatching { launcherPrefs.callMethod("put", nativeLabelHiddenItem, hidden) }
             .onFailure { log(this@IconLabels, it) }
             .isSuccess
+    }
+
+    private fun Any?.hidesLabel(display: Int): Boolean {
+        if (DrawerFolders.isDrawerFolderItem(this)) return !showDrawerLabels
+        if (display.isDesktop()) return !showDesktopLabels && !display.isNativelyHandled()
+        return display.isDrawer() && !showDrawerLabels
     }
 
     private fun View.isDrawerIconWithoutLabel(): Boolean {
