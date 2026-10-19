@@ -406,13 +406,25 @@ class DrawerFolders(context: Context) : ModPack(context) {
         folderInfo.setExtraField(FOLDER_ID, entry.folder.id)
         folderInfo.setExtraField(FOLDER_ENTRY, entry)
 
-        entry.apps.forEachIndexed { rank, app ->
-            val item = app.callMethodSilently("makeWorkspaceItem", context) ?: return@forEachIndexed
+        var added = 0
+        entry.apps.forEach { app ->
+            val item = app.makeWorkspaceItem(context) ?: return@forEach
             item.setFieldSilently("container", id)
-            item.setFieldSilently("rank", rank)
+            item.setFieldSilently("rank", added++)
             folderInfo.addToFolder(item)
         }
-        return folderInfo
+        return folderInfo.takeIf { added > 0 }
+    }
+
+    private fun Any.makeWorkspaceItem(context: Context): Any? {
+        val method = generateSequence<Class<*>>(javaClass) { it.superclass }
+            .flatMap { it.declaredMethods.asSequence() }
+            .firstOrNull { it.name == "makeWorkspaceItem" && it.parameterTypes.singleOrNull()?.isInstance(context) == true }
+            ?: return null
+        method.isAccessible = true
+        return runCatching { method.invoke(this, context) }
+            .onFailure { log(this@DrawerFolders, it) }
+            .getOrNull()
     }
 
     private fun Any.addToFolder(item: Any) {
