@@ -419,10 +419,14 @@ class DrawerFolders(context: Context) : ModPack(context) {
     private fun Any.makeWorkspaceItem(context: Context): Any? {
         val method = generateSequence<Class<*>>(javaClass) { it.superclass }
             .flatMap { it.declaredMethods.asSequence() }
-            .firstOrNull { it.name == "makeWorkspaceItem" && it.parameterTypes.singleOrNull()?.isInstance(context) == true }
+            .filter { it.name == "makeWorkspaceItem" }
+            .firstOrNull { method ->
+                method.parameterTypes.isEmpty() || method.parameterTypes.singleOrNull()?.isInstance(context) == true
+            }
             ?: return null
         method.isAccessible = true
-        return runCatching { method.invoke(this, context) }
+        val args = if (method.parameterTypes.isEmpty()) emptyArray() else arrayOf<Any?>(context)
+        return runCatching { method.invoke(this, *args) }
             .onFailure { log(this@DrawerFolders, it) }
             .getOrNull()
     }
