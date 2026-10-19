@@ -193,7 +193,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 
 - **Xposed Framework:** Make sure you have the Xposed framework installed.
 
-- **Android version:** Android 12 or newer is recommended. The module can still be installed on older versions for testing, but features aren't guaranteed to work there. If you try it on an older version, reports on what works and what doesn't are very welcome.
+- **Android version:** Android 12 or newer is required.
 
 # 🔧 Installation
 

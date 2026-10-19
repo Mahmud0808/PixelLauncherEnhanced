@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.drdisagree.pixellauncherenhanced"
-        minSdk = 26
+        minSdk = 31
         targetSdk = 36
         versionCode = 5
         versionName = "1.1.0"
