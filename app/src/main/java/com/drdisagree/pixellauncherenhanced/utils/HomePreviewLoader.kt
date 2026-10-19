@@ -72,7 +72,7 @@ object HomePreviewLoader {
 
         executor.execute {
             val result = runCatching {
-                val extras = previewExtras(appContext, width, height).apply {
+                val extras = previewExtras(width, height).apply {
                     putBinder(KEY_HOST_TOKEN, hostToken)
                 }
                 appContext.contentResolver.call(previewUri(authority), METHOD_PREVIEW, null, extras)
@@ -100,7 +100,7 @@ object HomePreviewLoader {
 
         val background = loadWallpaper(context, width, height)
         val result = runCatching {
-            context.contentResolver.call(previewUri(authority), METHOD_PREVIEW_BITMAP, null, previewExtras(context, width, height).apply {
+            context.contentResolver.call(previewUri(authority), METHOD_PREVIEW_BITMAP, null, previewExtras(width, height).apply {
                 putLong(KEY_DELAY, RENDER_DELAY_MS)
             })
         }.getOrNull()
@@ -121,14 +121,10 @@ object HomePreviewLoader {
 
     private fun previewUri(authority: String) = Uri.parse("content://$authority")
 
-    private fun previewExtras(context: Context, width: Int, height: Int) = Bundle().apply {
+    private fun previewExtras(width: Int, height: Int) = Bundle().apply {
         putInt(KEY_WIDTH, width)
         putInt(KEY_HEIGHT, height)
         putInt(KEY_DISPLAY_ID, Display.DEFAULT_DISPLAY)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            WallpaperManager.getInstance(context).getWallpaperColors(WallpaperManager.FLAG_SYSTEM)
-                ?.let { putParcelable(KEY_WALLPAPER_COLORS, it) }
-        }
     }
 
     private fun loadWallpaper(context: Context, width: Int, height: Int): Drawable? {
@@ -229,7 +225,6 @@ object HomePreviewLoader {
     private const val KEY_HEIGHT = "height"
     private const val KEY_DISPLAY_ID = "display_id"
     private const val KEY_DELAY = "bitmap_delay_ms"
-    private const val KEY_WALLPAPER_COLORS = "wallpaper_colors"
     private const val KEY_HOST_TOKEN = "host_token"
     private const val KEY_IMAGE = "image"
     private const val KEY_SURFACE_PACKAGE = "surface_package"
