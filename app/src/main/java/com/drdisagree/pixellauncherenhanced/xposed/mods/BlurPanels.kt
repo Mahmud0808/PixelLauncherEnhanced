@@ -247,6 +247,22 @@ class BlurPanels(context: Context) : ModPack(context) {
                 if (hotseat.isAttachedToWindow) hotseat.post { hotseat.installGlassOverlay() }
             }
 
+        val searchDelegateClass = findClass("com.google.android.apps.nexuslauncher.qsb.SearchDelegateView", suppressError = true)
+        searchDelegateClass
+            .hookMethod("onAttachedToWindow", "onLayout", "onThemeChanged")
+            .suppressError()
+            .runAfter { param -> (param.thisObject as? View)?.installSearchPanel() }
+
+        if (searchDelegateClass != null) {
+            findClass("android.view.View")
+                .hookMethod("setBackgroundDrawable")
+                .suppressError()
+                .runAfter { param ->
+                    if (param.thisObject.javaClass !== searchDelegateClass) return@runAfter
+                    (param.thisObject as View).installSearchPanel()
+                }
+        }
+
         findClass("com.android.quickstep.views.FloatingWidgetBackgroundView", suppressError = true)
             .hookMethod("init")
             .suppressError()
@@ -300,15 +316,17 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun View.installSearchPanel() {
         if (widgetHostClass?.isInstance(this) == true || background is BlurPanelDrawable) return
         val original = background ?: return
+        val pill = original.pillLayer() ?: original
         hosts.add(this)
-        (backgroundTintList?.defaultColor ?: original.fillColor())?.let { setExtraField(PANEL_COLOR, it) }
+        (backgroundTintList?.defaultColor ?: pill.fillColor())?.let { setExtraField(PANEL_COLOR, it) }
 
         background = BlurPanelDrawable(original, onShown = { panel().refreshSoon() }) { canvas ->
-            original.alpha = if (searchGlass) 0 else 255
+            pill.alpha = if (searchGlass) 0 else 255
             if (!searchGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
 
-            rect.set(0f, 0f, width.toFloat(), height.toFloat())
-            val corner = (original as? GradientDrawable)?.cornerRadius?.takeIf { it > 0f }
+            if (pill.bounds.isEmpty) rect.set(0f, 0f, width.toFloat(), height.toFloat()) else rect.set(pill.bounds)
+            if (rect.isEmpty) return@BlurPanelDrawable
+            val corner = (pill as? GradientDrawable)?.cornerRadius?.takeIf { it > 0f }
                 ?.let { minOf(it, rect.height() / 2f) }
                 ?: (rect.height() / 2f)
 
@@ -332,6 +350,14 @@ class BlurPanels(context: Context) : ModPack(context) {
                 tintColor = panelTintColor(searchBlurTint)
             )
         }
+    }
+
+    private fun Drawable.pillLayer(): Drawable? = when (this) {
+        is LayerDrawable -> (0 until numberOfLayers)
+            .filter { getId(it) != android.R.id.mask }
+            .firstNotNullOfOrNull { getDrawable(it)?.pillLayer() }
+        is DrawableWrapper -> drawable?.pillLayer()
+        else -> this
     }
 
     private fun ViewGroup.installDockPanel() {
