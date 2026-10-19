@@ -9,7 +9,6 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Message
 import android.os.SystemClock
 import android.util.AttributeSet
@@ -17,7 +16,6 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
-import androidx.annotation.RequiresApi
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.doOnLayout
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_COLUMNS
@@ -147,7 +145,7 @@ class LauncherPreviewView @JvmOverloads constructor(
         val previous = preview
         preview = result
 
-        if (result.screen == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (result.screen == null) {
             if (previous?.screen != null || surfaceView == null) showSurface(result)
             else surfaceView?.let { drawSurfaceWallpaper(it.holder) }
         } else {
@@ -179,7 +177,6 @@ class LauncherPreviewView @JvmOverloads constructor(
         playReveal()
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     private fun showSurface(result: HomePreview) {
         removeSurface()
 

@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.text.SpannableStringBuilder
@@ -161,8 +160,7 @@ class RecentsAppLock(context: Context) : ModPack(context) {
             LOCK_PLACEHOLDER,
             ImageSpan(
                 drawable,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) DynamicDrawableSpan.ALIGN_CENTER
-                else DynamicDrawableSpan.ALIGN_BASELINE
+                DynamicDrawableSpan.ALIGN_CENTER
             ),
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         ).append(" ").append(plain)

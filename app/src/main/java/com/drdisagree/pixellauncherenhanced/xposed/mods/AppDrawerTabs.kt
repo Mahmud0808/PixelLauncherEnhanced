@@ -13,7 +13,6 @@ import android.graphics.drawable.DrawableContainer
 import android.graphics.drawable.DrawableWrapper
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
@@ -575,9 +574,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     setColor(
                         themeColor(
                             android.R.color.system_neutral2_800,
-                            android.R.color.system_neutral2_100,
-                            0xFF2B2930.toInt(),
-                            0xFFECE6F0.toInt()
+                            android.R.color.system_neutral2_100
                         )
                     )
                 }
@@ -710,9 +707,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                     setColor(
                         themeColor(
                             android.R.color.system_accent1_200,
-                            android.R.color.system_accent1_600,
-                            0xFFD0BCFF.toInt(),
-                            0xFF6750A4.toInt()
+                            android.R.color.system_accent1_600
                         )
                     )
                 }
@@ -724,30 +719,22 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                 if (selected) {
                     themeColor(
                         android.R.color.system_accent1_800,
-                        android.R.color.system_accent1_0,
-                        0xFF381E72.toInt(),
-                        0xFFFFFFFF.toInt()
+                        android.R.color.system_accent1_0
                     )
                 } else {
                     themeColor(
                         android.R.color.system_neutral1_100,
-                        android.R.color.system_neutral1_800,
-                        0xFFE6E0E9.toInt(),
-                        0xFF322F35.toInt()
+                        android.R.color.system_neutral1_800
                     )
                 }
             )
         }
 
-        private fun themeColor(nightRes: Int, dayRes: Int, nightFallback: Int, dayFallback: Int): Int {
+        private fun themeColor(nightRes: Int, dayRes: Int): Int {
             val night = context.resources.configuration.uiMode and
                     Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                context.getColor(if (night) nightRes else dayRes)
-            } else {
-                if (night) nightFallback else dayFallback
-            }
+            return context.getColor(if (night) nightRes else dayRes)
         }
     }
 

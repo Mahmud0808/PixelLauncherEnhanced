@@ -3,7 +3,6 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.ContentProvider
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -96,11 +95,7 @@ class HomePreviewAccess(context: Context) : ModPack(context) {
     }
 
     private fun callingPackage(provider: ContentProvider): String? = runCatching {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            provider.callingAttributionSource?.packageName ?: provider.callingPackage
-        } else {
-            provider.callingPackage
-        }
+        provider.callingAttributionSource?.packageName ?: provider.callingPackage
     }.getOrNull()
 
     companion object {

@@ -2,7 +2,6 @@ package com.drdisagree.pixellauncherenhanced.data.config
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceGroup
@@ -80,8 +79,7 @@ object PrefsHelper {
         return when (key) {
             XPOSED_HOOK_CHECK -> false
 
-            WIDGET_CLEAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    PanelBackground.supported(getString(WIDGET_BACKGROUND)) == PanelBackground.OFF
+            WIDGET_CLEAR_BACKGROUND -> PanelBackground.supported(getString(WIDGET_BACKGROUND)) == PanelBackground.OFF
 
             APP_DRAWER_THEMED_ICONS,
             FORCE_THEMED_ICONS,
@@ -89,31 +87,29 @@ object PrefsHelper {
 
             FOLDER_COVER -> getBoolean(FOLDER_TAP_FIRST_APP)
 
-            ICON_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && getBoolean(HOME_THEMED_ICONS)
+            ICON_BACKGROUND -> getBoolean(HOME_THEMED_ICONS)
 
             FOLDER_BACKGROUND,
-            WIDGET_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            WIDGET_BACKGROUND -> true
 
             FOLDER_BACKGROUND_OPACITY,
-            FOLDER_BACKGROUND_BLUR -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    PanelBackground.supported(getString(FOLDER_BACKGROUND)) != PanelBackground.OFF
+            FOLDER_BACKGROUND_BLUR -> PanelBackground.supported(getString(FOLDER_BACKGROUND)) != PanelBackground.OFF
 
             ICON_BACKGROUND_BLUR,
             ICON_BACKGROUND_TINT -> getBoolean(HOME_THEMED_ICONS) &&
                     PanelBackground.supported(getString(ICON_BACKGROUND)) != PanelBackground.OFF
 
             WIDGET_BLUR_RADIUS,
-            WIDGET_BLUR_TINT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    PanelBackground.supported(getString(WIDGET_BACKGROUND)) != PanelBackground.OFF
+            WIDGET_BLUR_TINT -> PanelBackground.supported(getString(WIDGET_BACKGROUND)) != PanelBackground.OFF
 
-            DOCK_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !getBoolean(DISABLE_DOCK)
+            DOCK_BACKGROUND -> !getBoolean(DISABLE_DOCK)
 
             DOCK_BLUR_RADIUS,
             DOCK_BLUR_TINT,
             DOCK_BLUR_TINT_COLOR,
             DOCK_BLUR_CORNER,
             DOCK_BLUR_STYLE,
-            DOCK_BLUR_MARGIN -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !getBoolean(DISABLE_DOCK) &&
+            DOCK_BLUR_MARGIN -> !getBoolean(DISABLE_DOCK) &&
                     PanelBackground.supported(getString(DOCK_BACKGROUND)) != PanelBackground.OFF
 
             DEVELOPER_OPTIONS,
@@ -131,13 +127,11 @@ object PrefsHelper {
             FOLDER_CUSTOM_COLOR_LIGHT,
             FOLDER_CUSTOM_COLOR_DARK -> getBoolean(HOME_THEMED_ICONS) && getBoolean(THEMED_ICON_CUSTOM_COLOR)
 
-            SEARCH_BAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    !getBoolean(DESKTOP_SEARCH_BAR) &&
+            SEARCH_BAR_BACKGROUND -> !getBoolean(DESKTOP_SEARCH_BAR) &&
                     !getBoolean(DISABLE_DOCK)
 
             SEARCH_BAR_BLUR_RADIUS,
-            SEARCH_BAR_BLUR_TINT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    !getBoolean(DESKTOP_SEARCH_BAR) &&
+            SEARCH_BAR_BLUR_TINT -> !getBoolean(DESKTOP_SEARCH_BAR) &&
                     !getBoolean(DISABLE_DOCK) &&
                     PanelBackground.supported(getString(SEARCH_BAR_BACKGROUND)) != PanelBackground.OFF
 

@@ -343,7 +343,7 @@ object IconPackManager {
     fun renderShortcutIcon(drawable: Drawable, size: Int): Bitmap {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(bitmap)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
+        if (drawable is AdaptiveIconDrawable) {
             drawable.setBounds(0, 0, size, size)
             drawable.draw(canvas)
             return bitmap

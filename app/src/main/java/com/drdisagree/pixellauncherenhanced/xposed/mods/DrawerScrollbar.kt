@@ -1,7 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
-import android.os.Build
 import android.view.View
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_DRAWER_SCROLLBAR
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -86,7 +85,7 @@ class DrawerScrollbar(context: Context) : ModPack(context) {
     }
 
     private fun clearGestureExclusion(scroller: View) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && scroller.systemGestureExclusionRects.isNotEmpty()) {
+        if (scroller.systemGestureExclusionRects.isNotEmpty()) {
             scroller.systemGestureExclusionRects = emptyList()
         }
     }

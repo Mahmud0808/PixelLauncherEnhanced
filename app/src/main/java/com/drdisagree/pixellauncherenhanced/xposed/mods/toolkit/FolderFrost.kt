@@ -23,7 +23,6 @@ import java.lang.ref.WeakReference
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-@RequiresApi(Build.VERSION_CODES.S)
 class FolderFrost(private val host: View) {
 
     private val roundPath = Path()

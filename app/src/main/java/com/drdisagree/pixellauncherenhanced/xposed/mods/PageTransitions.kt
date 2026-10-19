@@ -2,7 +2,6 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
 import android.graphics.Matrix
-import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_PAGE_TRANSITION
@@ -94,14 +93,9 @@ class PageTransitions(context: Context) : ModPack(context) {
 
             STACK -> if (offset < 0f) {
                 val scale = 1f + offset * STACK_SCALE
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    animationMatrix = Matrix().apply {
-                        setScale(scale, scale, width / 2f, height / 2f)
-                        postTranslate(-offset * step, 0f)
-                    }
-                } else {
-                    scaleX = scale
-                    scaleY = scale
+                animationMatrix = Matrix().apply {
+                    setScale(scale, scale, width / 2f, height / 2f)
+                    postTranslate(-offset * step, 0f)
                 }
                 alpha = 1f + offset
             }
@@ -119,7 +113,7 @@ class PageTransitions(context: Context) : ModPack(context) {
     private fun View.resetTransition() {
         if (!transformed.remove(this)) return
         if (rotationY != 0f) rotationY = 0f
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && animationMatrix != null) animationMatrix = null
+        if (animationMatrix != null) animationMatrix = null
         if (scaleX != 1f) scaleX = 1f
         if (scaleY != 1f) scaleY = 1f
         if (alpha != 1f) alpha = 1f

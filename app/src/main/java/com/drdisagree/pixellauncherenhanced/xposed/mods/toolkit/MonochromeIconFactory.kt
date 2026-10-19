@@ -31,8 +31,6 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
@@ -46,7 +44,6 @@ import kotlin.math.roundToInt
 /**
  * Utility class to generate monochrome icons version for a given drawable.
  */
-@RequiresApi(Build.VERSION_CODES.Q)
 @Suppress("deprecation")
 open class MonochromeIconFactory internal constructor(
     iconBitmapSize: Int,

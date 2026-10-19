@@ -10,7 +10,6 @@ import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.view.animation.PathInterpolator
 import com.drdisagree.pixellauncherenhanced.data.enums.SegmentPosition
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
@@ -67,12 +66,7 @@ class SegmentedRowDrawable(context: Context) : Drawable() {
 
     override fun getOutline(outline: Outline) {
         buildPath()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            outline.setPath(path)
-        } else {
-            @Suppress("DEPRECATION")
-            outline.setConvexPath(path)
-        }
+        outline.setPath(path)
     }
 
     private fun buildPath() {

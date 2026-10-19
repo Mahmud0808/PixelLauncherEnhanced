@@ -2,10 +2,8 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.app.Activity
 import android.content.Context
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.view.WindowManager
 import androidx.core.view.WindowInsetsCompat
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_STATUSBAR
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -89,21 +87,11 @@ class HideStatusbar(context: Context) : ModPack(context) {
     }
 
     private fun hideStatusBar(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            activity.window.decorView.windowInsetsController?.hide(WindowInsetsCompat.Type.statusBars())
-        } else {
-            @Suppress("DEPRECATION")
-            activity.window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        }
+        activity.window.decorView.windowInsetsController?.hide(WindowInsetsCompat.Type.statusBars())
     }
 
     private fun showStatusBar(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            activity.window.decorView.windowInsetsController?.show(WindowInsetsCompat.Type.statusBars())
-        } else {
-            @Suppress("DEPRECATION")
-            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        }
+        activity.window.decorView.windowInsetsController?.show(WindowInsetsCompat.Type.statusBars())
     }
 
     private fun getListener(listener: CustomStateListener): Any {

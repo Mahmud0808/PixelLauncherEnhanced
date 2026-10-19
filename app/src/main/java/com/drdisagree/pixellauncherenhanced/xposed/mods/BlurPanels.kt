@@ -25,7 +25,6 @@ import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.VectorDrawable
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
@@ -169,8 +168,6 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-
         listOf(
             "com.android.quickstep.util.BaseDepthControllerImpl",
             "com.android.quickstep.util.BaseDepthController",

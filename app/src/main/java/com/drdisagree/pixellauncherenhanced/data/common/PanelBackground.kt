@@ -15,15 +15,12 @@ object PanelBackground {
 
     val KEYS = setOf(DOCK_BACKGROUND, WIDGET_BACKGROUND, FOLDER_BACKGROUND, ICON_BACKGROUND, SEARCH_BAR_BACKGROUND)
 
-    val isBlurSupported: Boolean
-        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-
     val isLiquidSupported: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
     fun supported(value: String?): String {
         return when {
-            value == null || !isBlurSupported -> OFF
+            value == null -> OFF
             value == LIQUID && !isLiquidSupported -> FROSTED
             value == FROSTED || value == LIQUID -> value
             else -> OFF

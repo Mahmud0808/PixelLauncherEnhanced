@@ -240,7 +240,6 @@ object WallpaperGlass {
     private var homeHeight = 0f
     private var homeToken = 0
 
-    @RequiresApi(Build.VERSION_CODES.S)
     fun captureHome(targets: List<View>, blurRadius: Float) {
         val root = targets.firstOrNull()?.rootView ?: return
         checkWallpaper(root.context)
@@ -305,7 +304,6 @@ object WallpaperGlass {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     private fun renderNode(node: RenderNode, width: Int, height: Int): Bitmap? {
         val reader = ImageReader.newInstance(
             width,

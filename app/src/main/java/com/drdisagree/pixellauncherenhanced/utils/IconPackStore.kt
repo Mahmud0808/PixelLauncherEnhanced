@@ -291,14 +291,10 @@ object IconPackStore {
             }
         }
 
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (night) {
-                context.getColor(android.R.color.system_accent1_800) to context.getColor(android.R.color.system_accent1_100)
-            } else {
-                context.getColor(android.R.color.system_accent1_100) to context.getColor(android.R.color.system_accent1_700)
-            }
+        return if (night) {
+            context.getColor(android.R.color.system_accent1_800) to context.getColor(android.R.color.system_accent1_100)
         } else {
-            if (night) Color.BLACK to Color.WHITE else Color.WHITE to Color.BLACK
+            context.getColor(android.R.color.system_accent1_100) to context.getColor(android.R.color.system_accent1_700)
         }
     }
 

@@ -10,18 +10,15 @@ import android.graphics.RectF
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.DrawableWrapper
-import android.os.Build
 import android.os.SystemClock
 import android.view.View
 import android.view.animation.DecelerateInterpolator
-import androidx.annotation.RequiresApi
 import java.util.Collections
 import java.util.WeakHashMap
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-@RequiresApi(Build.VERSION_CODES.S)
 class BlurPanel(private val host: View) {
 
     private val blurBounds = Rect()
@@ -247,7 +244,6 @@ class BlurPanel(private val host: View) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 class BlurPanelDrawable(
     original: Drawable?,
     private val onShown: () -> Unit = {},

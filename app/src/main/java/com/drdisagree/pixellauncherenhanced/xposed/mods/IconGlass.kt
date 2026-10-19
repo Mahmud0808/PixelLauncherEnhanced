@@ -17,11 +17,9 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.annotation.RequiresApi
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
@@ -105,7 +103,6 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
-        if (!PanelBackground.isBlurSupported) return
         DragPreviewGlass.install()
 
         val allAppsState = findClass("com.android.launcher3.LauncherState", suppressError = true)
@@ -125,7 +122,7 @@ class IconGlass(context: Context) : ModPack(context) {
                         arrayOf(stateListenerClass),
                         InvocationHandler { proxy, method, args ->
                             when (method.name) {
-                                "onStateTransitionStart" -> if (args?.getOrNull(0) == allAppsState && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) captureHome(launcher)
+                                "onStateTransitionStart" -> if (args?.getOrNull(0) == allAppsState) captureHome(launcher)
                                 "onStateTransitionComplete" -> if (args?.getOrNull(0) != allAppsState) WallpaperGlass.clearHome()
                                 "equals" -> return@InvocationHandler proxy === args?.getOrNull(0)
                                 "hashCode" -> return@InvocationHandler System.identityHashCode(proxy)
@@ -319,7 +316,6 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     @SuppressLint("DiscouragedApi")
-    @RequiresApi(Build.VERSION_CODES.S)
     private fun captureHome(launcher: Activity) {
         if (!enabled && !folderGlass) return
         val root = launcher.window?.decorView ?: return

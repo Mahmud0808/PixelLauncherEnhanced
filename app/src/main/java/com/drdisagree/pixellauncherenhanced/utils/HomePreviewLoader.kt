@@ -18,7 +18,6 @@ import android.os.Process
 import android.util.Xml
 import android.view.Display
 import android.view.SurfaceControlViewHost
-import androidx.annotation.RequiresApi
 import androidx.core.os.BundleCompat
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
@@ -59,7 +58,6 @@ object HomePreviewLoader {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     fun requestSurface(
         context: Context,
         authority: String,
@@ -108,8 +106,7 @@ object HomePreviewLoader {
 
         return when {
             screen != null -> HomePreview(screen, background, authority)
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> HomePreview(null, background, authority)
-            else -> null
+            else -> HomePreview(null, background, authority)
         }
     }
 

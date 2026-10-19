@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Insets
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.WindowManager
@@ -159,15 +158,9 @@ class TaskbarHandle(context: Context) : ModPack(context) {
         for (i in 0..<providedInsetsLength) {
             val insetsFrame = java.lang.reflect.Array.get(providedInsets, i) ?: continue
 
-            // no constants, maximum compatibility with Android versions
             if (!insetsFrame.toString().contains("type=navigationBars", ignoreCase = true)) continue
 
-            val noneInsets = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Insets.NONE
-            } else {
-                Insets.of(0, 0, 0, 0)
-            }
-            insetsFrame.callMethod("setInsetsSize", noneInsets)
+            insetsFrame.callMethod("setInsetsSize", Insets.NONE)
         }
     }
 }

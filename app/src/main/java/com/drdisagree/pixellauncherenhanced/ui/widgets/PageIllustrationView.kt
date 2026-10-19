@@ -17,7 +17,6 @@ import android.graphics.RectF
 import android.graphics.RenderEffect
 import android.graphics.RenderNode
 import android.graphics.Shader
-import android.os.Build
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.view.animation.PathInterpolator
@@ -139,7 +138,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
 
     private data class Glass(val blur: Int, val tint: Int)
 
-    private val backdropNode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) RenderNode("illustrationBackdrop") else null
+    private val backdropNode = RenderNode("illustrationBackdrop")
     private var backdrop: (Canvas) -> Unit = { drawWallpaper(it) }
     private var recordingBackdrop = false
 
@@ -1098,7 +1097,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
 
     private fun drawBlurredBackdrop(canvas: Canvas, bounds: RectF, radius: Float, glass: Glass) {
         val node = backdropNode
-        if (recordingBackdrop || node == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !canvas.isHardwareAccelerated) return
+        if (recordingBackdrop || !canvas.isHardwareAccelerated) return
         node.setPosition(0, 0, width, height)
         val recording = node.beginRecording(width, height)
         val savedScreen = RectF(screen)

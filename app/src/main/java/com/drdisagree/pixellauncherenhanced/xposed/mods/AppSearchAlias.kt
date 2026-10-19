@@ -2,7 +2,6 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.ComponentName
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import com.drdisagree.pixellauncherenhanced.BuildConfig
@@ -43,8 +42,6 @@ class AppSearchAlias(context: Context) : ModPack(context) {
 
                 param.result = matchesAlias(query, param.args.getOrNull(2))
             }
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
 
         findClass("android.app.search.SearchSession", suppressError = true)
             .hookMethod("query")
