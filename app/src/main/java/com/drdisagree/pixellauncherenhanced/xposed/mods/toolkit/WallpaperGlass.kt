@@ -5,6 +5,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
@@ -16,10 +18,13 @@ import android.graphics.Region
 import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Process
 import android.view.View
 import androidx.annotation.RequiresApi
+import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
 import java.io.File
 import java.util.Collections
@@ -154,6 +159,7 @@ object WallpaperGlass {
     private val listeners: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val lastPositions = WeakHashMap<View, Long>()
     private val lastScales = WeakHashMap<View, Float>()
+    private val lastScrims = WeakHashMap<View, Int>()
     private val watchedRoots: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val trackLocation = IntArray(2)
 
@@ -162,6 +168,7 @@ object WallpaperGlass {
         host.getLocationInWindow(trackLocation)
         lastPositions[host] = packPosition(trackLocation)
         lastScales[host] = host.cumulativeScale()
+        lastScrims[host] = host.cellScrim()
 
         val root = host.rootView ?: return
         if (!watchedRoots.add(root)) return
@@ -171,9 +178,11 @@ object WallpaperGlass {
                 view.getLocationInWindow(trackLocation)
                 val position = packPosition(trackLocation)
                 val scale = view.cumulativeScale()
-                if (lastPositions[view] != position || lastScales[view] != scale) {
+                val scrim = view.cellScrim()
+                if (lastPositions[view] != position || lastScales[view] != scale || lastScrims[view] != scrim) {
                     lastPositions[view] = position
                     lastScales[view] = scale
+                    lastScrims[view] = scrim
                     view.background?.invalidateSelf()
                     view.invalidate()
                 }
@@ -182,12 +191,45 @@ object WallpaperGlass {
         }
     }
 
+    private fun View.cellScrim(): Int {
+        var current: View? = this
+        while (current != null) {
+            if (current.javaClass.name.endsWith(".CellLayout")) {
+                val background = current.getFieldSilently("mBackground") as? Drawable ?: return 0
+                if (background.alpha == 0) return 0
+                val color = (background.current as? GradientDrawable)?.color?.defaultColor ?: return 0
+                return ColorUtils.setAlphaComponent(color, Color.alpha(color) * background.alpha / 255)
+            }
+            current = current.parent as? View
+        }
+        return 0
+    }
+
+    private fun backdropDim(host: View, dimColor: Int): Int {
+        val scrim = host.cellScrim()
+        if (Color.alpha(scrim) == 0) return dimColor
+        if (Color.alpha(dimColor) == 0) return scrim
+        return ColorUtils.compositeColors(dimColor, scrim)
+    }
+
+    private fun backdropFilter(color: Int): BlendModeColorFilter? {
+        if (Color.alpha(color) == 0) return null
+        return BlendModeColorFilter(color, BlendMode.SRC_OVER)
+    }
+
     private fun packPosition(location: IntArray): Long {
         return (location[0].toLong() shl 32) or (location[1].toLong() and 0xFFFFFFFFL)
     }
 
     var offsetX = 0.5f
     var zoom = 0f
+    private var depthBlur = 0f
+
+    fun setDepthBlur(radius: Float) {
+        if (radius == depthBlur) return
+        depthBlur = radius
+        onOffsetsChanged()
+    }
 
     fun isAvailable(): Boolean = !liveWallpaper && smallBase != null
 
@@ -338,13 +380,15 @@ object WallpaperGlass {
         if (!isAvailable()) return false
 
         val screenWidth = host.resources.displayMetrics.widthPixels
+        val radius = max(blurRadius, depthBlur)
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         val bitmap = if (useLiquid) {
-            blurredBitmap(true, (blurRadius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
+            blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
         } else {
-            blurredBitmap(false, max(1, (blurRadius * SAMPLE_WIDTH / screenWidth).roundToInt()))
+            blurredBitmap(false, max(1, (radius * SAMPLE_WIDTH / screenWidth).roundToInt()))
         } ?: return false
 
+        val dim = backdropDim(host, dimColor)
         val rootView = host.rootView
         val screenHeight = rootView.height.takeIf { it > 0 } ?: host.resources.displayMetrics.heightPixels
 
@@ -372,9 +416,10 @@ object WallpaperGlass {
 
         if (shapeDrawer != null) {
             val paint = if (useLiquid) {
-                liquidPaint(bitmap, rect, corner, hostScale, alpha, dimColor)
+                liquidPaint(bitmap, rect, corner, hostScale, alpha, dim)
             } else {
                 shapePaint.shader = wallpaperShader(bitmap, hostScale)
+                shapePaint.colorFilter = backdropFilter(dim)
                 shapePaint.alpha = (alpha.coerceIn(0f, 1f) * 255).roundToInt()
                 shapePaint
             }
@@ -383,7 +428,7 @@ object WallpaperGlass {
         }
 
         if (useLiquid) {
-            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, hostScale, alpha, dimColor))
+            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, hostScale, alpha, dim))
             drawTint(canvas, tintColor, alpha)
             return true
         }
@@ -398,7 +443,7 @@ object WallpaperGlass {
         canvas.drawBitmap(bitmap, source, target, bitmapPaint)
         canvas.restore()
 
-        drawTint(canvas, dimColor, alpha)
+        drawTint(canvas, dim, alpha)
         drawTint(canvas, tintColor, alpha)
         return true
     }
@@ -421,11 +466,12 @@ object WallpaperGlass {
         if (!isAvailable()) return null
 
         val screenWidth = host.resources.displayMetrics.widthPixels
+        val radius = max(blurRadius, depthBlur)
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         val bitmap = if (useLiquid) {
-            blurredBitmap(true, (blurRadius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
+            blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
         } else {
-            blurredBitmap(false, max(1, (blurRadius * SAMPLE_WIDTH / screenWidth).roundToInt()))
+            blurredBitmap(false, max(1, (radius * SAMPLE_WIDTH / screenWidth).roundToInt()))
         } ?: return null
 
         val screenHeight = host.rootView.height.takeIf { it > 0 } ?: host.resources.displayMetrics.heightPixels
@@ -461,7 +507,7 @@ object WallpaperGlass {
             shader.setFloatUniform("radius", corner)
             val refraction = minOf(localRect.height(), localRect.width()) * LIQUID_REFRACTION
             shader.setFloatUniform("refraction", refraction)
-            setDim(shader, 0)
+            setDim(shader, host.cellScrim())
             val mask = shapePath?.let { path -> shapeMask(path, localRect, refraction) { it.drawPath(path, maskPaint) } }
                 ?: maskDrawer?.let { shapeMask(maskKey ?: it, localRect, refraction, it) }
             if (mask != null) {
@@ -477,9 +523,15 @@ object WallpaperGlass {
             } else {
                 disableMask(shader)
             }
-            iconPaint.apply { this.shader = shader }
+            iconPaint.apply {
+                this.shader = shader
+                colorFilter = null
+            }
         } else {
-            iconPaint.apply { this.shader = image }
+            iconPaint.apply {
+                this.shader = image
+                colorFilter = backdropFilter(host.cellScrim())
+            }
         }
         paint.alpha = (alpha.coerceIn(0f, 1f) * 255).roundToInt()
         return paint

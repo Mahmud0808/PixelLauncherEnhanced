@@ -178,6 +178,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                     val current = param.thisObject.getFieldSilently("mCurrentBlur") as? Int ?: return@runAfter
                     val max = param.thisObject.getFieldSilently("mMaxBlurRadius") as? Int ?: return@runAfter
                     BlurPanel.setLauncherBlur(if (max > 0) current.toFloat() / max else 0f)
+                    WallpaperGlass.setDepthBlur(current.toFloat())
                 }
         }
 

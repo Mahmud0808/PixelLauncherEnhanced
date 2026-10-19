@@ -50,10 +50,12 @@ class IconGlass(context: Context) : ModPack(context) {
     private val localRect = RectF()
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val maskPaint = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
-    private val opaqueAlpha = ColorMatrixColorFilter(
-        floatArrayOf(1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 255f, 0f)
-    )
+    private val maskPaint = Paint().apply {
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+        colorFilter = ColorMatrixColorFilter(
+            floatArrayOf(1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 255f, 0f)
+        )
+    }
     private var scrimView: WeakReference<View>? = null
     private var drawerBlur: Float? = null
     private val folderClass: Class<*>? by lazy {
@@ -289,6 +291,8 @@ class IconGlass(context: Context) : ModPack(context) {
     ) : Drawable() {
 
         private val rect = RectF()
+        private var visible: RectF? = null
+        private val visibleFor = Rect()
 
         override fun draw(canvas: Canvas) {
             val clip = host.getFieldSilently(clipField)?.let {
@@ -299,12 +303,17 @@ class IconGlass(context: Context) : ModPack(context) {
                 inner.draw(canvas)
                 return
             }
+            var corner = if (clip != null && !clip.isEmpty) WallpaperGlass.pathCorner(clip, rect) else 0f
+            if (maskByInner) {
+                val width = rect.width()
+                visibleRect()?.let { if (rect.intersect(it)) corner *= rect.width() / width }
+            }
 
             val glass = WallpaperGlass.canvasPaint(
                 host = host,
                 canvas = canvas,
                 localRect = rect,
-                corner = if (clip != null && !clip.isEmpty) WallpaperGlass.pathCorner(clip, rect) else 0f,
+                corner = corner,
                 blurRadius = host.glassBlurRadius(),
                 alpha = inner.alpha / 255f,
                 liquid = liquid
@@ -318,10 +327,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 val layer = canvas.saveLayer(rect, null)
                 canvas.drawPaint(glass)
                 val mask = canvas.saveLayer(rect, maskPaint)
-                val filter = inner.colorFilter
-                inner.colorFilter = opaqueAlpha
                 inner.draw(canvas)
-                inner.colorFilter = filter
                 canvas.restoreToCount(mask)
                 canvas.restoreToCount(layer)
             } else {
@@ -334,6 +340,53 @@ class IconGlass(context: Context) : ModPack(context) {
                 inner.draw(canvas)
                 inner.alpha = previous
             }
+        }
+
+        private fun visibleRect(): RectF? {
+            val area = inner.bounds
+            if (area.isEmpty) return null
+            if (visibleFor == area) return visible
+            visibleFor.set(area)
+            visible = null
+
+            val bitmap = runCatching {
+                Bitmap.createBitmap(area.width(), area.height(), Bitmap.Config.ARGB_8888)
+            }.getOrNull() ?: return null
+            val drawn = runCatching {
+                val canvas = Canvas(bitmap)
+                canvas.translate(-area.left.toFloat(), -area.top.toFloat())
+                inner.draw(canvas)
+            }.isSuccess
+            if (!drawn) {
+                bitmap.recycle()
+                return null
+            }
+
+            val pixels = IntArray(bitmap.width * bitmap.height)
+            bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+            var left = bitmap.width
+            var top = bitmap.height
+            var right = -1
+            var bottom = -1
+            for (y in 0 until bitmap.height) {
+                for (x in 0 until bitmap.width) {
+                    if (pixels[y * bitmap.width + x] ushr 24 == 0) continue
+                    if (x < left) left = x
+                    if (x > right) right = x
+                    if (y < top) top = y
+                    if (y > bottom) bottom = y
+                }
+            }
+            bitmap.recycle()
+            if (right < left || bottom < top) return null
+
+            visible = RectF(
+                (area.left + left).toFloat(),
+                (area.top + top).toFloat(),
+                (area.left + right + 1).toFloat(),
+                (area.top + bottom + 1).toFloat()
+            )
+            return visible
         }
 
         override fun setAlpha(alpha: Int) {
