@@ -88,6 +88,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var searchBlurTint = 0
     private var searchLiquid = false
     private var searchGlass = false
+    private var installingSearchPanel = false
     private var widgetGlass = false
     private var widgetHostClass: Class<*>? = null
     private val hotseatClass: Class<*>? by lazy { findClass("com.android.launcher3.Hotseat", suppressError = true) }
@@ -314,13 +315,16 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     private fun View.installSearchPanel() {
-        if (widgetHostClass?.isInstance(this) == true || background is BlurPanelDrawable) return
-        val original = background ?: return
+        if (installingSearchPanel || widgetHostClass?.isInstance(this) == true) return
+        val current = background ?: return
+        if (current.hasBlurPanel()) return
+        val holder = current as? DrawableWrapper
+        val original = if (holder != null) holder.drawable ?: return else current
         val pill = original.pillLayer() ?: original
         hosts.add(this)
         (backgroundTintList?.defaultColor ?: pill.fillColor())?.let { setExtraField(PANEL_COLOR, it) }
 
-        background = BlurPanelDrawable(original, onShown = { panel().refreshSoon() }) { canvas ->
+        val glass = BlurPanelDrawable(original, onShown = { panel().refreshSoon() }) { canvas ->
             pill.alpha = if (searchGlass) 0 else 255
             if (!searchGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
 
@@ -350,6 +354,24 @@ class BlurPanels(context: Context) : ModPack(context) {
                 tintColor = panelTintColor(searchBlurTint)
             )
         }
+
+        installingSearchPanel = true
+        try {
+            if (holder != null) {
+                holder.drawable = glass
+                invalidate()
+            } else {
+                background = glass
+            }
+        } finally {
+            installingSearchPanel = false
+        }
+    }
+
+    private fun Drawable.hasBlurPanel(): Boolean = when (this) {
+        is BlurPanelDrawable -> true
+        is DrawableWrapper -> drawable?.hasBlurPanel() == true
+        else -> false
     }
 
     private fun Drawable.pillLayer(): Drawable? = when (this) {
