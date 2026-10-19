@@ -46,6 +46,7 @@ class FolderFrost(private val host: View) {
     var backdropRadius: Float? = null
     var backdropTint = 0
     var liquid = false
+    var home = false
     var progress = 0f
         set(value) {
             field = value
@@ -139,7 +140,8 @@ class FolderFrost(private val host: View) {
             blurRadius = backdropRadius ?: maxRadius,
             tintColor = backdropTint,
             liquid = liquid,
-            dimColor = dim
+            dimColor = dim,
+            home = home
         )
         canvas.restore()
 

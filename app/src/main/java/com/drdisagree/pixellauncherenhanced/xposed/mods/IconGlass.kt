@@ -1,9 +1,11 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
@@ -15,9 +17,11 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.annotation.RequiresApi
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
@@ -30,13 +34,16 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.DragPreviewGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.reflect.InvocationHandler
 import java.lang.ref.WeakReference
+import java.lang.reflect.Proxy
 import java.util.WeakHashMap
 
 class IconGlass(context: Context) : ModPack(context) {
@@ -100,6 +107,35 @@ class IconGlass(context: Context) : ModPack(context) {
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         if (!PanelBackground.isBlurSupported) return
         DragPreviewGlass.install()
+
+        val allAppsState = findClass("com.android.launcher3.LauncherState", suppressError = true)
+            .getStaticFieldSilently("ALL_APPS")
+        val stateListenerClass = findClass(
+            $$"com.android.launcher3.statemanager.StateManager$StateListener",
+            suppressError = true
+        )
+        if (allAppsState != null && stateListenerClass != null) {
+            findClass("com.android.launcher3.Launcher")
+                .hookMethod("onCreate")
+                .suppressError()
+                .runAfter { param ->
+                    val launcher = param.thisObject as? Activity ?: return@runAfter
+                    val listener = Proxy.newProxyInstance(
+                        stateListenerClass.classLoader,
+                        arrayOf(stateListenerClass),
+                        InvocationHandler { proxy, method, args ->
+                            when (method.name) {
+                                "onStateTransitionStart" -> if (args?.getOrNull(0) == allAppsState && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) captureHome(launcher)
+                                "onStateTransitionComplete" -> if (args?.getOrNull(0) != allAppsState) WallpaperGlass.clearHome()
+                                "equals" -> return@InvocationHandler proxy === args?.getOrNull(0)
+                                "hashCode" -> return@InvocationHandler System.identityHashCode(proxy)
+                            }
+                            null
+                        }
+                    )
+                    launcher.callMethodSilently("getStateManager")?.callMethodSilently("addStateListener", listener)
+                }
+        }
 
         findClass("com.android.launcher3.icons.FastBitmapDrawable")
             .hookMethod("draw")
@@ -177,7 +213,8 @@ class IconGlass(context: Context) : ModPack(context) {
                     blurRadius = host.glassBlurRadius(),
                     alpha = paint.alpha / 255f,
                     liquid = liquid,
-                    shapePath = path
+                    shapePath = path,
+                    home = host.isInDrawer()
                 )
                 if (glass == null) {
                     canvas.restoreToCount(save)
@@ -200,7 +237,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 val paint = param.thisObject.getFieldSilently("mHeaderPaint") as? Paint ?: return@runAfter
                 var color = paint.color
                 if (drawerOpacity in 0..254 && param.thisObject.getFieldSilently("mScrimColor") !is Int) {
-                    color = ColorUtils.setAlphaComponent(color, android.graphics.Color.alpha(color) * drawerOpacity / 255)
+                    color = ColorUtils.setAlphaComponent(color, Color.alpha(color) * drawerOpacity / 255)
                 }
                 if (sheetColor != color) {
                     sheetColor = color
@@ -256,7 +293,8 @@ class IconGlass(context: Context) : ModPack(context) {
                     corner = bounds.width() * LEGACY_CORNER_RATIO,
                     blurRadius = host.glassBlurRadius(),
                     alpha = drawable.alpha / 255f,
-                    liquid = liquid
+                    liquid = liquid,
+                    home = host.isInDrawer()
                 ) ?: return@runBefore
 
                 val mask = alphaMask(bgBitmap)
@@ -275,6 +313,21 @@ class IconGlass(context: Context) : ModPack(context) {
                 canvas.drawBitmap(monoIcon, null, bounds, monoPaint)
                 param.result = null
             }
+    }
+
+    @SuppressLint("DiscouragedApi")
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun captureHome(launcher: Activity) {
+        if (!enabled && !folderGlass) return
+        val root = launcher.window?.decorView ?: return
+        val targets = listOf("workspace", "hotseat").mapNotNull { name ->
+            root.resources.getIdentifier(name, "id", launcher.packageName)
+                .takeIf { it != 0 }
+                ?.let { root.findViewById<View>(it) }
+        }
+        val first = targets.firstOrNull() ?: return
+        val radius = maxOf(blurRadius * root.resources.displayMetrics.density, first.drawerBlurRadius())
+        WallpaperGlass.captureHome(targets, radius)
     }
 
     private fun Any?.isGlassIcon(): Boolean {
@@ -420,7 +473,7 @@ class IconGlass(context: Context) : ModPack(context) {
             return frost?.backdropColors().orEmpty() + listOfNotNull(folder.panelColor())
         }
         val drawer = if (isInDrawer()) {
-            listOfNotNull(drawerScrimColor(this), sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 })
+            listOfNotNull(drawerScrimColor(this), sheetColor.takeIf { Color.alpha(it) != 0 })
         } else emptyList()
         val folder = folderIconSource()?.let { OpacityModifier.folderIconTint(it, requireVisible = it === this) }
         return drawer + listOfNotNull(folder)
@@ -442,7 +495,7 @@ class IconGlass(context: Context) : ModPack(context) {
     private fun View.panelColor(): Int? {
         val background = getFieldSilently("mBackground") as? GradientDrawable ?: return null
         val color = background.color?.defaultColor ?: return null
-        val alpha = android.graphics.Color.alpha(color) * background.alpha / 255
+        val alpha = Color.alpha(color) * background.alpha / 255
         return if (alpha == 0) null else ColorUtils.setAlphaComponent(color, alpha)
     }
 
@@ -460,7 +513,7 @@ class IconGlass(context: Context) : ModPack(context) {
 
     private fun drawerTint(host: View, anywhere: Boolean = false): Int? {
         if (!anywhere && !host.isInDrawer()) return null
-        val sheet = sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 }
+        val sheet = sheetColor.takeIf { Color.alpha(it) != 0 }
         val scrim = drawerScrimColor(host, anywhere)
         return when {
             scrim != null && sheet != null -> ColorUtils.compositeColors(sheet, scrim)
@@ -476,7 +529,7 @@ class IconGlass(context: Context) : ModPack(context) {
         if (scrim.visibility != View.VISIBLE) return null
 
         val color = scrim.getFieldSilently("mBackgroundColor") as? Int ?: return null
-        val alpha = (android.graphics.Color.alpha(color) * scrim.alpha).toInt().coerceIn(0, 255)
+        val alpha = (Color.alpha(color) * scrim.alpha).toInt().coerceIn(0, 255)
         return if (alpha == 0) null else ColorUtils.setAlphaComponent(color, alpha)
     }
 
@@ -531,7 +584,7 @@ class IconGlass(context: Context) : ModPack(context) {
         val tintAlpha = tintOpacity.coerceIn(0, 100) * 255 / 100
         if (tintAlpha <= 0) return
         tintPaint.set(paint)
-        tintPaint.color = ColorUtils.setAlphaComponent(paint.color, android.graphics.Color.alpha(paint.color) * tintAlpha / 255)
+        tintPaint.color = ColorUtils.setAlphaComponent(paint.color, Color.alpha(paint.color) * tintAlpha / 255)
         canvas.drawPaint(tintPaint)
     }
 

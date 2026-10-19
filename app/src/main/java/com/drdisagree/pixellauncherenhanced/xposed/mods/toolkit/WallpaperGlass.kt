@@ -8,19 +8,27 @@ import android.graphics.BitmapShader
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
+import android.graphics.HardwareRenderer
 import android.graphics.Color
+import android.graphics.ColorSpace
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.RenderNode
 import android.graphics.Region
 import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.hardware.HardwareBuffer
+import android.media.ImageReader
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import android.view.View
 import androidx.annotation.RequiresApi
@@ -30,6 +38,7 @@ import java.io.File
 import java.util.Collections
 import java.util.WeakHashMap
 import java.util.concurrent.Executors
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -38,6 +47,8 @@ object WallpaperGlass {
 
     private const val SAMPLE_WIDTH = 160
     private const val MAX_ZOOM_SCALE = 1.1f
+    private const val HOME_SCALE = 0.25f
+    private const val HOME_NODE = "pleHomeBackdrop"
     private const val WALLPAPER_COPY = "ple_wallpaper"
     private const val SHARP_WIDTH = 720
     const val LIQUID_REFRACTION = 0.18f
@@ -119,7 +130,7 @@ object WallpaperGlass {
     """
 
     private val executor = Executors.newSingleThreadExecutor()
-    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val clipPath = Path()
@@ -224,6 +235,109 @@ object WallpaperGlass {
     var offsetX = 0.5f
     var zoom = 0f
     private var depthBlur = 0f
+    private var homeBitmap: Bitmap? = null
+    private var homeWidth = 0f
+    private var homeHeight = 0f
+    private var homeToken = 0
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    fun captureHome(targets: List<View>, blurRadius: Float) {
+        val root = targets.firstOrNull()?.rootView ?: return
+        checkWallpaper(root.context)
+        if (liveWallpaper) return
+        val base = sharpBase ?: smallBase ?: return
+        val width = root.width
+        val height = root.height
+        if (width <= 0 || height <= 0) return
+
+        val screenWidth = root.resources.displayMetrics.widthPixels
+        val scale = max(screenWidth.toFloat() / base.width, height.toFloat() / base.height) *
+                (1f + (MAX_ZOOM_SCALE - 1f) * zoom.coerceIn(0f, 1f))
+        val drawnWidth = base.width * scale
+        val drawnHeight = base.height * scale
+        val wallpaperLeft = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
+        val wallpaperTop = -(drawnHeight - height) / 2f
+
+        val bitmapWidth = max(1, (width * HOME_SCALE).roundToInt())
+        val bitmapHeight = max(1, (height * HOME_SCALE).roundToInt())
+        val node = RenderNode(HOME_NODE).apply {
+            setPosition(0, 0, bitmapWidth, bitmapHeight)
+            val canvas = beginRecording(bitmapWidth, bitmapHeight)
+            canvas.scale(HOME_SCALE, HOME_SCALE)
+            canvas.drawBitmap(
+                base,
+                null,
+                RectF(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight),
+                Paint(Paint.FILTER_BITMAP_FLAG)
+            )
+            val targetLocation = IntArray(2)
+            targets.filter { it.isShown && it.alpha > 0f }.forEach { target ->
+                target.getLocationInWindow(targetLocation)
+                canvas.save()
+                canvas.translate(targetLocation[0].toFloat(), targetLocation[1].toFloat())
+                canvas.scale(target.scaleX, target.scaleY)
+                canvas.translate(-target.scrollX.toFloat(), -target.scrollY.toFloat())
+                target.draw(canvas)
+                canvas.restore()
+            }
+            endRecording()
+        }
+
+        val token = ++homeToken
+        val rendered = runCatching { renderNode(node, bitmapWidth, bitmapHeight) }
+            .onFailure { log(this, it) }
+            .getOrNull()
+        node.discardDisplayList()
+        rendered ?: return
+        val radius = max(1, (blurRadius * HOME_SCALE).roundToInt())
+        executor.execute {
+            val blurred = runCatching { boxBlur(rendered, radius) }.onFailure { log(this, it) }.getOrNull()
+            mainHandler.post {
+                if (token != homeToken || blurred == null) return@post
+                homeBitmap = blurred
+                homeWidth = width.toFloat()
+                homeHeight = height.toFloat()
+                listeners.toList().forEach {
+                    it.background?.invalidateSelf()
+                    it.invalidate()
+                }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun renderNode(node: RenderNode, width: Int, height: Int): Bitmap? {
+        val reader = ImageReader.newInstance(
+            width,
+            height,
+            PixelFormat.RGBA_8888,
+            1,
+            HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT
+        )
+        val renderer = HardwareRenderer()
+        try {
+            renderer.setSurface(reader.surface)
+            renderer.setContentRoot(node)
+            renderer.createRenderRequest().setWaitForPresent(true).syncAndDraw()
+            reader.acquireNextImage()?.use { image ->
+                image.hardwareBuffer?.use { buffer ->
+                    return Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB))
+                        ?.copy(Bitmap.Config.ARGB_8888, true)
+                }
+            }
+            return null
+        } finally {
+            renderer.destroy()
+            reader.close()
+        }
+    }
+
+    fun clearHome() {
+        homeToken++
+        if (homeBitmap == null) return
+        homeBitmap = null
+        listeners.toList().forEach { it.invalidate() }
+    }
 
     fun setDepthBlur(radius: Float) {
         if (radius == depthBlur) return
@@ -359,7 +473,7 @@ object WallpaperGlass {
                 }
             }
         }
-        return cache.entries.minByOrNull { kotlin.math.abs(it.key - radius) }?.value ?: base
+        return cache.entries.minByOrNull { abs(it.key - radius) }?.value ?: base
     }
 
     fun draw(
@@ -373,7 +487,8 @@ object WallpaperGlass {
         alpha: Float = 1f,
         liquid: Boolean = false,
         shapeDrawer: ((Paint) -> Unit)? = null,
-        dimColor: Int = 0
+        dimColor: Int = 0,
+        home: Boolean = false
     ): Boolean {
         track(host)
         checkWallpaper(host.context)
@@ -382,11 +497,12 @@ object WallpaperGlass {
         val screenWidth = host.resources.displayMetrics.widthPixels
         val radius = max(blurRadius, depthBlur)
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-        val bitmap = if (useLiquid) {
+        val homeLayer = homeBitmap?.takeIf { home }
+        val bitmap = homeLayer ?: (if (useLiquid) {
             blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
         } else {
             blurredBitmap(false, max(1, (radius * SAMPLE_WIDTH / screenWidth).roundToInt()))
-        } ?: return false
+        } ?: return false)
 
         val dim = backdropDim(host, dimColor)
         val rootView = host.rootView
@@ -412,7 +528,11 @@ object WallpaperGlass {
         clipPath.addRoundRect(rect, radii, Path.Direction.CW)
 
         source.set(0, 0, bitmap.width, bitmap.height)
-        target.set(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight)
+        if (homeLayer != null) {
+            target.set(0f, 0f, homeWidth, homeHeight)
+        } else {
+            target.set(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight)
+        }
 
         if (shapeDrawer != null) {
             val paint = if (useLiquid) {
@@ -459,7 +579,8 @@ object WallpaperGlass {
         liquid: Boolean,
         shapePath: Path? = null,
         maskKey: Any? = null,
-        maskDrawer: ((Canvas) -> Unit)? = null
+        maskDrawer: ((Canvas) -> Unit)? = null,
+        home: Boolean = false
     ): Paint? {
         track(host)
         checkWallpaper(host.context)
@@ -468,11 +589,12 @@ object WallpaperGlass {
         val screenWidth = host.resources.displayMetrics.widthPixels
         val radius = max(blurRadius, depthBlur)
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-        val bitmap = if (useLiquid) {
+        val homeLayer = homeBitmap?.takeIf { home }
+        val bitmap = homeLayer ?: (if (useLiquid) {
             blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
         } else {
             blurredBitmap(false, max(1, (radius * SAMPLE_WIDTH / screenWidth).roundToInt()))
-        } ?: return null
+        } ?: return null)
 
         val screenHeight = host.rootView.height.takeIf { it > 0 } ?: host.resources.displayMetrics.heightPixels
         val scale = max(screenWidth.toFloat() / bitmap.width, screenHeight.toFloat() / bitmap.height) *
@@ -487,7 +609,11 @@ object WallpaperGlass {
 
         canvasShaderMatrix.setRectToRect(
             RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()),
-            RectF(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight),
+            if (homeLayer != null) {
+                RectF(0f, 0f, homeWidth, homeHeight)
+            } else {
+                RectF(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight)
+            },
             Matrix.ScaleToFit.FILL
         )
         canvasShaderMatrix.postTranslate(-location[0].toFloat(), -location[1].toFloat())

@@ -1,6 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -391,6 +392,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     frosted.backdropRadius = if (inDrawer) IconGlass.drawerBlur(folder, ownBlur) else null
                     frosted.backdropTint = if (inDrawer) IconGlass.drawerBackdropTint(folder) ?: 0 else 0
                     frosted.liquid = folderLiquid
+                    frosted.home = inDrawer
                     frosted.start(folder.blurTargets(dragLayer), dragLayer.width, dragLayer.height)
                     folderFrost = frosted
                     animateFolderBlur(1f, folder.getFieldSilently("mCurrentAnimator") as? Animator)
@@ -480,6 +482,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                             blurRadius = blurRadius,
                             tintColor = tint,
                             liquid = folderLiquid,
+                            home = inDrawer,
                             shapeDrawer = shape?.let { shape ->
                                 { paint: Paint ->
                                     shape.callMethodSilently(
@@ -763,7 +766,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
             this.duration = duration
             interpolator = source?.interpolator ?: DecelerateInterpolator()
             addUpdateListener { frosted.progress = it.animatedValue as Float }
-            addListener(object : android.animation.AnimatorListenerAdapter() {
+            addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     BlurPanel.refreshAllSoon()
                     if (folderBlurAnimator !== animation) return
