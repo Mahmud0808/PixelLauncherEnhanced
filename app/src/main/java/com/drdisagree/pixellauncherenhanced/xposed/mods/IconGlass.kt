@@ -8,11 +8,15 @@ import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
@@ -22,6 +26,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUN
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.DragPreviewGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
@@ -44,6 +49,10 @@ class IconGlass(context: Context) : ModPack(context) {
     private val localRect = RectF()
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val maskPaint = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
+    private val opaqueAlpha = ColorMatrixColorFilter(
+        floatArrayOf(1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 255f, 0f)
+    )
     private var scrimView: WeakReference<View>? = null
     private var drawerBlur: Float? = null
     private val allAppsContainerClass: Class<*>? by lazy {
@@ -84,15 +93,33 @@ class IconGlass(context: Context) : ModPack(context) {
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         if (!PanelBackground.isBlurSupported) return
+        DragPreviewGlass.install()
 
         findClass("com.android.launcher3.icons.FastBitmapDrawable")
             .hookMethod("draw")
             .suppressError()
             .runBefore { param ->
                 if (!enabled) return@runBefore
-                currentHost.set((param.thisObject as? Drawable)?.callback as? View)
+                currentHost.set((param.thisObject as? Drawable)?.hostView())
             }
             .runAfter { currentHost.remove() }
+
+        findClass("com.android.launcher3.dragndrop.DragView", suppressError = true)
+            .hookMethod("draw")
+            .suppressError()
+            .runBefore { param ->
+                if (!enabled) return@runBefore
+                val dragView = param.thisObject as? View ?: return@runBefore
+                val background = dragView.getFieldSilently("mBgSpringDrawable") as? Drawable ?: return@runBefore
+                if (background is FloatingGlassBackground) return@runBefore
+                val content = dragView.getFieldSilently("mContent") as? ImageView ?: return@runBefore
+                if (!DragPreviewGlass.hasGlass(content.drawable)) return@runBefore
+                dragView.setFieldSilently(
+                    "mBgSpringDrawable",
+                    FloatingGlassBackground(background, dragView, "mScaledMaskPath", maskByInner = true)
+                        .apply { bounds = background.bounds }
+                )
+            }
 
         findClass("com.android.launcher3.icons.mono.ThemedIconDelegate", suppressError = true)
             .hookMethod("drawContent")
@@ -125,6 +152,17 @@ class IconGlass(context: Context) : ModPack(context) {
 
                 val shapeBounds = pathBounds(path)
                 localRect.set(shapeBounds)
+                if (DragPreviewGlass.isCapturing(canvas)) {
+                    DragPreviewGlass.capture(
+                        canvas, path, localRect, shapeCorner(path, shapeBounds),
+                        host.glassBlurRadius(), paint.alpha / 255f, liquid
+                    )
+                    drawTint(canvas, paint)
+                    canvas.drawBitmap(monoIcon, null, monoBounds ?: Rect(0, 0, pathSize.toInt(), pathSize.toInt()), monoPaint)
+                    canvas.restoreToCount(save)
+                    param.result = null
+                    return@runBefore
+                }
                 val glass = WallpaperGlass.canvasPaint(
                     host = host,
                     canvas = canvas,
@@ -194,7 +232,7 @@ class IconGlass(context: Context) : ModPack(context) {
             .runBefore { param ->
                 if (!enabled) return@runBefore
                 val drawable = param.thisObject as? Drawable ?: return@runBefore
-                val host = drawable.callback as? View ?: return@runBefore
+                val host = drawable.hostView() ?: return@runBefore
                 val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
                 val bounds = param.args.getOrNull(1) as? Rect ?: return@runBefore
 
@@ -244,13 +282,15 @@ class IconGlass(context: Context) : ModPack(context) {
 
     private inner class FloatingGlassBackground(
         val inner: Drawable,
-        private val host: View
+        private val host: View,
+        private val clipField: String = "mClipPath",
+        private val maskByInner: Boolean = false
     ) : Drawable() {
 
         private val rect = RectF()
 
         override fun draw(canvas: Canvas) {
-            val clip = host.getFieldSilently("mClipPath")?.let {
+            val clip = host.getFieldSilently(clipField)?.let {
                 it as? Path ?: it.getFieldSilently("path") as? Path
             }
             if (clip != null && !clip.isEmpty) clip.computeBounds(rect, true) else rect.set(bounds)
@@ -273,7 +313,19 @@ class IconGlass(context: Context) : ModPack(context) {
                 return
             }
 
-            canvas.drawPaint(glass)
+            if (maskByInner) {
+                val layer = canvas.saveLayer(rect, null)
+                canvas.drawPaint(glass)
+                val mask = canvas.saveLayer(rect, maskPaint)
+                val filter = inner.colorFilter
+                inner.colorFilter = opaqueAlpha
+                inner.draw(canvas)
+                inner.colorFilter = filter
+                canvas.restoreToCount(mask)
+                canvas.restoreToCount(layer)
+            } else {
+                canvas.drawPaint(glass)
+            }
             val tintAlpha = tintOpacity.coerceIn(0, 100) * 255 / 100
             if (tintAlpha > 0) {
                 val previous = inner.alpha
@@ -311,6 +363,18 @@ class IconGlass(context: Context) : ModPack(context) {
             scrimPaint.color = it
             canvas.drawPaint(scrimPaint)
         }
+    }
+
+    private fun Drawable.hostView(): View? {
+        var callback: Any? = callback
+        repeat(MAX_CALLBACK_DEPTH) {
+            when (callback) {
+                is View -> return callback as View
+                is Drawable -> callback = (callback as Drawable).callback
+                else -> return null
+            }
+        }
+        return null
     }
 
     private fun drawerTint(host: View, anywhere: Boolean = false): Int? {
@@ -413,6 +477,7 @@ class IconGlass(context: Context) : ModPack(context) {
             return maxOf(own, with(glass) { host.drawerBlurRadius() })
         }
 
+        private const val MAX_CALLBACK_DEPTH = 6
         private const val DEFAULT_VISIBLE_AREA = 0.92f
         private const val LEGACY_CORNER_RATIO = 0.25f
         private const val DEFAULT_BLUR = 5

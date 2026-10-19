@@ -33,6 +33,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.DragPreviewGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FolderFrost
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
@@ -365,6 +366,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
             })
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            DragPreviewGlass.install()
             val folderClass = findClass("com.android.launcher3.folder.Folder")
 
             folderClass
@@ -453,6 +455,18 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     val tint = if (inDrawer) IconGlass.drawerGlassTint(folderIcon) ?: Color.TRANSPARENT else Color.TRANSPARENT
                     val shape = folderIcon.folderShape()
                     val shapeCorner = shape?.cornerRadius(scaledRadius.toFloat()) ?: scaledRadius.toFloat()
+                    if (DragPreviewGlass.isCapturing(canvas)) {
+                        DragPreviewGlass.capture(
+                            canvas,
+                            Path().apply { addRoundRect(previewRect, shapeCorner, shapeCorner, Path.Direction.CW) },
+                            previewRect,
+                            shapeCorner,
+                            blurRadius,
+                            1f,
+                            folderLiquid
+                        )
+                        return@runBefore
+                    }
                     if (WallpaperGlass.draw(
                             host = folderIcon,
                             canvas = canvas,

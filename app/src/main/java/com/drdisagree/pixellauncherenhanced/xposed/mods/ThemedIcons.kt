@@ -135,7 +135,7 @@ class ThemedIcons(context: Context) : ModPack(context) {
                 .hookMethod("getMonochromeDrawable")
                 .throwError() // Available only in modified launcher3
                 .runAfter { param ->
-                    if (param.result == null && forceThemedIcons) {
+                    if (param.result == null && forceThemedIcons && !param.args[0].isFolderIcon()) {
                         val mIconBitmapSize = param.thisObject.getField("mIconBitmapSize") as Int
 
                         param.result = MonochromeIconFactory(mIconBitmapSize, true)
@@ -161,7 +161,7 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     AdaptiveIconDrawable::class.java
                         .hookMethod("getMonochrome")
                         .runAfter runAfter2@{ param2 ->
-                            if (param2.result == null && forceThemedIcons) {
+                            if (param2.result == null && forceThemedIcons && !param2.thisObject.isFolderIcon()) {
                                 // If it's from com.android.launcher3.icons.IconProvider class and
                                 // mentioned methods, monochrome is already included
                                 Thread.currentThread().stackTrace.firstOrNull {
@@ -458,6 +458,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                 param.result = null
             }
     }
+
+    private fun Any?.isFolderIcon(): Boolean = this?.javaClass?.name?.endsWith(".FolderAdaptiveIcon") == true
 
     private fun Int.shouldUseTheme(
         context: Context,
