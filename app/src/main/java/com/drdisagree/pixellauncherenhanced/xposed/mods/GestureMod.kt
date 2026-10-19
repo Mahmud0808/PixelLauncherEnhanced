@@ -763,6 +763,11 @@ class GestureMod(context: Context) : ModPack(context) {
             return mod.folderCover && mod.folderIconClass?.isInstance(folderIcon) == true && mod.canCover(folderIcon)
         }
 
+        fun coverIcon(folderIcon: View): Drawable? {
+            val mod = instance?.get() ?: return null
+            return if (coversFolder(folderIcon)) mod.coverDrawable(folderIcon) else null
+        }
+
         private const val DOUBLE_TAP_TIMEOUT = 400L
         private const val TAP_DISTANCE_THRESHOLD = 50f
         private const val PINCH_MIN_DISTANCE_DP = 64f

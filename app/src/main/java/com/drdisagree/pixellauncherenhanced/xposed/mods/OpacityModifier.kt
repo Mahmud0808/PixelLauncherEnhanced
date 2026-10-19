@@ -324,8 +324,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 val view = param.thisObject as? View ?: return@runBefore
-                val original = (view.parent as? View)?.getFieldSilently("mOriginalIcon") as? View ?: return@runBefore
+                val floating = view.parent as? View ?: return@runBefore
+                val original = floating.getFieldSilently("mOriginalIcon") as? View ?: return@runBefore
                 if (!original.javaClass.name.endsWith(".FolderIcon")) return@runBefore
+                if (GestureMod.coversFolder(original) || !targetsWholeFolder(floating)) return@runBefore
                 val background = view.getFieldSilently("mBackground") as? Drawable ?: return@runBefore
                 if (background is FloatingFolderGlass) return@runBefore
 
@@ -721,8 +723,9 @@ class OpacityModifier(context: Context) : ModPack(context) {
 
     private fun folderGlass(): Boolean = folderBackgroundBlur > 0 || folderLiquid
 
-    private fun View.showsFolderBackground(): Boolean {
-        return getFieldSilently("mBackgroundIsVisible") != false && !GestureMod.coversFolder(this)
+    private fun View.showsFolderBackground(requireVisible: Boolean = true): Boolean {
+        if (GestureMod.coversFolder(this)) return false
+        return !requireVisible || getFieldSilently("mBackgroundIsVisible") != false
     }
 
     private fun View.folderIconBlur(): Float {
@@ -813,17 +816,22 @@ class OpacityModifier(context: Context) : ModPack(context) {
 
         fun folderFrost(folder: View): FolderFrost? = folder.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost
 
+        fun targetsWholeFolder(floating: View): Boolean {
+            val info = floating.getFieldSilently("mIconLoadResult")?.getFieldSilently("itemInfo") ?: return true
+            return info.javaClass.name.endsWith("FolderInfo")
+        }
+
         fun folderIconBlur(folderIcon: View, requireVisible: Boolean = true): Float? {
             val modifier = instance?.get() ?: return null
             return with(modifier) {
-                folderIcon.takeIf { folderGlass() && (!requireVisible || it.showsFolderBackground()) }?.folderIconBlur()
+                folderIcon.takeIf { folderGlass() && it.showsFolderBackground(requireVisible) }?.folderIconBlur()
             }
         }
 
         fun folderIconTint(folderIcon: View, requireVisible: Boolean = true): Int? {
             val modifier = instance?.get() ?: return null
             return with(modifier) {
-                folderIcon.takeIf { !requireVisible || it.showsFolderBackground() }?.folderIconTint()
+                folderIcon.takeIf { it.showsFolderBackground(requireVisible) }?.folderIconTint()
             }
         }
 

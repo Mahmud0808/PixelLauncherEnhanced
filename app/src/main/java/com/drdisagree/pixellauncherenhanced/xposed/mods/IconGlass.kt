@@ -254,9 +254,12 @@ class IconGlass(context: Context) : ModPack(context) {
                 val background = view.getFieldSilently("mBackground") as? Drawable ?: return@runBefore
                 if (background is FloatingGlassBackground) return@runBefore
 
-                val original = (view.parent as? View)?.getFieldSilently("mOriginalIcon") as? View
-                    ?: return@runBefore
-                if (!original.getFieldSilently("mIcon").isGlassIcon()) return@runBefore
+                val floating = view.parent as? View ?: return@runBefore
+                val original = floating.getFieldSilently("mOriginalIcon") as? View ?: return@runBefore
+                val icon = original.getFieldSilently("mIcon") ?: GestureMod.coverIcon(original)
+                val folderItem = original.isFolderIcon() && !OpacityModifier.targetsWholeFolder(floating) &&
+                        floating.getFieldSilently("mIconLoadResult")?.getFieldSilently("isThemed") == true
+                if (!icon.isGlassIcon() && !folderItem) return@runBefore
 
                 view.setFieldSilently(
                     "mBackground",
