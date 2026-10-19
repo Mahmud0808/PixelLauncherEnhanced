@@ -163,6 +163,14 @@ object Constants {
     const val QUICK_LAUNCH = "xposed_quicklaunch"
     const val PREVENT_WALLPAPER_DIMMING_RESTART = "xposed_preventwallpaperdimmingrestart"
 
+    const val UPDATE_AUTO_CHECK = "update_autocheck"
+    const val UPDATE_CACHE = "update_cache"
+    const val UPDATE_LAST_CHECK = "update_lastcheck"
+    const val UPDATE_SKIPPED = "update_skipped"
+    const val UPDATE_NOTIFIED = "update_notified"
+    const val UPDATE_NOTIFICATION_ASKED = "update_notificationasked"
+    const val UPDATE_NOTIFY = "update_notify"
+
     val PREF_UPDATE_EXCLUSIONS = listOf(
         BootLoopProtector.LOAD_TIME_KEY_KEY,
         BootLoopProtector.PACKAGE_STRIKE_KEY_KEY,
@@ -170,5 +178,12 @@ object Constants {
         SHORTCUT_LABELS,
         DEBUG_REPORT_REQUEST,
         DEBUG_REPORT_RESPONSE,
+        UPDATE_AUTO_CHECK,
+        UPDATE_CACHE,
+        UPDATE_LAST_CHECK,
+        UPDATE_SKIPPED,
+        UPDATE_NOTIFIED,
+        UPDATE_NOTIFICATION_ASKED,
+        UPDATE_NOTIFY,
     )
 }

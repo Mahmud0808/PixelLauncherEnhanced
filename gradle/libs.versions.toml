@@ -2,6 +2,7 @@
 agp = "9.4.1"
 circleimageview = "3.1.0"
 colorpickerVersion = "1.1.0"
+commonmark = "0.30.1"
 konfettiXml = "2.0.5"
 kotlin = "2.4.20"
 coreKtx = "1.19.1"
@@ -34,6 +35,8 @@ androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx",
 androidx-preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preferenceKtx" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
 androidx-recyclerview-selection = { module = "androidx.recyclerview:recyclerview-selection", version.ref = "recyclerviewSelection" }
+commonmark = { module = "org.commonmark:commonmark", version.ref = "commonmark" }
+commonmark-ext-autolink = { module = "org.commonmark:commonmark-ext-autolink", version.ref = "commonmark" }
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
 jaredrummler-colorpicker = { module = "com.jaredrummler:colorpicker", version.ref = "colorpickerVersion" }
 konfetti-xml = { module = "nl.dionsegijn:konfetti-xml", version.ref = "konfettiXml" }

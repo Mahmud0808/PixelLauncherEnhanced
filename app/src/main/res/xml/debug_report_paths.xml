@@ -3,4 +3,7 @@
     <cache-path
         name="debug_reports"
         path="debug_reports/" />
+    <cache-path
+        name="updates"
+        path="updates/" />
 </paths>

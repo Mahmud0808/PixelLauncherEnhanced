@@ -99,6 +99,8 @@ dependencies {
     implementation(libs.remotepreferences)
     implementation(libs.circleimageview)
     implementation(libs.konfetti.xml)
+    implementation(libs.commonmark)
+    implementation(libs.commonmark.ext.autolink)
 }
 
 tasks.register("printVersionName") {

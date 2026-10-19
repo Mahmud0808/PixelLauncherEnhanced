@@ -12,6 +12,10 @@
         android:key="dashboard_hero"
         app:iconSpaceReserved="false" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.UpdateBannerPreference
+        android:key="update_banner"
+        app:iconSpaceReserved="false" />
+
     <com.drdisagree.pixellauncherenhanced.ui.preferences.DashboardSearchPreference
         android:key="dashboard_search"
         app:iconSpaceReserved="false" />

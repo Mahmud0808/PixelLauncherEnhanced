@@ -178,4 +178,9 @@
         <item name="android:backgroundDimAmount">0.5</item>
     </style>
 
+    <style name="Animation.PLEnhanced.Dialog" parent="">
+        <item name="android:windowEnterAnimation">@anim/dialog_fade_in</item>
+        <item name="android:windowExitAnimation">@anim/dialog_exit</item>
+    </style>
+
 </resources>

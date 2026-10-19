@@ -20,9 +20,11 @@ import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentAboutBinding
+import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import com.drdisagree.pixellauncherenhanced.utils.Presets
+import com.drdisagree.pixellauncherenhanced.utils.UpdateManager
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.shape.MaterialShapes
 import kotlinx.coroutines.delay
@@ -84,8 +86,34 @@ class About : Fragment() {
         binding.btnGithub.setOnClickListener { openUrl("https://github.com/Mahmud0808/PixelLauncherEnhanced") }
         binding.developer.setOnClickListener { openUrl("https://github.com/Mahmud0808") }
         binding.buymeacoffee.setOnClickListener { openUrl("https://buymeacoffee.com/drdisagree") }
+        binding.updatesCard.setOnClickListener { (activity as? MainActivity)?.openScreen(Updates::class.java) }
+        binding.updatesEmblem.apply {
+            val content = MaterialColors.getColor(this, MaterialR.attr.colorOnPrimaryContainer)
+            setShapes(MaterialShapes.COOKIE_12, MaterialShapes.SUNNY)
+            setColors(MaterialColors.getColor(this, MaterialR.attr.colorPrimaryContainer), content)
+            setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_update), content)
+        }
+        bindUpdates()
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindUpdates()
+    }
+
+    private fun bindUpdates() {
+        val release = UpdateManager.availableUpdate()
+        binding.updatesSummary.text = release?.let { getString(R.string.update_banner_desc, it.version) }
+            ?: getString(R.string.update_installed_version, UpdateManager.installedVersion)
+        binding.updatesSummary.setTextColor(
+            MaterialColors.getColor(
+                binding.updatesSummary,
+                if (release != null) androidx.appcompat.R.attr.colorPrimary else MaterialR.attr.colorOnSurfaceVariant
+            )
+        )
+        binding.updatesEmblem.setPressedState(release != null)
     }
 
     private fun setupBackdrop() {

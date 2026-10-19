@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.UpdateCardPreference
+        android:key="update_card"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.ReleaseNotesPreference
+        android:key="update_notes"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="update_category_preferences"
+        android:title="@string/update_settings"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="update_autocheck"
+            android:summary="@string/update_auto_check_summary"
+            android:title="@string/update_auto_check_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="update_notify"
+            android:summary="@string/update_notify_summary"
+            android:title="@string/update_notify_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="update_category_more"
+        android:title="@string/update_more"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="update_changelog"
+            android:summary="@string/changelog_summary"
+            android:title="@string/changelog_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.Changelog"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="update_releases"
+            android:summary="@string/update_releases_summary"
+            android:title="@string/update_releases_title"
+            app:iconSpaceReserved="false"
+            app:showArrow="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+</PreferenceScreen>
