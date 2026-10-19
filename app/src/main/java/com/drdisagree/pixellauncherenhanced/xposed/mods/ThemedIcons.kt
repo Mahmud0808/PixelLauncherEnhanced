@@ -211,7 +211,10 @@ class ThemedIcons(context: Context) : ModPack(context) {
             .hookMethod("shouldUseTheme")
             .also { if (Build.VERSION.SDK_INT >= 37) it.suppressError() }
             .runAfter { param ->
-                if (param.result == false && appDrawerThemedIcons) {
+                if (!appDrawerThemedIcons) {
+                    val mDisplay = param.thisObject.getField("mDisplay") as Int
+                    if (param.result == true && mDisplay in DRAWER_DISPLAYS) param.result = false
+                } else if (param.result == false) {
                     val context = param.thisObject.callMethod("getContext") as Context
                     val mDisplay = param.thisObject.getField("mDisplay") as Int
 
@@ -496,6 +499,12 @@ class ThemedIcons(context: Context) : ModPack(context) {
         private const val DISPLAY_SEARCH_RESULT_SMALL: Int = 7
         private const val DISPLAY_PREDICTION_ROW: Int = 8
         private const val DISPLAY_SEARCH_RESULT_APP_ROW: Int = 9
+
+        private val DRAWER_DISPLAYS = setOf(
+            DISPLAY_ALL_APPS,
+            DISPLAY_PREDICTION_ROW,
+            DISPLAY_SEARCH_RESULT_APP_ROW
+        )
 
         private val THEMED_DISPLAYS = setOf(
             DISPLAY_WORKSPACE,
