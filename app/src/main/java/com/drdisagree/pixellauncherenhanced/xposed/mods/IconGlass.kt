@@ -14,6 +14,7 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -55,6 +56,9 @@ class IconGlass(context: Context) : ModPack(context) {
     )
     private var scrimView: WeakReference<View>? = null
     private var drawerBlur: Float? = null
+    private val folderClass: Class<*>? by lazy {
+        findClass("com.android.launcher3.folder.Folder", suppressError = true)
+    }
     private val allAppsContainerClass: Class<*>? by lazy {
         findClass("com.android.launcher3.allapps.ActivityAllAppsContainerView", suppressError = true)
     }
@@ -255,12 +259,9 @@ class IconGlass(context: Context) : ModPack(context) {
 
                 val mask = alphaMask(bgBitmap)
                 canvas.drawBitmap(mask, null, bounds, glass)
-                if (host.isInDrawer()) {
-                    listOfNotNull(drawerScrimColor(host), sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 })
-                        .forEach {
-                            scrimPaint.color = it
-                            canvas.drawBitmap(mask, null, bounds, scrimPaint)
-                        }
+                host.backdropColors().forEach {
+                    scrimPaint.color = it
+                    canvas.drawBitmap(mask, null, bounds, scrimPaint)
                 }
                 val tintAlpha = tintOpacity.coerceIn(0, 100) * 255 / 100
                 if (tintAlpha > 0) {
@@ -354,15 +355,42 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     private fun drawDrawerScrim(canvas: Canvas, host: View) {
-        if (!host.isInDrawer()) return
-        drawerScrimColor(host)?.let {
+        host.backdropColors().forEach {
             scrimPaint.color = it
             canvas.drawPaint(scrimPaint)
         }
-        sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 }?.let {
-            scrimPaint.color = it
-            canvas.drawPaint(scrimPaint)
+    }
+
+    private fun View.backdropColors(): List<Int> {
+        openFolder()?.let { folder ->
+            val frost = OpacityModifier.folderFrost(folder)?.takeIf { it.progress > 0f }
+            return frost?.backdropColors().orEmpty() + listOfNotNull(folder.panelColor())
         }
+        val drawer = if (isInDrawer()) {
+            listOfNotNull(drawerScrimColor(this), sheetColor.takeIf { android.graphics.Color.alpha(it) != 0 })
+        } else emptyList()
+        val folder = folderIconSource()?.let { OpacityModifier.folderIconTint(it, requireVisible = it === this) }
+        return drawer + listOfNotNull(folder)
+    }
+
+    private fun View.isFolderIcon(): Boolean = javaClass.name.endsWith(".FolderIcon")
+
+    private fun View.folderIconSource(): View? {
+        if (isFolderIcon()) return this
+        if (!javaClass.name.endsWith(".ClipIconView")) return null
+        return ((parent as? View)?.getFieldSilently("mOriginalIcon") as? View)?.takeIf { it.isFolderIcon() }
+    }
+
+    private fun View.openFolder(): View? {
+        val folderClass = folderClass ?: return null
+        return generateSequence(parent) { it.parent }.filterIsInstance<View>().firstOrNull { folderClass.isInstance(it) }
+    }
+
+    private fun View.panelColor(): Int? {
+        val background = getFieldSilently("mBackground") as? GradientDrawable ?: return null
+        val color = background.color?.defaultColor ?: return null
+        val alpha = android.graphics.Color.alpha(color) * background.alpha / 255
+        return if (alpha == 0) null else ColorUtils.setAlphaComponent(color, alpha)
     }
 
     private fun Drawable.hostView(): View? {
@@ -401,6 +429,13 @@ class IconGlass(context: Context) : ModPack(context) {
 
     private fun View.glassBlurRadius(): Float {
         val own = blurRadius * resources.displayMetrics.density
+        openFolder()?.let { folder ->
+            val frost = OpacityModifier.folderFrost(folder)?.takeIf { it.progress > 0f } ?: return own
+            return maxOf(own, frost.glassRadius)
+        }
+        folderIconSource()?.let { folder ->
+            OpacityModifier.folderIconBlur(folder, requireVisible = folder === this)?.let { return maxOf(own, it) }
+        }
         return if (isInDrawer()) maxOf(own, drawerBlurRadius()) else own
     }
 

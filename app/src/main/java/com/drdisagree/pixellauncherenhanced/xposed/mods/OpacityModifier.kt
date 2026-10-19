@@ -53,6 +53,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 
 class OpacityModifier(context: Context) : ModPack(context) {
 
@@ -67,6 +68,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private var folderFrost: FolderFrost? = null
     private val previewRect = RectF()
     private val previewBounds = Rect()
+
+    init {
+        instance = WeakReference(this)
+    }
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -450,8 +455,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     )
 
                     val inDrawer = folderIcon.tag.getFieldSilently("container") == CONTAINER_ALL_APPS
-                    val ownBlur = folderBackgroundBlur * folderIcon.resources.displayMetrics.density
-                    val blurRadius = if (inDrawer) IconGlass.drawerGlassBlur(folderIcon, ownBlur) else ownBlur
+                    val blurRadius = folderIcon.folderIconBlur()
                     val tint = if (inDrawer) IconGlass.drawerGlassTint(folderIcon) ?: Color.TRANSPARENT else Color.TRANSPARENT
                     val shape = folderIcon.folderShape()
                     val shapeCorner = shape?.cornerRadius(scaledRadius.toFloat()) ?: scaledRadius.toFloat()
@@ -714,6 +718,26 @@ class OpacityModifier(context: Context) : ModPack(context) {
 
     private fun folderGlass(): Boolean = folderBackgroundBlur > 0 || folderLiquid
 
+    private fun View.showsFolderBackground(): Boolean {
+        return getFieldSilently("mBackgroundIsVisible") != false && !GestureMod.coversFolder(this)
+    }
+
+    private fun View.folderIconBlur(): Float {
+        val own = folderBackgroundBlur * resources.displayMetrics.density
+        val inDrawer = tag.getFieldSilently("container") == CONTAINER_ALL_APPS
+        return if (inDrawer) IconGlass.drawerGlassBlur(this, own) else own
+    }
+
+    private fun View.folderIconTint(): Int? {
+        val background = getFieldSilently("mBackground")
+        val context = background?.getFieldSilently("mContext") as? Context ?: context
+        val base = context.takeIf { folderGlass() }?.folderBackgroundColor()
+            ?: background?.getFieldSilently("mBgColor") as? Int
+            ?: return null
+        val alpha = if (folderBackgroundOpacity >= 0) folderBackgroundOpacity else Color.alpha(base)
+        return if (alpha == 0) null else ColorUtils.setAlphaComponent(base, alpha)
+    }
+
     private fun View.blurTargets(dragLayer: ViewGroup): List<View> {
         if (getFieldSilently("mInfo").getFieldSilently("container") == CONTAINER_ALL_APPS) {
             var launcher: Context? = context
@@ -782,6 +806,24 @@ class OpacityModifier(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private var instance: WeakReference<OpacityModifier>? = null
+
+        fun folderFrost(folder: View): FolderFrost? = folder.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost
+
+        fun folderIconBlur(folderIcon: View, requireVisible: Boolean = true): Float? {
+            val modifier = instance?.get() ?: return null
+            return with(modifier) {
+                folderIcon.takeIf { folderGlass() && (!requireVisible || it.showsFolderBackground()) }?.folderIconBlur()
+            }
+        }
+
+        fun folderIconTint(folderIcon: View, requireVisible: Boolean = true): Int? {
+            val modifier = instance?.get() ?: return null
+            return with(modifier) {
+                folderIcon.takeIf { !requireVisible || it.showsFolderBackground() }?.folderIconTint()
+            }
+        }
+
         private const val CONTAINER_ALL_APPS = -104
         private const val PREVIEW_ORIGINAL_COLOR = "plePreviewOriginalColor"
         private const val FOLDER_FROST = "pleFolderFrost"

@@ -198,6 +198,11 @@ class FolderFrost(private val host: View) {
         }
     }
 
+    val glassRadius: Float
+        get() = backdropRadius ?: maxRadius
+
+    fun backdropColors(): List<Int> = listOfNotNull(scrimColor(), backdropTint.takeIf { Color.alpha(it) != 0 })
+
     private fun scrimColor(): Int? {
         val scrim = scrimView?.get()?.takeIf { it.isAttachedToWindow && it.rootView === host.rootView }
             ?: host.rootView.findScrimView()?.also { scrimView = WeakReference(it) }
