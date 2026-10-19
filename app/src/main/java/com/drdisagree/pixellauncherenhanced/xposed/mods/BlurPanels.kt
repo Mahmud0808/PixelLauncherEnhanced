@@ -22,6 +22,7 @@ import android.graphics.drawable.DrawableContainer
 import android.graphics.drawable.DrawableWrapper
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
+import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.VectorDrawable
 import android.os.Build
@@ -91,6 +92,9 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var installingSearchPanel = false
     private var widgetGlass = false
     private var widgetHostClass: Class<*>? = null
+    private val qsbHostClass: Class<*>? by lazy {
+        findClass("com.android.launcher3.qsb.QsbWidgetHostView", suppressError = true)
+    }
     private val hotseatClass: Class<*>? by lazy { findClass("com.android.launcher3.Hotseat", suppressError = true) }
     private val hosts: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val rect = RectF()
@@ -147,7 +151,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             WIDGET_CLEAR_BACKGROUND -> {
                 hosts.toList().forEach { host ->
                     host.post {
-                        if (host is ViewGroup && widgetHostClass?.isInstance(host) == true && !host.isSkippedSearchBar()) {
+                        if (host is ViewGroup && host.isWidgetHost() && !host.isSkippedSearchBar()) {
                             if (host.panelClear()) {
                                 host.clearLargeBackgrounds(host.width * host.height)
                             } else {
@@ -290,7 +294,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             .suppressError()
             .runAfter { param ->
                 val widget = param.thisObject as? ViewGroup ?: return@runAfter
-                if (widgetHostClass?.isInstance(widget) != true || widget.isSkippedSearchBar()) return@runAfter
+                if (!widget.isWidgetHost() || widget.isSkippedSearchBar()) return@runAfter
                 if (!widget.panelClear()) return@runAfter
                 widget.post { widget.clearLargeBackgrounds(widget.width * widget.height) }
             }
@@ -298,24 +302,36 @@ class BlurPanels(context: Context) : ModPack(context) {
         widgetHostClass
             .hookMethod("onLayout")
             .suppressError()
+            .runAfter { param -> (param.thisObject as ViewGroup).onWidgetLayout() }
+
+        qsbHostClass
+            .hookMethod("onLayout")
+            .suppressError()
             .runAfter { param ->
                 val widget = param.thisObject as ViewGroup
-                widget.installWidgetPanel()
-                if (widget.isSkippedSearchBar()) return@runAfter
-
-                val target = widget.findPanelTarget()
-                if (target !== widget.getExtraFieldSilently(PANEL_TARGET)) {
-                    widget.setExtraField(PANEL_TARGET, target)
-                    widget.invalidate()
-                }
-                if (!widget.panelClear()) return@runAfter
-
-                widget.clearLargeBackgrounds(widget.width * widget.height)
+                if (widget.isWidgetHost()) widget.onWidgetLayout()
             }
     }
 
+    private fun ViewGroup.onWidgetLayout() {
+        installWidgetPanel()
+        if (isSkippedSearchBar()) return
+
+        val target = findPanelTarget()
+        if (target !== getExtraFieldSilently(PANEL_TARGET)) {
+            setExtraField(PANEL_TARGET, target)
+            invalidate()
+        }
+        if (!panelClear()) return
+
+        clearLargeBackgrounds(width * height)
+    }
+
+    private fun View.isWidgetHost(): Boolean =
+        widgetHostClass?.isInstance(this) == true || (qsbHostClass?.isInstance(this) == true && isHotseatSearchBar())
+
     private fun View.installSearchPanel() {
-        if (installingSearchPanel || widgetHostClass?.isInstance(this) == true) return
+        if (installingSearchPanel || isWidgetHost()) return
         val current = background ?: return
         if (current.hasBlurPanel()) return
         val holder = current as? DrawableWrapper
@@ -324,8 +340,9 @@ class BlurPanels(context: Context) : ModPack(context) {
         hosts.add(this)
         (backgroundTintList?.defaultColor ?: pill.fillColor())?.let { setExtraField(PANEL_COLOR, it) }
 
+        val hidden = if (original is RippleDrawable) pill else original
         val glass = BlurPanelDrawable(original, onShown = { panel().refreshSoon() }) { canvas ->
-            pill.alpha = if (searchGlass) 0 else 255
+            hidden.alpha = if (searchGlass) 0 else 255
             if (!searchGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
 
             if (pill.bounds.isEmpty) rect.set(0f, 0f, width.toFloat(), height.toFloat()) else rect.set(pill.bounds)

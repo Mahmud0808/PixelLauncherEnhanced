@@ -132,13 +132,11 @@ object PrefsHelper {
             FOLDER_CUSTOM_COLOR_DARK -> getBoolean(HOME_THEMED_ICONS) && getBoolean(THEMED_ICON_CUSTOM_COLOR)
 
             SEARCH_BAR_BACKGROUND -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    isPixelLauncher &&
                     !getBoolean(DESKTOP_SEARCH_BAR) &&
                     !getBoolean(DISABLE_DOCK)
 
             SEARCH_BAR_BLUR_RADIUS,
             SEARCH_BAR_BLUR_TINT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    isPixelLauncher &&
                     !getBoolean(DESKTOP_SEARCH_BAR) &&
                     !getBoolean(DISABLE_DOCK) &&
                     PanelBackground.supported(getString(SEARCH_BAR_BACKGROUND)) != PanelBackground.OFF
