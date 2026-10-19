@@ -116,10 +116,13 @@ class About : Fragment() {
         })
     }
 
+    private val releaseBackdrop = Runnable { binding.iconBackdrop.setPressedState(false) }
+
     private fun pulseBackdrop() {
         val backdrop = binding.iconBackdrop
+        backdrop.removeCallbacks(releaseBackdrop)
         backdrop.setPressedState(true)
-        backdrop.postDelayed({ backdrop.setPressedState(false) }, HEART_HOLD_MS)
+        backdrop.postDelayed(releaseBackdrop, HEART_HOLD_MS)
     }
 
     private fun openUrl(url: String) {
