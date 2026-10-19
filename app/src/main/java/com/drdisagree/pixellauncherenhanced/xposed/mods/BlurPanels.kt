@@ -236,6 +236,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val hotseat = param.thisObject as ViewGroup
                 hotseat.installDockPanel()
+                (hotseat.getFieldSilently("mQsb") as? View)?.installSearchPanel()
                 hotseat.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
                     override fun onViewAttachedToWindow(view: View) {
                         hotseat.post { hotseat.installGlassOverlay() }
@@ -294,6 +295,43 @@ class BlurPanels(context: Context) : ModPack(context) {
 
                 widget.clearLargeBackgrounds(widget.width * widget.height)
             }
+    }
+
+    private fun View.installSearchPanel() {
+        if (widgetHostClass?.isInstance(this) == true || background is BlurPanelDrawable) return
+        val original = background ?: return
+        hosts.add(this)
+        (backgroundTintList?.defaultColor ?: original.fillColor())?.let { setExtraField(PANEL_COLOR, it) }
+
+        background = BlurPanelDrawable(original, onShown = { panel().refreshSoon() }) { canvas ->
+            original.alpha = if (searchGlass) 0 else 255
+            if (!searchGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
+
+            rect.set(0f, 0f, width.toFloat(), height.toFloat())
+            val corner = (original as? GradientDrawable)?.cornerRadius?.takeIf { it > 0f }
+                ?.let { minOf(it, rect.height() / 2f) }
+                ?: (rect.height() / 2f)
+
+            if (WallpaperGlass.draw(
+                    host = this,
+                    canvas = canvas,
+                    rect = rect,
+                    corner = corner,
+                    bottomCorner = corner,
+                    blurRadius = searchBlurRadius.dp(this),
+                    tintColor = panelTintColor(searchBlurTint),
+                    liquid = searchLiquid
+                )
+            ) return@BlurPanelDrawable
+
+            panel().draw(
+                canvas = canvas,
+                rect = rect,
+                cornerRadius = corner,
+                blurRadius = searchBlurRadius.dp(this),
+                tintColor = panelTintColor(searchBlurTint)
+            )
+        }
     }
 
     private fun ViewGroup.installDockPanel() {
