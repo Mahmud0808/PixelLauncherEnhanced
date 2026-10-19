@@ -34,7 +34,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
-import java.lang.reflect.Constructor
+import java.lang.reflect.Modifier
 import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.WeakHashMap
@@ -54,7 +54,6 @@ class DrawerFolders(context: Context) : ModPack(context) {
     private var foldersEnabled = false
     private val appLists: MutableSet<Any> = Collections.newSetFromMap(WeakHashMap())
     private val folderHolders: MutableMap<Any, FrameLayout> = Collections.synchronizedMap(WeakHashMap())
-    private var holderClass: Class<*>? = null
     private var iconViewType = DEFAULT_ICON_VIEW_TYPE
     private var adapterItemClass: Class<*>? = null
     private var appInfoClass: Class<*>? = null
@@ -275,10 +274,8 @@ class DrawerFolders(context: Context) : ModPack(context) {
                     layoutParams = parent.recyclerLayoutParams()
                 }
                 val holder = runCatching {
-                    val type = holderClass ?: XposedBridge.invokeOriginalMethod(
-                        param.method, param.thisObject, arrayOf(parent, iconViewType)
-                    ).javaClass.also { holderClass = it }
-                    newHolder(type, container)
+                    XposedBridge.invokeOriginalMethod(param.method, param.thisObject, arrayOf(parent, iconViewType))
+                        ?.takeIf { it.replaceItemView(container) }
                 }.onFailure { log(this, it) }.getOrNull()
                 if (holder == null) {
                     failedHolders++
@@ -324,22 +321,17 @@ class DrawerFolders(context: Context) : ModPack(context) {
             }
     }
 
-    private fun newHolder(type: Class<*>, view: View): Any {
-        type.declaredConstructors.viewConstructor()?.let { return it.newInstance(view) }
-
-        val parentConstructor = generateSequence(type.superclass) { it.superclass }
-            .firstNotNullOfOrNull { it.declaredConstructors.viewConstructor() }
-            ?: throw NoSuchMethodException("${type.name}(View)")
-        val unsafeClass = Class.forName("sun.misc.Unsafe")
-        val unsafe = unsafeClass.getDeclaredField("theUnsafe").apply { isAccessible = true }.get(null)
-        val holder = unsafeClass.getMethod("allocateInstance", Class::class.java).invoke(unsafe, type)!!
-        XposedBridge.invokeOriginalMethod(parentConstructor, holder, arrayOf(view))
-        return holder
+    private fun Any.replaceItemView(view: View): Boolean {
+        val fields = generateSequence<Class<*>>(javaClass) { it.superclass }
+            .flatMap { it.declaredFields.asSequence() }
+            .filter { !Modifier.isStatic(it.modifiers) && View::class.java.isAssignableFrom(it.type) }
+            .onEach { it.isAccessible = true }
+            .filter { field -> field.get(this).let { it is View && it !is ViewGroup } }
+            .toList()
+        if (fields.isEmpty()) return false
+        fields.forEach { it.set(this, view) }
+        return true
     }
-
-    private fun Array<Constructor<*>>.viewConstructor(): Constructor<*>? =
-        firstOrNull { it.parameterTypes.size == 1 && it.parameterTypes[0].isAssignableFrom(FrameLayout::class.java) }
-            ?.apply { isAccessible = true }
 
     @SuppressLint("DiscouragedApi")
     private fun bindFolder(container: FrameLayout, activity: Context, entry: FolderEntry) {
