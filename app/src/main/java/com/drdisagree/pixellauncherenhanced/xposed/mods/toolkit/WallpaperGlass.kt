@@ -57,6 +57,8 @@ object WallpaperGlass {
     private const val MASK_RAMP = 1.7f
     private const val MASK_PADDING = 8
     private const val MASK_CACHE_SIZE = 8
+    private const val BLUR_CACHE_SIZE = 5
+    private const val DEPTH_LEVELS = 3
     private const val LIQUID_SHADER = """
         uniform shader image;
         uniform float2 origin;
@@ -145,9 +147,12 @@ object WallpaperGlass {
     private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val canvasInverse = Matrix()
     private val canvasShaderMatrix = Matrix()
+    private val canvasMatrix = Matrix()
+    private val shaderSource = RectF()
+    private val shaderTarget = RectF()
     private var iconLiquidShader: RuntimeShader? = null
     private val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() }
-    private val maskCache = LinkedHashMap<Any, Bitmap>()
+    private val maskCache = LinkedHashMap<Any, BitmapShader>()
     private val emptyMaskShader by lazy {
         BitmapShader(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
     }
@@ -158,8 +163,8 @@ object WallpaperGlass {
 
     @Volatile
     private var sharpBase: Bitmap? = null
-    private val frostedCache = HashMap<Int, Bitmap>()
-    private val clearCache = HashMap<Int, Bitmap>()
+    private val frostedCache = LinkedHashMap<Int, Bitmap>(BLUR_CACHE_SIZE, 0.75f, true)
+    private val clearCache = LinkedHashMap<Int, Bitmap>(BLUR_CACHE_SIZE, 0.75f, true)
     private val pendingBlurs = HashSet<Pair<Boolean, Int>>()
     private var loading = false
     private var lastCopyOutput: String? = null
@@ -171,34 +176,66 @@ object WallpaperGlass {
     private val lastPositions = WeakHashMap<View, Long>()
     private val lastScales = WeakHashMap<View, Float>()
     private val lastScrims = WeakHashMap<View, Int>()
-    private val watchedRoots: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
+    private val rootListeners = WeakHashMap<View, MutableSet<View>>()
+    private val refreshers = WeakHashMap<View, () -> Boolean>()
     private val trackLocation = IntArray(2)
+    private val trackBuffer = ArrayList<View>()
+    private val dirtyRoots: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
 
     private fun track(host: View) {
+        if (host in listeners || !host.isAttachedToWindow) return
+        val root = host.rootView ?: return
         listeners.add(host)
         host.getLocationInWindow(trackLocation)
         lastPositions[host] = packPosition(trackLocation)
         lastScales[host] = host.cumulativeScale()
         lastScrims[host] = host.cellScrim()
 
-        val root = host.rootView ?: return
-        if (!watchedRoots.add(root)) return
-        root.viewTreeObserver.addOnPreDrawListener {
-            listeners.toList().forEach { view ->
-                if (view.rootView !== root || !view.isAttachedToWindow) return@forEach
-                view.getLocationInWindow(trackLocation)
-                val position = packPosition(trackLocation)
-                val scale = view.cumulativeScale()
-                val scrim = view.cellScrim()
-                if (lastPositions[view] != position || lastScales[view] != scale || lastScrims[view] != scrim) {
-                    lastPositions[view] = position
-                    lastScales[view] = scale
-                    lastScrims[view] = scrim
-                    view.background?.invalidateSelf()
-                    view.invalidate()
-                }
+        rootListeners.getOrPut(root) {
+            root.viewTreeObserver.addOnPreDrawListener { checkMoved(root) }
+            Collections.newSetFromMap(WeakHashMap())
+        }.add(host)
+    }
+
+    fun setRefresher(host: View, refresher: () -> Boolean) {
+        refreshers[host] = refresher
+    }
+
+    private fun refresh(view: View): Boolean {
+        if (refreshers[view]?.invoke() == true) return true
+        view.background?.invalidateSelf()
+        view.invalidate()
+        return false
+    }
+
+    private fun checkMoved(root: View): Boolean {
+        val views = rootListeners[root] ?: return true
+        val all = dirtyRoots.remove(root)
+        var refreshed = false
+        trackBuffer.clear()
+        trackBuffer.addAll(views)
+        for (view in trackBuffer) {
+            if (!view.isAttachedToWindow || view.windowVisibility != View.VISIBLE) continue
+            view.getLocationInWindow(trackLocation)
+            val position = packPosition(trackLocation)
+            val scale = view.cumulativeScale()
+            val scrim = view.cellScrim()
+            if (all || lastPositions[view] != position || lastScales[view] != scale || lastScrims[view] != scrim) {
+                lastPositions[view] = position
+                lastScales[view] = scale
+                lastScrims[view] = scrim
+                if (refresh(view)) refreshed = true
             }
-            true
+        }
+        trackBuffer.clear()
+        if (refreshed) root.invalidate()
+        return true
+    }
+
+    private fun invalidateTracked() {
+        for (root in rootListeners.keys) {
+            if (root == null || !dirtyRoots.add(root)) continue
+            root.invalidate()
         }
     }
 
@@ -296,10 +333,7 @@ object WallpaperGlass {
                 homeBitmap = blurred
                 homeWidth = width.toFloat()
                 homeHeight = height.toFloat()
-                listeners.toList().forEach {
-                    it.background?.invalidateSelf()
-                    it.invalidate()
-                }
+                invalidateTracked()
             }
         }
     }
@@ -334,16 +368,21 @@ object WallpaperGlass {
         homeToken++
         if (homeBitmap == null) return
         homeBitmap = null
-        listeners.toList().forEach { it.invalidate() }
+        invalidateTracked()
     }
 
-    fun setDepthBlur(radius: Float) {
-        if (radius == depthBlur) return
-        depthBlur = radius
+    fun setDepthBlur(radius: Float, maxRadius: Float) {
+        val step = maxRadius / DEPTH_LEVELS
+        val level = if (step > 0f) (radius / step).roundToInt() * step else radius
+        if (level == depthBlur) return
+        depthBlur = level
         onOffsetsChanged()
     }
 
     fun isAvailable(): Boolean = !liveWallpaper && smallBase != null
+
+    val isDepthBlurred: Boolean
+        get() = depthBlur > 0f
 
     fun debugState(): String = listOf(
         "available=${isAvailable()}",
@@ -366,14 +405,15 @@ object WallpaperGlass {
         frostedCache.clear()
         clearCache.clear()
         wallpaperChecked = false
-        listeners.toList().forEach { it.postInvalidate() }
+        onOffsetsChanged()
     }
 
     fun onOffsetsChanged() {
-        listeners.toList().forEach {
-            it.background?.invalidateSelf()
-            it.invalidate()
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { onOffsetsChanged() }
+            return
         }
+        invalidateTracked()
     }
 
     private fun checkWallpaper(context: Context) {
@@ -443,7 +483,7 @@ object WallpaperGlass {
                 sharpBase = result?.second
                 frostedCache.clear()
                 clearCache.clear()
-                listeners.toList().forEach { it.invalidate() }
+                invalidateTracked()
             }
         }
     }
@@ -463,10 +503,8 @@ object WallpaperGlass {
                     pendingBlurs.remove(key)
                     if (blurred != null && base === (if (clear) sharpBase else smallBase)) {
                         cache[radius] = blurred
-                        listeners.toList().forEach {
-                            it.background?.invalidateSelf()
-                            it.invalidate()
-                        }
+                        while (cache.size > BLUR_CACHE_SIZE) cache.remove(cache.keys.first())
+                        invalidateTracked()
                     }
                 }
             }
@@ -580,6 +618,23 @@ object WallpaperGlass {
         maskDrawer: ((Canvas) -> Unit)? = null,
         home: Boolean = false
     ): Paint? {
+        canvas.getMatrix(canvasMatrix)
+        return matrixPaint(host, canvasMatrix, localRect, corner, blurRadius, alpha, liquid, shapePath, maskKey, maskDrawer, home)
+    }
+
+    fun matrixPaint(
+        host: View,
+        matrix: Matrix,
+        localRect: RectF,
+        corner: Float,
+        blurRadius: Float,
+        alpha: Float,
+        liquid: Boolean,
+        shapePath: Path? = null,
+        maskKey: Any? = null,
+        maskDrawer: ((Canvas) -> Unit)? = null,
+        home: Boolean = false
+    ): Paint? {
         track(host)
         checkWallpaper(host.context)
         if (!isAvailable()) return null
@@ -603,17 +658,15 @@ object WallpaperGlass {
         val wallpaperTop = -(drawnHeight - screenHeight) / 2f
 
         host.getLocationInWindow(location)
-        if (!canvas.getMatrix().invert(canvasInverse)) return null
+        if (!matrix.invert(canvasInverse)) return null
 
-        canvasShaderMatrix.setRectToRect(
-            RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()),
-            if (homeLayer != null) {
-                RectF(0f, 0f, homeWidth, homeHeight)
-            } else {
-                RectF(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight)
-            },
-            Matrix.ScaleToFit.FILL
-        )
+        shaderSource.set(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        if (homeLayer != null) {
+            shaderTarget.set(0f, 0f, homeWidth, homeHeight)
+        } else {
+            shaderTarget.set(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight)
+        }
+        canvasShaderMatrix.setRectToRect(shaderSource, shaderTarget, Matrix.ScaleToFit.FILL)
         canvasShaderMatrix.postTranslate(-location[0].toFloat(), -location[1].toFloat())
         val hostScale = host.cumulativeScale()
         canvasShaderMatrix.postScale(1f / hostScale, 1f / hostScale)
@@ -635,11 +688,8 @@ object WallpaperGlass {
             val mask = shapePath?.let { path -> shapeMask(path, localRect, refraction) { it.drawPath(path, maskPaint) } }
                 ?: maskDrawer?.let { shapeMask(maskKey ?: it, localRect, refraction, it) }
             if (mask != null) {
-                val maskShader = BitmapShader(mask, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
-                    filterMode = BitmapShader.FILTER_MODE_LINEAR
-                }
                 val padding = maskPadding(refraction)
-                shader.setInputShader("mask", maskShader)
+                shader.setInputShader("mask", mask)
                 shader.setFloatUniform("useMask", 1f)
                 shader.setFloatUniform("maskOrigin", localRect.left - padding, localRect.top - padding)
                 shader.setFloatUniform("maskScale", 1f)
@@ -685,7 +735,7 @@ object WallpaperGlass {
 
     private fun maskPadding(refraction: Float): Int = MASK_PADDING + maskBlurRadius(refraction) * 3
 
-    private fun shapeMask(source: Any, bounds: RectF, refraction: Float, drawer: (Canvas) -> Unit): Bitmap {
+    private fun shapeMask(source: Any, bounds: RectF, refraction: Float, drawer: (Canvas) -> Unit): BitmapShader {
         val key = Triple(source, bounds.width().roundToInt(), bounds.height().roundToInt())
         maskCache[key]?.let { return it }
 
@@ -697,7 +747,8 @@ object WallpaperGlass {
             translate(padding - bounds.left, padding - bounds.top)
             drawer(this)
         }
-        val blurred = boxBlur(bitmap, maskBlurRadius(refraction))
+        val blurred = BitmapShader(boxBlur(bitmap, maskBlurRadius(refraction)), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+            .apply { filterMode = BitmapShader.FILTER_MODE_LINEAR }
         if (maskCache.size >= MASK_CACHE_SIZE) maskCache.remove(maskCache.keys.first())
         maskCache[key] = blurred
         return blurred
@@ -729,7 +780,8 @@ object WallpaperGlass {
     }
 
     private fun wallpaperShader(bitmap: Bitmap, hostScale: Float): BitmapShader {
-        liquidMatrix.setRectToRect(RectF(source), target, Matrix.ScaleToFit.FILL)
+        shaderSource.set(source)
+        liquidMatrix.setRectToRect(shaderSource, target, Matrix.ScaleToFit.FILL)
         liquidMatrix.postTranslate(-location[0].toFloat(), -location[1].toFloat())
         liquidMatrix.postScale(1f / hostScale, 1f / hostScale)
 

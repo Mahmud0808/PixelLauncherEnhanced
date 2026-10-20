@@ -15,10 +15,15 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.RecordingCanvas
+import android.graphics.RenderNode
+import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewParent
+import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
@@ -38,11 +43,14 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSi
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
+import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.reflect.Field
 import java.lang.reflect.InvocationHandler
 import java.lang.ref.WeakReference
 import java.lang.reflect.Proxy
 import java.util.WeakHashMap
+import kotlin.math.ceil
 
 class IconGlass(context: Context) : ModPack(context) {
 
@@ -52,6 +60,9 @@ class IconGlass(context: Context) : ModPack(context) {
     private var blurRadius = 0
     private var tintOpacity = DEFAULT_TINT
     private val currentHost = ThreadLocal<View?>()
+    private val currentDrawable = ThreadLocal<Drawable?>()
+    private val glassNodes = WeakHashMap<Drawable, GlassNode>()
+    private val hostNodes = WeakHashMap<View, MutableList<WeakReference<GlassNode>>>()
     private val localRect = RectF()
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -62,6 +73,9 @@ class IconGlass(context: Context) : ModPack(context) {
         )
     }
     private var scrimView: WeakReference<View>? = null
+    private var scrimFrame = -1L
+    private var scrimRoot: WeakReference<View>? = null
+    private var scrimColor: Int? = null
     private var drawerBlur: Float? = null
     private val folderClass: Class<*>? by lazy {
         findClass("com.android.launcher3.folder.Folder", suppressError = true)
@@ -73,6 +87,12 @@ class IconGlass(context: Context) : ModPack(context) {
     private var sheetColor = 0
     private var drawerOpacity = -1
     private val alphaMasks = WeakHashMap<Bitmap, Bitmap>()
+    private val shapeCache = WeakHashMap<Any, ShapeParts>()
+    private val delegateCache = WeakHashMap<Any, DelegateParts>()
+    private val ancestry = WeakHashMap<View, Ancestry>()
+    private val fullBounds = Rect()
+    private val canvasNodeField: Field? by lazy { XposedHelpers.findFieldIfExists(RecordingCanvas::class.java, "mNode") }
+    private val viewNodeField: Field? by lazy { XposedHelpers.findFieldIfExists(View::class.java, "mRenderNode") }
     private val cornerCache = WeakHashMap<Path, Float>()
     private val boundsCache = WeakHashMap<Path, RectF>()
     private val visibleAreaFactor: Float by lazy {
@@ -139,9 +159,14 @@ class IconGlass(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 if (!enabled) return@runBefore
-                currentHost.set((param.thisObject as? Drawable)?.hostView())
+                val drawable = param.thisObject as? Drawable
+                currentHost.set(drawable?.hostView())
+                currentDrawable.set(drawable)
             }
-            .runAfter { currentHost.remove() }
+            .runAfter {
+                currentHost.remove()
+                currentDrawable.remove()
+            }
 
         findClass("com.android.launcher3.dragndrop.DragView", suppressError = true)
             .hookMethod("draw")
@@ -170,14 +195,14 @@ class IconGlass(context: Context) : ModPack(context) {
                 val canvas = param.args.getOrNull(2) as? Canvas ?: return@runBefore
                 val bounds = param.args.getOrNull(3) as? Rect ?: return@runBefore
                 val paint = param.args.getOrNull(4) as? Paint ?: return@runBefore
-                val delegate = param.thisObject
-
-                val path = shape.getFieldSilently("path") as? Path ?: return@runBefore
-                val pathSize = (shape.getFieldSilently("pathSize") as? Int)?.toFloat() ?: return@runBefore
-                val monoIcon = delegate.getFieldSilently("monoIcon") as? Bitmap ?: return@runBefore
-                val monoBounds = delegate.getFieldSilently("shapeBounds") as? Rect
-                val monoPaint = delegate.getFieldSilently("monoPaint") as? Paint ?: return@runBefore
+                val shapeParts = shapeParts(shape) ?: return@runBefore
+                val parts = delegateParts(param.thisObject) ?: return@runBefore
+                val path = shapeParts.path
+                val pathSize = shapeParts.size
+                val monoIcon = parts.monoIcon
+                val monoPaint = parts.monoPaint
                 if (pathSize <= 0f || bounds.isEmpty) return@runBefore
+                val monoBounds = parts.bounds ?: fullBounds.apply { set(0, 0, pathSize.toInt(), pathSize.toInt()) }
 
                 (shape.getFieldSilently("shadowLayer") as? Bitmap)?.let {
                     canvas.drawBitmap(it, null, bounds, paint)
@@ -197,31 +222,47 @@ class IconGlass(context: Context) : ModPack(context) {
                         host.glassBlurRadius(), paint.alpha / 255f, liquid
                     )
                     drawTint(canvas, paint)
-                    canvas.drawBitmap(monoIcon, null, monoBounds ?: Rect(0, 0, pathSize.toInt(), pathSize.toInt()), monoPaint)
+                    canvas.drawBitmap(monoIcon, null, monoBounds, monoPaint)
                     canvas.restoreToCount(save)
                     param.result = null
                     return@runBefore
                 }
-                val glass = WallpaperGlass.canvasPaint(
-                    host = host,
-                    canvas = canvas,
-                    localRect = localRect,
-                    corner = shapeCorner(path, shapeBounds),
-                    blurRadius = host.glassBlurRadius(),
-                    alpha = paint.alpha / 255f,
-                    liquid = liquid,
-                    shapePath = path,
-                    home = host.isInDrawer()
-                )
-                if (glass == null) {
-                    canvas.restoreToCount(save)
-                    return@runBefore
+                val drawable = currentDrawable.get()
+                if (drawable != null && canvas.recordsFor(host)) {
+                    val node = glassNode(drawable, host)
+                    canvas.getMatrix(node.matrix)
+                    node.rect.set(localRect)
+                    node.corner = shapeCorner(path, shapeBounds)
+                    node.alpha = paint.alpha / 255f
+                    node.path = path
+                    node.size = pathSize
+                    node.attached = node.record()
+                    if (!node.attached) {
+                        canvas.restoreToCount(save)
+                        return@runBefore
+                    }
+                    canvas.drawRenderNode(node.node)
+                } else {
+                    val glass = WallpaperGlass.canvasPaint(
+                        host = host,
+                        canvas = canvas,
+                        localRect = localRect,
+                        corner = shapeCorner(path, shapeBounds),
+                        blurRadius = host.glassBlurRadius(),
+                        alpha = paint.alpha / 255f,
+                        liquid = liquid,
+                        shapePath = path,
+                        home = host.isInDrawer()
+                    )
+                    if (glass == null) {
+                        canvas.restoreToCount(save)
+                        return@runBefore
+                    }
+                    canvas.drawPaint(glass)
+                    drawDrawerScrim(canvas, host)
                 }
-
-                canvas.drawPaint(glass)
-                drawDrawerScrim(canvas, host)
                 drawTint(canvas, paint)
-                canvas.drawBitmap(monoIcon, null, monoBounds ?: Rect(0, 0, pathSize.toInt(), pathSize.toInt()), monoPaint)
+                canvas.drawBitmap(monoIcon, null, monoBounds, monoPaint)
                 canvas.restoreToCount(save)
                 param.result = null
             }
@@ -460,10 +501,25 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     private fun drawDrawerScrim(canvas: Canvas, host: View) {
-        host.backdropColors().forEach {
-            scrimPaint.color = it
-            canvas.drawPaint(scrimPaint)
+        host.openFolder()?.let { folder ->
+            OpacityModifier.folderFrost(folder)?.takeIf { it.progress > 0f }?.backdropColors()?.forEach {
+                drawScrim(canvas, it)
+            }
+            folder.panelColor()?.let { drawScrim(canvas, it) }
+            return
         }
+        if (host.isInDrawer()) {
+            drawerScrimColor(host)?.let { drawScrim(canvas, it) }
+            sheetColor.takeIf { Color.alpha(it) != 0 }?.let { drawScrim(canvas, it) }
+        }
+        host.folderIconSource()
+            ?.let { OpacityModifier.folderIconTint(it, requireVisible = it === host) }
+            ?.let { drawScrim(canvas, it) }
+    }
+
+    private fun drawScrim(canvas: Canvas, color: Int) {
+        scrimPaint.color = color
+        canvas.drawPaint(scrimPaint)
     }
 
     private fun View.backdropColors(): List<Int> {
@@ -478,6 +534,113 @@ class IconGlass(context: Context) : ModPack(context) {
         return drawer + listOfNotNull(folder)
     }
 
+    private inner class GlassNode(host: View) {
+        private val host = WeakReference(host)
+        val node = RenderNode(GLASS_NODE)
+        val matrix = Matrix()
+        val rect = RectF()
+        var corner = 0f
+        var alpha = 1f
+        var path: Path? = null
+        var size = 0f
+        var attached = false
+
+        fun refresh(): Boolean {
+            val view = host.get() ?: return false
+            if (!attached) return false
+            if (WallpaperGlass.isDepthBlurred && !view.isInDrawer()) return true
+            return record()
+        }
+
+        fun record(): Boolean {
+            val view = host.get() ?: return false
+            val glass = WallpaperGlass.matrixPaint(
+                host = view,
+                matrix = matrix,
+                localRect = rect,
+                corner = corner,
+                blurRadius = view.glassBlurRadius(),
+                alpha = alpha,
+                liquid = liquid,
+                shapePath = path,
+                home = view.isInDrawer()
+            ) ?: return false
+            val extent = ceil(size).toInt().coerceAtLeast(1)
+            node.setPosition(0, 0, extent, extent)
+            val canvas = node.beginRecording(extent, extent)
+            canvas.drawPaint(glass)
+            drawDrawerScrim(canvas, view)
+            node.endRecording()
+            return true
+        }
+    }
+
+    private fun glassNode(drawable: Drawable, host: View): GlassNode {
+        glassNodes[drawable]?.let { return it }
+        val node = GlassNode(host)
+        glassNodes[drawable] = node
+        val nodes = hostNodes.getOrPut(host) {
+            mutableListOf<WeakReference<GlassNode>>().also { list ->
+                WallpaperGlass.setRefresher(host) { refreshNodes(list) }
+            }
+        }
+        nodes.add(WeakReference(node))
+        return node
+    }
+
+    private fun Canvas.recordsFor(view: View): Boolean {
+        val canvasNode = canvasNodeField ?: return false
+        val viewNode = viewNodeField ?: return false
+        return runCatching { canvasNode.get(this) === viewNode.get(view) }.getOrDefault(false)
+    }
+
+    private fun refreshNodes(nodes: MutableList<WeakReference<GlassNode>>): Boolean {
+        nodes.removeAll { it.get() == null }
+        if (nodes.isEmpty()) return false
+        return nodes.all { it.get()?.refresh() == true }
+    }
+
+    private class ShapeParts(val path: Path, val size: Float)
+
+    private class DelegateParts(val monoIcon: Bitmap, val bounds: Rect?, val monoPaint: Paint)
+
+    private class Ancestry(val parent: WeakReference<ViewParent>, val inDrawer: Boolean, val folder: WeakReference<View>?)
+
+    private fun shapeParts(shape: Any): ShapeParts? {
+        shapeCache[shape]?.let { return it }
+        val path = shape.getFieldSilently("path") as? Path ?: return null
+        val size = (shape.getFieldSilently("pathSize") as? Int)?.toFloat() ?: return null
+        return ShapeParts(path, size).also { shapeCache[shape] = it }
+    }
+
+    private fun delegateParts(delegate: Any): DelegateParts? {
+        delegateCache[delegate]?.let { return it }
+        val monoIcon = delegate.getFieldSilently("monoIcon") as? Bitmap ?: return null
+        val monoPaint = delegate.getFieldSilently("monoPaint") as? Paint ?: return null
+        val bounds = delegate.getFieldSilently("shapeBounds") as? Rect
+        return DelegateParts(monoIcon, bounds, monoPaint).also { delegateCache[delegate] = it }
+    }
+
+    private fun View.ancestry(): Ancestry? {
+        val parent = parent ?: return null
+        ancestry[this]?.takeIf { it.parent.get() === parent }?.let { return it }
+
+        val containerClass = allAppsContainerClass
+        val folderClass = folderClass
+        var inDrawer = false
+        var folder: View? = null
+        var current: ViewParent? = parent
+        while (current is View) {
+            if (!inDrawer && (containerClass?.isInstance(current) == true || current.javaClass.name.contains("AllApps"))) {
+                inDrawer = true
+            }
+            if (folder == null && folderClass?.isInstance(current) == true) folder = current
+            current = current.parent
+        }
+        return Ancestry(WeakReference(parent), inDrawer, folder?.let { WeakReference(it) })
+            .also { ancestry[this] = it }
+    }
+
     private fun View.isFolderIcon(): Boolean = javaClass.name.endsWith(".FolderIcon")
 
     private fun View.folderIconSource(): View? {
@@ -486,10 +649,7 @@ class IconGlass(context: Context) : ModPack(context) {
         return ((parent as? View)?.getFieldSilently("mOriginalIcon") as? View)?.takeIf { it.isFolderIcon() }
     }
 
-    private fun View.openFolder(): View? {
-        val folderClass = folderClass ?: return null
-        return generateSequence(parent) { it.parent }.filterIsInstance<View>().firstOrNull { folderClass.isInstance(it) }
-    }
+    private fun View.openFolder(): View? = ancestry()?.folder?.get()
 
     private fun View.panelColor(): Int? {
         val background = getFieldSilently("mBackground") as? GradientDrawable ?: return null
@@ -522,14 +682,19 @@ class IconGlass(context: Context) : ModPack(context) {
 
     private fun drawerScrimColor(host: View, anywhere: Boolean = false): Int? {
         if (!anywhere && !host.isInDrawer()) return null
-        val scrim = scrimView?.get()?.takeIf { it.isAttachedToWindow && it.rootView === host.rootView }
-            ?: host.rootView.findScrimView()?.also { scrimView = WeakReference(it) }
-            ?: return null
-        if (scrim.visibility != View.VISIBLE) return null
+        val root = host.rootView
+        val frame = AnimationUtils.currentAnimationTimeMillis()
+        if (frame == scrimFrame && scrimRoot?.get() === root) return scrimColor
 
-        val color = scrim.getFieldSilently("mBackgroundColor") as? Int ?: return null
-        val alpha = (Color.alpha(color) * scrim.alpha).toInt().coerceIn(0, 255)
-        return if (alpha == 0) null else ColorUtils.setAlphaComponent(color, alpha)
+        val scrim = scrimView?.get()?.takeIf { it.isAttachedToWindow && it.rootView === root }
+            ?: root.findScrimView()?.also { scrimView = WeakReference(it) }
+        val color = scrim?.takeIf { it.visibility == View.VISIBLE }
+            ?.let { it.getFieldSilently("mBackgroundColor") as? Int }
+        val alpha = color?.let { (Color.alpha(it) * scrim.alpha).toInt().coerceIn(0, 255) } ?: 0
+        scrimFrame = frame
+        scrimRoot = WeakReference(root)
+        scrimColor = if (color == null || alpha == 0) null else ColorUtils.setAlphaComponent(color, alpha)
+        return scrimColor
     }
 
     private fun View.glassBlurRadius(): Float {
@@ -559,16 +724,7 @@ class IconGlass(context: Context) : ModPack(context) {
         return radius
     }
 
-    private fun View.isInDrawer(): Boolean {
-        val containerClass = allAppsContainerClass
-        var current = parent
-        while (current is View) {
-            if (containerClass?.isInstance(current) == true) return true
-            if (current.javaClass.name.contains("AllApps")) return true
-            current = current.parent
-        }
-        return false
-    }
+    private fun View.isInDrawer(): Boolean = ancestry()?.inDrawer == true
 
     private fun View.findScrimView(): View? {
         if (javaClass.name.endsWith(".ScrimView")) return this
@@ -618,6 +774,7 @@ class IconGlass(context: Context) : ModPack(context) {
         }
 
         private const val MAX_CALLBACK_DEPTH = 6
+        private const val GLASS_NODE = "pleIconGlass"
         private const val DEFAULT_VISIBLE_AREA = 0.92f
         private const val LEGACY_CORNER_RATIO = 0.25f
         private const val DEFAULT_BLUR = 5

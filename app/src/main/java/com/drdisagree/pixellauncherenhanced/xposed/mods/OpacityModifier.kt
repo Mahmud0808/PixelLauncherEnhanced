@@ -4,7 +4,6 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -35,6 +34,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.DragPreviewGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FolderFrost
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceIds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
@@ -574,12 +574,11 @@ class OpacityModifier(context: Context) : ModPack(context) {
         return WallpaperGlass.pathCorner(path, bounds)
     }
 
-    @SuppressLint("DiscouragedApi")
     private fun Context.folderBackgroundColor(): Int? {
         val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
                 Configuration.UI_MODE_NIGHT_YES
         val name = if (night) "folder_background_dark" else "folder_background_light"
-        val id = resources.getIdentifier(name, "color", packageName).takeIf { it != 0 } ?: return null
+        val id = ResourceIds.find(resources, name, "color", packageName).takeIf { it != 0 } ?: return null
         return runCatching { getColor(id) }.getOrNull()
     }
 

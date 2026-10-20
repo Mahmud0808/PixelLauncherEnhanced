@@ -1,6 +1,5 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.WallpaperColors
 import android.app.WallpaperManager
@@ -52,6 +51,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanelDrawable
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceIds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
@@ -180,7 +180,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                     val current = param.thisObject.getFieldSilently("mCurrentBlur") as? Int ?: return@runAfter
                     val max = param.thisObject.getFieldSilently("mMaxBlurRadius") as? Int ?: return@runAfter
                     BlurPanel.setLauncherBlur(if (max > 0) current.toFloat() / max else 0f)
-                    WallpaperGlass.setDepthBlur(current.toFloat())
+                    WallpaperGlass.setDepthBlur(current.toFloat(), max.toFloat())
                 }
         }
 
@@ -207,8 +207,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 if (param.args.getOrNull(0) != View.LAYER_TYPE_HARDWARE) return@runBefore
-                if (dockBlurRadius <= 0 && widgetBlurRadius <= 0 && searchBlurRadius <= 0) return@runBefore
-                if (WallpaperGlass.isAvailable()) return@runBefore
+                val blurred = dockBlurRadius > 0 || widgetBlurRadius > 0 || searchBlurRadius > 0
+                if (!blurred && !WallpaperGlass.isAvailable()) return@runBefore
 
                 val name = param.thisObject.javaClass.name
                 if (LAYERED_CONTAINERS.any { name.endsWith(it) }) {
@@ -787,18 +787,16 @@ class BlurPanels(context: Context) : ModPack(context) {
                 Configuration.UI_MODE_NIGHT_YES
     }
 
-    @SuppressLint("DiscouragedApi")
     private fun View.folderBackgroundColor(): Int? {
         val name = if (isNightMode()) "folder_background_dark" else "folder_background_light"
-        val id = resources.getIdentifier(name, "color", context.packageName).takeIf { it != 0 }
+        val id = ResourceIds.find(resources, name, "color", context.packageName).takeIf { it != 0 }
             ?: return null
         return runCatching { context.getColor(id) }.getOrNull()
     }
 
-    @SuppressLint("DiscouragedApi")
     private fun View.materialWidgetColor(): Int? {
         val name = if (isNightMode()) "system_widget_background_dark" else "system_widget_background_light"
-        val id = resources.getIdentifier(name, "color", "android").takeIf { it != 0 } ?: return null
+        val id = ResourceIds.find(resources, name, "color", "android").takeIf { it != 0 } ?: return null
         return runCatching { context.getColor(id) }.getOrNull()
     }
 
