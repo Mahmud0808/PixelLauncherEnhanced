@@ -93,6 +93,11 @@
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_togglelocklayoutinoptionspopup"
+            android:title="@string/toggle_lock_layout_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="true"
             android:key="xposed_allowwallpaperzooming"
             android:summary="@string/allow_wallpaper_zooming_summary"

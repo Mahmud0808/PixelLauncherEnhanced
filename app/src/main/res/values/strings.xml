@@ -213,6 +213,9 @@
     <string name="free_widget_resize_title">Free widget resizing</string>
     <string name="free_widget_resize_desc">Resize any widget to any size, ignoring the limits set by its app</string>
     <string name="layout_is_locked">Layout is locked!</string>
+    <string name="toggle_lock_layout_title">Toggle layout lock from homescreen popup</string>
+    <string name="lock_layout_action">Lock layout</string>
+    <string name="unlock_layout_action">Unlock layout</string>
     <string name="drawer_search_title">App search bar</string>
     <string name="drawer_search_desc">Search bar on top of the app drawer</string>
     <string name="clear_all_button_title">Clear all button</string>

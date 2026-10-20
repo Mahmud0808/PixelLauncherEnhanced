@@ -103,6 +103,7 @@ object Constants {
     const val HIDE_APPS_FROM_APP_DRAWER = "xposed_hideappsfromappdrawer"
     const val SEARCH_HIDDEN_APPS = "xposed_searchhiddenapps"
     const val TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP = "xposed_togglehideappsinoptionspopup"
+    const val TOGGLE_LOCK_LAYOUT_IN_OPTIONS_POPUP = "xposed_togglelocklayoutinoptionspopup"
     const val REMOVE_ICON_BADGE = "xposed_removeiconbadge"
     const val RECENTS_REMOVE_SCREENSHOT_BUTTON = "xposed_recentsremovescreenshotbutton"
     const val RECENTS_DISABLE_SELECTION = "xposed_recentsdisableselection"

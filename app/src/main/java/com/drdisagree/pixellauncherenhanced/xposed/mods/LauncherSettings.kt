@@ -15,7 +15,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ENTRY_IN_OPTIO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.LOCK_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_LOCK_LAYOUT_IN_OPTIONS_POPUP
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -49,6 +51,8 @@ class LauncherSettings(context: Context) : ModPack(context) {
     private var entryInLauncher = true
     private var entryInPopup = false
     private var toggleHideAppsInPopup = false
+    private var toggleLockInPopup = false
+    private var layoutLocked = false
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -56,6 +60,8 @@ class LauncherSettings(context: Context) : ModPack(context) {
             entryInLauncher = getBoolean(ENTRY_IN_LAUNCHER_SETTINGS, true)
             entryInPopup = getBoolean(ENTRY_IN_OPTIONS_POPUP, false)
             toggleHideAppsInPopup = getBoolean(TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP, false)
+            toggleLockInPopup = getBoolean(TOGGLE_LOCK_LAYOUT_IN_OPTIONS_POPUP, false)
+            layoutLocked = getBoolean(LOCK_LAYOUT, false)
             HideApps.HIDE_APPS_ENABLED = getBoolean(HIDE_APPS_FROM_APP_DRAWER, false)
         }
 
@@ -248,7 +254,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
             .hookConstructor()
             .capability("Popup entries")
             .runBefore { param ->
-                if (!entryInPopup && !toggleHideAppsInPopup) return@runBefore
+                if (!entryInPopup && !toggleHideAppsInPopup && !toggleLockInPopup) return@runBefore
 
                 if (param.args[0] is Context) {
                     val context = param.args[0] as Context
@@ -289,6 +295,16 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             }
                         }
 
+                        LOCK_SENTINEL if iconRes == LOCK_SENTINEL -> {
+                            param.thisObject.apply {
+                                setField("labelRes", labelRes)
+                                setField("label", modRes.getString(lockLabel()))
+                                setField("icon", modRes.getDrawable(lockIcon()))
+                                setField("eventId", eventId)
+                                setField("clickListener", clickListener)
+                            }
+                        }
+
                         else -> {
                             param.thisObject.apply {
                                 setField("labelRes", labelRes)
@@ -323,7 +339,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 .hookMethod("getOptions")
                 .capability("Popup entries")
                 .runAfter { param ->
-                    if (!entryInPopup && !toggleHideAppsInPopup) return@runAfter
+                    if (!entryInPopup && !toggleHideAppsInPopup && !toggleLockInPopup) return@runAfter
 
                     val launcher = param.args[0]
                     val options = param.result as ArrayList<Any>
@@ -391,6 +407,76 @@ class LauncherSettings(context: Context) : ModPack(context) {
                                         launcher,
                                         -2,
                                         -2,
+                                        eventId,
+                                        clickListener
+                                    )
+                            }
+
+                            else -> {
+                                log("No supported constructor found for optionItemClass.")
+                                null
+                            }
+                        }
+                        if (optionItem != null) {
+                            options.add(optionItem)
+                        }
+                    }
+
+                    if (toggleLockInPopup) {
+                        val clickListener = View.OnLongClickListener {
+                            toggleLayoutLock()
+                            true
+                        }
+
+                        val optionItem = when {
+                            optionItemConstructors.any {
+                                it.parameterTypes.contentEquals(
+                                    arrayOf(
+                                        CharSequence::class.java,
+                                        Drawable::class.java,
+                                        eventEnum,
+                                        View.OnLongClickListener::class.java
+                                    )
+                                )
+                            } -> {
+                                optionItemClass
+                                    .getDeclaredConstructor(
+                                        CharSequence::class.java,
+                                        Drawable::class.java,
+                                        eventEnum,
+                                        View.OnLongClickListener::class.java
+                                    )
+                                    .newInstance(
+                                        modRes.getString(lockLabel()),
+                                        modRes.getDrawable(lockIcon()),
+                                        eventId,
+                                        clickListener
+                                    )
+                            }
+
+                            optionItemConstructors.any {
+                                it.parameterTypes.contentEquals(
+                                    arrayOf(
+                                        Context::class.java,
+                                        Int::class.javaPrimitiveType,
+                                        Int::class.javaPrimitiveType,
+                                        eventEnum,
+                                        View.OnLongClickListener::class.java
+                                    )
+                                )
+                            } -> {
+                                optionItemClass
+                                    .getDeclaredConstructor(
+                                        Context::class.java,
+                                        Int::class.javaPrimitiveType,
+                                        Int::class.javaPrimitiveType,
+                                        eventEnum,
+                                        View.OnLongClickListener::class.java
+                                    )
+                                    .newInstance(
+                                        launcher,
+                                        LOCK_SENTINEL,
+                                        LOCK_SENTINEL,
                                         eventId,
                                         clickListener
                                     )
@@ -708,7 +794,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                     .capability("Popup entries")
                     .suppressError()
                     .runAfter { param ->
-                        if (!entryInPopup && !toggleHideAppsInPopup) return@runAfter
+                        if (!entryInPopup && !toggleHideAppsInPopup && !toggleLockInPopup) return@runAfter
 
                         val original = param.result as? List<*> ?: return@runAfter
                         val eventConstants = launcherEventEnum.enumConstants ?: return@runAfter
@@ -748,6 +834,21 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             }?.let { addedOptions.add(it) }
                         }
 
+                        if (toggleLockInPopup) {
+                            createPopupData(
+                                label = modRes.getString(lockLabel()),
+                                iconResId = if (usesLabelResId) {
+                                    injectedResId(lockIcon())
+                                } else {
+                                    launcherDrawableId(lockIcon(), "ic_lock", "ic_setting")
+                                },
+                                eventId = eventId,
+                                labelResId = if (usesLabelResId) injectedResId(lockLabel()) else 0
+                            ) {
+                                toggleLayoutLock()
+                            }?.let { addedOptions.add(it) }
+                        }
+
                         if (entryInPopup) {
                             createPopupData(
                                 label = modRes.getString(R.string.app_name_shortened),
@@ -781,11 +882,24 @@ class LauncherSettings(context: Context) : ModPack(context) {
         }
     }
 
+    private fun lockLabel(): Int = if (layoutLocked) R.string.unlock_layout_action else R.string.lock_layout_action
+
+    private fun lockIcon(): Int = if (layoutLocked) R.drawable.ic_lock_open else R.drawable.ic_lock
+
+    private fun toggleLayoutLock() {
+        layoutLocked = !layoutLocked
+        runCatching { Xprefs.edit().putBoolean(LOCK_LAYOUT, layoutLocked).apply() }
+    }
+
     fun setRevealHiddenApps(value: Boolean) {
         HideApps.REVEAL_HIDDEN_APPS = value
         CoroutineScope(Dispatchers.Main).launch {
             delay(300.milliseconds)
             HideApps.updateLauncherIcons(mContext)
         }
+    }
+
+    companion object {
+        private const val LOCK_SENTINEL = -3
     }
 }
