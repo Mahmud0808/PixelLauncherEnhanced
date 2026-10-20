@@ -259,6 +259,17 @@ class BlurPanels(context: Context) : ModPack(context) {
             .suppressError()
             .runAfter { param -> (param.thisObject as? View)?.installSearchPanel() }
 
+        val qsbOuterClass = findClass("com.android.launcher3.qsb.QsbOuterDrawable", suppressError = true)
+        if (qsbOuterClass != null) {
+            findClass("android.view.View")
+                .hookMethod("setBackgroundDrawable")
+                .suppressError()
+                .runAfter { param ->
+                    if (!qsbOuterClass.isInstance(param.args.getOrNull(0))) return@runAfter
+                    (param.thisObject as View).installSearchPanel()
+                }
+        }
+
         if (searchDelegateClass != null) {
             findClass("android.view.View")
                 .hookMethod("setBackgroundDrawable")
@@ -342,7 +353,8 @@ class BlurPanels(context: Context) : ModPack(context) {
         (backgroundTintList?.defaultColor ?: pill.fillColor())?.let { setExtraField(PANEL_COLOR, it) }
 
         val hidden = if (original is RippleDrawable) pill else original
-        val glass = BlurPanelDrawable(original, onShown = { panel().refreshSoon() }) { canvas ->
+        val shown = if (original.javaClass.name.endsWith(QSB_OUTER_DRAWABLE)) GlassHidden(original) else original
+        val glass = BlurPanelDrawable(shown, onShown = { panel().refreshSoon() }) { canvas ->
             hidden.alpha = if (searchGlass) 0 else 255
             if (!searchGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
 
@@ -385,6 +397,12 @@ class BlurPanels(context: Context) : ModPack(context) {
             }
         } finally {
             installingSearchPanel = false
+        }
+    }
+
+    private inner class GlassHidden(inner: Drawable) : DrawableWrapper(inner) {
+        override fun draw(canvas: Canvas) {
+            if (!searchGlass) super.draw(canvas)
         }
     }
 
@@ -1124,6 +1142,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         private const val DEFAULT_BLUR = 5
         private const val DEFAULT_TINT = 40
         private const val HOTSEAT_SEARCH_ID = "search_container_hotseat"
+        private const val QSB_OUTER_DRAWABLE = ".QsbOuterDrawable"
         private const val PANEL_COLOR = "plePanelColor"
         private const val ORIGINAL_BACKGROUND_ALPHA = "pleOriginalBackgroundAlpha"
         private const val ORIGINAL_IMAGE_ALPHA = "pleOriginalImageAlpha"
