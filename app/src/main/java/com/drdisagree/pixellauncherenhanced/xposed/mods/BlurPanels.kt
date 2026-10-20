@@ -29,6 +29,7 @@ import android.os.Looper
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewParent
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.graphics.ColorUtils
@@ -63,6 +64,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.WeakHashMap
 import kotlin.math.abs
@@ -97,6 +99,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     private val hotseatClass: Class<*>? by lazy { findClass("com.android.launcher3.Hotseat", suppressError = true) }
     private val hosts: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val rect = RectF()
+    private var dockPanelOn = false
     private var wallpaperIsLight: Boolean? = null
     private var wallpaperListenerRegistered = false
     private var wallpaperChecked = false
@@ -105,6 +108,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         Xprefs.apply {
             val dockBackground = PanelBackground.supported(getString(DOCK_BACKGROUND, BACKGROUND_OFF))
             val dockEnabled = dockBackground != BACKGROUND_OFF
+            dockPanelOn = dockEnabled
             dockBlurRadius = if (dockEnabled) getSliderInt(DOCK_BLUR_RADIUS, DEFAULT_BLUR) else 0
             dockBlurTint = if (dockEnabled) getSliderInt(DOCK_BLUR_TINT, DEFAULT_TINT) else 0
             dockLiquid = dockBackground == BACKGROUND_LIQUID
@@ -356,7 +360,9 @@ class BlurPanels(context: Context) : ModPack(context) {
                     bottomCorner = corner,
                     blurRadius = searchBlurRadius.dp(this),
                     tintColor = panelTintColor(searchBlurTint),
-                    liquid = searchLiquid
+                    liquid = searchLiquid,
+                    dimColor = dockBackdropTint(),
+                    frostedBackdrop = dockBackdropRadius()
                 )
             ) return@BlurPanelDrawable
 
@@ -559,7 +565,9 @@ class BlurPanels(context: Context) : ModPack(context) {
             alpha = 1f,
             liquid = true,
             maskKey = mask,
-            maskDrawer = { drawMask(it, target, mask) }
+            maskDrawer = { drawMask(it, target, mask) },
+            frostedBackdrop = dockBackdropRadius(),
+            dimColor = dockBackdropTint()
         ) ?: return false
 
         canvas.drawRect(rect, paint)
@@ -640,7 +648,9 @@ class BlurPanels(context: Context) : ModPack(context) {
                 bottomCorner = corner,
                 blurRadius = blurRadius.dp(this),
                 tintColor = panelTintColor(blurTint),
-                liquid = liquid
+                liquid = liquid,
+                dimColor = dockBackdropTint(),
+                frostedBackdrop = dockBackdropRadius()
             )
 
             if (mask != null) {
@@ -841,6 +851,20 @@ class BlurPanels(context: Context) : ModPack(context) {
         }
         return false
     }
+
+    private fun View.onDock(): Boolean {
+        if (!dockPanelOn) return false
+        val parent = parent ?: return false
+        dockMembership[this]?.takeIf { it.first.get() === parent }?.let { return it.second }
+        val member = isHotseatSearchBar()
+        dockMembership[this] = WeakReference(parent) to member
+        return member
+    }
+
+    private fun View.dockBackdropRadius(): Float =
+        if (!dockLiquid && dockBlurRadius > 0 && onDock()) dockBlurRadius.dp(this) else 0f
+
+    private fun View.dockBackdropTint(): Int = if (onDock()) dockTint(dockBlurTint) else 0
 
     private fun View.isSkippedSearchBar(): Boolean = isSearchBar() && !isHotseatSearchBar()
 
@@ -1082,7 +1106,19 @@ class BlurPanels(context: Context) : ModPack(context) {
         )
     }
 
+    private val dockMembership = WeakHashMap<View, Pair<WeakReference<ViewParent>, Boolean>>()
+
+    init {
+        instance = WeakReference(this)
+    }
+
     companion object {
+        private var instance: WeakReference<BlurPanels>? = null
+
+        fun dockBackdropRadius(view: View): Float = instance?.get()?.run { view.dockBackdropRadius() } ?: 0f
+
+        fun dockBackdropTint(view: View): Int = instance?.get()?.run { view.dockBackdropTint() } ?: 0
+
         private const val BLUR_PANEL = "pleBlurPanel"
         private const val PANEL_TARGET = "plePanelTarget"
         private const val DEFAULT_BLUR = 5

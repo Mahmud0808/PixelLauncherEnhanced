@@ -524,7 +524,8 @@ object WallpaperGlass {
         liquid: Boolean = false,
         shapeDrawer: ((Paint) -> Unit)? = null,
         dimColor: Int = 0,
-        home: Boolean = false
+        home: Boolean = false,
+        frostedBackdrop: Float = 0f
     ): Boolean {
         track(host)
         checkWallpaper(host.context)
@@ -534,11 +535,14 @@ object WallpaperGlass {
         val radius = max(blurRadius, depthBlur)
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         val homeLayer = homeBitmap?.takeIf { home }
-        val bitmap = homeLayer ?: (if (useLiquid) {
-            blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
-        } else {
-            blurredBitmap(false, max(1, (radius * SAMPLE_WIDTH / screenWidth).roundToInt()))
-        } ?: return false)
+        val frosted = max(frostedBackdrop, depthBlur)
+        val bitmap = homeLayer ?: when {
+            useLiquid && frostedBackdrop > 0f ->
+                blurredBitmap(false, max(1, (frosted * SAMPLE_WIDTH / screenWidth).roundToInt()))
+
+            useLiquid -> blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
+            else -> blurredBitmap(false, max(1, (max(radius, frostedBackdrop) * SAMPLE_WIDTH / screenWidth).roundToInt()))
+        } ?: return false
 
         val dim = backdropDim(host, dimColor)
         val rootView = host.rootView
@@ -616,10 +620,15 @@ object WallpaperGlass {
         shapePath: Path? = null,
         maskKey: Any? = null,
         maskDrawer: ((Canvas) -> Unit)? = null,
-        home: Boolean = false
+        home: Boolean = false,
+        frostedBackdrop: Float = 0f,
+        dimColor: Int = 0
     ): Paint? {
         canvas.getMatrix(canvasMatrix)
-        return matrixPaint(host, canvasMatrix, localRect, corner, blurRadius, alpha, liquid, shapePath, maskKey, maskDrawer, home)
+        return matrixPaint(
+            host, canvasMatrix, localRect, corner, blurRadius, alpha, liquid,
+            shapePath, maskKey, maskDrawer, home, frostedBackdrop, dimColor
+        )
     }
 
     fun matrixPaint(
@@ -633,7 +642,9 @@ object WallpaperGlass {
         shapePath: Path? = null,
         maskKey: Any? = null,
         maskDrawer: ((Canvas) -> Unit)? = null,
-        home: Boolean = false
+        home: Boolean = false,
+        frostedBackdrop: Float = 0f,
+        dimColor: Int = 0
     ): Paint? {
         track(host)
         checkWallpaper(host.context)
@@ -643,11 +654,13 @@ object WallpaperGlass {
         val radius = max(blurRadius, depthBlur)
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         val homeLayer = homeBitmap?.takeIf { home }
-        val bitmap = homeLayer ?: (if (useLiquid) {
-            blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
-        } else {
-            blurredBitmap(false, max(1, (radius * SAMPLE_WIDTH / screenWidth).roundToInt()))
-        } ?: return null)
+        val bitmap = homeLayer ?: when {
+            useLiquid && frostedBackdrop > 0f ->
+                blurredBitmap(false, max(1, (max(frostedBackdrop, depthBlur) * SAMPLE_WIDTH / screenWidth).roundToInt()))
+
+            useLiquid -> blurredBitmap(true, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
+            else -> blurredBitmap(false, max(1, (max(radius, frostedBackdrop) * SAMPLE_WIDTH / screenWidth).roundToInt()))
+        } ?: return null
 
         val screenHeight = host.rootView.height.takeIf { it > 0 } ?: host.resources.displayMetrics.heightPixels
         val scale = max(screenWidth.toFloat() / bitmap.width, screenHeight.toFloat() / bitmap.height) *
@@ -684,7 +697,7 @@ object WallpaperGlass {
             shader.setFloatUniform("radius", corner)
             val refraction = minOf(localRect.height(), localRect.width()) * LIQUID_REFRACTION
             shader.setFloatUniform("refraction", refraction)
-            setDim(shader, host.cellScrim())
+            setDim(shader, backdropDim(host, dimColor))
             val mask = shapePath?.let { path -> shapeMask(path, localRect, refraction) { it.drawPath(path, maskPaint) } }
                 ?: maskDrawer?.let { shapeMask(maskKey ?: it, localRect, refraction, it) }
             if (mask != null) {
@@ -704,7 +717,7 @@ object WallpaperGlass {
         } else {
             iconPaint.apply {
                 this.shader = image
-                colorFilter = backdropFilter(host.cellScrim())
+                colorFilter = backdropFilter(backdropDim(host, dimColor))
             }
         }
         paint.alpha = (alpha.coerceIn(0f, 1f) * 255).roundToInt()

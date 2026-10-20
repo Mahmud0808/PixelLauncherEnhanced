@@ -252,7 +252,9 @@ class IconGlass(context: Context) : ModPack(context) {
                         alpha = paint.alpha / 255f,
                         liquid = liquid,
                         shapePath = path,
-                        home = host.isInDrawer()
+                        home = host.isInDrawer(),
+                        frostedBackdrop = BlurPanels.dockBackdropRadius(host),
+                        dimColor = BlurPanels.dockBackdropTint(host)
                     )
                     if (glass == null) {
                         canvas.restoreToCount(save)
@@ -563,7 +565,9 @@ class IconGlass(context: Context) : ModPack(context) {
                 alpha = alpha,
                 liquid = liquid,
                 shapePath = path,
-                home = view.isInDrawer()
+                home = view.isInDrawer(),
+                frostedBackdrop = BlurPanels.dockBackdropRadius(view),
+                dimColor = BlurPanels.dockBackdropTint(view)
             ) ?: return false
             val extent = ceil(size).toInt().coerceAtLeast(1)
             node.setPosition(0, 0, extent, extent)
