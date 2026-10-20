@@ -353,7 +353,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         (backgroundTintList?.defaultColor ?: pill.fillColor())?.let { setExtraField(PANEL_COLOR, it) }
 
         val hidden = if (original is RippleDrawable) pill else original
-        val shown = if (original.javaClass.name.endsWith(QSB_OUTER_DRAWABLE)) GlassHidden(original) else original
+        val shown = if (original.javaClass.name.endsWith(QSB_OUTER_DRAWABLE)) GlassHidden(original, this) else original
         val glass = BlurPanelDrawable(shown, onShown = { panel().refreshSoon() }) { canvas ->
             hidden.alpha = if (searchGlass) 0 else 255
             if (!searchGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
@@ -400,10 +400,32 @@ class BlurPanels(context: Context) : ModPack(context) {
         }
     }
 
-    private inner class GlassHidden(inner: Drawable) : DrawableWrapper(inner) {
+    private inner class GlassHidden(inner: Drawable, host: View) : DrawableWrapper(inner) {
+        private val host = WeakReference(host)
+
         override fun draw(canvas: Canvas) {
-            if (!searchGlass) super.draw(canvas)
+            host.get()?.aiButtonShape()?.alpha = if (searchGlass) INNER_PILL_ALPHA else 255
+            val inner = drawable ?: return
+            val opacity = if (searchGlass) inner.getFieldSilently(OUTER_OPACITY) else null
+            if (opacity == null) {
+                super.draw(canvas)
+                return
+            }
+            inner.setFieldSilently(OUTER_OPACITY, 0)
+            val save = canvas.saveLayerAlpha(RectF(bounds), INNER_PILL_ALPHA)
+            try {
+                super.draw(canvas)
+            } finally {
+                canvas.restoreToCount(save)
+                inner.setFieldSilently(OUTER_OPACITY, opacity)
+            }
         }
+    }
+
+    private fun View.aiButtonShape(): Drawable? {
+        val id = ResourceIds.find(resources, AI_MODE_BUTTON, "id", context.packageName).takeIf { it != 0 } ?: return null
+        val ripple = findViewById<View>(id)?.background as? RippleDrawable ?: return null
+        return if (ripple.numberOfLayers > 0) ripple.getDrawable(0) else null
     }
 
     private fun Drawable.hasBlurPanel(): Boolean = when (this) {
@@ -1143,6 +1165,9 @@ class BlurPanels(context: Context) : ModPack(context) {
         private const val DEFAULT_TINT = 40
         private const val HOTSEAT_SEARCH_ID = "search_container_hotseat"
         private const val QSB_OUTER_DRAWABLE = ".QsbOuterDrawable"
+        private const val OUTER_OPACITY = "mOpacity"
+        private const val AI_MODE_BUTTON = "ai_mode_button"
+        private const val INNER_PILL_ALPHA = 128
         private const val PANEL_COLOR = "plePanelColor"
         private const val ORIGINAL_BACKGROUND_ALPHA = "pleOriginalBackgroundAlpha"
         private const val ORIGINAL_IMAGE_ALPHA = "pleOriginalImageAlpha"
