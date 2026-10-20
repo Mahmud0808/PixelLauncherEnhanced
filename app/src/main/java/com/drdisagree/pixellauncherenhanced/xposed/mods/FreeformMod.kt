@@ -3,6 +3,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.Context
 import android.graphics.Rect
 import android.os.Build
+import android.view.ViewGroup
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE_PROGRESS
@@ -34,6 +35,7 @@ class FreeformMod(context: Context) : ModPack(context) {
     private var offProgress: Float = 3f
     private var freeformMode: Int = 0
     private var inactiveHandler: WeakReference<Any>? = null
+    private var dragLayer: WeakReference<ViewGroup>? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -55,17 +57,9 @@ class FreeformMod(context: Context) : ModPack(context) {
         dragLayerClass?.hookConstructor()
             ?.parameters(Context::class.java, android.util.AttributeSet::class.java)
             ?.runAfter { param ->
-                if (!freeformEnabled) return@runAfter
-                try {
-                    FreeformHintViewController.init(
-                        param.thisObject as android.view.ViewGroup,
-                        param.args[0] as Context,
-                        appContext.resources,
-                        BuildConfig.APPLICATION_ID
-                    )
-                } catch (e: Exception) {
-                    log("FreeformMod", "FreeformHintView init error: ${e.message}")
-                }
+                val layer = param.thisObject as ViewGroup
+                dragLayer = WeakReference(layer)
+                if (freeformEnabled) attachHintView(layer)
             }
 
         // ── onCurrentShiftUpdated: hint view updates during gesture ──
@@ -196,6 +190,14 @@ class FreeformMod(context: Context) : ModPack(context) {
             }
     }
 
+    private fun attachHintView(layer: ViewGroup) {
+        try {
+            FreeformHintViewController.init(layer, layer.context, appContext.resources, BuildConfig.APPLICATION_ID)
+        } catch (e: Exception) {
+            log("FreeformMod", "FreeformHintView init error: ${e.message}")
+        }
+    }
+
     // ── FreeformHintView helpers ──
 
     private fun getDisplayRotation(handler: Any): Int {
@@ -250,7 +252,12 @@ class FreeformMod(context: Context) : ModPack(context) {
             else -> FreeformHintView.HintPhase.EXPAND
         }
 
-        val hintView = FreeformHintViewController.getHintView() ?: return
+        val hintView = FreeformHintViewController.getHintView()?.takeIf { it.isAttachedToWindow }
+            ?: dragLayer?.get()?.let { layer ->
+                attachHintView(layer)
+                FreeformHintViewController.getHintView()
+            }
+            ?: return
 
         // Haptic at trigger threshold
         if (phase != hintView.phase) {

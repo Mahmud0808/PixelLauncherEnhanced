@@ -23,7 +23,10 @@ public class FreeformHintViewController {
      */
     public static void init(ViewGroup dragLayer, Context context,
                              Resources moduleResources, String modulePackage) {
-        if (sHintView != null) return;
+        if (sHintView != null && sHintView.getParent() == dragLayer) return;
+        if (sHintView != null && sHintView.getParent() instanceof ViewGroup) {
+            ((ViewGroup) sHintView.getParent()).removeView(sHintView);
+        }
         sDragLayer = dragLayer;
 
         sHintView = new FreeformHintView(context, moduleResources, modulePackage);
