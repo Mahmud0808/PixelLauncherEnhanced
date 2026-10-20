@@ -36,6 +36,7 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Modifier
 import java.lang.ref.WeakReference
+import java.text.Collator
 import java.util.Collections
 import java.util.WeakHashMap
 import kotlin.math.roundToInt
@@ -157,6 +158,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
             val members = folder.apps.filterNot { HideApps.isHidden(it) }
                 .flatMap { pkg -> source.filter { it.packageName() == pkg } }
                 .filter { it.component()?.let(claimed::add) == true }
+                .sortedWith(labelOrder)
             members.takeIf { it.size >= MIN_FOLDER_APPS }?.let { FolderEntry(folder, it) }
         }
     }
@@ -717,6 +719,12 @@ class DrawerFolders(context: Context) : ModPack(context) {
         this != null && getExtraFieldSilently(FOLDER_ID) is Int
 
     private fun Any.component(): ComponentName? = getFieldSilently("componentName") as? ComponentName
+
+    private val labelOrder: Comparator<Any> by lazy {
+        val collator = Collator.getInstance()
+        compareBy<Any, String>(collator) { it.getFieldSilently("title")?.toString().orEmpty() }
+            .thenBy { it.component()?.flattenToShortString().orEmpty() }
+    }
 
     private fun Any.packageName(): String? = component()?.packageName
 
