@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -22,6 +23,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -53,7 +55,7 @@ public class FreeformHintView extends FrameLayout {
 
     private static final int CARD_HEIGHT_DP = 56, ICON_SIZE_DP = 24;
     private static final int ICON_PADDING_DP = 16, TEXT_SIZE_SP = 14;
-    private static final int CARD_MARGIN_DP = 2, EXPAND_MARGIN_DP = 8;
+    private static final int CARD_MARGIN_DP = 12, EXPAND_MARGIN_DP = 8;
     private static final int ANIM_DURATION_MS = 250;
 
     private final Paint mBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -382,6 +384,8 @@ public class FreeformHintView extends FrameLayout {
                 if (!wasCancelled[0]) {
                     mHintAlpha = 0f;
                     mIsVisible = false;
+                    mPhase = HintPhase.HIDDEN;
+                    mExpandProgress = 0f;
                     requestLayout();
                     if (onComplete != null) onComplete.run();
                 }
@@ -593,21 +597,24 @@ public class FreeformHintView extends FrameLayout {
                 : (int) (48 * getResources().getDisplayMetrics().density);
     }
 
+    private Insets systemInsets() {
+        WindowInsets insets = getRootWindowInsets();
+        if (insets != null) {
+            return insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+        }
+        return Insets.of(0, statusBarHeight(), 0, navigationBarHeight());
+    }
+
     private void getSmallCardPos(int pw, int ph, int cw, int ch, int[] out) {
-        int sbH = statusBarHeight();
-        int nbH = navigationBarHeight();
+        Insets insets = systemInsets();
+        out[1] = mCardMargin + insets.top;
         switch (mRotation) {
             case ROTATION_90:
-                out[0] = mCardMargin;
-                out[1] = mCardMargin + sbH;
-                break;
             case ROTATION_180:
-                out[0] = mCardMargin;
-                out[1] = mCardMargin + nbH;
+                out[0] = mCardMargin + insets.left;
                 break;
             default:
-                out[0] = pw - cw - mCardMargin;
-                out[1] = mCardMargin + sbH;
+                out[0] = pw - cw - mCardMargin - insets.right;
                 break;
         }
     }

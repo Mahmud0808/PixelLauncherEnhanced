@@ -26,12 +26,14 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 
 class FreeformMod(context: Context) : ModPack(context) {
 
     private var freeformEnabled: Boolean = false
     private var offProgress: Float = 3f
     private var freeformMode: Int = 0
+    private var inactiveHandler: WeakReference<Any>? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -80,7 +82,9 @@ class FreeformMod(context: Context) : ModPack(context) {
         // ── Gesture end (setEndTarget / onGestureEnd): reset hint view ──
         absSwipeClass
             .hookMethod("onGestureEnded")
-            .runAfter {
+            .runAfter { param ->
+                if (inactiveHandler?.get() === param.thisObject) return@runAfter
+                inactiveHandler = WeakReference(param.thisObject)
                 FreeformHintViewController.reset()
             }
 
@@ -181,10 +185,8 @@ class FreeformMod(context: Context) : ModPack(context) {
                                     }
                                 }
 
-                                val hintView = FreeformHintViewController.getHintView()
-                                if (hintView != null) {
-                                    hintView.playReleaseAnimation(null)
-                                }
+                                inactiveHandler = WeakReference(param.thisObject)
+                                FreeformHintViewController.getHintView()?.playReleaseAnimation(null)
                                 param.thisObject
                                     .getField("mGestureState")
                                     .callMethod("setEndTarget", homeTarget)
@@ -237,6 +239,7 @@ class FreeformMod(context: Context) : ModPack(context) {
 
     private fun updateHintView(handler: Any, shift: Float, param:  XC_MethodHook.MethodHookParam) {
         if (!freeformEnabled) return
+        if (inactiveHandler?.get() === handler) return
 
         // Hint starts at (trigger threshold - 0.7)
         val hintStart = offProgress - 0.7f

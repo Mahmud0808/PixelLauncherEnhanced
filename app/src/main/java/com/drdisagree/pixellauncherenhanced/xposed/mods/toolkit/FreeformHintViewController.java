@@ -6,6 +6,8 @@ import android.graphics.Rect;
 import android.view.Gravity;
 import android.view.ViewGroup;
 
+import java.lang.reflect.Field;
+
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformHintView.HintPhase;
 
 public class FreeformHintViewController {
@@ -63,6 +65,12 @@ public class FreeformHintViewController {
             if (lp instanceof android.widget.FrameLayout.LayoutParams) {
                 ((android.widget.FrameLayout.LayoutParams) lp).gravity =
                         Gravity.TOP | Gravity.START;
+            }
+            try {
+                Field ignoreInsets = lpClass.getDeclaredField("ignoreInsets");
+                ignoreInsets.setAccessible(true);
+                ignoreInsets.setBoolean(lp, true);
+            } catch (Exception ignored) {
             }
             return lp;
         } catch (Exception e) {
