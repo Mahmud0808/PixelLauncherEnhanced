@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.lifecycle.lifecycleScope
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.Messages
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
 import com.drdisagree.pixellauncherenhanced.ui.preferences.BackupCardPreference
@@ -16,7 +17,6 @@ import com.drdisagree.pixellauncherenhanced.utils.DrawerLayoutBackup
 import com.drdisagree.pixellauncherenhanced.utils.HomeLayoutBackup
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
 import com.drdisagree.pixellauncherenhanced.utils.SettingsBackup
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -109,58 +109,63 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
     }
 
     private fun confirmRestoreLayout(uri: Uri) {
-        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
-            .setIcon(R.drawable.ic_download)
-            .setTitle(R.string.restore_home_layout_title)
-            .setMessage(R.string.restore_home_layout_confirm_desc)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.restore_home_layout_button) { _, _ ->
+        ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_download,
+            title = getString(R.string.restore_home_layout_title),
+            message = getString(R.string.restore_home_layout_confirm_desc),
+            positive = ExpressiveDialog.Action(getString(R.string.restore_home_layout_button)) {
                 runBackupTask(R.string.home_layout_restore_success) {
                     HomeLayoutBackup.restore(it, uri)
                 }
-            }
-            .show()
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
     }
 
     private fun chooseDrawerLayoutBackupOptions() {
-        val checked = booleanArrayOf(true)
+        var checked = true
+        val context = requireContext()
 
-        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
-            .setIcon(R.drawable.ic_upload)
-            .setTitle(R.string.backup_drawer_layout_title)
-            .setMultiChoiceItems(
-                arrayOf(getString(R.string.backup_drawer_layout_include_hidden_apps)),
+        ExpressiveDialog.show(
+            context = context,
+            icon = R.drawable.ic_upload,
+            title = getString(R.string.backup_drawer_layout_title),
+            content = ExpressiveDialog.toggleRow(
+                context,
+                getString(R.string.backup_drawer_layout_include_hidden_apps),
                 checked
-            ) { _, _, isChecked -> checked[0] = isChecked }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.backup_button) { _, _ ->
-                includeHiddenApps = checked[0]
+            ) { checked = it },
+            positive = ExpressiveDialog.Action(getString(R.string.backup_button)) {
+                includeHiddenApps = checked
                 backupDrawerLayoutLauncher.launch(DrawerLayoutBackup.defaultFileName)
-            }
-            .show()
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
     }
 
     private fun confirmRestoreDrawerLayout(uri: Uri) {
-        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
-            .setIcon(R.drawable.ic_download)
-            .setTitle(R.string.restore_drawer_layout_title)
-            .setMessage(R.string.restore_drawer_layout_confirm_desc)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.restore_home_layout_button) { _, _ ->
+        ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_download,
+            title = getString(R.string.restore_drawer_layout_title),
+            message = getString(R.string.restore_drawer_layout_confirm_desc),
+            positive = ExpressiveDialog.Action(getString(R.string.restore_home_layout_button)) {
                 runBackupTask(R.string.drawer_layout_restore_success) {
                     DrawerLayoutBackup.restore(it, uri)
                 }
-            }
-            .show()
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
     }
 
     private fun confirmRestoreSettings(uri: Uri) {
-        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
-            .setIcon(R.drawable.ic_download)
-            .setTitle(R.string.restore_settings_title)
-            .setMessage(R.string.restore_settings_confirm_desc)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.restore_home_layout_button) { _, _ ->
+        ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_download,
+            title = getString(R.string.restore_settings_title),
+            message = getString(R.string.restore_settings_confirm_desc),
+            positive = ExpressiveDialog.Action(getString(R.string.restore_home_layout_button)) {
                 runBackupTask(
                     successRes = R.string.settings_restore_success,
                     onSuccess = {
@@ -170,8 +175,9 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
                 ) {
                     SettingsBackup.restore(it, uri)
                 }
-            }
-            .show()
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
     }
 
     private fun verifyBackup(uri: Uri, magic: ByteArray, @StringRes invalidRes: Int, onValid: () -> Unit) {

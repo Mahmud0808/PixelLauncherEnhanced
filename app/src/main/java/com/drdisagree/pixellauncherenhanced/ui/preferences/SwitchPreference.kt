@@ -17,10 +17,10 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.ui.views.RoundedBackgroundSpan
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.toggleVibrate
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.google.android.material.color.MaterialColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.lang.ref.WeakReference
 import com.google.android.material.R as MaterialR
 
@@ -134,14 +134,13 @@ class SwitchPreference : SwitchPreferenceCompat {
     }
 
     private fun showUnstableDialog() {
-        MaterialAlertDialogBuilder(
-            context,
-            R.style.MaterialComponents_MaterialAlertDialog_Centered
+        ExpressiveDialog.show(
+            context = context,
+            icon = R.drawable.ic_info,
+            title = context.getString(R.string.unstable_dialog_title),
+            message = context.getString(R.string.unstable_dialog_desc),
+            positive = ExpressiveDialog.Action(context.getString(android.R.string.ok)),
+            tone = ExpressiveDialog.Tone.TERTIARY
         )
-            .setIcon(R.drawable.ic_info)
-            .setTitle(context.getString(R.string.unstable_dialog_title))
-            .setMessage(context.getString(R.string.unstable_dialog_desc))
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
     }
 }

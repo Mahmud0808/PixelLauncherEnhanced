@@ -20,8 +20,8 @@ import com.drdisagree.pixellauncherenhanced.ui.adapters.AppPickerAdapter
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
 import com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
 import com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.ShortcutPicker
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -121,11 +121,14 @@ class GesturesMods : ControlledPreferenceFragmentCompat() {
 
         list.layoutManager = LinearLayoutManager(requireContext())
 
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.gesture_choose_app)
-            .setView(view)
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        val dialog = ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_app_drawer,
+            title = getString(R.string.gesture_choose_app),
+            content = view,
+            fullWidthContent = true,
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
 
         viewLifecycleOwner.lifecycleScope.launch {
             val apps = withContext(Dispatchers.IO) {

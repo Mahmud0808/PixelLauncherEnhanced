@@ -7,7 +7,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -25,9 +24,9 @@ import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.ui.adapters.DrawerTabAdapter
 import com.drdisagree.pixellauncherenhanced.utils.DrawerFoldersStore
 import com.drdisagree.pixellauncherenhanced.utils.DrawerTabsStore
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 
@@ -167,17 +166,19 @@ class DrawerTabs : Fragment() {
     }
 
     private fun confirmDelete(tab: DrawerTab) {
-        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
-            .setIcon(R.drawable.ic_delete)
-            .setTitle(R.string.drawer_tabs_delete_title)
-            .setMessage(getString(R.string.drawer_tabs_delete_desc, tab.name))
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.drawer_tabs_delete) { _, _ ->
+        ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_delete,
+            title = getString(R.string.drawer_tabs_delete_title),
+            message = getString(R.string.drawer_tabs_delete_desc, tab.name),
+            positive = ExpressiveDialog.Action(getString(R.string.drawer_tabs_delete)) {
                 DrawerTabsStore.save(DrawerTabsStore.load().filterNot { it.id == tab.id })
                 DrawerFoldersStore.deleteForTab(tab.id)
                 adapter.submit(DrawerTabsStore.load())
-            }
-            .show()
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel)),
+            tone = ExpressiveDialog.Tone.ERROR
+        )
     }
 
     private fun openEditor(tab: DrawerTab) {
@@ -218,28 +219,23 @@ class DrawerTabs : Fragment() {
                 setBoxCornerRadii(radius, radius, radius, radius)
                 addView(input)
             }
-            val container = FrameLayout(context).apply {
-                setPadding(dpToPx(24), dpToPx(8), dpToPx(24), 0)
-                addView(inputLayout)
-            }
+            val dialog = ExpressiveDialog.show(
+                context = context,
+                icon = R.drawable.ic_edit,
+                title = context.getString(title),
+                content = inputLayout,
+                positive = ExpressiveDialog.Action(context.getString(android.R.string.ok), dismiss = false) { dialog ->
+                    val name = input.text?.toString()?.trim().orEmpty()
 
-            val dialog = MaterialAlertDialogBuilder(context)
-                .setTitle(title)
-                .setView(container)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(android.R.string.ok, null)
-                .show()
-
-            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
-                val name = input.text?.toString()?.trim().orEmpty()
-
-                if (name.isEmpty()) {
-                    inputLayout.error = context.getString(R.string.drawer_tabs_name_empty)
-                } else {
-                    dialog.dismiss()
-                    onSave(name)
-                }
-            }
+                    if (name.isEmpty()) {
+                        inputLayout.error = context.getString(R.string.drawer_tabs_name_empty)
+                    } else {
+                        dialog.dismiss()
+                        onSave(name)
+                    }
+                },
+                negative = ExpressiveDialog.Action(context.getString(android.R.string.cancel))
+            )
 
             dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
             input.requestFocus()

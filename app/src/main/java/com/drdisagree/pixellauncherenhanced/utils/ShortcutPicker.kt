@@ -35,7 +35,6 @@ import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
 import com.drdisagree.pixellauncherenhanced.ui.fragments.HiddenApps
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -104,15 +103,18 @@ object ShortcutPicker {
         }
         RPrefs.registerOnSharedPreferenceChangeListener(listener)
 
-        dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.gesture_choose_shortcut)
-            .setView(view)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener {
+        dialog = ExpressiveDialog.show(
+            context = context,
+            icon = R.drawable.ic_open,
+            title = context.getString(R.string.gesture_choose_shortcut),
+            content = view,
+            fullWidthContent = true,
+            negative = ExpressiveDialog.Action(context.getString(android.R.string.cancel)),
+            onDismiss = {
                 RPrefs.unregisterOnSharedPreferenceChangeListener(listener)
                 handler.removeCallbacksAndMessages(null)
             }
-            .show()
+        )
         list.adapter = adapter
         search.doAfterTextChanged { adapter.filter(it?.toString().orEmpty()) }
 

@@ -25,10 +25,10 @@ import com.drdisagree.pixellauncherenhanced.data.model.DrawerFolder
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentHiddenAppsBinding
 import com.drdisagree.pixellauncherenhanced.ui.adapters.AppListAdapter
 import com.drdisagree.pixellauncherenhanced.utils.DrawerFoldersStore
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import com.google.android.material.color.MaterialColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -147,16 +147,18 @@ class DrawerFolderEditor : Fragment() {
     private fun confirmDelete() {
         val folder = currentFolder() ?: return
 
-        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
-            .setIcon(R.drawable.ic_delete)
-            .setTitle(R.string.drawer_folders_delete_title)
-            .setMessage(getString(R.string.drawer_folders_delete_desc, folder.title))
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.drawer_folders_delete) { _, _ ->
+        ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_delete,
+            title = getString(R.string.drawer_folders_delete_title),
+            message = getString(R.string.drawer_folders_delete_desc, folder.title),
+            positive = ExpressiveDialog.Action(getString(R.string.drawer_folders_delete)) {
                 DrawerFoldersStore.delete(folderId)
                 parentFragmentManager.popBackStackImmediate()
-            }
-            .show()
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel)),
+            tone = ExpressiveDialog.Tone.ERROR
+        )
     }
 
     private fun loadApps() {

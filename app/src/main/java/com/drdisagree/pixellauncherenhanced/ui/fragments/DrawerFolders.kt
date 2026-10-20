@@ -25,11 +25,11 @@ import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.ui.adapters.DrawerFolderAdapter
 import com.drdisagree.pixellauncherenhanced.utils.DrawerFoldersStore
 import com.drdisagree.pixellauncherenhanced.utils.DrawerTabsStore
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class DrawerFolders : Fragment() {
 
@@ -178,16 +178,18 @@ class DrawerFolders : Fragment() {
     }
 
     private fun confirmDelete(folder: DrawerFolder) {
-        MaterialAlertDialogBuilder(requireContext(), R.style.MaterialComponents_MaterialAlertDialog_Centered)
-            .setIcon(R.drawable.ic_delete)
-            .setTitle(R.string.drawer_folders_delete_title)
-            .setMessage(getString(R.string.drawer_folders_delete_desc, folder.title))
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.drawer_folders_delete) { _, _ ->
+        ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_delete,
+            title = getString(R.string.drawer_folders_delete_title),
+            message = getString(R.string.drawer_folders_delete_desc, folder.title),
+            positive = ExpressiveDialog.Action(getString(R.string.drawer_folders_delete)) {
                 DrawerFoldersStore.delete(folder.id)
                 showFolders()
-            }
-            .show()
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel)),
+            tone = ExpressiveDialog.Tone.ERROR
+        )
     }
 
     private fun openEditor(folder: DrawerFolder) {

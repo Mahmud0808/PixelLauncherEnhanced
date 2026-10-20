@@ -26,8 +26,8 @@ import com.drdisagree.pixellauncherenhanced.data.enums.GestureAction
 import com.drdisagree.pixellauncherenhanced.ui.adapters.AppPickerAdapter
 import com.drdisagree.pixellauncherenhanced.ui.fragments.HiddenApps
 import com.drdisagree.pixellauncherenhanced.ui.preferences.ValuePill
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.ShortcutPicker
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.databinding.SheetAppEditorBinding
@@ -163,28 +163,30 @@ class AppEditorActivity : AppCompatActivity() {
 
     private fun chooseAction(direction: IconSwipeActions.Direction, done: () -> Unit) {
         val current = actionValues.indexOf(currentAction(direction).type.value)
-        MaterialAlertDialogBuilder(this)
-            .setTitle(if (direction == IconSwipeActions.Direction.UP) R.string.swipe_up_title else R.string.swipe_down_title)
-            .setSingleChoiceItems(actionLabels, current) { dialog, which ->
-                dialog.dismiss()
-                val type = GestureAction.fromValue(actionValues[which])
-                if (type == GestureAction.OPEN_APP) {
-                    pickApp { pkg ->
-                        saveAction(direction, IconSwipeActions.Action(GestureAction.OPEN_APP, pkg))
-                        done()
-                    }
-                } else if (type == GestureAction.OPEN_SHORTCUT) {
-                    ShortcutPicker.show(this, lifecycleScope) { target ->
-                        saveAction(direction, IconSwipeActions.Action(GestureAction.OPEN_SHORTCUT, target))
-                        done()
-                    }
-                } else {
-                    saveAction(direction, IconSwipeActions.Action(type))
+        ExpressiveDialog.showChoices(
+            context = this,
+            icon = R.drawable.ic_gestures,
+            title = getString(if (direction == IconSwipeActions.Direction.UP) R.string.swipe_up_title else R.string.swipe_down_title),
+            items = actionLabels.toList(),
+            checked = current,
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        ) { which ->
+            val type = GestureAction.fromValue(actionValues[which])
+            if (type == GestureAction.OPEN_APP) {
+                pickApp { pkg ->
+                    saveAction(direction, IconSwipeActions.Action(GestureAction.OPEN_APP, pkg))
                     done()
                 }
+            } else if (type == GestureAction.OPEN_SHORTCUT) {
+                ShortcutPicker.show(this, lifecycleScope) { target ->
+                    saveAction(direction, IconSwipeActions.Action(GestureAction.OPEN_SHORTCUT, target))
+                    done()
+                }
+            } else {
+                saveAction(direction, IconSwipeActions.Action(type))
+                done()
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        }
     }
 
     private fun saveAction(direction: IconSwipeActions.Direction, action: IconSwipeActions.Action) {
@@ -201,11 +203,14 @@ class AppEditorActivity : AppCompatActivity() {
         val progress = view.findViewById<View>(R.id.progress)
         list.layoutManager = LinearLayoutManager(this)
 
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.gesture_choose_app)
-            .setView(view)
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        val dialog = ExpressiveDialog.show(
+            context = this,
+            icon = R.drawable.ic_app_drawer,
+            title = getString(R.string.gesture_choose_app),
+            content = view,
+            fullWidthContent = true,
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
 
         lifecycleScope.launch {
             val apps = withContext(Dispatchers.IO) {

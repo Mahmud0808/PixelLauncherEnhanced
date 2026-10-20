@@ -15,8 +15,8 @@ import android.widget.ScrollView
 import androidx.appcompat.app.AlertDialog
 import com.drdisagree.pixellauncherenhanced.data.common.MaterialPalette
 import com.drdisagree.pixellauncherenhanced.ui.widgets.FadingEdgeLayout
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.google.android.material.color.MaterialColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.drdisagree.pixellauncherenhanced.R as AppR
 import com.google.android.material.R as MaterialR
@@ -187,18 +187,21 @@ class ColorPreference : Preference, ColorPickerDialogListener {
                 content.addView(row)
             }
         }
-        dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(title)
-            .setView(FadingEdgeLayout(context).apply {
+        dialog = ExpressiveDialog.show(
+            context = context,
+            icon = AppR.drawable.ic_palette,
+            title = title ?: "",
+            content = FadingEdgeLayout(context).apply {
                 addView(ScrollView(context).apply {
                     isVerticalScrollBarEnabled = false
                     overScrollMode = View.OVER_SCROLL_NEVER
                     addView(content)
                 })
-            })
-            .setNeutralButton(AppR.string.color_custom) { _, _ -> showCustomDialog() }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            },
+            fullWidthContent = true,
+            positive = ExpressiveDialog.Action(context.getString(AppR.string.color_custom)) { showCustomDialog() },
+            negative = ExpressiveDialog.Action(context.getString(android.R.string.cancel))
+        )
     }
 
     private fun showCustomDialog() {
