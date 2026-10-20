@@ -130,9 +130,7 @@
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_themediconcustomfgcolorlight"
             android:title="@string/icon_foreground_color_light_title"
-            app:cpv_allowPresets="false"
-            app:cpv_dialogType="custom"
-            app:cpv_showAlphaSlider="true"
+            app:showAlphaSlider="true"
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
@@ -140,9 +138,7 @@
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_themediconcustombgcolorlight"
             android:title="@string/icon_background_color_light_title"
-            app:cpv_allowPresets="false"
-            app:cpv_dialogType="custom"
-            app:cpv_showAlphaSlider="true"
+            app:showAlphaSlider="true"
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
@@ -150,9 +146,7 @@
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_foldercustomcolorlight"
             android:title="@string/folder_color_light_title"
-            app:cpv_allowPresets="false"
-            app:cpv_dialogType="custom"
-            app:cpv_showAlphaSlider="true"
+            app:showAlphaSlider="true"
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
@@ -160,9 +154,7 @@
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_themediconcustomfgcolordark"
             android:title="@string/icon_foreground_color_dark_title"
-            app:cpv_allowPresets="false"
-            app:cpv_dialogType="custom"
-            app:cpv_showAlphaSlider="true"
+            app:showAlphaSlider="true"
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
@@ -170,9 +162,7 @@
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_themediconcustombgcolordark"
             android:title="@string/icon_background_color_dark_title"
-            app:cpv_allowPresets="false"
-            app:cpv_dialogType="custom"
-            app:cpv_showAlphaSlider="true"
+            app:showAlphaSlider="true"
             app:iconSpaceReserved="false" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
@@ -180,9 +170,7 @@
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_foldercustomcolordark"
             android:title="@string/folder_color_dark_title"
-            app:cpv_allowPresets="false"
-            app:cpv_dialogType="custom"
-            app:cpv_showAlphaSlider="true"
+            app:showAlphaSlider="true"
             app:iconSpaceReserved="false" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>

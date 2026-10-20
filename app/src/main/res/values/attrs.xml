@@ -58,6 +58,10 @@
         <attr name="summaryWarning" format="boolean" />
     </declare-styleable>
 
+    <declare-styleable name="ColorPreference">
+        <attr name="showAlphaSlider" format="boolean" />
+    </declare-styleable>
+
     <declare-styleable name="SwitchPreference">
         <attr name="showUnstableBadge" format="boolean" />
         <attr name="unstableText" format="string" />

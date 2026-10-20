@@ -603,6 +603,8 @@
     <string name="debug_step_attachments">Your notes</string>
     <string name="debug_step_package">Packing report</string>
     <string name="color_custom">Custom color</string>
+    <string name="color_hex_hint">Hex</string>
+    <string name="color_select">Select</string>
     <string name="material_group_primary">Primary</string>
     <string name="material_group_secondary">Secondary</string>
     <string name="material_group_tertiary">Tertiary</string>

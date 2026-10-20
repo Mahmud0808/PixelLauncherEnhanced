@@ -95,7 +95,6 @@ dependencies {
     implementation(libs.su.service)
     implementation(libs.su.nio)
     compileOnly(libs.xposedbridge)
-    implementation(libs.jaredrummler.colorpicker)
     implementation(libs.remotepreferences)
     implementation(libs.circleimageview)
     implementation(libs.konfetti.xml)

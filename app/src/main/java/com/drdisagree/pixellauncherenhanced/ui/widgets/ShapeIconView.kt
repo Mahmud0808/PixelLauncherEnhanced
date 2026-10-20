@@ -28,6 +28,8 @@ class ShapeIconView @JvmOverloads constructor(
     private val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
     }
+    private val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val checkerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val path = Path()
     private val scaleMatrix = Matrix()
     private var morph: Morph? = null
@@ -52,6 +54,17 @@ class ShapeIconView @JvmOverloads constructor(
     fun setColors(container: Int, content: Int) {
         paint.color = container
         icon?.setTint(content)
+        invalidate()
+    }
+
+    fun setOutline(color: Int, width: Float) {
+        outlinePaint.color = color
+        outlinePaint.strokeWidth = width
+        invalidate()
+    }
+
+    fun setCheckerboard(cell: Int) {
+        checkerPaint.shader = if (cell > 0) Checkerboard.shader(cell) else null
         invalidate()
     }
 
@@ -88,9 +101,11 @@ class ShapeIconView @JvmOverloads constructor(
         val w = width.toFloat()
         val h = height.toFloat()
 
+        val inset = outlinePaint.strokeWidth
         path.rewind()
         currentMorph.toPath(progress.coerceIn(0f, 1f), path)
-        scaleMatrix.setScale(w, h)
+        scaleMatrix.setScale(w - inset, h - inset)
+        scaleMatrix.postTranslate(inset / 2f, inset / 2f)
         path.transform(scaleMatrix)
 
         if (adaptiveBackground != null || adaptiveForeground != null) {
@@ -115,7 +130,9 @@ class ShapeIconView @JvmOverloads constructor(
 
         canvas.withSave {
             rotate(spin, w / 2f, h / 2f)
+            if (checkerPaint.shader != null) drawPath(path, checkerPaint)
             drawPath(path, paint)
+            if (inset > 0f) drawPath(path, outlinePaint)
         }
 
         icon?.let { drawable ->

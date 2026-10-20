@@ -54,8 +54,8 @@ object ExpressiveDialog {
     private const val ENTER_SCALE_MS = 420L
     private const val ENTER_FADE_MS = 220L
     private const val ENTER_TENSION = 1.4f
-    private const val COMPACT_EMBLEM = 72
-    private const val ROW_HEIGHT = 56
+    private const val COMPACT_EMBLEM = 56
+    private const val ROW_HEIGHT = 48
     private const val ROW_GAP = 3
     private const val ROW_OUTER_RADIUS = 20
     private const val ROW_INNER_RADIUS = 6
@@ -105,7 +105,7 @@ object ExpressiveDialog {
                     width = dpToPx(COMPACT_EMBLEM)
                     height = dpToPx(COMPACT_EMBLEM)
                 }
-                view.findViewById<View>(R.id.dialog_buttons).setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(20))
+                view.findViewById<View>(R.id.dialog_buttons).setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(16))
             }
         }
 
@@ -116,7 +116,7 @@ object ExpressiveDialog {
         }
         if (positive == null && negative == null) {
             view.findViewById<View>(R.id.dialog_buttons).visibility = View.GONE
-            view.findViewById<View>(R.id.dialog_scroll).setPadding(0, 0, 0, dpToPx(28))
+            view.findViewById<View>(R.id.dialog_scroll).setPadding(0, 0, 0, dpToPx(24))
         }
 
         onDismiss?.let { callback -> dialog.setOnDismissListener { callback() } }

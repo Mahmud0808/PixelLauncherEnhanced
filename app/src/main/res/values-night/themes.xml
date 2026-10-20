@@ -1,6 +1,8 @@
 <resources>
 
     <style name="Base.Theme.PixelLauncherEnhanced" parent="Theme.Material3Expressive.Dark.NoActionBar">
+        <item name="snackbarStyle">@style/Widget.App.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/Widget.Material3Expressive.Button.TextButton.Snackbar</item>
         <item name="materialSwitchStyle">@style/Widget.App.Switch</item>
         <item name="materialAlertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
         <item name="alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>

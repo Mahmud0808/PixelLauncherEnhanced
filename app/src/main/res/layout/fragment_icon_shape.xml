@@ -109,7 +109,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/undo"
-                            style="@style/Widget.Material3.Button.IconButton"
+                            style="@style/Widget.Material3Expressive.Button.IconButton.Tonal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:contentDescription="@string/icon_shape_undo"
@@ -118,7 +118,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/redo"
-                            style="@style/Widget.Material3.Button.IconButton"
+                            style="@style/Widget.Material3Expressive.Button.IconButton.Tonal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:contentDescription="@string/icon_shape_redo"
@@ -127,7 +127,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/clearDrawing"
-                            style="@style/Widget.Material3.Button.IconButton"
+                            style="@style/Widget.Material3Expressive.Button.IconButton.Tonal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:contentDescription="@string/icon_shape_clear"
@@ -149,113 +149,146 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
+                        android:fadingEdgeLength="28dp"
+                        android:overScrollMode="never"
+                        android:requiresFadingEdge="horizontal"
                         android:scrollbars="none">
 
-                        <com.google.android.material.chip.ChipGroup
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
                             android:id="@+id/tools"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             app:selectionRequired="true"
-                            app:singleLine="true"
                             app:singleSelection="true">
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/toolSelect"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_tool_select"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/toolOutline"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_tool_draw"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/toolCircle"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_tool_circle"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/toolSquare"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_tool_square"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/toolRing"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_tool_ring"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                        </com.google.android.material.chip.ChipGroup>
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     </HorizontalScrollView>
 
-                    <com.google.android.material.chip.ChipGroup
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                            style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
                         android:id="@+id/brushMode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         app:selectionRequired="true"
-                        app:singleLine="true"
                         app:singleSelection="true">
 
-                        <com.google.android.material.chip.Chip
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/modeAdd"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.Material3Expressive.Button.TonalButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:maxLines="1"
+                            android:minHeight="40dp"
+                            android:paddingHorizontal="16dp"
                             android:text="@string/icon_shape_add"
                             android:textColor="@color/editor_toggle_content"
                             app:checkedIconVisible="false"
-                            app:chipBackgroundColor="@color/editor_toggle_background"
+                            app:backgroundTint="@color/editor_toggle_background"
                             app:chipIcon="@drawable/ic_add"
                             app:chipIconTint="@color/editor_toggle_content"
                             app:chipIconVisible="true"
-                            app:chipStrokeWidth="0dp" />
+                            app:strokeWidth="0dp" />
 
-                        <com.google.android.material.chip.Chip
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/modeCut"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.Material3Expressive.Button.TonalButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:maxLines="1"
+                            android:minHeight="40dp"
+                            android:paddingHorizontal="16dp"
                             android:text="@string/icon_shape_cut"
                             android:textColor="@color/editor_toggle_content"
                             app:checkedIconVisible="false"
-                            app:chipBackgroundColor="@color/editor_toggle_background"
+                            app:backgroundTint="@color/editor_toggle_background"
                             app:chipIcon="@drawable/ic_remove"
                             app:chipIconTint="@color/editor_toggle_content"
                             app:chipIconVisible="true"
-                            app:chipStrokeWidth="0dp" />
+                            app:strokeWidth="0dp" />
 
-                    </com.google.android.material.chip.ChipGroup>
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     <com.drdisagree.pixellauncherenhanced.ui.widgets.ShapeDrawView
                         android:id="@+id/drawPad"
@@ -267,50 +300,65 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
+                        android:fadingEdgeLength="28dp"
+                        android:overScrollMode="never"
+                        android:requiresFadingEdge="horizontal"
                         android:scrollbars="none">
 
-                        <com.google.android.material.chip.ChipGroup
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
                             android:id="@+id/symmetry"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             app:selectionRequired="true"
-                            app:singleLine="true"
                             app:singleSelection="true">
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/symmetryOff"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_symmetry_off"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/symmetryMirror"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_symmetry_mirror"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                            <com.google.android.material.chip.Chip
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/symmetryQuad"
-                                style="@style/Widget.Material3.Chip.Filter"
+                                style="@style/Widget.Material3Expressive.Button.TonalButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:maxLines="1"
+                                android:minHeight="40dp"
+                                android:paddingHorizontal="16dp"
                                 android:text="@string/icon_shape_symmetry_quad"
                                 android:textColor="@color/editor_toggle_content"
-                                app:checkedIconTint="@color/editor_toggle_content"
-                                app:chipBackgroundColor="@color/editor_toggle_background"
-                                app:chipStrokeWidth="0dp" />
+                                app:backgroundTint="@color/editor_toggle_background"
+                                app:strokeWidth="0dp" />
 
-                        </com.google.android.material.chip.ChipGroup>
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     </HorizontalScrollView>
 
@@ -333,6 +381,7 @@
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/apply"
+        style="@style/Widget.Material3Expressive.ExtendedFloatingActionButton.Small"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"

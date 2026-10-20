@@ -183,4 +183,14 @@
         <item name="android:windowExitAnimation">@anim/dialog_exit</item>
     </style>
 
+    <style name="Widget.App.Snackbar" parent="Widget.Material3.Snackbar">
+        <item name="shapeAppearance">@style/ShapeAppearance.App.Snackbar</item>
+        <item name="android:layout_margin">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.App.Snackbar" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
 </resources>

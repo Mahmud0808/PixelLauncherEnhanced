@@ -28,8 +28,8 @@ import com.drdisagree.pixellauncherenhanced.utils.DrawerTabsStore
 import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 
 class DrawerFolders : Fragment() {
 
@@ -224,21 +224,21 @@ class DrawerFolders : Fragment() {
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            val group = holder.itemView.findViewById<ChipGroup>(R.id.chips)
-            group.setOnCheckedStateChangeListener(null)
+            val group = holder.itemView.findViewById<MaterialButtonToggleGroup>(R.id.tabs)
+            group.clearOnButtonCheckedListeners()
             group.removeAllViews()
             tabs.forEach { (tabId, name) ->
-                val chip = LayoutInflater.from(group.context)
-                    .inflate(R.layout.view_drawer_folder_tab_chip, group, false) as Chip
-                chip.id = View.generateViewId()
-                chip.text = name
-                chip.tag = tabId
-                group.addView(chip)
-                chip.isChecked = tabId == selectedTab
+                val button = LayoutInflater.from(group.context)
+                    .inflate(R.layout.view_drawer_folder_tab_button, group, false) as MaterialButton
+                button.id = View.generateViewId()
+                button.text = name
+                button.tag = tabId
+                group.addView(button)
+                if (tabId == selectedTab) group.check(button.id)
             }
-            group.setOnCheckedStateChangeListener { chipGroup, checkedIds ->
-                val chip = checkedIds.firstOrNull()?.let { chipGroup.findViewById<Chip>(it) } ?: return@setOnCheckedStateChangeListener
-                selectTab(chip.tag as String?)
+            group.addOnButtonCheckedListener { toggleGroup, checkedId, isChecked ->
+                if (!isChecked) return@addOnButtonCheckedListener
+                selectTab(toggleGroup.findViewById<View>(checkedId)?.tag as String?)
             }
         }
     }

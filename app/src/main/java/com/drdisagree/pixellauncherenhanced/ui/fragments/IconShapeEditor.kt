@@ -286,8 +286,9 @@ class IconShapeEditor : Fragment() {
             }
         )
 
-        binding.tools.setOnCheckedStateChangeListener { _, checked ->
-            binding.drawPad.tool = when (checked.firstOrNull()) {
+        binding.tools.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            binding.drawPad.tool = when (checkedId) {
                 R.id.toolSelect -> ShapeTool.SELECT
                 R.id.toolCircle -> ShapeTool.CIRCLE
                 R.id.toolSquare -> ShapeTool.SQUARE
@@ -297,12 +298,13 @@ class IconShapeEditor : Fragment() {
         }
 
         binding.brushMode.check(R.id.modeAdd)
-        binding.brushMode.setOnCheckedStateChangeListener { _, checked ->
-            binding.drawPad.addMode = checked.firstOrNull() != R.id.modeCut
+        binding.brushMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) binding.drawPad.addMode = checkedId != R.id.modeCut
         }
 
-        binding.symmetry.setOnCheckedStateChangeListener { _, checked ->
-            symmetry = when (checked.firstOrNull()) {
+        binding.symmetry.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            symmetry = when (checkedId) {
                 R.id.symmetryMirror -> ShapeSymmetry.MIRROR
                 R.id.symmetryQuad -> ShapeSymmetry.QUAD
                 else -> ShapeSymmetry.NONE

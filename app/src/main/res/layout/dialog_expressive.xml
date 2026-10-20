@@ -19,12 +19,12 @@
             android:gravity="center_horizontal"
             android:orientation="vertical"
             android:paddingHorizontal="24dp"
-            android:paddingTop="32dp">
+            android:paddingTop="24dp">
 
             <FrameLayout
                 android:id="@+id/dialog_emblem_frame"
-                android:layout_width="104dp"
-                android:layout_height="104dp">
+                android:layout_width="72dp"
+                android:layout_height="72dp">
 
                 <com.drdisagree.pixellauncherenhanced.ui.widgets.ShapeIconView
                     android:id="@+id/dialog_emblem"
@@ -38,9 +38,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:visibility="gone"
-                    app:containerHeight="104dp"
-                    app:containerWidth="104dp"
-                    app:indicatorSize="60dp" />
+                    app:containerHeight="72dp"
+                    app:containerWidth="72dp"
+                    app:indicatorSize="44dp" />
 
             </FrameLayout>
 
@@ -48,7 +48,7 @@
                 android:id="@+id/dialog_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="16dp"
                 android:gravity="center"
                 android:textAppearance="?attr/textAppearanceHeadlineSmall"
                 android:textColor="?attr/colorOnSurface" />
@@ -57,10 +57,10 @@
                 android:id="@+id/dialog_message"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:lineSpacingMultiplier="1.1"
-                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:visibility="gone" />
 
@@ -68,7 +68,7 @@
                 android:id="@+id/dialog_inner_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="16dp"
                 android:visibility="gone" />
 
         </LinearLayout>
@@ -79,7 +79,7 @@
         android:id="@+id/dialog_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:visibility="gone" />
 
     <LinearLayout
@@ -88,14 +88,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="24dp"
-        android:paddingTop="28dp"
-        android:paddingBottom="20dp">
+        android:paddingTop="20dp"
+        android:paddingBottom="16dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/dialog_positive"
             style="@style/Widget.Material3Expressive.Button"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="48dp"
             android:maxLines="1"
             android:visibility="gone" />
 
@@ -103,8 +103,8 @@
             android:id="@+id/dialog_negative"
             style="@style/Widget.Material3Expressive.Button.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="6dp"
             android:maxLines="1"
             android:visibility="gone" />
 

@@ -18,6 +18,7 @@
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/addTab"
+        style="@style/Widget.Material3Expressive.ExtendedFloatingActionButton.Small"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
