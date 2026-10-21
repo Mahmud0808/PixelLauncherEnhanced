@@ -67,7 +67,8 @@ def render(categories):
         label = html.escape(name)
         index_items.append(
             f'              <li><a class="index__link" href="#f-{slug}" style="--tone: var(--tone-{slug})">'
-            f'<span>{label}</span><span class="index__n">{len(features)}</span></a></li>'
+            f'<span class="index__icon" aria-hidden="true"><svg><use href="#c-{slug}"/></svg></span>'
+            f'<span class="index__label">{label}</span><span class="index__n">{len(features)}</span></a></li>'
         )
         rows = "\n".join(
             f"                <li>{html.escape(feature)}{tag_for(pixel, launcher3)}</li>"

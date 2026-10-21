@@ -12,6 +12,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="update_category_preferences"
+        android:icon="@drawable/ic_section_settings"
         android:title="@string/update_settings"
         app:iconSpaceReserved="false">
 
@@ -33,6 +34,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="update_category_more"
+        android:icon="@drawable/ic_section_more"
         android:title="@string/update_more"
         app:iconSpaceReserved="false">
 

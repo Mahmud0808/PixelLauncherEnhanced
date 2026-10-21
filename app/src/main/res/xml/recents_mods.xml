@@ -8,6 +8,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_recents_interface"
+        android:icon="@drawable/ic_section_interface"
         android:title="@string/section_interface_title"
         app:iconSpaceReserved="false">
 
@@ -73,6 +74,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_recents_app_menu"
+        android:icon="@drawable/ic_section_app_menu"
         android:title="@string/section_app_menu_title"
         app:iconSpaceReserved="false">
 
@@ -98,6 +100,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_recents_general"
+        android:icon="@drawable/ic_section_general"
         android:title="@string/section_general_title"
         app:iconSpaceReserved="false">
 
@@ -111,6 +114,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_recents_freeform"
+        android:icon="@drawable/ic_section_freeform"
         android:title="@string/section_freeform_title"
         app:iconSpaceReserved="false">
 

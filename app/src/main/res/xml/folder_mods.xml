@@ -8,6 +8,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_home_screen_folders"
+        android:icon="@drawable/ic_section_layout"
         android:title="@string/section_layout_title"
         app:iconSpaceReserved="false">
 
@@ -39,6 +40,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_folder_general_section"
+        android:icon="@drawable/ic_section_general"
         android:title="@string/section_general_title"
         app:iconSpaceReserved="false">
 
@@ -60,6 +62,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_folder_background_section"
+        android:icon="@drawable/ic_section_background"
         android:title="@string/section_background_title"
         app:iconSpaceReserved="false">
 

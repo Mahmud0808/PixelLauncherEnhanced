@@ -4,6 +4,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_dock_spacing_section"
+        android:icon="@drawable/ic_section_background"
         android:title="@string/section_dock_background_title"
         app:iconSpaceReserved="false">
 
@@ -46,6 +47,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_dock_position_section"
+        android:icon="@drawable/ic_section_position"
         android:title="@string/section_dock_position_title"
         app:iconSpaceReserved="false">
 

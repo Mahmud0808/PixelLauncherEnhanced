@@ -8,6 +8,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_interface"
+        android:icon="@drawable/ic_section_layout"
         android:title="@string/section_layout_title"
         app:iconSpaceReserved="false">
 
@@ -56,6 +57,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_hide_apps"
+        android:icon="@drawable/ic_section_hide_apps"
         android:title="@string/section_hide_apps_title"
         app:iconSpaceReserved="false">
 
@@ -79,6 +81,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_appearance"
+        android:icon="@drawable/ic_section_appearance"
         android:title="@string/section_appearance_title"
         app:iconSpaceReserved="false">
 
@@ -106,6 +109,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_search_bar"
+        android:icon="@drawable/ic_section_search_bar"
         android:title="@string/section_search_bar_title"
         app:iconSpaceReserved="false">
 
@@ -127,6 +131,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_tabs"
+        android:icon="@drawable/ic_section_tabs"
         android:title="@string/section_drawer_tabs_title"
         app:iconSpaceReserved="false">
 
@@ -147,6 +152,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_folders"
+        android:icon="@drawable/ic_section_folders"
         android:title="@string/section_drawer_folders_title"
         app:iconSpaceReserved="false">
 
@@ -161,6 +167,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_app_drawer_general"
+        android:icon="@drawable/ic_section_drawer_mode"
         android:title="@string/section_drawer_mode_title"
         app:iconSpaceReserved="false">
 

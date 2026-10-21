@@ -4,6 +4,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_misc_general"
+        android:icon="@drawable/ic_section_general"
         android:title="@string/section_general_title"
         app:iconSpaceReserved="false">
 
@@ -24,6 +25,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_misc_entry_points"
+        android:icon="@drawable/ic_section_entry_points"
         android:title="@string/section_entry_points_title"
         app:iconSpaceReserved="false">
 
@@ -43,6 +45,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_misc_troubleshooting"
+        android:icon="@drawable/ic_section_troubleshooting"
         android:title="@string/section_troubleshooting_title"
         app:iconSpaceReserved="false">
 

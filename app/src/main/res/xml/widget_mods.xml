@@ -8,6 +8,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_home_screen_widgets"
+        android:icon="@drawable/ic_section_general"
         android:title="@string/section_general_title"
         app:iconSpaceReserved="false">
 
@@ -22,6 +23,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_widget_background_section"
+        android:icon="@drawable/ic_section_background"
         android:title="@string/section_background_title"
         app:iconSpaceReserved="false">
 

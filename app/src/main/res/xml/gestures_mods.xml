@@ -8,6 +8,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_gestures_home"
+        android:icon="@drawable/ic_section_home_gestures"
         android:title="@string/section_home_gestures_title"
         app:iconSpaceReserved="false">
 
@@ -52,6 +53,7 @@
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
         android:key="xposed_gestures_navigation"
+        android:icon="@drawable/ic_section_navigation"
         android:title="@string/section_navigation_title"
         app:iconSpaceReserved="false">
 

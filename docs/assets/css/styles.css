@@ -704,17 +704,29 @@ code {
   color: var(--color-on-surface);
 }
 
-.index__link::before {
-  content: "";
-  width: 10px;
-  height: 10px;
+.index__icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
   flex: none;
   border-radius: 50%;
-  background: var(--tone);
-  transition: transform var(--dur-base) var(--ease-out);
+  background: color-mix(in oklch, var(--tone) 18%, transparent);
+  color: var(--tone);
+  transition: border-radius var(--dur-slow) var(--ease-out), background-color var(--dur-base) var(--ease-in-out), color var(--dur-base) var(--ease-in-out);
 }
 
-.index__link > span:first-child {
+.index__icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.index__label {
   flex: 1;
 }
 
@@ -723,8 +735,10 @@ code {
   color: var(--color-on-surface);
 }
 
-.index__link.is-active::before {
-  transform: scale(1.3);
+.index__link.is-active .index__icon {
+  border-radius: 34%;
+  background: var(--tone);
+  color: var(--color-on-tone);
 }
 
 .index__n {
@@ -755,7 +769,7 @@ code {
 }
 
 .cat__icon {
-  display: grid;
+  display: none;
   place-items: center;
   width: 44px;
   height: 44px;
@@ -1554,6 +1568,10 @@ code {
 
   .stack__index {
     display: none;
+  }
+
+  .cat__icon {
+    display: grid;
   }
 
   .faq__grid {
