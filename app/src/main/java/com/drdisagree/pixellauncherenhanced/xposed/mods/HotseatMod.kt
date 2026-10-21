@@ -116,6 +116,8 @@ class HotseatMod(context: Context) : ModPack(context) {
             .hookMethod("setInsets")
             .runAfter { param ->
                 (param.args.firstOrNull() as? Rect)?.let { workspaceInsets.set(it) }
+                if (!dockDisabled && dockTopSpacing == 0) return@runAfter
+
                 val mLauncher = param.thisObject.getField("mLauncher")
                 val grid = mLauncher.callMethodSilently("getDeviceProfile")
                     ?: mLauncher
@@ -132,7 +134,7 @@ class HotseatMod(context: Context) : ModPack(context) {
                     else -> (padding.bottom + mContext.toPx(dockTopSpacing)).coerceAtLeast(0)
                 }
 
-                workspace.setPadding(padding.left, padding.top, padding.right, bottomPadding)
+                workspace.setPadding(workspace.paddingLeft, workspace.paddingTop, workspace.paddingRight, bottomPadding)
 
                 if (dockDisabled) placePageIndicatorAtBottom(workspace)
             }
