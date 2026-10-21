@@ -585,7 +585,11 @@ class IconGlass(context: Context) : ModPack(context) {
         glassNodes[drawable] = node
         val nodes = hostNodes.getOrPut(host) {
             mutableListOf<WeakReference<GlassNode>>().also { list ->
-                WallpaperGlass.setRefresher(host) { refreshNodes(list) }
+                val hostRef = WeakReference(host)
+                val ownGlass = host.isFolderIcon()
+                WallpaperGlass.setRefresher(host) {
+                    refreshNodes(list) && !(ownGlass && folderGlass && hostRef.get()?.drawsGlassNow() == true)
+                }
             }
         }
         nodes.add(WeakReference(node))
@@ -597,6 +601,8 @@ class IconGlass(context: Context) : ModPack(context) {
         val viewNode = viewNodeField ?: return false
         return runCatching { canvasNode.get(this) === viewNode.get(view) }.getOrDefault(false)
     }
+
+    private fun View.drawsGlassNow(): Boolean = !WallpaperGlass.isDepthBlurred || isInDrawer()
 
     private fun refreshNodes(nodes: MutableList<WeakReference<GlassNode>>): Boolean {
         nodes.removeAll { it.get() == null }
