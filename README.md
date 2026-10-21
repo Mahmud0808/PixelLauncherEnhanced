@@ -93,6 +93,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Toggle hidden apps from homescreen popup |       ✅        |         ✅          |
 | App drawer background opacity            |       ✅        |         ✅          |
 | Hide scrollbar                           |       ✅        |         ✅          |
+| Hide drag handle                         |       ✅        |         ✅          |
 | Scroll fade                              |       ✅        |         ✅          |
 | Toggle app search bar                    |       ✅        |         ✅          |
 | Quick launch                             |       ✅        |         ✅          |

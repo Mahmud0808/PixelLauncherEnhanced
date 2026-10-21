@@ -107,6 +107,13 @@
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="false"
+            android:key="xposed_hidedrawerhandle"
+            android:summary="@string/hide_drawer_handle_desc"
+            android:title="@string/hide_drawer_handle_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
             android:key="xposed_drawerscrollfade"
             android:summary="@string/drawer_scroll_fade_desc"
             android:title="@string/drawer_scroll_fade_title"

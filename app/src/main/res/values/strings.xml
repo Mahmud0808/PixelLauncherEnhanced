@@ -138,6 +138,8 @@
     <string name="app_drawer_long_labels_desc">Use two lines for app names in app drawer</string>
     <string name="hide_drawer_scrollbar_title">Hide scrollbar</string>
     <string name="hide_drawer_scrollbar_desc">Hide the fast scroll bar on the edge of the app drawer</string>
+    <string name="hide_drawer_handle_title">Hide drag handle</string>
+    <string name="hide_drawer_handle_desc">Hide the pill at the top of the app drawer</string>
     <string name="drawer_scroll_fade_title">Scroll fade</string>
     <string name="drawer_scroll_fade_desc">Fade apps at the top and bottom edges while scrolling</string>
     <string name="disable_recents_live_tile_title">Disable recents live tile</string>

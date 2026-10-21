@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.data.config
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceGroup
@@ -43,6 +44,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_P
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_DRAWER_HANDLE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_ARRANGEMENT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_FILL
@@ -148,6 +150,8 @@ object PrefsHelper {
             FREEFORM_MODE -> getBoolean(FREEFORM_GESTURE)
 
             HIDE_NAVIGATION_SPACE -> getBoolean(HIDE_GESTURE_PILL)
+
+            HIDE_DRAWER_HANDLE -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
 
             LAUNCHER_DARK_PAGE_INDICATOR -> !getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR)
 
