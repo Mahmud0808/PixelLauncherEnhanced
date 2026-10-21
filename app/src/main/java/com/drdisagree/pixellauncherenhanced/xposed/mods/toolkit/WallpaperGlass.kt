@@ -64,6 +64,7 @@ object WallpaperGlass {
         uniform float2 origin;
         uniform float2 size;
         uniform float radius;
+        uniform float bottomRadius;
         uniform float refraction;
         uniform shader mask;
         uniform float useMask;
@@ -75,6 +76,10 @@ object WallpaperGlass {
         float roundedBox(float2 p, float2 halfSize, float r) {
             float2 q = abs(p) - halfSize + r;
             return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+        }
+
+        float boxDistance(float2 p, float2 halfSize) {
+            return roundedBox(p, halfSize, p.y > 0.0 ? bottomRadius : radius);
         }
 
         float maskDistance(float2 coord) {
@@ -101,10 +106,10 @@ object WallpaperGlass {
                 edge = min(refraction, maskRange * 0.9);
                 strength = smoothstep(0.05, 0.4, length(normal));
             } else {
-                d = roundedBox(p, halfSize, radius);
+                d = boxDistance(p, halfSize);
                 normal = float2(
-                    roundedBox(p + e.xy, halfSize, radius) - roundedBox(p - e.xy, halfSize, radius),
-                    roundedBox(p + e.yx, halfSize, radius) - roundedBox(p - e.yx, halfSize, radius)
+                    boxDistance(p + e.xy, halfSize) - boxDistance(p - e.xy, halfSize),
+                    boxDistance(p + e.yx, halfSize) - boxDistance(p - e.yx, halfSize)
                 );
             }
             normal = normal / max(length(normal), 0.0001);
@@ -576,7 +581,7 @@ object WallpaperGlass {
 
         if (shapeDrawer != null) {
             val paint = if (useLiquid) {
-                liquidPaint(bitmap, rect, corner, hostScale, alpha, dim)
+                liquidPaint(bitmap, rect, corner, bottomCorner, hostScale, alpha, dim)
             } else {
                 shapePaint.shader = wallpaperShader(bitmap, hostScale)
                 shapePaint.colorFilter = backdropFilter(dim)
@@ -588,7 +593,7 @@ object WallpaperGlass {
         }
 
         if (useLiquid) {
-            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, hostScale, alpha, dim))
+            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, bottomCorner, hostScale, alpha, dim))
             drawTint(canvas, tintColor, alpha)
             return true
         }
@@ -695,6 +700,7 @@ object WallpaperGlass {
             shader.setFloatUniform("origin", localRect.left, localRect.top)
             shader.setFloatUniform("size", localRect.width(), localRect.height())
             shader.setFloatUniform("radius", corner)
+            shader.setFloatUniform("bottomRadius", corner)
             val refraction = minOf(localRect.height(), localRect.width()) * LIQUID_REFRACTION
             shader.setFloatUniform("refraction", refraction)
             setDim(shader, backdropDim(host, dimColor))
@@ -808,6 +814,7 @@ object WallpaperGlass {
         bitmap: Bitmap,
         rect: RectF,
         corner: Float,
+        bottomCorner: Float,
         hostScale: Float,
         alpha: Float,
         dimColor: Int
@@ -819,6 +826,7 @@ object WallpaperGlass {
         shader.setFloatUniform("origin", rect.left, rect.top)
         shader.setFloatUniform("size", rect.width(), rect.height())
         shader.setFloatUniform("radius", corner)
+        shader.setFloatUniform("bottomRadius", bottomCorner)
         shader.setFloatUniform("refraction", minOf(rect.height(), rect.width()) * LIQUID_REFRACTION)
         setDim(shader, dimColor)
         disableMask(shader)
