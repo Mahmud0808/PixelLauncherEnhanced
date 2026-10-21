@@ -763,6 +763,9 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         fun activeTabId(): String? = instance?.get()?.takeIf { it.barActive }?.selectedTab()
             ?.takeIf { it.type != DrawerTab.Type.ALL }?.id
 
+        fun shownTabBar(): View? = instance?.get()?.takeIf { it.barActive }?.tabBar
+            ?.takeIf { it.isShown && it.alpha > 0f && it.height > 0 }
+
         private const val SEARCH_FADE_MS = 200L
         private const val BAR_BOTTOM_GAP_DP = 8
         private const val CHIP_HEIGHT_DP = 36
