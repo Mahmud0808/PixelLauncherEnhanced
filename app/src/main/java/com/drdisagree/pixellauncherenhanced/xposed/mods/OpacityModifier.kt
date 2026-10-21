@@ -771,7 +771,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     BlurPanel.refreshAllSoon()
                     if (folderBlurAnimator !== animation) return
                     folderBlurAnimator = null
-                    if (target == 0f) clearFolderBlur()
+                    if (target == 0f) clearFolderBlur() else if (frosted.home) WallpaperGlass.onOffsetsChanged()
                 }
             })
             start()
@@ -782,9 +782,11 @@ class OpacityModifier(context: Context) : ModPack(context) {
         val previous = folderBlurAnimator
         folderBlurAnimator = null
         previous?.cancel()
+        val drawerFrost = folderFrost?.home == true
         folderFrost?.stop()
         folderFrost = null
         BlurPanel.refreshAllSoon()
+        if (drawerFrost) WallpaperGlass.onOffsetsChanged()
     }
 
     private fun getScrimColors(
@@ -812,6 +814,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
         private var instance: WeakReference<OpacityModifier>? = null
 
         fun folderFrost(folder: View): FolderFrost? = folder.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost
+
+        fun drawerFrostActive(): Boolean = instance?.get()?.folderFrost?.let { it.home && it.progress > 0f } == true
+
+        fun drawerFrostAnimating(): Boolean = instance?.get()?.let { it.folderFrost?.home == true && it.folderBlurAnimator?.isRunning == true } == true
 
         fun targetsWholeFolder(floating: View): Boolean {
             val info = floating.getFieldSilently("mIconLoadResult")?.getFieldSilently("itemInfo") ?: return true

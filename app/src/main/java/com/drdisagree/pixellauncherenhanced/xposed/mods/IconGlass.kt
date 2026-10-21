@@ -558,6 +558,8 @@ class IconGlass(context: Context) : ModPack(context) {
             val view = host.get() ?: return false
             if (!attached) return false
             if (WallpaperGlass.isDepthBlurred && !view.samplesHome()) return true
+            if (OpacityModifier.drawerFrostActive() && view.isInDrawer()) return true
+            if (OpacityModifier.drawerFrostAnimating() && view.openFolder() != null) return true
             return record()
         }
 

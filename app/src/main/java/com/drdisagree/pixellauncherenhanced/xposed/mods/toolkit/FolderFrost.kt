@@ -1,9 +1,13 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorSpace
+import android.graphics.HardwareRenderer
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PixelFormat
 import android.graphics.PorterDuff
 import android.graphics.Path
 import android.graphics.Rect
@@ -14,6 +18,8 @@ import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.hardware.HardwareBuffer
+import android.media.ImageReader
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
@@ -30,6 +36,8 @@ class FolderFrost(private val host: View) {
     private val blurBounds = Rect()
     private val inverse = Matrix()
     private var snapshot: RenderNode? = null
+    private var baked: Bitmap? = null
+    private var frostScale = 1f
     private val lensBounds = RectF()
     private val appliedBounds = RectF()
     private var appliedRadius = -1f
@@ -54,8 +62,9 @@ class FolderFrost(private val host: View) {
 
     fun start(targets: List<View>, width: Int, height: Int) {
         snapshot?.discardDisplayList()
+        releaseBaked()
         appliedRadius = -1f
-        snapshot = RenderNode(NODE_NAME).apply {
+        val content = RenderNode(CONTENT_NAME).apply {
             setPosition(0, 0, width, height)
             val canvas = beginRecording(width, height)
             val origin = IntArray(2).also { (host.parent as? View)?.getLocationInWindow(it) }
@@ -71,6 +80,29 @@ class FolderFrost(private val host: View) {
                 canvas.restore()
             }
             endRecording()
+        }
+        val smallWidth = (width * FROST_SCALE).roundToInt().coerceAtLeast(1)
+        val smallHeight = (height * FROST_SCALE).roundToInt().coerceAtLeast(1)
+        val scaled = RenderNode(SCALED_NAME).apply {
+            setPosition(0, 0, smallWidth, smallHeight)
+            val canvas = beginRecording(smallWidth, smallHeight)
+            canvas.scale(smallWidth / width.toFloat(), smallHeight / height.toFloat())
+            canvas.drawRenderNode(content)
+            endRecording()
+        }
+        val image = bake(scaled, smallWidth, smallHeight)
+        scaled.discardDisplayList()
+        baked = image
+        frostScale = if (image == null) 1f else smallWidth / width.toFloat()
+        snapshot = if (image == null) content else RenderNode(NODE_NAME).apply {
+            setPosition(0, 0, smallWidth, smallHeight)
+            pivotX = 0f
+            pivotY = 0f
+            scaleX = width / smallWidth.toFloat()
+            scaleY = height / smallHeight.toFloat()
+            beginRecording(smallWidth, smallHeight).drawBitmap(image, 0f, 0f, null)
+            endRecording()
+            content.discardDisplayList()
         }
 
         if (wallpaperBlur == null) {
@@ -90,12 +122,13 @@ class FolderFrost(private val host: View) {
 
     private fun lensEffect(corner: Float): RenderEffect {
         val shader = lensShader as? RuntimeShader ?: RuntimeShader(LENS_SHADER).also { lensShader = it }
-        shader.setFloatUniform("origin", lensBounds.left, lensBounds.top)
-        shader.setFloatUniform("size", lensBounds.width(), lensBounds.height())
-        shader.setFloatUniform("radius", corner)
+        val scale = frostScale
+        shader.setFloatUniform("origin", lensBounds.left * scale, lensBounds.top * scale)
+        shader.setFloatUniform("size", lensBounds.width() * scale, lensBounds.height() * scale)
+        shader.setFloatUniform("radius", corner * scale)
         shader.setFloatUniform(
             "refraction",
-            min(lensBounds.width(), lensBounds.height()) * WallpaperGlass.LIQUID_REFRACTION
+            min(lensBounds.width(), lensBounds.height()) * WallpaperGlass.LIQUID_REFRACTION * scale
         )
         return RenderEffect.createRuntimeShaderEffect(shader, "image")
     }
@@ -103,8 +136,40 @@ class FolderFrost(private val host: View) {
     fun stop() {
         snapshot?.discardDisplayList()
         snapshot = null
+        releaseBaked()
         progress = 0f
     }
+
+    private fun releaseBaked() {
+        baked?.recycle()
+        baked = null
+    }
+
+    private fun bake(node: RenderNode, width: Int, height: Int): Bitmap? = runCatching {
+        if (width <= 0 || height <= 0) return@runCatching null
+        val reader = ImageReader.newInstance(
+            width, height, PixelFormat.RGBA_8888, 1,
+            HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT
+        )
+        val renderer = HardwareRenderer()
+        try {
+            renderer.isOpaque = false
+            renderer.setSurface(reader.surface)
+            renderer.setContentRoot(node)
+            renderer.createRenderRequest().setWaitForPresent(true).syncAndDraw()
+            val frame = reader.acquireNextImage() ?: return@runCatching null
+            try {
+                frame.hardwareBuffer?.use { buffer ->
+                    Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB))
+                }
+            } finally {
+                frame.close()
+            }
+        } finally {
+            renderer.destroy()
+            reader.close()
+        }
+    }.getOrNull()
 
     fun draw(canvas: Canvas, clipPath: Path?, backgroundBounds: Rect, cornerRadius: Float) {
         val radius = maxRadius * progress
@@ -165,7 +230,8 @@ class FolderFrost(private val host: View) {
                 appliedLens = useLens
                 appliedBounds.set(lensBounds)
                 appliedCorner = lensCorner
-                val blur = if (radius >= 0.5f) RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP) else null
+                val scaledRadius = radius * frostScale
+                val blur = if (scaledRadius >= 0.5f) RenderEffect.createBlurEffect(scaledRadius, scaledRadius, Shader.TileMode.CLAMP) else null
                 val lens = if (useLens && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) lensEffect(lensCorner) else null
                 node.setRenderEffect(
                     when {
@@ -261,5 +327,8 @@ class FolderFrost(private val host: View) {
             }
         """
         private const val NODE_NAME = "pleFolderFrost"
+        private const val CONTENT_NAME = "pleFolderFrostContent"
+        private const val SCALED_NAME = "pleFolderFrostScaled"
+        private const val FROST_SCALE = 0.25f
     }
 }
