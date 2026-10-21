@@ -24,6 +24,12 @@
             android:title="@string/hide_desktop_search_bar_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_docksearchbarabove"
+            android:summary="@string/dock_search_bar_above_desc"
+            android:title="@string/dock_search_bar_above_title"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory

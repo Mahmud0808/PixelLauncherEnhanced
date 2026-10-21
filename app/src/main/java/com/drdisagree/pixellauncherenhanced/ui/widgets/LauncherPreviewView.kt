@@ -22,6 +22,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_C
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_ROWS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_SEARCH_BAR_ABOVE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_AT_A_GLANCE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
@@ -271,6 +272,7 @@ class LauncherPreviewView @JvmOverloads constructor(
             columns = columns,
             dock = dock,
             searchBar = dock && !RPrefs.getBoolean(DESKTOP_SEARCH_BAR, false),
+            searchAbove = RPrefs.getBoolean(DOCK_SEARCH_BAR_ABOVE, false),
             glance = !RPrefs.getBoolean(HIDE_AT_A_GLANCE, false),
             pageIndicator = !RPrefs.getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR, false)
         )
@@ -382,6 +384,11 @@ class LauncherPreviewView @JvmOverloads constructor(
             cursor += h * 0.04f
         }
 
+        if (layout.searchBar && layout.searchAbove) {
+            drawSearchBar(canvas, cursor, h, contentLeft, contentRight, contentWidth)
+            cursor += h * 0.07f
+        }
+
         if (layout.dock) {
             val dockCell = contentWidth / layout.columns
             val dockSize = minOf(dockCell, h * 0.1f) * 0.62f
@@ -398,13 +405,17 @@ class LauncherPreviewView @JvmOverloads constructor(
             cursor += h * 0.1f
         }
 
-        if (layout.searchBar) {
-            val searchHeight = h * 0.045f
-            fillPaint.color = ColorUtils.setAlphaComponent(onWallpaper, (60 * reveal).toInt())
-            val inset = contentWidth * 0.5f * (1f - reveal)
-            rect.set(contentLeft + inset, cursor + h * 0.012f, contentRight - inset, cursor + h * 0.012f + searchHeight)
-            canvas.drawRoundRect(rect, searchHeight, searchHeight, fillPaint)
+        if (layout.searchBar && !layout.searchAbove) {
+            drawSearchBar(canvas, cursor, h, contentLeft, contentRight, contentWidth)
         }
+    }
+
+    private fun drawSearchBar(canvas: Canvas, top: Float, h: Float, left: Float, right: Float, width: Float) {
+        val searchHeight = h * 0.045f
+        fillPaint.color = ColorUtils.setAlphaComponent(onWallpaper, (60 * reveal).toInt())
+        val inset = width * 0.5f * (1f - reveal)
+        rect.set(left + inset, top + h * 0.012f, right - inset, top + h * 0.012f + searchHeight)
+        canvas.drawRoundRect(rect, searchHeight, searchHeight, fillPaint)
     }
 
     private fun isOccupied(row: Int, column: Int): Boolean {

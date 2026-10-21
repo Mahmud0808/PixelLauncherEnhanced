@@ -5,6 +5,7 @@ data class LauncherPreviewLayout(
     val columns: Int,
     val dock: Boolean,
     val searchBar: Boolean,
+    val searchAbove: Boolean,
     val glance: Boolean,
     val pageIndicator: Boolean
 )

@@ -45,6 +45,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 |-------------------------------------|:--------------:|:------------------:|
 | Disable dock                        |       ✅        |         ✅          |
 | Hide desktop search bar             |       ✅        |         ✅          |
+| Search bar above dock icons         |       ✅        |         ✅          |
 | Dock frosted and liquid glass       |       ✅        |         ✅          |
 | Dock tint color                     |       ✅        |         ✅          |
 | Floating or attached dock           |       ✅        |         ✅          |

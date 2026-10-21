@@ -30,6 +30,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_SEARCH_BAR_ABOVE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
@@ -51,6 +52,7 @@ import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.google.android.material.R as MaterialR
 import com.google.android.material.color.MaterialColors
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -109,6 +111,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
 
     private var searchShown = 1f
     private var dockShown = 1f
+    private var aboveShown = 0f
     private var pillShown = 1f
     private var navSpaceShown = 1f
     private var chromeAnimator: ValueAnimator? = null
@@ -163,6 +166,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
         previous = null
         searchShown = if (searchHidden()) 0f else 1f
         dockShown = if (dockHidden()) 0f else 1f
+        aboveShown = if (searchAbove()) 1f else 0f
         pillShown = if (RPrefs.getBoolean(HIDE_GESTURE_PILL, false)) 0f else 1f
         navSpaceShown = if (navSpaceHidden()) 0f else 1f
         startAnimation()
@@ -260,12 +264,14 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
     private fun animateChrome() {
         val searchTarget = if (searchHidden()) 0f else 1f
         val dockTarget = if (dockHidden()) 0f else 1f
+        val aboveTarget = if (searchAbove()) 1f else 0f
         val pillTarget = if (RPrefs.getBoolean(HIDE_GESTURE_PILL, false)) 0f else 1f
         val navTarget = if (navSpaceHidden()) 0f else 1f
         chromeAnimator?.cancel()
         if (!ValueAnimator.areAnimatorsEnabled()) {
             searchShown = searchTarget
             dockShown = dockTarget
+            aboveShown = aboveTarget
             pillShown = pillTarget
             navSpaceShown = navTarget
             invalidate()
@@ -273,6 +279,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
         }
         val searchStart = searchShown
         val dockStart = dockShown
+        val aboveStart = aboveShown
         val pillStart = pillShown
         val navStart = navSpaceShown
         chromeAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
@@ -282,6 +289,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
                 val t = it.animatedValue as Float
                 searchShown = lerp(searchStart, searchTarget, t)
                 dockShown = lerp(dockStart, dockTarget, t)
+                aboveShown = lerp(aboveStart, aboveTarget, t)
                 pillShown = lerp(pillStart, pillTarget, t)
                 navSpaceShown = lerp(navStart, navTarget, t)
                 invalidate()
@@ -891,18 +899,20 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
         if (dockShown <= 0f) return
         val pad = gridPad()
         val cellW = (screen.width() - pad * 2) / columns
-        val cy = screen.top + screen.height() * (lerp(0.9f, 0.835f, searchShown) + (1f - dockShown) * 0.06f + navLift())
+        val cy = screen.top + screen.height() * (lerp(0.9f, rowFraction(), searchShown) + (1f - dockShown) * 0.06f + navLift())
         val size = iconSize(columns, homeRows())
         val layer = if (dockShown < 1f) canvas.saveLayerAlpha(screen, (dockShown * 255).toInt()) else -1
         if (mode != PanelBackground.OFF) {
             val radius = size * 0.72f
+            val search = searchShown * dockShown
+            val barCy = screen.top + screen.height() * (barFraction() + (1f - search) * 0.05f + navLift())
             if (active.dockAttached) {
-                rect.set(screen.left, cy - size * 0.9f, screen.right, screen.bottom + radius)
+                val top = min(cy - size * 0.9f, lerp(cy - size * 0.9f, barCy - size * 0.9f, search))
+                rect.set(screen.left, top, screen.right, screen.bottom + radius)
             } else {
-                val search = searchShown * dockShown
-                val searchBottom = screen.top + screen.height() * (0.92f + (1f - search) * 0.05f + navLift()) + size * 0.46f
-                val bottom = lerp(cy + size * 0.75f, searchBottom + size * 0.3f, search)
-                rect.set(screen.left + pad * 0.55f, cy - size * 0.75f, screen.right - pad * 0.55f, bottom)
+                val top = min(cy - size * 0.75f, lerp(cy - size * 0.75f, barCy - size * 0.76f, search))
+                val bottom = max(cy + size * 0.75f, lerp(cy + size * 0.75f, barCy + size * 0.76f, search))
+                rect.set(screen.left + pad * 0.55f, top, screen.right - pad * 0.55f, bottom)
             }
             drawPanel(canvas, rect, radius, mode, native = false, glass = active.dockGlass)
         }
@@ -919,7 +929,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
         val columns = homeColumns()
         val size = iconSize(columns, homeRows())
         val h = size * 0.92f
-        val cy = screen.top + screen.height() * (0.92f + (1f - shown) * 0.05f + navLift())
+        val cy = screen.top + screen.height() * (barFraction() + (1f - shown) * 0.05f + navLift())
         val cellW = (screen.width() - gridPad() * 2) / columns
         val edge = gridPad() + cellW / 2 - size / 2
         rect.set(screen.left + edge, cy - h / 2, screen.right - edge, cy + h / 2)
@@ -1178,6 +1188,10 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
 
     private fun gridBottom() = screen.top + screen.height() * (0.86f - 0.06f * dockShown - 0.06f * dockShown * searchShown + navLift())
 
+    private fun rowFraction() = lerp(0.835f, 0.92f, aboveShown)
+
+    private fun barFraction() = lerp(0.92f, 0.835f, aboveShown)
+
     private fun navLift() = (1f - navSpaceShown) * NAV_SPACE_FRACTION
 
     private fun navSpaceHidden() = RPrefs.getBoolean(HIDE_GESTURE_PILL, false) && RPrefs.getBoolean(HIDE_NAVIGATION_SPACE, false)
@@ -1215,6 +1229,8 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
 
     private fun searchHidden() = RPrefs.getBoolean(DESKTOP_SEARCH_BAR, false)
 
+    private fun searchAbove() = RPrefs.getBoolean(DOCK_SEARCH_BAR_ABOVE, false)
+
     private fun color(attr: Int) = MaterialColors.getColor(context, attr, Color.GRAY)
 
     private fun withAlpha(color: Int, alpha: Float) =
@@ -1231,7 +1247,7 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
         private const val REFERENCE_SCREEN_DP = 412f
         private const val BLUR_BOOST = 2.5f
         private const val NAV_SPACE_FRACTION = 0.035f
-        private val CHROME_KEYS = setOf(DESKTOP_SEARCH_BAR, DISABLE_DOCK, HIDE_GESTURE_PILL, HIDE_NAVIGATION_SPACE)
+        private val CHROME_KEYS = setOf(DESKTOP_SEARCH_BAR, DOCK_SEARCH_BAR_ABOVE, DISABLE_DOCK, HIDE_GESTURE_PILL, HIDE_NAVIGATION_SPACE)
         private const val DOCK_FLOATING = "floating"
         private const val DOCK_ATTACHED = "attached"
         private const val CHROME_DURATION_MS = 500L

@@ -146,6 +146,8 @@
     <string name="hide_at_a_glance_desc">Hide at a glance from home screen</string>
     <string name="hide_desktop_search_bar_title">Hide desktop search bar</string>
     <string name="hide_desktop_search_bar_desc">Hide search bar from desktop dock</string>
+    <string name="dock_search_bar_above_title">Search bar above icons</string>
+    <string name="dock_search_bar_above_desc">Show the dock search bar above the dock icons</string>
     <string name="dock_top_spacing_title">Dock top spacing</string>
     <string name="dock_top_spacing_desc">Space above the dock</string>
     <string name="dock_bottom_spacing_title">Dock bottom spacing</string>

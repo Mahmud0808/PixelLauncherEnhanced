@@ -8,6 +8,7 @@ import androidx.preference.PreferenceGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_LONG_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_THEMED_ICONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_SEARCH_BAR_ABOVE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FORCE_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_COVER
@@ -128,6 +129,8 @@ object PrefsHelper {
             THEMED_ICON_CUSTOM_BG_COLOR_DARK,
             FOLDER_CUSTOM_COLOR_LIGHT,
             FOLDER_CUSTOM_COLOR_DARK -> getBoolean(HOME_THEMED_ICONS) && getBoolean(THEMED_ICON_CUSTOM_COLOR)
+
+            DOCK_SEARCH_BAR_ABOVE -> !getBoolean(DESKTOP_SEARCH_BAR) && !getBoolean(DISABLE_DOCK)
 
             SEARCH_BAR_BACKGROUND -> !getBoolean(DESKTOP_SEARCH_BAR) &&
                     !getBoolean(DISABLE_DOCK)

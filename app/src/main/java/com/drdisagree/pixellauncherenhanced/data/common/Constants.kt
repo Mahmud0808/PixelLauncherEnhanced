@@ -74,6 +74,7 @@ object Constants {
     const val NOTIFICATION_DOT_BLOCK_LIST = "xposed_notificationdotblocklist"
     const val HIDE_AT_A_GLANCE = "xposed_hideataglance"
     const val DESKTOP_SEARCH_BAR = "xposed_desktopsearchbar"
+    const val DOCK_SEARCH_BAR_ABOVE = "xposed_docksearchbarabove"
     const val DOCK_BOTTOM_SPACING = "xposed_dockbottomspacing"
     const val DOCK_TOP_SPACING = "xposed_docktopspacing"
     const val LAUNCHER_ICON_SIZE = "xposed_launchericonsize"
