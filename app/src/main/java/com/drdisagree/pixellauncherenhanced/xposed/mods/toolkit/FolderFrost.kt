@@ -127,7 +127,7 @@ class FolderFrost(private val host: View) {
         } else {
             min(cornerRadius, min(pathBounds.width(), pathBounds.height()) / 2f)
         }
-        val dim = scrimColor() ?: 0
+        val dim = scrimColor()?.takeIf { !home } ?: 0
         canvas.save()
         canvas.clipPath(clip)
         val glass = WallpaperGlass.draw(
@@ -137,9 +137,9 @@ class FolderFrost(private val host: View) {
             corner = corner,
             bottomCorner = corner,
             blurRadius = backdropRadius ?: maxRadius,
-            tintColor = backdropTint,
+            tintColor = if (home) 0 else backdropTint,
             liquid = liquid,
-            dimColor = dim,
+            dimColor = if (home) backdropTint else dim,
             home = home
         )
         canvas.restore()
@@ -202,7 +202,10 @@ class FolderFrost(private val host: View) {
     val glassRadius: Float
         get() = backdropRadius ?: maxRadius
 
-    fun backdropColors(): List<Int> = listOfNotNull(scrimColor(), backdropTint.takeIf { Color.alpha(it) != 0 })
+    fun backdropColors(): List<Int> = listOfNotNull(
+        scrimColor()?.takeIf { !home },
+        backdropTint.takeIf { Color.alpha(it) != 0 }
+    )
 
     private fun scrimColor(): Int? {
         val scrim = scrimView?.get()?.takeIf { it.isAttachedToWindow && it.rootView === host.rootView }

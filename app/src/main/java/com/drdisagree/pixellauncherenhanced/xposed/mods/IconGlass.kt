@@ -252,7 +252,7 @@ class IconGlass(context: Context) : ModPack(context) {
                         alpha = paint.alpha / 255f,
                         liquid = liquid,
                         shapePath = path,
-                        home = host.isInDrawer(),
+                        home = host.samplesHome(),
                         frostedBackdrop = BlurPanels.dockBackdropRadius(host),
                         dimColor = BlurPanels.dockBackdropTint(host)
                     )
@@ -337,7 +337,7 @@ class IconGlass(context: Context) : ModPack(context) {
                     blurRadius = host.glassBlurRadius(),
                     alpha = drawable.alpha / 255f,
                     liquid = liquid,
-                    home = host.isInDrawer()
+                    home = host.samplesHome()
                 ) ?: return@runBefore
 
                 val mask = alphaMask(bgBitmap)
@@ -550,7 +550,7 @@ class IconGlass(context: Context) : ModPack(context) {
         fun refresh(): Boolean {
             val view = host.get() ?: return false
             if (!attached) return false
-            if (WallpaperGlass.isDepthBlurred && !view.isInDrawer()) return true
+            if (WallpaperGlass.isDepthBlurred && !view.samplesHome()) return true
             return record()
         }
 
@@ -565,7 +565,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 alpha = alpha,
                 liquid = liquid,
                 shapePath = path,
-                home = view.isInDrawer(),
+                home = view.samplesHome(),
                 frostedBackdrop = BlurPanels.dockBackdropRadius(view),
                 dimColor = BlurPanels.dockBackdropTint(view)
             ) ?: return false
@@ -735,6 +735,9 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     private fun View.isInDrawer(): Boolean = ancestry()?.inDrawer == true
+
+    private fun View.samplesHome(): Boolean =
+        isInDrawer() || openFolder()?.let { OpacityModifier.folderFrost(it)?.home } == true
 
     private fun View.findScrimView(): View? {
         if (javaClass.name.endsWith(".ScrimView")) return this

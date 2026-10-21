@@ -458,7 +458,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
 
                 val inDrawer = folderIcon.tag.getFieldSilently("container") == CONTAINER_ALL_APPS
                 val blurRadius = folderIcon.folderIconBlur()
-                val tint = if (inDrawer) IconGlass.drawerGlassTint(folderIcon) ?: Color.TRANSPARENT else Color.TRANSPARENT
+                val drawerTint = if (inDrawer) IconGlass.drawerGlassTint(folderIcon) ?: 0 else 0
                 val shape = folderIcon.folderShape()
                 val shapeCorner = shape?.cornerRadius(scaledRadius.toFloat()) ?: scaledRadius.toFloat()
                 if (DragPreviewGlass.isCapturing(canvas)) {
@@ -480,8 +480,9 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         corner = shapeCorner,
                         bottomCorner = shapeCorner,
                         blurRadius = blurRadius,
-                        tintColor = tint,
+                        tintColor = Color.TRANSPARENT,
                         liquid = folderLiquid,
+                        dimColor = drawerTint,
                         home = inDrawer,
                         shapeDrawer = shape?.let { shape ->
                             { paint: Paint ->
