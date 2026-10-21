@@ -672,7 +672,6 @@ class IconPacks(context: Context) : ModPack(context) {
 
     private fun replaceIcon(component: ComponentName, original: Drawable?, density: Int): Drawable? {
         val key = component.flattenToString()
-        val inRecents = taskComponent.get() != null
         val resolved = runCatching {
             IconPackManager.resolve(
                 context = mContext,
@@ -686,7 +685,6 @@ class IconPacks(context: Context) : ModPack(context) {
 
         resolved?.packageName?.let { recordSource(it, component.packageName) }
         val regular = resolved?.drawable
-        if (inRecents) return regular
 
         return composeIcon(
             component = component,

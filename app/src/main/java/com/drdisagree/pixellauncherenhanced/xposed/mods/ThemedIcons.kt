@@ -35,6 +35,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ThemedIcons(context: Context) : ModPack(context) {
@@ -42,6 +43,7 @@ class ThemedIcons(context: Context) : ModPack(context) {
     private var forceThemedIcons: Boolean = false
     private var appDrawerThemedIcons: Boolean = false
     private var homeThemedIcons: Boolean = false
+    private var taskIconCacheRef: WeakReference<Any>? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -51,7 +53,11 @@ class ThemedIcons(context: Context) : ModPack(context) {
         }
 
         when (key.firstOrNull()) {
-            FORCE_THEMED_ICONS,
+            FORCE_THEMED_ICONS -> {
+                reloadIcons()
+                taskIconCacheRef?.get().callMethodSilently("clearCache")
+            }
+
             APP_DRAWER_THEMED_ICONS -> reloadIcons()
 
             HOME_THEMED_ICONS -> {
@@ -460,6 +466,52 @@ class ThemedIcons(context: Context) : ModPack(context) {
 
                 param.result = null
             }
+
+        val taskIconCache = "com.android.quickstep.TaskIconCache"
+        val taskIconCallers = listOf(
+            $$"$$taskIconCache$TaskBitmapInfoCacheEntry" to "toTaskCacheEntry",
+            $$"$$taskIconCache$getIconInBackground$2" to "onBitmapInfoReceived"
+        ) + (1..MAX_TASK_ICON_LAMBDA).map { $$"$$taskIconCache$getIcon$$$it" to "invokeSuspend" }
+
+        findClass(taskIconCache, suppressError = true)
+            .hookConstructor()
+            .suppressError()
+            .runAfter { param -> taskIconCacheRef = WeakReference(param.thisObject) }
+
+        taskIconCallers.forEach { (className, methodName) ->
+            findClass(className, suppressError = true)
+                .hookMethod(methodName)
+                .suppressError()
+                .runAround(
+                    before = { param ->
+                        param.setObjectExtra(TASK_ICON_OUTER, inTaskIcon.get())
+                        inTaskIcon.set(true)
+                    },
+                    after = { param ->
+                        if (param.getObjectExtra(TASK_ICON_OUTER) == null) inTaskIcon.remove()
+                    }
+                )
+        }
+
+        findClass("com.android.launcher3.icons.BitmapInfo", suppressError = true)
+            .hookMethod("newIcon")
+            .suppressError()
+            .runBefore { param ->
+                if (inTaskIcon.get() != true) return@runBefore
+                val index = param.args.indexOfFirst { it is Int }
+                if (index < 0) return@runBefore
+
+                val themed = runCatching {
+                    DISPLAY_WORKSPACE.shouldUseTheme(
+                        mContext,
+                        themesClass,
+                        themeManagerClass,
+                        themePreferenceClass
+                    )
+                }.getOrDefault(false)
+
+                if (themed) param.args[index] = (param.args[index] as Int) or FLAG_THEMED
+            }
     }
 
     private fun Any?.isFolderIcon(): Boolean = this?.javaClass?.name?.endsWith(".FolderAdaptiveIcon") == true
@@ -518,5 +570,9 @@ class ThemedIcons(context: Context) : ModPack(context) {
         )
 
         private val verifyHighResThemeOverride = ThreadLocal<Boolean?>()
+        private val inTaskIcon = ThreadLocal<Boolean?>()
+
+        private const val TASK_ICON_OUTER = "pleTaskIconOuter"
+        private const val MAX_TASK_ICON_LAMBDA = 9
     }
 }
