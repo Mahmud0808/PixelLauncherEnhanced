@@ -55,6 +55,11 @@ object WallpaperGlass {
     private const val SQRT_HALF = 0.70710677f
     private const val MASK_BLUR = 0.3f
     private const val MASK_RAMP = 1.7f
+    private const val SHADOW_BLUR_DP = 4f
+    private const val SHADOW_SIZE_RATIO = 0.08f
+    private const val SHADOW_DX_RATIO = 0.25f
+    private const val SHADOW_DY_RATIO = 0.375f
+    private const val SHADOW_ALPHA = 32
     private const val MASK_PADDING = 8
     private const val MASK_CACHE_SIZE = 8
     private const val BLUR_CACHE_SIZE = 5
@@ -140,6 +145,8 @@ object WallpaperGlass {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
+    private val shadowBounds = RectF()
     private val clipPath = Path()
     private val radii = FloatArray(8)
     private val source = Rect()
@@ -580,6 +587,7 @@ object WallpaperGlass {
         }
 
         if (shapeDrawer != null) {
+            if (useLiquid && prepareShadow(shadowBlur(host.resources.displayMetrics.density, rect), alpha)) shapeDrawer(shadowPaint)
             val paint = if (useLiquid) {
                 liquidPaint(bitmap, rect, corner, bottomCorner, hostScale, alpha, dim)
             } else {
@@ -593,6 +601,7 @@ object WallpaperGlass {
         }
 
         if (useLiquid) {
+            drawLiquidShadow(canvas, clipPath, host.resources.displayMetrics.density, alpha)
             canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, bottomCorner, hostScale, alpha, dim))
             drawTint(canvas, tintColor, alpha)
             return true
@@ -789,6 +798,30 @@ object WallpaperGlass {
             inset += 1f
         }
         return (inset / (1f - SQRT_HALF)).coerceIn(0f, half)
+    }
+
+    fun drawLiquidShadow(canvas: Canvas, path: Path, density: Float, alpha: Float = 1f, unitScale: Float = 1f) {
+        path.computeBounds(shadowBounds, true)
+        if (!prepareShadow(shadowBlur(density / unitScale, shadowBounds), alpha)) return
+        canvas.save()
+        canvas.clipOutPath(path)
+        canvas.drawPath(path, shadowPaint)
+        canvas.restore()
+    }
+
+    private fun shadowBlur(unit: Float, bounds: RectF): Float =
+        max(SHADOW_BLUR_DP * unit, min(bounds.width(), bounds.height()) * SHADOW_SIZE_RATIO)
+
+    private fun prepareShadow(blur: Float, alpha: Float): Boolean {
+        val shadowAlpha = (SHADOW_ALPHA * alpha.coerceIn(0f, 1f)).roundToInt()
+        if (shadowAlpha <= 0 || blur <= 0f) return false
+        shadowPaint.setShadowLayer(
+            blur,
+            blur * SHADOW_DX_RATIO,
+            blur * SHADOW_DY_RATIO,
+            Color.argb(shadowAlpha, 0, 0, 0)
+        )
+        return true
     }
 
     private fun drawTint(canvas: Canvas, tintColor: Int, alpha: Float) {

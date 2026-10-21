@@ -20,6 +20,7 @@ import android.graphics.RenderNode
 import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewParent
@@ -212,6 +213,12 @@ class IconGlass(context: Context) : ModPack(context) {
                 canvas.translate(bounds.left.toFloat(), bounds.top.toFloat())
                 canvas.scale(bounds.width() / pathSize, bounds.height() / pathSize)
                 canvas.scale(visibleAreaFactor, visibleAreaFactor, pathSize / 2f, pathSize / 2f)
+                if (liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    WallpaperGlass.drawLiquidShadow(
+                        canvas, path, host.resources.displayMetrics.density, paint.alpha / 255f,
+                        bounds.width() / pathSize * visibleAreaFactor
+                    )
+                }
                 canvas.clipPath(path)
 
                 val shapeBounds = pathBounds(path)
