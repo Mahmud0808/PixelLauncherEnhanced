@@ -3,6 +3,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.Context
 import android.graphics.Point
 import android.graphics.Rect
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
@@ -59,7 +60,16 @@ object IconFit {
             val folderProfile = getAnyFieldSilently("mFolderProfile", "folderProfile")
             val folder = folderProfile ?: this
 
-            val scale = (workspace ?: this).fitIconSize(WORKSPACE_FIELDS, minGap, hotseatPitch)
+            val fixedCells = getFieldSilently("isScalableGrid") == false
+            val workspaceProfile = workspace ?: this
+            val workspacePitch = if (fixedCells) {
+                (callMethodSilently("getCellSize") as? Point)?.x?.plus(workspaceProfile.borderX(WORKSPACE_FIELDS))
+            } else {
+                null
+            }
+            val scale = workspaceProfile.fitIconSize(
+                WORKSPACE_FIELDS, minGap, listOfNotNull(hotseatPitch, workspacePitch).minOrNull(), !fixedCells
+            )
             if (scale < 1f) {
                 listOf("folderIconSizePx", "folderIconOffsetYPx").forEach { field ->
                     val owner = if (folder.getFieldSilently(field) is Int) folder else this
@@ -71,7 +81,7 @@ object IconFit {
 
             val allApps = getAnyFieldSilently("mAllAppsProfile", "allAppsProfile")
             val allAppsFields = if (allApps != null) ALL_APPS_PROFILE_FIELDS else LEGACY_ALL_APPS_FIELDS
-            (allApps ?: this).fitIconSize(allAppsFields, minGap, allAppsPitch(allApps, context))
+            (allApps ?: this).fitIconSize(allAppsFields, minGap, allAppsPitch(allApps, context), !fixedCells)
         }
     }
 
@@ -92,19 +102,28 @@ object IconFit {
         return ((width - padding - margin) / columns).takeIf { it > 0 }
     }
 
-    private fun Any.fitIconSize(fields: IconFields, minGap: Float, extraPitch: Int?): Float {
+    private fun Any.fitIconSize(fields: IconFields, minGap: Float, extraPitch: Int?, useCellWidth: Boolean = true): Float {
         val iconSize = getFieldSilently(fields.iconSize) as? Int ?: return 1f
-        val cellWidth = getFieldSilently(fields.cellWidth) as? Int ?: return 1f
-        if (iconSize <= 0 || cellWidth <= 0) return 1f
+        if (iconSize <= 0) return 1f
 
-        val border = getFieldSilently(fields.borderSpace)
-        val borderX = (border as? Point)?.x ?: border as? Int ?: 0
-        val pitch = listOfNotNull(cellWidth + borderX, extraPitch).min()
+        val cellPitch = if (useCellWidth) {
+            val cellWidth = getFieldSilently(fields.cellWidth) as? Int ?: return 1f
+            if (cellWidth <= 0) return 1f
+            cellWidth + borderX(fields)
+        } else {
+            null
+        }
+        val pitch = listOfNotNull(cellPitch, extraPitch).minOrNull() ?: return 1f
         val maxIconSize = (pitch - minGap).roundToInt()
         if (maxIconSize <= 0 || iconSize <= maxIconSize) return 1f
 
         setFieldSilently(fields.iconSize, maxIconSize)
         return maxIconSize.toFloat() / iconSize
+    }
+
+    private fun Any.borderX(fields: IconFields): Int {
+        val border = getFieldSilently(fields.borderSpace)
+        return (border as? Point)?.x ?: border as? Int ?: 0
     }
 
     private fun Any.scaleIntField(field: String, scale: Float) {
