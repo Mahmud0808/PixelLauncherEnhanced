@@ -3,6 +3,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00000000</color>
+    <color name="brand">#FF4481EB</color>
     <color name="textColor">@color/black</color>
     <color name="textColorInverse">@color/white</color>
     <color name="warning">#C25E00</color>

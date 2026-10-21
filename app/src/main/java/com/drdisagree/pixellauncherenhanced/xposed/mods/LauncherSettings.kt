@@ -3,9 +3,15 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.DrawableWrapper
+import android.graphics.drawable.LayerDrawable
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
@@ -32,9 +38,12 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -173,19 +182,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 myPreference.callMethod("setSummary", modRes.getString(R.string.app_motto))
 
                 if (mContext.packageName == LAUNCHER3_PACKAGE) {
-                    myPreference.callMethod(
-                        "setIcon",
-                        modRes.getDrawable(R.drawable.ic_launcher_settings)
-                    )
-
-                    val layoutResource = mContext.resources.getIdentifier(
-                        "settings_layout",
-                        "layout",
-                        mContext.packageName
-                    )
-                    if (layoutResource != 0) {
-                        myPreference.callMethod("setLayoutResource", layoutResource)
-                    }
+                    myPreference.matchSiblingStyle(preferenceScreen, activity as? Context ?: mContext)
                 }
 
                 val listener = Proxy.newProxyInstance(
@@ -882,6 +879,131 @@ class LauncherSettings(context: Context) : ModPack(context) {
         }
     }
 
+    private fun Any.matchSiblingStyle(screen: Any?, context: Context) {
+        val siblings = screen.leafPreferences().filter { it.getFieldSilently("mVisible") != false }
+        val withIcons = siblings.mapNotNull { sibling -> sibling.preferenceIcon(context)?.let { sibling to it } }
+        val layoutSource = withIcons.firstOrNull()?.first ?: siblings.firstOrNull()
+
+        (layoutSource.getFieldSilently("mLayoutResId") as? Int)?.takeIf { it != 0 }?.let { layout ->
+            if (hasMethod("setLayoutResource", Int::class.javaPrimitiveType)) {
+                callMethod("setLayoutResource", layout)
+            } else {
+                setFieldSilently("mLayoutResId", layout)
+            }
+        }
+
+        if (withIcons.isEmpty()) {
+            (siblings.firstOrNull().getFieldSilently("mIconSpaceReserved") as? Boolean)?.let {
+                setFieldSilently("mIconSpaceReserved", it)
+            }
+            return
+        }
+
+        val icons = withIcons.map { it.second }
+        val fallbackSize = (context.resources.displayMetrics.density * 24).roundToInt()
+        val width = icons.first().intrinsicWidth.takeIf { it > 0 } ?: fallbackSize
+        val height = icons.first().intrinsicHeight.takeIf { it > 0 } ?: fallbackSize
+        val brand = modRes.getColor(R.color.brand, null)
+        val layered = icons.map { it as? LayerDrawable }
+        val icon = if (layered.all { it != null && it.numberOfLayers >= 2 }) {
+            layered.filterNotNull().tiledEntryIcon(brand)
+        } else {
+            val color = icons.map { it.dominantColor() }.sharedColor() ?: brand
+            val glyph = modRes.getDrawable(R.drawable.ic_settings_entry, null).mutate().apply { setTint(color) }
+            object : DrawableWrapper(glyph) {
+                override fun getIntrinsicWidth(): Int = width
+                override fun getIntrinsicHeight(): Int = height
+            }
+        }
+
+        if (hasMethod("setIcon", Drawable::class.java)) {
+            callMethod("setIcon", icon)
+        } else {
+            setFieldSilently("mIcon", icon)
+        }
+    }
+
+    private fun Any?.leafPreferences(): List<Any> {
+        val children = getFieldSilently("mPreferences") as? List<*> ?: return emptyList()
+        return children.filterNotNull().flatMap { child ->
+            if (child.getFieldSilently("mPreferences") is List<*>) child.leafPreferences() else listOf(child)
+        }
+    }
+
+    private fun Any.preferenceIcon(context: Context): Drawable? {
+        (getFieldSilently("mIcon") as? Drawable)?.let { return it }
+        (callMethodSilently("getIcon") as? Drawable)?.let { return it }
+        val resId = getFieldSilently("mIconResId") as? Int ?: return null
+        if (resId == 0) return null
+        return runCatching { context.getDrawable(resId) }.getOrNull()
+    }
+
+    private fun List<LayerDrawable>.tiledEntryIcon(brand: Int): Drawable {
+        val reference = first()
+        val top = reference.numberOfLayers - 1
+        val tileColor = map { it.getDrawable(0).dominantColor() }.sharedColor()
+        val glyphColor = map { it.getDrawable(it.numberOfLayers - 1).dominantColor() }.sharedColor() ?: Color.WHITE
+        val tile = reference.getDrawable(0).let { it.constantState?.newDrawable() ?: it }.mutate().apply {
+            if (tileColor == null) setTint(brand)
+        }
+        val glyph = modRes.getDrawable(R.drawable.ic_settings_entry, null).mutate().apply { setTint(glyphColor) }
+        val referenceGlyph = reference.getDrawable(top)
+
+        return LayerDrawable(arrayOf(tile, glyph)).apply {
+            copyLayer(0, reference, 0, null)
+            copyLayer(1, reference, top, referenceGlyph)
+        }
+    }
+
+    private fun LayerDrawable.copyLayer(index: Int, source: LayerDrawable, sourceIndex: Int, sized: Drawable?) {
+        setLayerInset(
+            index,
+            source.getLayerInsetLeft(sourceIndex),
+            source.getLayerInsetTop(sourceIndex),
+            source.getLayerInsetRight(sourceIndex),
+            source.getLayerInsetBottom(sourceIndex)
+        )
+        setLayerInsetStart(index, source.getLayerInsetStart(sourceIndex))
+        setLayerInsetEnd(index, source.getLayerInsetEnd(sourceIndex))
+        val width = source.getLayerWidth(sourceIndex).takeIf { it > 0 } ?: sized?.intrinsicWidth ?: -1
+        val height = source.getLayerHeight(sourceIndex).takeIf { it > 0 } ?: sized?.intrinsicHeight ?: -1
+        if (width > 0 && height > 0) setLayerSize(index, width, height)
+        val gravity = source.getLayerGravity(sourceIndex)
+        setLayerGravity(index, if (gravity == Gravity.NO_GRAVITY && sized != null) Gravity.CENTER else gravity)
+    }
+
+    private fun List<Int?>.sharedColor(): Int? {
+        val first = firstOrNull() ?: return null
+        return first.takeIf { all { color -> color != null && color.isNear(first) } }
+    }
+
+    private fun Drawable.dominantColor(): Int? {
+        val copy = (constantState?.newDrawable() ?: this).mutate()
+        val bitmap = Bitmap.createBitmap(COLOR_SAMPLE_SIZE, COLOR_SAMPLE_SIZE, Bitmap.Config.ARGB_8888)
+        copy.setBounds(0, 0, COLOR_SAMPLE_SIZE, COLOR_SAMPLE_SIZE)
+        copy.draw(Canvas(bitmap))
+        val pixels = IntArray(COLOR_SAMPLE_SIZE * COLOR_SAMPLE_SIZE)
+        bitmap.getPixels(pixels, 0, COLOR_SAMPLE_SIZE, 0, 0, COLOR_SAMPLE_SIZE, COLOR_SAMPLE_SIZE)
+        bitmap.recycle()
+
+        val opaque = pixels.filter { Color.alpha(it) >= OPAQUE_ALPHA }
+        val top = opaque
+            .groupBy { (Color.red(it) shr 5 shl 6) or (Color.green(it) shr 5 shl 3) or (Color.blue(it) shr 5) }
+            .values.maxByOrNull { it.size } ?: return null
+        if (top.size < opaque.size * SINGLE_COLOR_SHARE) return null
+
+        return Color.rgb(
+            top.map { Color.red(it) }.average().roundToInt(),
+            top.map { Color.green(it) }.average().roundToInt(),
+            top.map { Color.blue(it) }.average().roundToInt()
+        )
+    }
+
+    private fun Int.isNear(other: Int): Boolean =
+        abs(Color.red(this) - Color.red(other)) +
+                abs(Color.green(this) - Color.green(other)) +
+                abs(Color.blue(this) - Color.blue(other)) <= COLOR_TOLERANCE
+
     private fun lockLabel(): Int = if (layoutLocked) R.string.unlock_layout_action else R.string.lock_layout_action
 
     private fun lockIcon(): Int = if (layoutLocked) R.drawable.ic_lock_open else R.drawable.ic_lock
@@ -901,5 +1023,9 @@ class LauncherSettings(context: Context) : ModPack(context) {
 
     companion object {
         private const val LOCK_SENTINEL = -3
+        private const val COLOR_SAMPLE_SIZE = 48
+        private const val OPAQUE_ALPHA = 160
+        private const val SINGLE_COLOR_SHARE = 0.6f
+        private const val COLOR_TOLERANCE = 48
     }
 }
