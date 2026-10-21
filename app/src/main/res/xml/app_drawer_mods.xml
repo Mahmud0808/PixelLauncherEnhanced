@@ -45,6 +45,13 @@
             android:title="@string/app_drawer_icon_labels_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_appdrawerlonglabels"
+            android:summary="@string/app_drawer_long_labels_desc"
+            android:title="@string/app_drawer_long_labels_title"
+            app:iconSpaceReserved="false" />
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory

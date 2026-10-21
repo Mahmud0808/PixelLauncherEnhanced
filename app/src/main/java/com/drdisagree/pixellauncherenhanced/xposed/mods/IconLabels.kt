@@ -1,13 +1,17 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
+import android.text.TextUtils
 import android.view.View
+import android.widget.TextView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_LONG_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
@@ -21,17 +25,20 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import kotlin.math.ceil
 
 class IconLabels(context: Context) : ModPack(context) {
 
     private var showDesktopLabels = true
     private var showDrawerLabels = true
+    private var longDrawerLabels = false
     private var nativeLabelHiddenItem: Any? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             showDesktopLabels = getBoolean(DESKTOP_ICON_LABELS, true)
             showDrawerLabels = getBoolean(APP_DRAWER_ICON_LABELS, true)
+            longDrawerLabels = getBoolean(APP_DRAWER_LONG_LABELS, false)
         }
 
         when (key.firstOrNull()) {
@@ -41,7 +48,8 @@ class IconLabels(context: Context) : ModPack(context) {
                 }
             }
 
-            APP_DRAWER_ICON_LABELS -> reloadLauncher(mContext)
+            APP_DRAWER_ICON_LABELS,
+            APP_DRAWER_LONG_LABELS -> reloadLauncher(mContext)
         }
     }
 
@@ -95,6 +103,8 @@ class IconLabels(context: Context) : ModPack(context) {
             .hookMethod("onMeasure")
             .suppressError()
             .runAround(before = { param ->
+                param.beforeLongLabelMeasure()
+
                 val view = param.thisObject as View
                 if (!view.isDrawerIconWithoutLabel()) return@runAround
                 if (view.getFieldSilently("mCenterVertically") != true) return@runAround
@@ -102,6 +112,9 @@ class IconLabels(context: Context) : ModPack(context) {
                 view.setField("mCenterVertically", false)
                 param.setObjectExtra(CENTER_VERTICALLY, true)
             }, after = { param ->
+                if (param.getObjectExtra(LONG_LABEL_CENTER) == true) {
+                    (param.thisObject as View).setField("mCenterVertically", true)
+                }
                 if (param.getObjectExtra(CENTER_VERTICALLY) != true) return@runAround
 
                 val view = param.thisObject as View
@@ -128,6 +141,41 @@ class IconLabels(context: Context) : ModPack(context) {
                 .runBefore { param -> param.beforeHookedLabel() }
                 .runAfter { param -> param.afterHookedLabel() }
         }
+    }
+
+    private fun XC_MethodHook.MethodHookParam.beforeLongLabelMeasure() {
+        val view = thisObject as TextView
+        if (!view.usesLongLabel()) return
+
+        if (view.maxLines != LONG_LABEL_LINES) {
+            view.setSingleLine(false)
+            view.maxLines = LONG_LABEL_LINES
+            view.ellipsize = TextUtils.TruncateAt.END
+        }
+
+        val heightSpec = args[1] as Int
+        if (View.MeasureSpec.getMode(heightSpec) != View.MeasureSpec.EXACTLY) return
+        val height = View.MeasureSpec.getSize(heightSpec)
+        args[1] = View.MeasureSpec.makeMeasureSpec(height + view.lineHeight, View.MeasureSpec.EXACTLY)
+
+        if (view.getFieldSilently("mCenterVertically") != true) return
+        val iconSize = view.getFieldSilently("mIconSize") as? Int ?: return
+        val fontMetrics = view.paint.fontMetrics
+        val content = iconSize + view.compoundDrawablePadding + ceil(fontMetrics.bottom - fontMetrics.top).toInt()
+        val paddingTop = ((height - content) / 2).coerceAtLeast(0)
+
+        view.setField("mCenterVertically", false)
+        setObjectExtra(LONG_LABEL_CENTER, true)
+        if (view.paddingTop != paddingTop) {
+            view.setPadding(view.paddingLeft, paddingTop, view.paddingRight, view.paddingBottom)
+        }
+    }
+
+    private fun View.usesLongLabel(): Boolean {
+        if (!longDrawerLabels || !showDrawerLabels) return false
+        if (getFieldSilently("mDisplay") != DISPLAY_ALL_APPS) return false
+        if (DrawerFolders.isDrawerFolderItem(tag)) return false
+        return callMethodSilently("shouldUseTwoLine") != true
     }
 
     private fun centerIconWithoutLabel(container: View, child: View) {
@@ -200,6 +248,8 @@ class IconLabels(context: Context) : ModPack(context) {
 
     companion object {
         private const val CENTER_VERTICALLY = "pleCenterVertically"
+        private const val LONG_LABEL_CENTER = "pleLongLabelCenter"
+        private const val LONG_LABEL_LINES = 2
         const val DISPLAY_WORKSPACE: Int = 0
         const val DISPLAY_ALL_APPS: Int = 1
         const val DISPLAY_FOLDER: Int = 2

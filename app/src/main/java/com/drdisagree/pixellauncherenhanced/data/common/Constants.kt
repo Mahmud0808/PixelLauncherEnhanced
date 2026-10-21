@@ -48,6 +48,7 @@ object Constants {
     const val LAUNCHER_HIDE_PAGE_INDICATOR = "xposed_launcherhidepageindicator"
     const val DESKTOP_ICON_LABELS = "xposed_desktopiconlabels"
     const val APP_DRAWER_ICON_LABELS = "xposed_appdrawericonlabels"
+    const val APP_DRAWER_LONG_LABELS = "xposed_appdrawerlonglabels"
     const val DOCK_DATABASE_ICON_COUNT = "xposed_dockdatabaseiconcount"
     const val DOCK_BLUR_RADIUS = "xposed_dockblurradius"
     const val DOCK_BLUR_TINT = "xposed_dockblurtint"

@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceGroup
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_LONG_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FORCE_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
@@ -147,6 +149,8 @@ object PrefsHelper {
             LAUNCHER_DARK_PAGE_INDICATOR -> !getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR)
 
             SEARCH_HIDDEN_APPS -> getBoolean(HIDE_APPS_FROM_APP_DRAWER)
+
+            APP_DRAWER_LONG_LABELS -> getBoolean(APP_DRAWER_ICON_LABELS, true)
 
             NO_DRAWER_SWIPE_ACTION,
             NO_DRAWER_ARRANGEMENT,
