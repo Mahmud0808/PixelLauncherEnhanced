@@ -753,10 +753,12 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun ViewGroup.dockBounds(out: RectF): Boolean {
         var top = Float.MAX_VALUE
         var bottom = -Float.MAX_VALUE
+        val qsb = getFieldSilently("mQsb") as? View
 
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             if (child.visibility != View.VISIBLE || child.height == 0) continue
+            if (child === qsb && !child.hasVisibleContent()) continue
 
             top = minOf(top, child.top + child.translationY)
             bottom = maxOf(bottom, child.bottom + child.translationY)
@@ -769,6 +771,16 @@ class BlurPanels(context: Context) : ModPack(context) {
         val panelBottom = if (dockAttached) height.toFloat() + windowGapBelow() else bottom + (top - panelTop).coerceAtLeast(0f)
         out.set(margin, panelTop, width - margin, panelBottom)
         return !out.isEmpty
+    }
+
+    private fun View.hasVisibleContent(): Boolean {
+        if (visibility != View.VISIBLE || alpha <= 0f || width == 0 || height == 0) return false
+        background?.let { if ((it as? ColorDrawable)?.alpha != 0) return true }
+        if (this !is ViewGroup) return javaClass != View::class.java
+        for (i in 0 until childCount) {
+            if (getChildAt(i).hasVisibleContent()) return true
+        }
+        return false
     }
 
     private fun View.pageIndicatorBottom(): Float {
