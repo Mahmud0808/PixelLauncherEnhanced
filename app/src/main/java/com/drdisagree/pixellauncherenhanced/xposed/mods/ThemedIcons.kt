@@ -1,6 +1,5 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
-import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
@@ -16,6 +15,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACK
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadIcons
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MonochromeIconFactory
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceIds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
@@ -122,7 +122,6 @@ class ThemedIcons(context: Context) : ModPack(context) {
         }
     }
 
-    @SuppressLint("DiscouragedApi")
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
@@ -362,7 +361,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     "appColor",
                     iconDrawable.callMethodSilently("getIconColor")
                 )
-                val notificationDotColorAttr = context.resources.getIdentifier(
+                val notificationDotColorAttr = ResourceIds.find(
+                    context.resources,
                     "notificationDotColor",
                     "attr",
                     context.packageName
@@ -372,7 +372,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                         LauncherUtils.getAttrColor(context, notificationDotColorAttr)
                     } else {
                         context.resources.getColor(
-                            context.resources.getIdentifier(
+                            ResourceIds.find(
+                                context.resources,
                                 "system_accent3_200",
                                 "color",
                                 context.packageName
@@ -449,7 +450,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     if (info.getFieldSilently("contentDescription") != null) {
                         val charSequence = if (info.callMethod("isDisabled") as Boolean) {
                             context.getString(
-                                context.resources.getIdentifier(
+                                ResourceIds.find(
+                                    context.resources,
                                     "disabled_app_label",
                                     "string",
                                     mContext.packageName
