@@ -31,6 +31,32 @@
             app:valueFormat="dp" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurpaddingtop"
+            android:title="@string/dock_blur_padding_top_title"
+            app:defaultValue="12"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="48"
+            app:minVal="-48"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurpaddingbottom"
+            android:title="@string/dock_blur_padding_bottom_title"
+            app:defaultValue="12"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="48"
+            app:minVal="-48"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
             android:key="xposed_dockblurcorner"
             android:title="@string/dock_blur_corner_title"
             app:defaultValue="28"

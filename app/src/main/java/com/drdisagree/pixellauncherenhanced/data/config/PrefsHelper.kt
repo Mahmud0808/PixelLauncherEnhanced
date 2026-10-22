@@ -20,6 +20,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_CORNER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_MARGIN
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_PADDING_BOTTOM
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_PADDING_TOP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_STYLE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
@@ -114,8 +116,13 @@ object PrefsHelper {
             DOCK_BLUR_TINT_COLOR,
             DOCK_BLUR_CORNER,
             DOCK_BLUR_STYLE,
-            DOCK_BLUR_MARGIN -> !getBoolean(DISABLE_DOCK) &&
+            DOCK_BLUR_MARGIN,
+            DOCK_BLUR_PADDING_TOP -> !getBoolean(DISABLE_DOCK) &&
                     PanelBackground.supported(getString(DOCK_BACKGROUND)) != PanelBackground.OFF
+
+            DOCK_BLUR_PADDING_BOTTOM -> !getBoolean(DISABLE_DOCK) &&
+                    PanelBackground.supported(getString(DOCK_BACKGROUND)) != PanelBackground.OFF &&
+                    getString(DOCK_BLUR_STYLE, "floating") != "attached"
 
             DEVELOPER_OPTIONS,
             RECENTS_DISABLE_SELECTION -> isPixelLauncher

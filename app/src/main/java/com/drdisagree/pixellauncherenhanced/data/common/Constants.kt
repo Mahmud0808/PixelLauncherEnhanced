@@ -57,6 +57,8 @@ object Constants {
     const val DOCK_BLUR_STYLE = "xposed_dockblurstyle"
     const val DOCK_BACKGROUND = "xposed_dockbackground"
     const val DOCK_BLUR_MARGIN = "xposed_dockblurmargin"
+    const val DOCK_BLUR_PADDING_TOP = "xposed_dockblurpaddingtop"
+    const val DOCK_BLUR_PADDING_BOTTOM = "xposed_dockblurpaddingbottom"
     const val WIDGET_BLUR_RADIUS = "xposed_widgetblurradius"
     const val WIDGET_BLUR_TINT = "xposed_widgetblurtint"
     const val WIDGET_BACKGROUND = "xposed_widgetbackground"

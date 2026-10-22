@@ -559,6 +559,8 @@
     <string name="dock_blur_style_floating">Floating</string>
     <string name="dock_blur_style_attached">Attached to bottom</string>
     <string name="dock_blur_margin_title">Dock background side margin</string>
+    <string name="dock_blur_padding_top_title">Dock background top padding</string>
+    <string name="dock_blur_padding_bottom_title">Dock background bottom padding</string>
     <string name="dock_blur_tint_title">Dock background tint</string>
     <string name="dock_blur_tint_color_title">Dock background tint color</string>
     <string name="dock_blur_tint_color_folder">Folder color</string>

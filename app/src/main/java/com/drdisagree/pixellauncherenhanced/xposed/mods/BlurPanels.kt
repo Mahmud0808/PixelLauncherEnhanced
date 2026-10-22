@@ -36,6 +36,8 @@ import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_CORNER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_MARGIN
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_PADDING_BOTTOM
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_PADDING_TOP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_STYLE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
@@ -79,6 +81,8 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var dockBlurCorner = DEFAULT_DOCK_CORNER
     private var dockAttached = false
     private var dockBlurMargin = DEFAULT_DOCK_MARGIN
+    private var dockPaddingTop = DOCK_PADDING
+    private var dockPaddingBottom = DOCK_PADDING
     private val windowLocation = IntArray(2)
     private val maskBounds = Rect()
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -116,6 +120,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             dockBlurCorner = getSliderInt(DOCK_BLUR_CORNER, DEFAULT_DOCK_CORNER)
             dockAttached = getString(DOCK_BLUR_STYLE, STYLE_FLOATING) == STYLE_ATTACHED
             dockBlurMargin = getSliderInt(DOCK_BLUR_MARGIN, DEFAULT_DOCK_MARGIN)
+            dockPaddingTop = getSliderInt(DOCK_BLUR_PADDING_TOP, DOCK_PADDING)
+            dockPaddingBottom = getSliderInt(DOCK_BLUR_PADDING_BOTTOM, DOCK_PADDING)
             val widgetBackground = PanelBackground.supported(getString(WIDGET_BACKGROUND, BACKGROUND_OFF))
             val widgetEnabled = widgetBackground != BACKGROUND_OFF
             widgetBlurRadius = if (widgetEnabled) getSliderInt(WIDGET_BLUR_RADIUS, DEFAULT_BLUR) else 0
@@ -139,6 +145,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             DOCK_BLUR_STYLE,
             DOCK_BACKGROUND,
             DOCK_BLUR_MARGIN,
+            DOCK_BLUR_PADDING_TOP,
+            DOCK_BLUR_PADDING_BOTTOM,
             WIDGET_BLUR_RADIUS,
             WIDGET_BLUR_TINT,
             SEARCH_BAR_BLUR_RADIUS,
@@ -766,9 +774,13 @@ class BlurPanels(context: Context) : ModPack(context) {
         if (top == Float.MAX_VALUE) return false
 
         val margin = dockBlurMargin.dp(this)
-        val padding = DOCK_PADDING.dp(this)
-        val panelTop = maxOf(top - padding, pageIndicatorBottom() + PAGE_INDICATOR_GAP.dp(this))
-        val panelBottom = if (dockAttached) height.toFloat() + windowGapBelow() else bottom + (top - panelTop).coerceAtLeast(0f)
+        val paddingTop = dockPaddingTop.dp(this)
+        val panelTop = maxOf(top - paddingTop, pageIndicatorBottom() + PAGE_INDICATOR_GAP.dp(this))
+        val panelBottom = if (dockAttached) {
+            height.toFloat() + windowGapBelow()
+        } else {
+            maxOf(bottom + dockPaddingBottom.dp(this), panelTop)
+        }
         out.set(margin, panelTop, width - margin, panelBottom)
         return !out.isEmpty
     }

@@ -49,7 +49,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Dock frosted and liquid glass       |       ✅        |         ✅          |
 | Dock tint color                     |       ✅        |         ✅          |
 | Floating or attached dock           |       ✅        |         ✅          |
-| Dock margin and corner radius       |       ✅        |         ✅          |
+| Dock margin, padding and corner     |       ✅        |         ✅          |
 | Dock top and bottom spacing         |       ✅        |         ✅          |
 | Search bar frosted and liquid glass |       ✅        |         🚫          |
 
