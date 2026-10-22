@@ -54,6 +54,8 @@ import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.ref.WeakReference
+import java.lang.reflect.Method
+import java.util.WeakHashMap
 
 class OpacityModifier(context: Context) : ModPack(context) {
 
@@ -62,6 +64,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private var recentsBackgroundOpacity: Int = -1
     private var disableRecentsLiveTile: Boolean = false
     private var folderBackgroundOpacity: Int = -1
+    private val shapeCorners = WeakHashMap<Any, Pair<Float, Float>>()
+    private val addToPathMethods = HashMap<Class<*>, Method?>()
     private var folderBackgroundBlur: Int = 0
     private var folderLiquid = false
     private var folderBlurAnimator: ValueAnimator? = null
@@ -568,11 +572,25 @@ class OpacityModifier(context: Context) : ModPack(context) {
         (getFieldSilently("radiusRatio") as? Float)?.let { return radius * it }
         if (javaClass.simpleName.endsWith("Circle")) return radius
 
+        shapeCorners[this]?.takeIf { it.first == radius }?.let { return it.second }
         val path = Path()
-        callMethodSilently("addToPath", 0f, 0f, radius, path)
+        if (!addShapeToPath(path, radius)) return radius
         val bounds = RectF().also { path.computeBounds(it, true) }
         if (bounds.isEmpty) return radius
-        return WallpaperGlass.pathCorner(path, bounds)
+        return WallpaperGlass.pathCorner(path, bounds).also { shapeCorners[this] = radius to it }
+    }
+
+    private fun Any.addShapeToPath(path: Path, radius: Float): Boolean {
+        val method = addToPathMethods.getOrPut(javaClass) {
+            javaClass.methods.firstOrNull { method ->
+                val types = method.parameterTypes
+                method.name == "addToPath" && types.size == 4 && types.count { it == Path::class.java } == 1 &&
+                        types.count { it == Float::class.javaPrimitiveType } == 3
+            }
+        } ?: return false
+        val floats = arrayOf(0f, 0f, radius).iterator()
+        val args = method.parameterTypes.map { if (it == Path::class.java) path else floats.next() }
+        return runCatching { method.invoke(this, *args.toTypedArray()) }.isSuccess
     }
 
     private fun Context.folderBackgroundColor(): Int? {
