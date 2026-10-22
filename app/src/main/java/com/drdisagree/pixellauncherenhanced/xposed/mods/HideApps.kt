@@ -25,12 +25,15 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Modifier
 import java.util.Arrays
 import java.util.Collections
+import java.util.function.Predicate
 
 class HideApps(context: Context) : ModPack(context) {
 
     private var searchHiddenApps: Boolean = false
 
     companion object {
+        private const val ORIGINAL_ITEM_FILTER = "pleOriginalItemFilter"
+        private val NO_FILTER = Any()
         private var appBlockList: Set<String> = mutableSetOf()
 
         fun isHidden(packageName: String?): Boolean =
@@ -289,25 +292,34 @@ class HideApps(context: Context) : ModPack(context) {
             }
         }
 
+        @Suppress("UNCHECKED_CAST")
         alphabeticalAppsListClass
             .hookMethod("onAppsUpdated")
+            .runBefore { param ->
+                if (SHOULD_UNHIDE_ALL_APPS || appBlockList.isEmpty()) return@runBefore
+                val list = param.thisObject
+                if (list.getFieldSilently("mAllAppsStore") == null) return@runBefore
+
+                val original = list.getFieldSilently("mItemFilter") as? Predicate<Any?>
+                val hiddenFilter = Predicate<Any?> { !it.getComponentName().matchesBlocklist() }
+
+                param.setObjectExtra(ORIGINAL_ITEM_FILTER, original ?: NO_FILTER)
+                list.setField("mItemFilter", original?.and(hiddenFilter) ?: hiddenFilter)
+            }
             .runAfter { param ->
-                val mAdapterItems =
-                    (param.thisObject.getField("mAdapterItems") as ArrayList<*>).toMutableList()
-
-                val iterator = mAdapterItems.iterator()
-
-                while (iterator.hasNext()) {
-                    val item = iterator.next()
-                    val itemInfo = item.getFieldSilently("itemInfo")
-                    val componentName = itemInfo.getComponentName()
-
-                    if (componentName.matchesBlocklist()) {
-                        iterator.remove()
-                    }
+                val original = param.getObjectExtra(ORIGINAL_ITEM_FILTER)
+                if (original != null) {
+                    param.thisObject.setField("mItemFilter", original.takeIf { it !== NO_FILTER })
                 }
 
-                param.thisObject.setField("mAdapterItems", ArrayList(mAdapterItems))
+                val mAdapterItems = param.thisObject.getField("mAdapterItems") as ArrayList<*>
+                val visibleItems = mAdapterItems.filterNot {
+                    it.getFieldSilently("itemInfo").getComponentName().matchesBlocklist()
+                }
+
+                if (visibleItems.size != mAdapterItems.size) {
+                    param.thisObject.setField("mAdapterItems", ArrayList(visibleItems))
+                }
             }
     }
 
