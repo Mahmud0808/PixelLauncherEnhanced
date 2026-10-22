@@ -46,6 +46,10 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_P
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BAR
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_DRAWER_HANDLE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_ARRANGEMENT
@@ -159,6 +163,14 @@ object PrefsHelper {
             HIDE_NAVIGATION_SPACE -> getBoolean(HIDE_GESTURE_PILL)
 
             HIDE_DRAWER_HANDLE -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+
+            DRAWER_SEARCH_BACKGROUND -> getBoolean(DRAWER_SEARCH_BAR, true) &&
+                    (!isPixelLauncher || Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
+
+            DRAWER_SEARCH_BLUR_RADIUS,
+            DRAWER_SEARCH_BLUR_TINT -> getBoolean(DRAWER_SEARCH_BAR, true) &&
+                    (!isPixelLauncher || Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) &&
+                    PanelBackground.supported(getString(DRAWER_SEARCH_BACKGROUND)) != PanelBackground.OFF
 
             LAUNCHER_DARK_PAGE_INDICATOR -> !getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR)
 

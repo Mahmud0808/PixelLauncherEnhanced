@@ -134,6 +134,37 @@
             android:title="@string/drawer_search_title"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="off"
+            android:dialogTitle="@string/search_bar_background_title"
+            android:entries="@array/panel_background_str"
+            android:entryValues="@array/panel_background_value"
+            android:key="xposed_drawersearchbackground"
+            android:summary="@string/panel_background_desc"
+            app:summaryWarning="true"
+            android:title="@string/search_bar_background_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchblurradius"
+            android:title="@string/search_bar_blur_title"
+            app:defaultValue="5"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchblurtint"
+            android:title="@string/search_bar_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="false"
             android:key="xposed_quicklaunch"

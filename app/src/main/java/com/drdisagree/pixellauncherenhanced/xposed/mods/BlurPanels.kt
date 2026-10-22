@@ -45,6 +45,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_RADI
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_STYLE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT_COLOR
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_TINT
@@ -97,6 +100,10 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var searchBlurTint = 0
     private var searchLiquid = false
     private var searchGlass = false
+    private var drawerSearchGlass = false
+    private var drawerSearchLiquid = false
+    private var drawerSearchBlurRadius = 0
+    private var drawerSearchBlurTint = 0
     private var installingSearchPanel = false
     private var widgetGlass = false
     private var widgetHostClass: Class<*>? = null
@@ -138,6 +145,11 @@ class BlurPanels(context: Context) : ModPack(context) {
             searchBlurTint = if (searchEnabled) getSliderInt(SEARCH_BAR_BLUR_TINT, DEFAULT_TINT) else 0
             searchLiquid = searchBackground == BACKGROUND_LIQUID
             searchGlass = searchEnabled
+            val drawerSearchBackground = PanelBackground.supported(getString(DRAWER_SEARCH_BACKGROUND, BACKGROUND_OFF))
+            drawerSearchGlass = drawerSearchBackground != BACKGROUND_OFF
+            drawerSearchLiquid = drawerSearchBackground == BACKGROUND_LIQUID
+            drawerSearchBlurRadius = getSliderInt(DRAWER_SEARCH_BLUR_RADIUS, DEFAULT_BLUR)
+            drawerSearchBlurTint = getSliderInt(DRAWER_SEARCH_BLUR_TINT, DEFAULT_TINT)
         }
 
         when (key.firstOrNull()) {
@@ -153,7 +165,10 @@ class BlurPanels(context: Context) : ModPack(context) {
             WIDGET_BLUR_RADIUS,
             WIDGET_BLUR_TINT,
             SEARCH_BAR_BLUR_RADIUS,
-            SEARCH_BAR_BLUR_TINT -> hosts.toList().forEach {
+            SEARCH_BAR_BLUR_TINT,
+            DRAWER_SEARCH_BACKGROUND,
+            DRAWER_SEARCH_BLUR_RADIUS,
+            DRAWER_SEARCH_BLUR_TINT -> hosts.toList().forEach {
                 it.post {
                     it.background?.invalidateSelf()
                     it.invalidate()
@@ -263,6 +278,22 @@ class BlurPanels(context: Context) : ModPack(context) {
                 })
                 if (hotseat.isAttachedToWindow) hotseat.post { hotseat.installGlassOverlay() }
             }
+
+        val drawerSearchClass = findClass("com.android.launcher3.allapps.search.AppsSearchContainerLayout", suppressError = true)
+        drawerSearchClass
+            .hookConstructor()
+            .suppressError()
+            .runAfter { param -> (param.thisObject as? View)?.installDrawerSearchPanel() }
+
+        if (drawerSearchClass != null) {
+            findClass("android.view.View")
+                .hookMethod("setBackgroundDrawable")
+                .suppressError()
+                .runAfter { param ->
+                    if (!drawerSearchClass.isInstance(param.thisObject)) return@runAfter
+                    (param.thisObject as View).installDrawerSearchPanel()
+                }
+        }
 
         val searchDelegateClass = findClass("com.google.android.apps.nexuslauncher.qsb.SearchDelegateView", suppressError = true)
         searchDelegateClass
@@ -406,6 +437,60 @@ class BlurPanels(context: Context) : ModPack(context) {
             } else {
                 background = glass
             }
+        } finally {
+            installingSearchPanel = false
+        }
+    }
+
+    private fun View.installDrawerSearchPanel() {
+        if (installingSearchPanel) return
+        val original = background ?: return
+        if (original.hasBlurPanel()) return
+        val pill = original.pillLayer() ?: original
+        val hidden = if (original is RippleDrawable) pill else original
+        val color = backgroundTintList?.defaultColor ?: pill.fillColor()
+        hosts.add(this)
+
+        val glass = BlurPanelDrawable(original, onShown = { panel().refreshSoon() }) { canvas ->
+            hidden.alpha = if (drawerSearchGlass) 0 else 255
+            if (!drawerSearchGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
+
+            if (pill.bounds.isEmpty) rect.set(0f, 0f, width.toFloat(), height.toFloat()) else rect.set(pill.bounds)
+            if (rect.isEmpty) return@BlurPanelDrawable
+            val corner = (pill as? GradientDrawable)?.cornerRadius?.takeIf { it > 0f }
+                ?.let { minOf(it, rect.height() / 2f) }
+                ?: (rect.height() / 2f)
+            val tintColor = color?.let {
+                ColorUtils.setAlphaComponent(it, drawerSearchBlurTint.coerceIn(0, 100) * 255 / 100)
+            } ?: tint(drawerSearchBlurTint)
+            val blurRadius = IconGlass.drawerGlassBlur(this, drawerSearchBlurRadius.dp(this))
+
+            if (WallpaperGlass.draw(
+                    host = this,
+                    canvas = canvas,
+                    rect = rect,
+                    corner = corner,
+                    bottomCorner = corner,
+                    blurRadius = blurRadius,
+                    tintColor = tintColor,
+                    liquid = drawerSearchLiquid,
+                    dimColor = IconGlass.drawerGlassTint(this) ?: 0,
+                    home = true
+                )
+            ) return@BlurPanelDrawable
+
+            panel().draw(
+                canvas = canvas,
+                rect = rect,
+                cornerRadius = corner,
+                blurRadius = blurRadius,
+                tintColor = tintColor
+            )
+        }
+
+        installingSearchPanel = true
+        try {
+            background = glass
         } finally {
             installingSearchPanel = false
         }

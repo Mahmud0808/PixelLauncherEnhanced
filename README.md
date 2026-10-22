@@ -96,6 +96,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Hide drag handle                         |       ✅        |         ✅          |
 | Scroll fade                              |       ✅        |         ✅          |
 | Toggle app search bar                    |       ✅        |         ✅          |
+| App search bar frosted and liquid glass  |       ✅        |         ✅          |
 | Quick launch                             |       ✅        |         ✅          |
 | App drawer tabs                          |       ✅        |         ✅          |
 | Tabs at the bottom                       |       ✅        |         ✅          |
