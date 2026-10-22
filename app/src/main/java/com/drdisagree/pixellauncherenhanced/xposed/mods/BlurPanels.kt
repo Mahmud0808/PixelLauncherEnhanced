@@ -903,10 +903,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     private fun View.isHotseatSearchBar(): Boolean {
-        if (id != View.NO_ID) {
-            val name = runCatching { resources.getResourceEntryName(id) }.getOrNull()
-            if (name == HOTSEAT_SEARCH_ID) return true
-        }
+        if (ResourceIds.entryName(resources, id) == HOTSEAT_SEARCH_ID) return true
         val hotseat = hotseatClass ?: return false
         var current = parent
         while (current is View) {
@@ -949,9 +946,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun View.panelClear(): Boolean = if (isHotseatSearchBar()) searchGlass else widgetClearBackground
 
     private fun View.isSearchBar(): Boolean {
-        if (id == View.NO_ID) return false
-        val name = runCatching { resources.getResourceEntryName(id) }.getOrNull() ?: return false
-        return name.startsWith("search_container")
+        return ResourceIds.entryName(resources, id)?.startsWith("search_container") == true
     }
 
     private fun View.widgetCornerRadius(): Float {
