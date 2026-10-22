@@ -411,14 +411,16 @@ class IconGlass(context: Context) : ModPack(context) {
                 visibleRect()?.let { if (rect.intersect(it)) corner *= rect.width() / width }
             }
 
+            val drawerIcon = drawerSource()
             val glass = WallpaperGlass.canvasPaint(
                 host = host,
                 canvas = canvas,
                 localRect = rect,
                 corner = corner,
-                blurRadius = host.glassBlurRadius(),
+                blurRadius = drawerIcon?.glassBlurRadius() ?: host.glassBlurRadius(),
                 alpha = inner.alpha / 255f,
-                liquid = liquid
+                liquid = liquid,
+                home = drawerIcon != null
             )
             if (glass == null) {
                 inner.draw(canvas)
@@ -428,12 +430,14 @@ class IconGlass(context: Context) : ModPack(context) {
             if (maskByInner) {
                 val layer = canvas.saveLayer(rect, null)
                 canvas.drawPaint(glass)
+                drawerIcon?.let { drawDrawerTint(canvas, it) }
                 val mask = canvas.saveLayer(rect, maskPaint)
                 inner.draw(canvas)
                 canvas.restoreToCount(mask)
                 canvas.restoreToCount(layer)
             } else {
                 canvas.drawPaint(glass)
+                drawerIcon?.let { drawDrawerTint(canvas, it) }
             }
             val tintAlpha = tintOpacity.coerceIn(0, 100) * 255 / 100
             if (tintAlpha > 0) {
@@ -442,6 +446,11 @@ class IconGlass(context: Context) : ModPack(context) {
                 inner.draw(canvas)
                 inner.alpha = previous
             }
+        }
+
+        private fun drawerSource(): View? {
+            val original = (host.parent as? View)?.getFieldSilently("mOriginalIcon") as? View ?: return null
+            return original.takeIf { it.isInDrawer() }
         }
 
         private fun visibleRect(): RectF? {
@@ -517,13 +526,15 @@ class IconGlass(context: Context) : ModPack(context) {
             folder.panelColor()?.let { drawScrim(canvas, it) }
             return
         }
-        if (host.isInDrawer()) {
-            drawerScrimColor(host)?.let { drawScrim(canvas, it) }
-            sheetColor.takeIf { Color.alpha(it) != 0 }?.let { drawScrim(canvas, it) }
-        }
+        if (host.isInDrawer()) drawDrawerTint(canvas, host)
         host.folderIconSource()
             ?.let { OpacityModifier.folderIconTint(it, requireVisible = it === host) }
             ?.let { drawScrim(canvas, it) }
+    }
+
+    private fun drawDrawerTint(canvas: Canvas, icon: View) {
+        drawerScrimColor(icon)?.let { drawScrim(canvas, it) }
+        sheetColor.takeIf { Color.alpha(it) != 0 }?.let { drawScrim(canvas, it) }
     }
 
     private fun drawScrim(canvas: Canvas, color: Int) {
