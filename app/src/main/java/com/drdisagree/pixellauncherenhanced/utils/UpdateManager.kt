@@ -70,6 +70,8 @@ object UpdateManager {
     private const val DEV_RUNS_URL =
         "https://api.github.com/repos/Mahmud0808/PixelLauncherEnhanced/actions/workflows/build_debug.yml/runs?branch=master&status=success&per_page=1"
     const val RELEASES_URL = "https://github.com/Mahmud0808/PixelLauncherEnhanced/releases"
+    private const val WEB_LATEST_URL = "$RELEASES_URL/latest"
+    private const val TAG_PATH = "/tag/"
     const val DEV_BUILDS_URL = "https://t.me/DrDsProjectsChat/267103"
     private const val CHANNEL_ID = "updates"
     private const val NOTIFICATION_ID = 7301
@@ -176,7 +178,38 @@ object UpdateManager {
     }
 
     private fun fetchLatest(): ReleaseInfo =
-        ReleaseInfo.fromGitHub(fetch(API_URL)) ?: throw IOException("No APK in release")
+        runCatching { ReleaseInfo.fromGitHub(fetch(API_URL)) }.getOrNull() ?: fetchLatestFromWeb()
+
+    private fun fetchLatestFromWeb(): ReleaseInfo {
+        val connection = (URL(WEB_LATEST_URL).openConnection() as HttpURLConnection).apply {
+            connectTimeout = TIMEOUT_MS
+            readTimeout = TIMEOUT_MS
+            useCaches = false
+            instanceFollowRedirects = false
+            setRequestProperty("User-Agent", "PLEnhanced/${BuildConfig.VERSION_NAME}")
+        }
+        val tag = try {
+            connection.getHeaderField("Location")?.substringAfterLast(TAG_PATH, "")
+        } finally {
+            connection.disconnect()
+        }
+        if (tag.isNullOrBlank()) throw IOException("No release tag")
+
+        val version = tag.removePrefix("v").removePrefix("V")
+        cachedRelease()?.takeIf { it.version == version }?.let { return it }
+
+        val apkName = "PLEnhanced.$tag.apk"
+        return ReleaseInfo(
+            version = version,
+            name = tag,
+            notes = "",
+            apkUrl = "$RELEASES_URL/download/$tag/$apkName",
+            apkName = apkName,
+            size = 0L,
+            pageUrl = "$RELEASES_URL$TAG_PATH$tag",
+            publishedAt = ""
+        )
+    }
 
     suspend fun changelog(): List<ReleaseInfo>? {
         cachedChangelog?.let { return it }
