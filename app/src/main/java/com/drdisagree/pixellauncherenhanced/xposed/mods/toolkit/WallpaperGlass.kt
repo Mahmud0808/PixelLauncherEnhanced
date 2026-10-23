@@ -1,7 +1,9 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import android.annotation.SuppressLint
 import android.app.WallpaperManager
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
@@ -46,7 +48,7 @@ import kotlin.math.roundToInt
 object WallpaperGlass {
 
     private const val SAMPLE_WIDTH = 160
-    private const val MAX_ZOOM_SCALE = 1.1f
+    private const val DEFAULT_MAX_ZOOM_SCALE = 1.1f
     private const val HOME_SCALE = 0.25f
     private const val HOME_NODE = "pleHomeBackdrop"
     private const val WALLPAPER_COPY = "ple_wallpaper"
@@ -200,11 +202,38 @@ object WallpaperGlass {
 
     var offsetX = 0.5f
     var zoom = 0f
+
     private var depthBlur = 0f
     private var homeBitmap: Bitmap? = null
     private var homeWidth = 0f
     private var homeHeight = 0f
     private var homeToken = 0
+
+    @get:SuppressLint("DiscouragedApi")
+    private val maxZoomScale by lazy {
+        val system = Resources.getSystem()
+        system.getIdentifier("config_wallpaperMaxScale", "dimen", "android").takeIf { it != 0 }
+            ?.let { runCatching { system.getFloat(it) }.getOrNull() }
+            ?.takeIf { it >= 1f }
+            ?: DEFAULT_MAX_ZOOM_SCALE
+    }
+
+    private fun wallpaperBounds(bitmapWidth: Int, bitmapHeight: Int, screenWidth: Int, screenHeight: Int, out: RectF) {
+        val scale = max(screenWidth.toFloat() / bitmapWidth, screenHeight.toFloat() / bitmapHeight)
+        val drawnWidth = bitmapWidth * scale
+        val drawnHeight = bitmapHeight * scale
+        val left = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
+        val top = -(drawnHeight - screenHeight) / 2f
+        val zoomScale = maxZoomScale + (1f - maxZoomScale) * zoom.coerceIn(0f, 1f)
+        val centerX = screenWidth / 2f
+        val centerY = screenHeight / 2f
+        out.set(
+            centerX + (left - centerX) * zoomScale,
+            centerY + (top - centerY) * zoomScale,
+            centerX + (left + drawnWidth - centerX) * zoomScale,
+            centerY + (top + drawnHeight - centerY) * zoomScale
+        )
+    }
 
     fun captureHome(targets: List<View>, blurRadius: Float) {
         val root = targets.firstOrNull()?.rootView ?: return
@@ -216,12 +245,7 @@ object WallpaperGlass {
         if (width <= 0 || height <= 0) return
 
         val screenWidth = root.resources.displayMetrics.widthPixels
-        val scale = max(screenWidth.toFloat() / base.width, height.toFloat() / base.height) *
-                (1f + (MAX_ZOOM_SCALE - 1f) * zoom.coerceIn(0f, 1f))
-        val drawnWidth = base.width * scale
-        val drawnHeight = base.height * scale
-        val wallpaperLeft = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
-        val wallpaperTop = -(drawnHeight - height) / 2f
+        val wallpaperRect = RectF().also { wallpaperBounds(base.width, base.height, screenWidth, height, it) }
 
         val bitmapWidth = max(1, (width * HOME_SCALE).roundToInt())
         val bitmapHeight = max(1, (height * HOME_SCALE).roundToInt())
@@ -229,12 +253,7 @@ object WallpaperGlass {
             setPosition(0, 0, bitmapWidth, bitmapHeight)
             val canvas = beginRecording(bitmapWidth, bitmapHeight)
             canvas.scale(HOME_SCALE, HOME_SCALE)
-            canvas.drawBitmap(
-                base,
-                null,
-                RectF(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight),
-                Paint(Paint.FILTER_BITMAP_FLAG)
-            )
+            canvas.drawBitmap(base, null, wallpaperRect, Paint(Paint.FILTER_BITMAP_FLAG))
             val targetLocation = IntArray(2)
             targets.filter { it.isShown && it.alpha > 0f }.forEach { target ->
                 target.getLocationInWindow(targetLocation)
@@ -485,17 +504,6 @@ object WallpaperGlass {
 
         val dim = backdropDim(host, dimColor)
 
-        val baseScale = max(
-            screenWidth.toFloat() / bitmap.width,
-            screenHeight.toFloat() / bitmap.height
-        )
-        val zoomScale = 1f + (MAX_ZOOM_SCALE - 1f) * zoom.coerceIn(0f, 1f)
-        val scale = baseScale * zoomScale
-        val drawnWidth = bitmap.width * scale
-        val drawnHeight = bitmap.height * scale
-        val wallpaperLeft = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
-        val wallpaperTop = -(drawnHeight - screenHeight) / 2f
-
         host.getLocationInWindow(location)
         val hostScale = host.cumulativeScale()
 
@@ -508,7 +516,7 @@ object WallpaperGlass {
         if (homeLayer != null) {
             target.set(0f, 0f, homeWidth, homeHeight)
         } else {
-            target.set(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight)
+            wallpaperBounds(bitmap.width, bitmap.height, screenWidth, screenHeight, target)
         }
 
         if (shapeDrawer != null) {
@@ -605,13 +613,6 @@ object WallpaperGlass {
             else -> frostedBitmap(max(radius, frostedBackdrop), screenWidth, screenHeight)
         } ?: return null
 
-        val scale = max(screenWidth.toFloat() / bitmap.width, screenHeight.toFloat() / bitmap.height) *
-                (1f + (MAX_ZOOM_SCALE - 1f) * zoom.coerceIn(0f, 1f))
-        val drawnWidth = bitmap.width * scale
-        val drawnHeight = bitmap.height * scale
-        val wallpaperLeft = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
-        val wallpaperTop = -(drawnHeight - screenHeight) / 2f
-
         host.getLocationInWindow(location)
         if (!matrix.invert(canvasInverse)) return null
 
@@ -619,7 +620,7 @@ object WallpaperGlass {
         if (homeLayer != null) {
             shaderTarget.set(0f, 0f, homeWidth, homeHeight)
         } else {
-            shaderTarget.set(wallpaperLeft, wallpaperTop, wallpaperLeft + drawnWidth, wallpaperTop + drawnHeight)
+            wallpaperBounds(bitmap.width, bitmap.height, screenWidth, screenHeight, shaderTarget)
         }
         canvasShaderMatrix.setRectToRect(shaderSource, shaderTarget, Matrix.ScaleToFit.FILL)
         canvasShaderMatrix.postTranslate(-location[0].toFloat(), -location[1].toFloat())
