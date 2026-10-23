@@ -61,7 +61,7 @@ object WallpaperGlass {
     private const val SHADOW_ALPHA = 32
     private const val MASK_PADDING = 8
     private const val MASK_CACHE_SIZE = 8
-    private const val BLUR_CACHE_SIZE = 5
+    private const val BLUR_CACHE_SIZE = 10
     private const val LIQUID_BLUR_RATIO = 3f
     private const val DEPTH_LEVELS = 3
     private val executor = Executors.newSingleThreadExecutor()

@@ -19,7 +19,7 @@ object GlassShader {
 
     const val REFRACTION_RATIO = 0.18f
     private const val DISPERSION = 0.06f
-    private const val FROSTED_SAMPLE_RADIUS = 8
+    private const val FROSTED_SAMPLE_RADIUS = 4
     private const val FROSTED_MIN_WIDTH = 16
 
     const val LIQUID = """
