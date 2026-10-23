@@ -25,6 +25,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.ColorUtils
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import java.lang.ref.WeakReference
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -53,6 +55,7 @@ class FolderFrost(private val host: View) {
     var backdropRadius: Float? = null
     var backdropTint = 0
     var liquid = false
+    var style = GlassStyle.DEFAULT
     var home = false
     var progress = 0f
         set(value) {
@@ -126,10 +129,9 @@ class FolderFrost(private val host: View) {
         shader.setFloatUniform("origin", lensBounds.left * scale, lensBounds.top * scale)
         shader.setFloatUniform("size", lensBounds.width() * scale, lensBounds.height() * scale)
         shader.setFloatUniform("radius", corner * scale)
-        shader.setFloatUniform(
-            "refraction",
-            min(lensBounds.width(), lensBounds.height()) * WallpaperGlass.LIQUID_REFRACTION * scale
-        )
+        val base = GlassShader.baseRefraction(lensBounds.width(), lensBounds.height()) * scale
+        shader.setFloatUniform("refraction", base * style.refraction)
+        shader.setFloatUniform("edge", (base * style.depth).coerceAtLeast(1f))
         return RenderEffect.createRuntimeShaderEffect(shader, "image")
     }
 
@@ -194,7 +196,7 @@ class FolderFrost(private val host: View) {
         }
         val dim = scrimColor()?.takeIf { !home } ?: 0
         if (liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            WallpaperGlass.drawLiquidShadow(canvas, clip, host.resources.displayMetrics.density, progress)
+            WallpaperGlass.drawLiquidShadow(canvas, clip, host.resources.displayMetrics.density, progress, strength = style.shadow)
         }
         canvas.save()
         canvas.clipPath(clip)
@@ -208,7 +210,8 @@ class FolderFrost(private val host: View) {
             tintColor = if (home) 0 else backdropTint,
             liquid = liquid,
             dimColor = if (home) backdropTint else dim,
-            home = home
+            home = home,
+            style = style
         )
         canvas.restore()
 
@@ -305,6 +308,7 @@ class FolderFrost(private val host: View) {
             uniform float2 size;
             uniform float radius;
             uniform float refraction;
+            uniform float edge;
 
             float roundedBox(float2 p, float2 halfSize, float r) {
                 float2 q = abs(p) - halfSize + r;
@@ -321,7 +325,7 @@ class FolderFrost(private val host: View) {
                     roundedBox(p + e.yx, halfSize, radius) - roundedBox(p - e.yx, halfSize, radius)
                 );
                 normal = normal / max(length(normal), 0.0001);
-                float band = clamp(1.0 + d / max(refraction, 1.0), 0.0, 1.0);
+                float band = clamp(1.0 + d / max(edge, 1.0), 0.0, 1.0);
                 float bend = band * band * band;
                 return image.eval(coord - normal * refraction * bend);
             }

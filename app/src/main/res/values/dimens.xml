@@ -9,4 +9,5 @@
     <dimen name="preference_padding_horizontal">20dp</dimen>
     <dimen name="preference_padding_vertical">16dp</dimen>
 
+    <dimen name="glass_preview_height">200dp</dimen>
 </resources>

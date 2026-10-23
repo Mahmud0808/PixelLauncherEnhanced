@@ -70,6 +70,7 @@ class SliderPreference(
     private var decimalFormat: String? = "#.#"
 
     var updateConstantly: Boolean
+    var onSlide: ((Int) -> Unit)? = null
     var showValueLabel: Boolean
 
     @Suppress("unused")
@@ -371,6 +372,7 @@ class SliderPreference(
             if (!fromUser) return@OnChangeListener
             if (slider.stepSize > 0f) slider.tickVibrate()
             updateOutput()
+            onSlide?.invoke(slider.values[0].toInt())
             if (updateConstantly) savePrefs()
         }
 

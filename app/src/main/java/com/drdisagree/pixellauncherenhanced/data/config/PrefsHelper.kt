@@ -76,7 +76,12 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_CLEAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_ADVANCED
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_LINK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_SECTION
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_TARGET
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getBoolean
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getSliderFloat
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs.getString
@@ -87,6 +92,8 @@ import com.drdisagree.pixellauncherenhanced.utils.AppUtils.isPixelLauncher
 object PrefsHelper {
 
     fun isVisible(key: String?): Boolean {
+        glassVisibility(key)?.let { return it }
+
         return when (key) {
             XPOSED_HOOK_CHECK -> false
 
@@ -190,6 +197,36 @@ object PrefsHelper {
 
             else -> true
         }
+    }
+
+    fun selectedGlassTarget(): GlassTarget = GlassTarget.forId(getString(GLASS_EDITOR_TARGET)) ?: GlassTarget.ICONS
+
+    private fun glassStyle(target: GlassTarget): String = PanelBackground.supported(getString(target.styleKey))
+
+    private fun glassActive(target: GlassTarget): Boolean =
+        isVisible(target.styleKey) && glassStyle(target) != PanelBackground.OFF
+
+    private fun glassVisibility(key: String?): Boolean? {
+        if (key == null) return null
+
+        when {
+            key.startsWith(GLASS_EDITOR_SECTION) ->
+                return key.removePrefix(GLASS_EDITOR_SECTION) == selectedGlassTarget().id
+
+            key.startsWith(GLASS_EDITOR_ADVANCED) -> {
+                val target = GlassTarget.forId(key.removePrefix(GLASS_EDITOR_ADVANCED)) ?: return false
+                return target == selectedGlassTarget() && glassActive(target)
+            }
+
+            key.startsWith(GLASS_EDITOR_LINK) -> {
+                val target = GlassTarget.forId(key.removePrefix(GLASS_EDITOR_LINK)) ?: return false
+                return glassActive(target)
+            }
+        }
+
+        val target = GlassTarget.forStyleKey(key) ?: return null
+        if (!glassActive(target)) return false
+        return key == target.vibrancyKey || glassStyle(target) == PanelBackground.LIQUID
     }
 
     fun isEnabled(key: String): Boolean {

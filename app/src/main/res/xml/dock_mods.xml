@@ -49,35 +49,16 @@
             android:title="@string/dock_background_title"
             app:iconSpaceReserved="false" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_dockblurradius"
-            android:summary="@string/dock_blur_radius_desc"
-            android:title="@string/dock_blur_radius_title"
-            app:defaultValue="5"
-            app:iconSpaceReserved="false"
-            app:maxVal="30"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="dp" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_dockblurtint"
-            android:title="@string/dock_blur_tint_title"
-            app:defaultValue="40"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="%" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
-            android:defaultValue="folder"
-            android:dialogTitle="@string/dock_blur_tint_color_title"
-            android:entries="@array/dock_blur_tint_color_str"
-            android:entryValues="@array/dock_blur_tint_color_value"
-            android:key="xposed_dockblurtintcolor"
-            android:title="@string/dock_blur_tint_color_title"
-            app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_dock"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="dock" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
             android:key="xposed_dock_spacing_page"
@@ -105,25 +86,16 @@
             android:title="@string/search_bar_background_title"
             app:iconSpaceReserved="false" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_searchbarblurradius"
-            android:title="@string/search_bar_blur_title"
-            app:defaultValue="5"
-            app:iconSpaceReserved="false"
-            app:maxVal="30"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="dp" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_searchbarblurtint"
-            android:title="@string/search_bar_tint_title"
-            app:defaultValue="40"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_searchbar"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="searchbar" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 

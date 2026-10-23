@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.view.View
 import java.util.Collections
 import java.util.WeakHashMap
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 
 object DragPreviewGlass {
@@ -19,7 +20,8 @@ object DragPreviewGlass {
         val corner: Float,
         val blurRadius: Float,
         val alpha: Float,
-        val liquid: Boolean
+        val liquid: Boolean,
+        val style: GlassStyle
     )
 
     private const val MAX_CALLBACK_DEPTH = 6
@@ -32,8 +34,17 @@ object DragPreviewGlass {
 
     fun isCapturing(canvas: Canvas): Boolean = capturing.get() != null && !canvas.isHardwareAccelerated
 
-    fun capture(canvas: Canvas, path: Path, rect: RectF, corner: Float, blurRadius: Float, alpha: Float, liquid: Boolean) {
-        capturing.get()?.add(Spec(Matrix(canvas.matrix), Path(path), RectF(rect), corner, blurRadius, alpha, liquid))
+    fun capture(
+        canvas: Canvas,
+        path: Path,
+        rect: RectF,
+        corner: Float,
+        blurRadius: Float,
+        alpha: Float,
+        liquid: Boolean,
+        style: GlassStyle = GlassStyle.DEFAULT
+    ) {
+        capturing.get()?.add(Spec(Matrix(canvas.matrix), Path(path), RectF(rect), corner, blurRadius, alpha, liquid, style))
     }
 
     fun install() {
@@ -85,7 +96,8 @@ object DragPreviewGlass {
                 blurRadius = spec.blurRadius,
                 alpha = spec.alpha * drawable.alpha / 255f,
                 liquid = spec.liquid,
-                shapePath = spec.path
+                shapePath = spec.path,
+                style = spec.style
             )?.let { canvas.drawPaint(it) }
             canvas.restoreToCount(save)
         }

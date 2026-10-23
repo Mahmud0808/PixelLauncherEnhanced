@@ -8,6 +8,13 @@
         <item name="materialAlertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
     </style>
 
+    <style name="PrefsThemeGlassEditor" parent="PreferenceThemeOverlay.v14.Material">
+        <item name="android:layout">@layout/fragment_preference_container_glass</item>
+        <item name="alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="android:alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="materialAlertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+    </style>
+
     <style name="PrefsThemeCollapsingToolbar" parent="PreferenceThemeOverlay.v14.Material">
         <item name="android:layout">@layout/fragment_preference_container_home</item>
         <item name="alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>

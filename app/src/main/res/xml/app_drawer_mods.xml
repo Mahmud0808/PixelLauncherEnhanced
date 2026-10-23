@@ -145,25 +145,16 @@
             android:title="@string/search_bar_background_title"
             app:iconSpaceReserved="false" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_drawersearchblurradius"
-            android:title="@string/search_bar_blur_title"
-            app:defaultValue="5"
-            app:iconSpaceReserved="false"
-            app:maxVal="30"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="dp" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_drawersearchblurtint"
-            android:title="@string/search_bar_tint_title"
-            app:defaultValue="40"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_drawersearch"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="drawersearch" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="false"

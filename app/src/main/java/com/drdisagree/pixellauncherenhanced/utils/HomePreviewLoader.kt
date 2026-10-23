@@ -58,6 +58,19 @@ object HomePreviewLoader {
         }
     }
 
+    fun wallpaper(context: Context, width: Int, height: Int, onResult: (Drawable?) -> Unit) {
+        if (width <= 0 || height <= 0) return
+        val appContext = context.applicationContext
+
+        executor.execute {
+            val drawable = runCatching {
+                RootShell.init()
+                loadWallpaper(appContext, width, height)
+            }.getOrNull()
+            mainHandler.post { onResult(drawable) }
+        }
+    }
+
     fun requestSurface(
         context: Context,
         authority: String,

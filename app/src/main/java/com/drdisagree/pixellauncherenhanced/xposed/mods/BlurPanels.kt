@@ -56,6 +56,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_RA
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_CLEAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
@@ -83,6 +85,10 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var dockBlurTint = 0
     private var dockTintWidgetColor = false
     private var dockLiquid = false
+    private var dockStyle = GlassStyle.DEFAULT
+    private var widgetStyle = GlassStyle.DEFAULT
+    private var searchStyle = GlassStyle.DEFAULT
+    private var drawerSearchStyle = GlassStyle.DEFAULT
     private var widgetLiquid = false
     private var dockBlurCorner = DEFAULT_DOCK_CORNER
     private var dockAttached = false
@@ -126,6 +132,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             dockBlurRadius = if (dockEnabled) getSliderInt(DOCK_BLUR_RADIUS, DEFAULT_BLUR) else 0
             dockBlurTint = if (dockEnabled) getSliderInt(DOCK_BLUR_TINT, DEFAULT_TINT) else 0
             dockLiquid = dockBackground == BACKGROUND_LIQUID
+            dockStyle = GlassTarget.DOCK.readStyle { slider, default -> getSliderInt(slider, default) }
             dockTintWidgetColor = getString(DOCK_BLUR_TINT_COLOR, TINT_FOLDER) == TINT_WIDGET
             dockBlurCorner = getSliderInt(DOCK_BLUR_CORNER, DEFAULT_DOCK_CORNER)
             dockAttached = getString(DOCK_BLUR_STYLE, STYLE_FLOATING) == STYLE_ATTACHED
@@ -137,6 +144,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             widgetBlurRadius = if (widgetEnabled) getSliderInt(WIDGET_BLUR_RADIUS, DEFAULT_BLUR) else 0
             widgetBlurTint = if (widgetEnabled) getSliderInt(WIDGET_BLUR_TINT, DEFAULT_TINT) else 0
             widgetLiquid = widgetBackground == BACKGROUND_LIQUID
+            widgetStyle = GlassTarget.WIDGETS.readStyle { slider, default -> getSliderInt(slider, default) }
             widgetGlass = widgetEnabled
             widgetClearBackground = widgetEnabled || getBoolean(WIDGET_CLEAR_BACKGROUND, false)
             val searchBackground = PanelBackground.supported(getString(SEARCH_BAR_BACKGROUND, BACKGROUND_OFF))
@@ -144,10 +152,12 @@ class BlurPanels(context: Context) : ModPack(context) {
             searchBlurRadius = if (searchEnabled) getSliderInt(SEARCH_BAR_BLUR_RADIUS, DEFAULT_BLUR) else 0
             searchBlurTint = if (searchEnabled) getSliderInt(SEARCH_BAR_BLUR_TINT, DEFAULT_TINT) else 0
             searchLiquid = searchBackground == BACKGROUND_LIQUID
+            searchStyle = GlassTarget.SEARCH_BAR.readStyle { slider, default -> getSliderInt(slider, default) }
             searchGlass = searchEnabled
             val drawerSearchBackground = PanelBackground.supported(getString(DRAWER_SEARCH_BACKGROUND, BACKGROUND_OFF))
             drawerSearchGlass = drawerSearchBackground != BACKGROUND_OFF
             drawerSearchLiquid = drawerSearchBackground == BACKGROUND_LIQUID
+            drawerSearchStyle = GlassTarget.DRAWER_SEARCH.readStyle { slider, default -> getSliderInt(slider, default) }
             drawerSearchBlurRadius = getSliderInt(DRAWER_SEARCH_BLUR_RADIUS, DEFAULT_BLUR)
             drawerSearchBlurTint = getSliderInt(DRAWER_SEARCH_BLUR_TINT, DEFAULT_TINT)
         }
@@ -168,7 +178,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             SEARCH_BAR_BLUR_TINT,
             DRAWER_SEARCH_BACKGROUND,
             DRAWER_SEARCH_BLUR_RADIUS,
-            DRAWER_SEARCH_BLUR_TINT -> hosts.toList().forEach {
+            DRAWER_SEARCH_BLUR_TINT,
+            in PANEL_STYLE_KEYS -> hosts.toList().forEach {
                 it.post {
                     it.background?.invalidateSelf()
                     it.invalidate()
@@ -415,6 +426,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                     blurRadius = searchBlurRadius.dp(this),
                     tintColor = panelTintColor(searchBlurTint),
                     liquid = searchLiquid,
+                    style = searchStyle,
                     dimColor = dockBackdropTint(),
                     frostedBackdrop = dockBackdropRadius()
                 )
@@ -474,6 +486,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                     blurRadius = blurRadius,
                     tintColor = tintColor,
                     liquid = drawerSearchLiquid,
+                    style = drawerSearchStyle,
                     dimColor = IconGlass.drawerGlassTint(this) ?: 0,
                     home = true
                 )
@@ -634,7 +647,8 @@ class BlurPanels(context: Context) : ModPack(context) {
                     blurRadius = dockBlurRadius.dp(hotseat),
                     tintColor = hotseat.dockTint(dockBlurTint),
                     alpha = glassAlpha,
-                    liquid = dockLiquid
+                    liquid = dockLiquid,
+                    style = dockStyle
                 )
             }
         }
@@ -700,6 +714,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             blurRadius = panelBlur().dp(this),
             alpha = 1f,
             liquid = true,
+            style = panelStyle(),
             maskKey = mask,
             maskDrawer = { drawMask(it, target, mask) },
             frostedBackdrop = dockBackdropRadius(),
@@ -791,6 +806,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             blurRadius = blurRadius.dp(this),
             tintColor = panelTintColor(blurTint),
             liquid = liquid,
+            style = panelStyle(),
             dimColor = dockBackdropTint(),
             frostedBackdrop = dockBackdropRadius()
         )
@@ -837,7 +853,8 @@ class BlurPanels(context: Context) : ModPack(context) {
                     bottomCorner = corner,
                     blurRadius = widgetBlurRadius.dp(this),
                     tintColor = tint(widgetBlurTint),
-                    liquid = widgetLiquid
+                    liquid = widgetLiquid,
+                    style = widgetStyle
                 )
             ) return@BlurPanelDrawable
 
@@ -1027,6 +1044,8 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun View.panelTint(): Int = if (isHotseatSearchBar()) searchBlurTint else widgetBlurTint
 
     private fun View.panelLiquid(): Boolean = if (isHotseatSearchBar()) searchLiquid else widgetLiquid
+
+    private fun View.panelStyle(): GlassStyle = if (isHotseatSearchBar()) searchStyle else widgetStyle
 
     private fun View.panelTintColor(opacity: Int): Int {
         val original = (getExtraFieldSilently(PANEL_COLOR) as? Int)?.takeIf { isHotseatSearchBar() }
@@ -1348,5 +1367,11 @@ class BlurPanels(context: Context) : ModPack(context) {
         private const val PAGE_INDICATOR_GAP = 8
         private const val LARGE_BACKGROUND_RATIO = 0.5f
         private const val SECTION_SPAN = 0.9f
+        private val PANEL_STYLE_KEYS = listOf(
+            GlassTarget.DOCK,
+            GlassTarget.WIDGETS,
+            GlassTarget.SEARCH_BAR,
+            GlassTarget.DRAWER_SEARCH
+        ).flatMap { it.styleKeys }
     }
 }

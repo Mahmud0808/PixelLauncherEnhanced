@@ -29,6 +29,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGRO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
@@ -68,6 +70,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private val addToPathMethods = HashMap<Class<*>, Method?>()
     private var folderBackgroundBlur: Int = 0
     private var folderLiquid = false
+    private var folderStyle = GlassStyle.DEFAULT
     private var folderBlurAnimator: ValueAnimator? = null
     private var folderFrost: FolderFrost? = null
     private val previewRect = RectF()
@@ -86,12 +89,14 @@ class OpacityModifier(context: Context) : ModPack(context) {
             val folderEnabled = folderBackground != BACKGROUND_OFF
             folderBackgroundBlur = if (folderEnabled) getSliderInt(FOLDER_BACKGROUND_BLUR, DEFAULT_FOLDER_BLUR) else 0
             folderLiquid = folderBackground == BACKGROUND_LIQUID
+            folderStyle = GlassTarget.FOLDERS.readStyle { slider, default -> getSliderInt(slider, default) }
             folderBackgroundOpacity = if (folderEnabled) {
                 getSliderInt(FOLDER_BACKGROUND_OPACITY, DEFAULT_FOLDER_TINT) * 255 / 100
             } else -1
         }
 
         if (key.firstOrNull() in setOf(FOLDER_BACKGROUND_OPACITY, FOLDER_BACKGROUND)) reloadLauncher(mContext)
+        if (key.firstOrNull() in GlassTarget.FOLDERS.styleKeys) WallpaperGlass.onOffsetsChanged()
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
@@ -396,6 +401,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 frosted.backdropRadius = if (inDrawer) IconGlass.drawerBlur(folder, ownBlur) else null
                 frosted.backdropTint = if (inDrawer) IconGlass.drawerBackdropTint(folder) ?: 0 else 0
                 frosted.liquid = folderLiquid
+                frosted.style = folderStyle
                 frosted.home = inDrawer
                 frosted.start(folder.blurTargets(dragLayer), dragLayer.width, dragLayer.height)
                 folderFrost = frosted
@@ -473,7 +479,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         shapeCorner,
                         blurRadius,
                         1f,
-                        folderLiquid
+                        folderLiquid,
+                        folderStyle
                     )
                     return@runBefore
                 }
@@ -486,6 +493,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         blurRadius = blurRadius,
                         tintColor = Color.TRANSPARENT,
                         liquid = folderLiquid,
+                        style = folderStyle,
                         dimColor = drawerTint,
                         home = inDrawer,
                         shapeDrawer = shape?.let { shape ->
@@ -695,7 +703,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 corner = corner,
                 blurRadius = folderBackgroundBlur * host.resources.displayMetrics.density,
                 alpha = inner.alpha / 255f,
-                liquid = folderLiquid
+                liquid = folderLiquid,
+                style = folderStyle
             )
             if (glass == null) {
                 inner.draw(canvas)

@@ -16,6 +16,10 @@ object Constants {
     // Preferences
     const val VIBRATE_UI = "vibrate_ui"
     const val XPOSED_HOOK_CHECK = "xposed_hook_check"
+    const val GLASS_EDITOR_TARGET = "glass_editor_target"
+    const val GLASS_EDITOR_SECTION = "glass_editor_section_"
+    const val GLASS_EDITOR_ADVANCED = "glass_editor_advanced_"
+    const val GLASS_EDITOR_LINK = "glass_editor_link_"
     const val ACTION_HOOK_CHECK_REQUEST = "${BuildConfig.APPLICATION_ID}.ACTION_HOOK_CHECK_REQUEST"
     const val ACTION_HOOK_CHECK_RESULT = "${BuildConfig.APPLICATION_ID}.ACTION_HOOK_CHECK_RESULT"
     const val ACTION_APP_LIST_UPDATED = "${BuildConfig.APPLICATION_ID}.ACTION_APP_LIST_UPDATED"

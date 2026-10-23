@@ -77,26 +77,16 @@
             android:title="@string/folder_background_title"
             app:iconSpaceReserved="false" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_folderbackgroundblur"
-            android:summary="@string/folder_background_blur_desc"
-            android:title="@string/folder_background_blur_title"
-            app:defaultValue="5"
-            app:iconSpaceReserved="false"
-            app:maxVal="30"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="dp" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_folderbackgroundopacity"
-            android:title="@string/folder_background_tint_title"
-            app:defaultValue="40"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_folder"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="folder" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 

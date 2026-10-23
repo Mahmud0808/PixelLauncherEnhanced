@@ -33,6 +33,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.DragPreviewGlass
@@ -60,6 +62,7 @@ class IconGlass(context: Context) : ModPack(context) {
     private var liquid = false
     private var blurRadius = 0
     private var tintOpacity = DEFAULT_TINT
+    private var iconStyle = GlassStyle.DEFAULT
     private val currentHost = ThreadLocal<View?>()
     private val currentDrawable = ThreadLocal<Drawable?>()
     private val glassNodes = WeakHashMap<Drawable, GlassNode>()
@@ -113,13 +116,15 @@ class IconGlass(context: Context) : ModPack(context) {
             liquid = background == PanelBackground.LIQUID
             blurRadius = getSliderInt(ICON_BACKGROUND_BLUR, DEFAULT_BLUR)
             tintOpacity = getSliderInt(ICON_BACKGROUND_TINT, DEFAULT_TINT)
+            iconStyle = GlassTarget.ICONS.readStyle { slider, default -> getSliderInt(slider, default) }
             drawerOpacity = getSliderInt(APP_DRAWER_BACKGROUND_OPACITY, -1) * 255 / 100
         }
 
         when (key.firstOrNull()) {
             ICON_BACKGROUND -> reloadLauncher(mContext)
             ICON_BACKGROUND_BLUR,
-            ICON_BACKGROUND_TINT -> WallpaperGlass.onOffsetsChanged()
+            ICON_BACKGROUND_TINT,
+            in GlassTarget.ICONS.styleKeys -> WallpaperGlass.onOffsetsChanged()
         }
     }
 
@@ -216,7 +221,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 if (liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     WallpaperGlass.drawLiquidShadow(
                         canvas, path, host.resources.displayMetrics.density, paint.alpha / 255f,
-                        bounds.width() / pathSize * visibleAreaFactor
+                        bounds.width() / pathSize * visibleAreaFactor, iconStyle.shadow
                     )
                 }
                 canvas.clipPath(path)
@@ -226,7 +231,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 if (DragPreviewGlass.isCapturing(canvas)) {
                     DragPreviewGlass.capture(
                         canvas, path, localRect, shapeCorner(path, shapeBounds),
-                        host.glassBlurRadius(), paint.alpha / 255f, liquid
+                        host.glassBlurRadius(), paint.alpha / 255f, liquid, iconStyle
                     )
                     drawTint(canvas, paint)
                     canvas.drawBitmap(monoIcon, null, monoBounds, monoPaint)
@@ -258,6 +263,7 @@ class IconGlass(context: Context) : ModPack(context) {
                         blurRadius = host.glassBlurRadius(),
                         alpha = paint.alpha / 255f,
                         liquid = liquid,
+                        style = iconStyle,
                         shapePath = path,
                         home = host.samplesHome(),
                         frostedBackdrop = BlurPanels.dockBackdropRadius(host),
@@ -344,6 +350,7 @@ class IconGlass(context: Context) : ModPack(context) {
                     blurRadius = host.glassBlurRadius(),
                     alpha = drawable.alpha / 255f,
                     liquid = liquid,
+                    style = iconStyle,
                     home = host.samplesHome()
                 ) ?: return@runBefore
 
@@ -420,6 +427,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 blurRadius = drawerIcon?.glassBlurRadius() ?: host.glassBlurRadius(),
                 alpha = inner.alpha / 255f,
                 liquid = liquid,
+                style = iconStyle,
                 home = drawerIcon != null
             )
             if (glass == null) {
@@ -584,6 +592,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 blurRadius = view.glassBlurRadius(),
                 alpha = alpha,
                 liquid = liquid,
+                style = iconStyle,
                 shapePath = path,
                 home = view.samplesHome(),
                 frostedBackdrop = BlurPanels.dockBackdropRadius(view),

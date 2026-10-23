@@ -38,26 +38,16 @@
             android:title="@string/widget_background_title"
             app:iconSpaceReserved="false" />
 
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_widgetblurradius"
-            android:summary="@string/widget_blur_radius_desc"
-            android:title="@string/widget_blur_radius_title"
-            app:defaultValue="5"
-            app:iconSpaceReserved="false"
-            app:maxVal="30"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="dp" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
-            android:key="xposed_widgetblurtint"
-            android:title="@string/widget_blur_tint_title"
-            app:defaultValue="40"
-            app:iconSpaceReserved="false"
-            app:maxVal="100"
-            app:minVal="0"
-            app:tickInterval="1"
-            app:valueFormat="%" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_widget"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="widget" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:defaultValue="false"
