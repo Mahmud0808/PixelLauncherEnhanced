@@ -119,6 +119,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     private val hotseatClass: Class<*>? by lazy { findClass("com.android.launcher3.Hotseat", suppressError = true) }
     private val hosts: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val rect = RectF()
+    private val panelRadii = FloatArray(8)
     private var dockPanelOn = false
     private var wallpaperIsLight: Boolean? = null
     private var wallpaperListenerRegistered = false
@@ -790,10 +791,11 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun ViewGroup.drawPanelTarget(canvas: Canvas, target: View, blurRadius: Int, blurTint: Int, liquid: Boolean) {
         if (!targetBounds(target, rect)) return
 
-        val cornerRadius = (target.background as? GradientDrawable)?.cornerRadius
-            ?.takeIf { it > 0f }
-            ?: widgetCornerRadius()
+        val shape = target.background?.gradientShape()
+        val ownRadius = shape?.cornerRadius?.takeIf { it > 0f }
+        val cornerRadius = ownRadius ?: widgetCornerRadius()
         val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
+        val cornerRadii = shape?.perCornerRadii(rect) ?: if (ownRadius == null) frameRadii(rect) else null
 
         val mask = target.shapeMask()
         val layer = if (mask != null) canvas.saveLayer(rect, null) else -1
@@ -811,7 +813,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             liquid = liquid,
             style = panelStyle(),
             dimColor = dockBackdropTint(),
-            frostedBackdrop = dockBackdropRadius()
+            frostedBackdrop = dockBackdropRadius(),
+            cornerRadii = cornerRadii
         )
 
         if (mask != null) {
@@ -832,8 +835,46 @@ class BlurPanels(context: Context) : ModPack(context) {
             cornerRadius = cornerRadius,
             blurRadius = blurRadius.dp(this),
             tintColor = panelTintColor(blurTint),
-            outline = panelStyle().takeUnless { liquid }
+            outline = panelStyle().takeUnless { liquid },
+            cornerRadii = cornerRadii
         )
+    }
+
+    private fun Drawable.gradientShape(): GradientDrawable? = when (this) {
+        is GradientDrawable -> this
+        is DrawableWrapper -> drawable?.gradientShape()
+        is DrawableContainer -> current?.gradientShape()
+        is LayerDrawable -> (0 until numberOfLayers).firstNotNullOfOrNull { getDrawable(it)?.gradientShape() }
+        else -> null
+    }
+
+    private fun ViewGroup.frameRadii(bounds: RectF): FloatArray? {
+        val frame = (getFieldSilently("enforcedRectangle") ?: getFieldSilently("mEnforcedRectangle")) as? Rect
+        if (frame == null || frame.isEmpty) return null
+        val enforced = (getFieldSilently("isCornerRadiusEnforced") ?: getFieldSilently("mIsCornerRadiusEnforced")) == true
+        val radius = ((getFieldSilently("enforcedCornerRadius") ?: getFieldSilently("mEnforcedCornerRadius")) as? Float)
+            ?.takeIf { enforced && it > 0f }
+            ?: widgetCornerRadius()
+
+        val left = bounds.left - frame.left <= FRAME_EDGE_SLACK
+        val top = bounds.top - frame.top <= FRAME_EDGE_SLACK
+        val right = frame.right - bounds.right <= FRAME_EDGE_SLACK
+        val bottom = frame.bottom - bounds.bottom <= FRAME_EDGE_SLACK
+        if (left && top && right && bottom) return null
+
+        val corner = minOf(radius, minOf(bounds.width(), bounds.height()) / 2f)
+        panelRadii.fill(if (left && top) corner else 0f, 0, 2)
+        panelRadii.fill(if (top && right) corner else 0f, 2, 4)
+        panelRadii.fill(if (right && bottom) corner else 0f, 4, 6)
+        panelRadii.fill(if (bottom && left) corner else 0f, 6, 8)
+        return panelRadii
+    }
+
+    private fun GradientDrawable.perCornerRadii(bounds: RectF): FloatArray? {
+        val radii = runCatching { cornerRadii }.getOrNull()?.takeIf { it.size == 8 } ?: return null
+        val limit = minOf(bounds.width(), bounds.height()) / 2f
+        for (i in 0 until 8) panelRadii[i] = minOf(radii[i], limit)
+        return panelRadii
     }
 
     private fun View.installFloatingWidgetPanel() {
@@ -1364,6 +1405,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         private const val RESUME_REFRESH_DELAY = 300L
         private const val DEFAULT_DOCK_CORNER = 28
         private const val DEFAULT_WIDGET_CORNER = 24
+        private const val FRAME_EDGE_SLACK = 1f
         private const val DEFAULT_DOCK_MARGIN = 12
         private val LAYERED_CONTAINERS = listOf(".Workspace", ".Hotseat", ".ShortcutAndWidgetContainer")
         private const val BACKGROUND_OFF = "off"

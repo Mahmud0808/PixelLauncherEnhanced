@@ -35,8 +35,7 @@ object GlassShader {
         uniform shader image;
         uniform float2 origin;
         uniform float2 size;
-        uniform float radius;
-        uniform float bottomRadius;
+        uniform float4 radii;
         uniform float refraction;
         uniform float edge;
         uniform float dispersion;
@@ -54,8 +53,12 @@ object GlassShader {
             return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
         }
 
+        float cornerRadius(float2 p) {
+            return p.y > 0.0 ? (p.x > 0.0 ? radii.z : radii.w) : (p.x > 0.0 ? radii.y : radii.x);
+        }
+
         float boxDistance(float2 p, float2 halfSize) {
-            return roundedBox(p, halfSize, p.y > 0.0 ? bottomRadius : radius);
+            return roundedBox(p, halfSize, cornerRadius(p));
         }
 
         float maskDistance(float2 coord) {
@@ -130,6 +133,22 @@ object GlassShader {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun setRadii(shader: RuntimeShader, radii: FloatArray) {
+        shader.setFloatUniform("radii", radii[0], radii[2], radii[4], radii[6])
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun setRadii(shader: RuntimeShader, corner: Float, bottomCorner: Float = corner) {
+        shader.setFloatUniform("radii", corner, corner, bottomCorner, bottomCorner)
+    }
+
+    fun cornerRadii(corner: Float, bottomCorner: Float, out: FloatArray): FloatArray {
+        out.fill(corner, 0, 4)
+        out.fill(bottomCorner, 4, 8)
+        return out
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun setDim(shader: RuntimeShader, color: Int) {
         shader.setFloatUniform(
             "dim",
@@ -172,6 +191,10 @@ object GlassShader {
         alpha: Float,
         density: Float
     ) {
+        drawOutline(canvas, rect, cornerRadii(corner, bottomCorner, outlineRadii), style, alpha, density)
+    }
+
+    fun drawOutline(canvas: Canvas, rect: RectF, radii: FloatArray, style: GlassStyle?, alpha: Float, density: Float) {
         if (rect.isEmpty) return
         val width = prepareOutline(style, alpha, density)
         if (width <= 0f) return
@@ -179,8 +202,7 @@ object GlassShader {
         val inset = width / 2f
         outlineRect.set(rect)
         outlineRect.inset(inset, inset)
-        outlineRadii.fill(max(0f, corner - inset), 0, 4)
-        outlineRadii.fill(max(0f, bottomCorner - inset), 4, 8)
+        for (i in 0 until 8) outlineRadii[i] = max(0f, radii[i] - inset)
         outlinePath.reset()
         outlinePath.addRoundRect(outlineRect, outlineRadii, Path.Direction.CW)
         canvas.drawPath(outlinePath, outlinePaint)

@@ -483,7 +483,8 @@ object WallpaperGlass {
         dimColor: Int = 0,
         home: Boolean = false,
         frostedBackdrop: Float = 0f,
-        style: GlassStyle = GlassStyle.DEFAULT
+        style: GlassStyle = GlassStyle.DEFAULT,
+        cornerRadii: FloatArray? = null
     ): Boolean {
         track(host)
         checkWallpaper(host.context)
@@ -507,8 +508,7 @@ object WallpaperGlass {
         host.getLocationInWindow(location)
         val hostScale = host.cumulativeScale()
 
-        radii.fill(corner, 0, 4)
-        radii.fill(bottomCorner, 4, 8)
+        if (cornerRadii != null) cornerRadii.copyInto(radii) else GlassShader.cornerRadii(corner, bottomCorner, radii)
         clipPath.reset()
         clipPath.addRoundRect(rect, radii, Path.Direction.CW)
 
@@ -522,7 +522,7 @@ object WallpaperGlass {
         if (shapeDrawer != null) {
             if (useLiquid && prepareShadow(shadowBlur(host.resources.displayMetrics.density, rect), alpha, style.shadow)) shapeDrawer(shadowPaint)
             val paint = if (useLiquid) {
-                liquidPaint(bitmap, rect, corner, bottomCorner, hostScale, alpha, dim, style)
+                liquidPaint(bitmap, rect, radii, hostScale, alpha, dim, style)
             } else {
                 shapePaint.shader = wallpaperShader(bitmap, hostScale)
                 shapePaint.colorFilter = GlassShader.backdropFilter(dim, style.saturation)
@@ -535,7 +535,7 @@ object WallpaperGlass {
 
         if (useLiquid) {
             drawLiquidShadow(canvas, clipPath, host.resources.displayMetrics.density, alpha, strength = style.shadow)
-            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, corner, bottomCorner, hostScale, alpha, dim, style))
+            canvas.drawPath(clipPath, liquidPaint(bitmap, rect, radii, hostScale, alpha, dim, style))
             drawTint(canvas, tintColor, alpha)
             return true
         }
@@ -554,7 +554,7 @@ object WallpaperGlass {
         drawTint(canvas, dim, alpha)
         drawTint(canvas, tintColor, alpha)
         GlassShader.drawOutline(
-            canvas, rect, corner, bottomCorner, style.takeUnless { liquid }, alpha, host.resources.displayMetrics.density
+            canvas, rect, radii, style.takeUnless { liquid }, alpha, host.resources.displayMetrics.density
         )
         return true
     }
@@ -640,8 +640,7 @@ object WallpaperGlass {
             shader.setInputShader("image", image)
             shader.setFloatUniform("origin", localRect.left, localRect.top)
             shader.setFloatUniform("size", localRect.width(), localRect.height())
-            shader.setFloatUniform("radius", corner)
-            shader.setFloatUniform("bottomRadius", corner)
+            GlassShader.setRadii(shader, corner)
             GlassShader.applyStyle(shader, localRect.width(), localRect.height(), style)
             GlassShader.setDim(shader, backdropDim(host, dimColor))
             val edge = GlassShader.edgeWidth(localRect.width(), localRect.height(), style)
@@ -774,8 +773,7 @@ object WallpaperGlass {
     private fun liquidPaint(
         bitmap: Bitmap,
         rect: RectF,
-        corner: Float,
-        bottomCorner: Float,
+        cornerRadii: FloatArray,
         hostScale: Float,
         alpha: Float,
         dimColor: Int,
@@ -787,8 +785,7 @@ object WallpaperGlass {
         shader.setInputShader("image", image)
         shader.setFloatUniform("origin", rect.left, rect.top)
         shader.setFloatUniform("size", rect.width(), rect.height())
-        shader.setFloatUniform("radius", corner)
-        shader.setFloatUniform("bottomRadius", bottomCorner)
+        GlassShader.setRadii(shader, cornerRadii)
         GlassShader.applyStyle(shader, rect.width(), rect.height(), style)
         GlassShader.setDim(shader, dimColor)
         disableMask(shader)

@@ -97,17 +97,19 @@ class BlurPanel(private val host: View) {
         blurRadius: Float,
         tintColor: Int,
         roundBottom: Boolean = true,
-        outline: GlassStyle? = null
+        outline: GlassStyle? = null,
+        cornerRadii: FloatArray? = null
     ) {
         if (rect.isEmpty) return
 
         val corner = min(cornerRadius, min(rect.width(), rect.height()) / 2f)
         val bottomCorner = if (roundBottom) corner else 0f
+        if (cornerRadii != null) cornerRadii.copyInto(radii) else GlassShader.cornerRadii(corner, bottomCorner, radii)
         val density = host.resources.displayMetrics.density
 
         if (blurRadius < 0.5f) {
-            drawTint(canvas, rect, corner, bottomCorner, tintColor, 1f)
-            GlassShader.drawOutline(canvas, rect, corner, bottomCorner, outline, 1f, density)
+            drawTint(canvas, rect, tintColor, 1f)
+            GlassShader.drawOutline(canvas, rect, radii, outline, 1f, density)
             return
         }
 
@@ -153,10 +155,10 @@ class BlurPanel(private val host: View) {
                 if (hasPerCornerRadius()) {
                     callMethodSilently(
                         "setCornerRadius",
-                        corner,
-                        corner,
-                        bottomCorner,
-                        bottomCorner
+                        radii[0],
+                        radii[2],
+                        radii[6],
+                        radii[4]
                     )
                 } else {
                     if (!roundBottom) blurBounds.bottom += corner.roundToInt()
@@ -173,15 +175,13 @@ class BlurPanel(private val host: View) {
             }
         }
 
-        drawTint(canvas, rect, corner, bottomCorner, tintColor, fade)
-        GlassShader.drawOutline(canvas, rect, corner, bottomCorner, outline, fade, density)
+        drawTint(canvas, rect, tintColor, fade)
+        GlassShader.drawOutline(canvas, rect, radii, outline, fade, density)
     }
 
     private fun drawTint(
         canvas: Canvas,
         rect: RectF,
-        corner: Float,
-        bottomCorner: Float,
         tintColor: Int,
         tintFade: Float
     ) {
@@ -189,8 +189,6 @@ class BlurPanel(private val host: View) {
 
         tintPaint.color = tintColor
         tintPaint.alpha = ((tintColor ushr 24) * tintFade).roundToInt()
-        radii.fill(corner, 0, 4)
-        radii.fill(bottomCorner, 4, 8)
         tintPath.reset()
         tintPath.addRoundRect(rect, radii, Path.Direction.CW)
         canvas.drawPath(tintPath, tintPaint)
