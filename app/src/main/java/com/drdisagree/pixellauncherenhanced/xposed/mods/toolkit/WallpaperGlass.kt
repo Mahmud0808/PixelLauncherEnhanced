@@ -553,6 +553,9 @@ object WallpaperGlass {
 
         drawTint(canvas, dim, alpha)
         drawTint(canvas, tintColor, alpha)
+        GlassShader.drawOutline(
+            canvas, rect, corner, bottomCorner, style.takeUnless { liquid }, alpha, host.resources.displayMetrics.density
+        )
         return true
     }
 

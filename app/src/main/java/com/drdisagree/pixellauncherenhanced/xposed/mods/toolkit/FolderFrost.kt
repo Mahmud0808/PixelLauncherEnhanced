@@ -55,7 +55,12 @@ class FolderFrost(private val host: View) {
     var backdropRadius: Float? = null
     var backdropTint = 0
     var liquid = false
+    private var panelStyle = GlassStyle.DEFAULT
     var style = GlassStyle.DEFAULT
+        set(value) {
+            field = value
+            panelStyle = value.copy(outline = false)
+        }
     var home = false
     var progress = 0f
         set(value) {
@@ -173,21 +178,31 @@ class FolderFrost(private val host: View) {
         }
     }.getOrNull()
 
-    fun draw(canvas: Canvas, clipPath: Path?, backgroundBounds: Rect, cornerRadius: Float) {
-        val radius = maxRadius * progress
-        if (progress <= 0f || !canvas.isHardwareAccelerated) return
+    fun drawOutline(canvas: Canvas, clipPath: Path?, backgroundBounds: Rect, cornerRadius: Float) {
+        if (progress <= 0f || liquid) return
+        val clip = resolveClip(clipPath, backgroundBounds, cornerRadius) ?: return
+        GlassShader.drawOutline(canvas, clip, style, 1f, host.resources.displayMetrics.density)
+    }
 
+    private fun resolveClip(clipPath: Path?, backgroundBounds: Rect, cornerRadius: Float): Path? {
         val clip = if (clipPath != null && !clipPath.isEmpty) {
             clipPath.computeBounds(pathBounds, true)
             clipPath
         } else {
-            if (backgroundBounds.isEmpty) return
+            if (backgroundBounds.isEmpty) return null
             pathBounds.set(backgroundBounds)
             roundPath.reset()
             roundPath.addRoundRect(pathBounds, cornerRadius, cornerRadius, Path.Direction.CW)
             roundPath
         }
-        if (pathBounds.isEmpty) return
+        return clip.takeUnless { pathBounds.isEmpty }
+    }
+
+    fun draw(canvas: Canvas, clipPath: Path?, backgroundBounds: Rect, cornerRadius: Float) {
+        val radius = maxRadius * progress
+        if (progress <= 0f || !canvas.isHardwareAccelerated) return
+
+        val clip = resolveClip(clipPath, backgroundBounds, cornerRadius) ?: return
 
         val corner = if (clip === clipPath) {
             WallpaperGlass.pathCorner(clip, pathBounds)
@@ -211,7 +226,7 @@ class FolderFrost(private val host: View) {
             liquid = liquid,
             dimColor = if (home) backdropTint else dim,
             home = home,
-            style = style
+            style = panelStyle
         )
         canvas.restore()
 

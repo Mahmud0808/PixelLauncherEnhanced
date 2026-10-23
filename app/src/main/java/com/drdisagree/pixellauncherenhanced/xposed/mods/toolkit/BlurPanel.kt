@@ -13,6 +13,8 @@ import android.graphics.drawable.DrawableWrapper
 import android.os.SystemClock
 import android.view.View
 import android.view.animation.DecelerateInterpolator
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import java.util.Collections
 import java.util.WeakHashMap
 import kotlin.math.abs
@@ -94,15 +96,18 @@ class BlurPanel(private val host: View) {
         cornerRadius: Float,
         blurRadius: Float,
         tintColor: Int,
-        roundBottom: Boolean = true
+        roundBottom: Boolean = true,
+        outline: GlassStyle? = null
     ) {
         if (rect.isEmpty) return
 
         val corner = min(cornerRadius, min(rect.width(), rect.height()) / 2f)
         val bottomCorner = if (roundBottom) corner else 0f
+        val density = host.resources.displayMetrics.density
 
         if (blurRadius < 0.5f) {
             drawTint(canvas, rect, corner, bottomCorner, tintColor, 1f)
+            GlassShader.drawOutline(canvas, rect, corner, bottomCorner, outline, 1f, density)
             return
         }
 
@@ -169,6 +174,7 @@ class BlurPanel(private val host: View) {
         }
 
         drawTint(canvas, rect, corner, bottomCorner, tintColor, fade)
+        GlassShader.drawOutline(canvas, rect, corner, bottomCorner, outline, fade, density)
     }
 
     private fun drawTint(

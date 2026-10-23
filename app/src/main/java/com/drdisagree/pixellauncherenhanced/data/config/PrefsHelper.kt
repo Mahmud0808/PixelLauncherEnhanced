@@ -226,7 +226,12 @@ object PrefsHelper {
 
         val target = GlassTarget.forStyleKey(key) ?: return null
         if (!glassActive(target)) return false
-        return key == target.vibrancyKey || glassStyle(target) == PanelBackground.LIQUID
+        val style = glassStyle(target)
+        return when (key) {
+            target.vibrancyKey -> true
+            target.outlineKey -> style == PanelBackground.FROSTED
+            else -> style == PanelBackground.LIQUID
+        }
     }
 
     fun isEnabled(key: String): Boolean {

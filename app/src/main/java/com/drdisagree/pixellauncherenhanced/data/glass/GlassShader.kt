@@ -3,10 +3,14 @@ package com.drdisagree.pixellauncherenhanced.data.glass
 import android.graphics.Bitmap
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -21,6 +25,17 @@ object GlassShader {
     private const val DISPERSION = 0.06f
     private const val FROSTED_SAMPLE_RADIUS = 4
     private const val FROSTED_MIN_WIDTH = 16
+
+    private const val OUTLINE_WIDTH_DP = 1f
+    private const val OUTLINE_OPACITY = 0.15f
+
+    private val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.WHITE
+    }
+    private val outlineRect = RectF()
+    private val outlinePath = Path()
+    private val outlineRadii = FloatArray(8)
 
     const val LIQUID = """
         uniform shader image;
@@ -152,6 +167,51 @@ object GlassShader {
             )
         }
         return ColorMatrixColorFilter(matrix)
+    }
+
+    fun drawOutline(
+        canvas: Canvas,
+        rect: RectF,
+        corner: Float,
+        bottomCorner: Float,
+        style: GlassStyle?,
+        alpha: Float,
+        density: Float
+    ) {
+        if (rect.isEmpty) return
+        val width = prepareOutline(style, alpha, density)
+        if (width <= 0f) return
+
+        val inset = width / 2f
+        outlineRect.set(rect)
+        outlineRect.inset(inset, inset)
+        outlineRadii.fill(max(0f, corner - inset), 0, 4)
+        outlineRadii.fill(max(0f, bottomCorner - inset), 4, 8)
+        outlinePath.reset()
+        outlinePath.addRoundRect(outlineRect, outlineRadii, Path.Direction.CW)
+        canvas.drawPath(outlinePath, outlinePaint)
+    }
+
+    fun drawOutline(canvas: Canvas, path: Path, style: GlassStyle?, alpha: Float, unit: Float) {
+        val width = prepareOutline(style, alpha, unit)
+        if (width <= 0f || path.isEmpty) return
+
+        outlinePaint.strokeWidth = width * 2f
+        val save = canvas.save()
+        canvas.clipPath(path)
+        canvas.drawPath(path, outlinePaint)
+        canvas.restoreToCount(save)
+    }
+
+    private fun prepareOutline(style: GlassStyle?, alpha: Float, unit: Float): Float {
+        if (style?.outline != true) return 0f
+        val width = OUTLINE_WIDTH_DP * unit
+        val outlineAlpha = (OUTLINE_OPACITY * alpha.coerceIn(0f, 1f) * 255).roundToInt()
+        if (width <= 0f || outlineAlpha <= 0) return 0f
+
+        outlinePaint.strokeWidth = width
+        outlinePaint.alpha = outlineAlpha
+        return width
     }
 
     fun frostedSample(radius: Float, coverWidth: Float, baseWidth: Int): Pair<Int, Int> {

@@ -216,7 +216,7 @@ class GlassPreviewView @JvmOverloads constructor(
         canvas.drawBitmap(wallpaper, null, wallpaperRect, wallpaperPaint)
 
         val mode = PanelBackground.supported(RPrefs.getString(target.styleKey))
-        val style = target.readStyle { key, default -> slider(key, default) }
+        val style = target.readStyle(this::slider, RPrefs::getBoolean)
         val blur = slider(target.blurKey, DEFAULT_BLUR) * density
         val tint = slider(target.tintKey, DEFAULT_TINT)
 
@@ -303,6 +303,7 @@ class GlassPreviewView @JvmOverloads constructor(
                 glassPaint.colorFilter = GlassShader.backdropFilter(Color.TRANSPARENT, style.saturation)
                 canvas.drawPath(path, glassPaint)
                 drawTint(canvas, surface, tint)
+                GlassShader.drawOutline(canvas, rect, element.corner, element.corner, style, 1f, density)
             }
         }
 

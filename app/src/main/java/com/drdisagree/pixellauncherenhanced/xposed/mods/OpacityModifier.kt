@@ -29,6 +29,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGRO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -68,9 +69,15 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private var folderBackgroundOpacity: Int = -1
     private val shapeCorners = WeakHashMap<Any, Pair<Float, Float>>()
     private val addToPathMethods = HashMap<Class<*>, Method?>()
+    private val folderOutlinePath = Path()
+    private var pendingFolderOutline: Any? = null
+    private var outlinedFolderBackground: GradientDrawable? = null
+    private var outlinedFolderFrost: FolderFrost? = null
+    private var outlinedFolderClip: Path? = null
     private var folderBackgroundBlur: Int = 0
     private var folderLiquid = false
     private var folderStyle = GlassStyle.DEFAULT
+    private var folderPanelStyle = GlassStyle.DEFAULT
     private var folderBlurAnimator: ValueAnimator? = null
     private var folderFrost: FolderFrost? = null
     private val previewRect = RectF()
@@ -89,7 +96,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
             val folderEnabled = folderBackground != BACKGROUND_OFF
             folderBackgroundBlur = if (folderEnabled) getSliderInt(FOLDER_BACKGROUND_BLUR, DEFAULT_FOLDER_BLUR) else 0
             folderLiquid = folderBackground == BACKGROUND_LIQUID
-            folderStyle = GlassTarget.FOLDERS.readStyle { slider, default -> getSliderInt(slider, default) }
+            folderStyle = GlassTarget.FOLDERS.readStyle(this::getSliderInt, this::getBoolean)
+            folderPanelStyle = folderStyle.copy(outline = false)
             folderBackgroundOpacity = if (folderEnabled) {
                 getSliderInt(FOLDER_BACKGROUND_OPACITY, DEFAULT_FOLDER_TINT) * 255 / 100
             } else -1
@@ -377,8 +385,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 val alpha = if (folderBackgroundOpacity >= 0) folderBackgroundOpacity else Color.alpha(base)
                 param.thisObject.setFieldSilently("mBgColor", ColorUtils.setAlphaComponent(base, alpha))
             }, after = { param ->
-                val color = param.getObjectExtra(PREVIEW_ORIGINAL_COLOR) as? Int ?: return@runAround
-                param.thisObject.setFieldSilently("mBgColor", color)
+                (param.getObjectExtra(PREVIEW_ORIGINAL_COLOR) as? Int)?.let {
+                    param.thisObject.setFieldSilently("mBgColor", it)
+                }
+                (param.args.getOrNull(0) as? Canvas)?.let { drawQueuedFolderOutline(param.thisObject, it) }
             })
 
         DragPreviewGlass.install()
@@ -427,6 +437,24 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     ?: return@runBefore
 
                 frost.draw(canvas, clip, background.bounds, background.cornerRadius)
+                outlinedFolderBackground = background
+                outlinedFolderFrost = frost
+                outlinedFolderClip = clip
+            }
+            .runAfter {
+                outlinedFolderBackground = null
+                outlinedFolderFrost = null
+                outlinedFolderClip = null
+            }
+
+        findClass(GradientDrawable::class.java.name)
+            .hookMethod("draw")
+            .suppressError()
+            .runAfter { param ->
+                val background = outlinedFolderBackground ?: return@runAfter
+                if (param.thisObject !== background) return@runAfter
+                val canvas = param.args.getOrNull(0) as? Canvas ?: return@runAfter
+                outlinedFolderFrost?.drawOutline(canvas, outlinedFolderClip, background.bounds, background.cornerRadius)
             }
 
         findClass("com.android.launcher3.util.QuickstepBackgroundBlurHelper", suppressError = true)
@@ -442,6 +470,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
             .hookMethod("dispatchDraw")
             .suppressError()
             .runBefore { param ->
+                pendingFolderOutline = null
                 if (!folderGlass()) return@runBefore
 
                 val folderIcon = param.thisObject as View
@@ -493,7 +522,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         blurRadius = blurRadius,
                         tintColor = Color.TRANSPARENT,
                         liquid = folderLiquid,
-                        style = folderStyle,
+                        style = folderPanelStyle,
                         dimColor = drawerTint,
                         home = inDrawer,
                         shapeDrawer = shape?.let { shape ->
@@ -509,7 +538,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
                             }
                         }
                     )
-                ) return@runBefore
+                ) {
+                    queueFolderOutline(preview, shape, shapeCorner, scaledRadius.toFloat())
+                    return@runBefore
+                }
                 if (inDrawer) return@runBefore
 
                 val panel = folderIcon.getExtraFieldSilently(PREVIEW_BLUR) as? BlurPanel
@@ -522,6 +554,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                     blurRadius = blurRadius,
                     tintColor = Color.TRANSPARENT
                 )
+                queueFolderOutline(preview, shape, shapeCorner, scaledRadius.toFloat())
             }
 
         folderClass
@@ -586,6 +619,27 @@ class OpacityModifier(context: Context) : ModPack(context) {
         val bounds = RectF().also { path.computeBounds(it, true) }
         if (bounds.isEmpty) return radius
         return WallpaperGlass.pathCorner(path, bounds).also { shapeCorners[this] = radius to it }
+    }
+
+    private fun queueFolderOutline(preview: Any, shape: Any?, corner: Float, radius: Float) {
+        if (folderLiquid || !folderStyle.outline) return
+        folderOutlinePath.reset()
+        if (shape != null && shape.addShapeToPath(folderOutlinePath, radius)) {
+            folderOutlinePath.offset(previewRect.left, previewRect.top)
+        } else {
+            folderOutlinePath.addRoundRect(previewRect, corner, corner, Path.Direction.CW)
+        }
+        pendingFolderOutline = preview
+    }
+
+    private fun drawQueuedFolderOutline(preview: Any, canvas: Canvas) {
+        if (pendingFolderOutline !== preview) return
+        pendingFolderOutline = null
+        val context = preview.getFieldSilently("mContext") as? Context ?: return
+        GlassShader.drawOutline(
+            canvas, folderOutlinePath, folderStyle.takeUnless { folderLiquid }, 1f,
+            context.resources.displayMetrics.density
+        )
     }
 
     private fun Any.addShapeToPath(path: Path, radius: Float): Boolean {
@@ -722,6 +776,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 tintPaint.color = ColorUtils.setAlphaComponent(base, tint * inner.alpha / 255)
                 canvas.drawPaint(tintPaint)
             }
+            GlassShader.drawOutline(
+                canvas, shapePath, folderStyle.takeUnless { folderLiquid }, inner.alpha / 255f,
+                host.resources.displayMetrics.density
+            )
             canvas.restoreToCount(saved)
         }
 

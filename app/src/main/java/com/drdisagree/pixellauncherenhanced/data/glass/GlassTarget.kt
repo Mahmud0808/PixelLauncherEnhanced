@@ -38,17 +38,19 @@ enum class GlassTarget(
     val vibrancyKey = "xposed_${id}glassvibrancy"
     val rimKey = "xposed_${id}glassrim"
     val shadowKey = "xposed_${id}glassshadow"
+    val outlineKey = "xposed_${id}glassborder"
 
     val liquidKeys = listOf(refractionKey, depthKey, dispersionKey, rimKey, shadowKey)
-    val styleKeys = liquidKeys + vibrancyKey
+    val styleKeys = liquidKeys + vibrancyKey + outlineKey
 
-    fun readStyle(readSlider: (String, Int) -> Int) = GlassStyle(
+    fun readStyle(readSlider: (String, Int) -> Int, readBoolean: (String, Boolean) -> Boolean) = GlassStyle(
         refraction = readSlider(refractionKey, GlassStyle.DEFAULT_REFRACTION) / 100f,
         depth = readSlider(depthKey, GlassStyle.DEFAULT_DEPTH) / 100f,
         dispersion = readSlider(dispersionKey, GlassStyle.DEFAULT_DISPERSION) / 100f,
         vibrancy = readSlider(vibrancyKey, GlassStyle.DEFAULT_VIBRANCY) / 100f,
         rim = readSlider(rimKey, GlassStyle.DEFAULT_RIM) / 100f,
-        shadow = readSlider(shadowKey, GlassStyle.DEFAULT_SHADOW) / 100f
+        shadow = readSlider(shadowKey, GlassStyle.DEFAULT_SHADOW) / 100f,
+        outline = readBoolean(outlineKey, GlassStyle.DEFAULT_OUTLINE)
     )
 
     companion object {

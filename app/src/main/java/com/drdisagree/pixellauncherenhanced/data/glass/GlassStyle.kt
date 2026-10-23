@@ -6,7 +6,8 @@ data class GlassStyle(
     val dispersion: Float = 1f,
     val vibrancy: Float = 0f,
     val rim: Float = 1f,
-    val shadow: Float = 1f
+    val shadow: Float = 1f,
+    val outline: Boolean = true
 ) {
     val saturation: Float
         get() = (1f + vibrancy).coerceAtLeast(0f)
@@ -18,6 +19,7 @@ data class GlassStyle(
         const val DEFAULT_VIBRANCY = 0
         const val DEFAULT_RIM = 100
         const val DEFAULT_SHADOW = 100
+        const val DEFAULT_OUTLINE = true
 
         val DEFAULT = GlassStyle()
     }

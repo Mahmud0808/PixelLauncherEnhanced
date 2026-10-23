@@ -564,6 +564,7 @@
     <string name="glass_dispersion_title">Dispersion</string>
     <string name="glass_vibrancy_title">Vibrancy</string>
     <string name="glass_rim_title">Rim light</string>
+    <string name="glass_outline_title">Outline</string>
     <string name="glass_shadow_title">Shadow</string>
     <string name="glass_target_icons">Icons</string>
     <string name="glass_target_folders">Folders</string>

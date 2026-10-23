@@ -33,6 +33,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
+import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -116,7 +117,7 @@ class IconGlass(context: Context) : ModPack(context) {
             liquid = background == PanelBackground.LIQUID
             blurRadius = getSliderInt(ICON_BACKGROUND_BLUR, DEFAULT_BLUR)
             tintOpacity = getSliderInt(ICON_BACKGROUND_TINT, DEFAULT_TINT)
-            iconStyle = GlassTarget.ICONS.readStyle { slider, default -> getSliderInt(slider, default) }
+            iconStyle = GlassTarget.ICONS.readStyle(this::getSliderInt, this::getBoolean)
             drawerOpacity = getSliderInt(APP_DRAWER_BACKGROUND_OPACITY, -1) * 255 / 100
         }
 
@@ -234,6 +235,7 @@ class IconGlass(context: Context) : ModPack(context) {
                         host.glassBlurRadius(), paint.alpha / 255f, liquid, iconStyle
                     )
                     drawTint(canvas, paint)
+                    drawOutline(canvas, path, paint, host, bounds.width() / pathSize * visibleAreaFactor)
                     canvas.drawBitmap(monoIcon, null, monoBounds, monoPaint)
                     canvas.restoreToCount(save)
                     param.result = null
@@ -277,6 +279,7 @@ class IconGlass(context: Context) : ModPack(context) {
                     drawDrawerScrim(canvas, host)
                 }
                 drawTint(canvas, paint)
+                drawOutline(canvas, path, paint, host, bounds.width() / pathSize * visibleAreaFactor)
                 canvas.drawBitmap(monoIcon, null, monoBounds, monoPaint)
                 canvas.restoreToCount(save)
                 param.result = null
@@ -439,6 +442,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 val layer = canvas.saveLayer(rect, null)
                 canvas.drawPaint(glass)
                 drawerIcon?.let { drawDrawerTint(canvas, it) }
+                clip?.let { drawOutline(canvas, it) }
                 val mask = canvas.saveLayer(rect, maskPaint)
                 inner.draw(canvas)
                 canvas.restoreToCount(mask)
@@ -454,6 +458,15 @@ class IconGlass(context: Context) : ModPack(context) {
                 inner.draw(canvas)
                 inner.alpha = previous
             }
+            if (!maskByInner) clip?.let { drawOutline(canvas, it) }
+        }
+
+        private fun drawOutline(canvas: Canvas, clip: Path) {
+            if (clip.isEmpty) return
+            GlassShader.drawOutline(
+                canvas, clip, iconStyle.takeUnless { liquid }, inner.alpha / 255f,
+                host.resources.displayMetrics.density
+            )
         }
 
         private fun drawerSource(): View? {
@@ -775,6 +788,14 @@ class IconGlass(context: Context) : ModPack(context) {
             getChildAt(i).findScrimView()?.let { return it }
         }
         return null
+    }
+
+    private fun drawOutline(canvas: Canvas, path: Path, paint: Paint, host: View, scale: Float) {
+        if (scale <= 0f) return
+        GlassShader.drawOutline(
+            canvas, path, iconStyle.takeUnless { liquid }, paint.alpha / 255f,
+            host.resources.displayMetrics.density / scale
+        )
     }
 
     private fun drawTint(canvas: Canvas, paint: Paint) {
