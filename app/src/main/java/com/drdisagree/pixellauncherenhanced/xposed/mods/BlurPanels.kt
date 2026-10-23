@@ -1033,7 +1033,11 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     private fun View.dockBackdropRadius(): Float =
-        if (!dockLiquid && dockBlurRadius > 0 && onDock()) dockBlurRadius.dp(this) else 0f
+        when {
+            dockBlurRadius <= 0 || !onDock() -> 0f
+            dockLiquid -> WallpaperGlass.liquidBlur(dockBlurRadius.dp(this))
+            else -> dockBlurRadius.dp(this)
+        }
 
     private fun View.dockBackdropTint(): Int = if (onDock()) dockTint(dockBlurTint) else 0
 

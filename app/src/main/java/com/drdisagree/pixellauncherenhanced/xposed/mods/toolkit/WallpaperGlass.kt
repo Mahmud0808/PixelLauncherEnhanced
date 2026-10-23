@@ -62,6 +62,7 @@ object WallpaperGlass {
     private const val MASK_PADDING = 8
     private const val MASK_CACHE_SIZE = 8
     private const val BLUR_CACHE_SIZE = 5
+    private const val LIQUID_BLUR_RATIO = 3f
     private const val DEPTH_LEVELS = 3
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -420,8 +421,10 @@ object WallpaperGlass {
         return blurredBitmap(width, sampleRadius)
     }
 
+    fun liquidBlur(radius: Float): Float = radius / LIQUID_BLUR_RATIO
+
     private fun clearBitmap(radius: Float, screenWidth: Int): Bitmap? =
-        blurredBitmap(SHARP_WIDTH, (radius * SHARP_WIDTH / screenWidth / 3f).roundToInt())
+        blurredBitmap(SHARP_WIDTH, (liquidBlur(radius) * SHARP_WIDTH / screenWidth).roundToInt())
 
     private fun blurredBitmap(width: Int, radius: Int): Bitmap? {
         val base = sharpBase ?: return null
@@ -472,9 +475,10 @@ object WallpaperGlass {
         val radius = max(blurRadius, depthBlur)
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         val homeLayer = homeBitmap?.takeIf { home }
-        val frosted = max(frostedBackdrop, depthBlur)
         val bitmap = homeLayer ?: when {
-            useLiquid && frostedBackdrop > 0f -> frostedBitmap(frosted, screenWidth, screenHeight)
+            useLiquid && frostedBackdrop > 0f ->
+                frostedBitmap(maxOf(frostedBackdrop, depthBlur, liquidBlur(blurRadius)), screenWidth, screenHeight)
+
             useLiquid -> clearBitmap(radius, screenWidth)
             else -> frostedBitmap(max(radius, frostedBackdrop), screenWidth, screenHeight)
         } ?: return false
@@ -594,7 +598,9 @@ object WallpaperGlass {
         val useLiquid = liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         val homeLayer = homeBitmap?.takeIf { home }
         val bitmap = homeLayer ?: when {
-            useLiquid && frostedBackdrop > 0f -> frostedBitmap(max(frostedBackdrop, depthBlur), screenWidth, screenHeight)
+            useLiquid && frostedBackdrop > 0f ->
+                frostedBitmap(maxOf(frostedBackdrop, depthBlur, liquidBlur(blurRadius)), screenWidth, screenHeight)
+
             useLiquid -> clearBitmap(radius, screenWidth)
             else -> frostedBitmap(max(radius, frostedBackdrop), screenWidth, screenHeight)
         } ?: return null
