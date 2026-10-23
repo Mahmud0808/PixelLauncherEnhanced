@@ -8,6 +8,8 @@ import android.content.res.Resources
 import android.content.res.XResForwarder
 import android.content.res.XResources
 import android.graphics.Color
+import android.os.Handler
+import android.os.Looper
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_LIGHT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_BG_COLOR_DARK
@@ -19,6 +21,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.MaterialPalette
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.resParams
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadIcons
+import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
@@ -27,11 +30,11 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 class ThemedIconsColor(context: Context) : ModPack(context) {
 
     private class ColorChoice(val color: Int, val role: MaterialPalette.Role?, val dark: Boolean) {
-        fun value(): Int = role?.let { MaterialPalette.resolve(Resources.getSystem(), it, dark) } ?: color
+        fun value(resources: Resources): Int = role?.let { MaterialPalette.resolve(resources, it, dark) } ?: color
 
-        fun replacement(): Any {
+        fun replacement(resources: Resources): Any {
             val id = role?.let { MaterialPalette.resourceId(it, dark) }?.takeIf { it != 0 } ?: return color
-            return XResForwarder(Resources.getSystem(), id)
+            return XResForwarder(resources, id)
         }
     }
 
@@ -44,6 +47,8 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
     private var folderDark = ColorChoice(Color.BLACK, null, true)
     private var packageName: String? = null
     private val replacedIds = HashSet<Int>()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val rebindLauncher = Runnable { reloadLauncher(mContext) }
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -70,6 +75,8 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
             clearResources(packageName)
             if (mCustomThemedIconColor) replaceResources(packageName)
             reloadIcons()
+            mainHandler.removeCallbacks(rebindLauncher)
+            mainHandler.postDelayed(rebindLauncher, REBIND_DELAY)
         }
     }
 
@@ -103,8 +110,8 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
                 val colors = param.result as? IntArray ?: return@runAfter
                 val context = param.args.firstOrNull() as? Context ?: return@runAfter
                 val dark = isDarkTheme(context)
-                if (colors.isNotEmpty()) colors[0] = (if (dark) iconBgDark else iconBgLight).value()
-                if (colors.size > 1) colors[1] = (if (dark) iconFgDark else iconFgLight).value()
+                if (colors.isNotEmpty()) colors[0] = (if (dark) iconBgDark else iconBgLight).value(context.resources)
+                if (colors.size > 1) colors[1] = (if (dark) iconFgDark else iconFgLight).value(context.resources)
             }
     }
 
@@ -113,7 +120,7 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
 
     private fun replace(res: XResources, id: Int, choice: ColorChoice) {
         replacedIds.add(id)
-        res.setReplacement(id, choice.replacement())
+        res.setReplacement(id, choice.replacement(mContext.resources))
     }
 
     private fun clearResources(packageName: String?) {
@@ -140,6 +147,7 @@ class ThemedIconsColor(context: Context) : ModPack(context) {
     }
 
     companion object {
+        private const val REBIND_DELAY = 300L
         private val COLOR_KEYS = listOf(
             THEMED_ICON_CUSTOM_FG_COLOR_LIGHT,
             THEMED_ICON_CUSTOM_BG_COLOR_LIGHT,
