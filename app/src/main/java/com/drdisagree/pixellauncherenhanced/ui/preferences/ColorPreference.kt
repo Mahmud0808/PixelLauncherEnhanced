@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.ui.preferences
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.content.res.TypedArray
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -21,12 +22,16 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.data.common.MaterialPalette
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.applyChoiceColors
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.ui.widgets.ExpressiveColorPicker
 import com.drdisagree.pixellauncherenhanced.ui.widgets.FadingEdgeLayout
 import com.drdisagree.pixellauncherenhanced.ui.widgets.ShapeIconView
 import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
+import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.tickVibrate
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.shape.MaterialShapes
 import com.google.android.material.textfield.TextInputEditText
@@ -37,6 +42,10 @@ import com.google.android.material.R as MaterialR
 class ColorPreference : Preference {
     private var color = Color.BLACK
     private var showAlphaSlider = false
+    private var darkKey: String? = null
+    private var darkDefault = Color.BLACK
+    private var darkColor = Color.BLACK
+    private var editingDark = false
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         init(attrs)
@@ -54,8 +63,10 @@ class ColorPreference : Preference {
         isPersistent = true
         context.withStyledAttributes(attrs, AppR.styleable.ColorPreference) {
             showAlphaSlider = getBoolean(AppR.styleable.ColorPreference_showAlphaSlider, false)
+            darkKey = getString(AppR.styleable.ColorPreference_darkKey)
+            darkDefault = getColor(AppR.styleable.ColorPreference_darkDefaultValue, Color.BLACK)
         }
-        widgetLayoutResource = AppR.layout.preference_color_swatch
+        widgetLayoutResource = if (darkKey != null) AppR.layout.preference_color_swatch_pair else AppR.layout.preference_color_swatch
         initResource()
     }
 
@@ -65,29 +76,94 @@ class ColorPreference : Preference {
 
     override fun onClick() {
         super.onClick()
+        editingDark = darkKey != null &&
+                context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         showSourceDialog()
     }
 
-    private val materialRole: MaterialPalette.Role?
-        get() = MaterialPalette.effectiveRole(
-            key,
-            sharedPreferences?.getString(MaterialPalette.sourceKey(key), null),
-            if (sharedPreferences?.contains(key) == true) color else null
-        )
+    private fun keyFor(dark: Boolean): String = if (dark) darkKey ?: key else key
 
-    private val isDarkVariant: Boolean
-        get() = MaterialPalette.isDarkKey(key)
+    private fun colorFor(dark: Boolean): Int = if (dark && darkKey != null) darkColor else color
+
+    private fun roleFor(dark: Boolean): MaterialPalette.Role? {
+        val variantKey = keyFor(dark)
+        return MaterialPalette.effectiveRole(
+            variantKey,
+            sharedPreferences?.getString(MaterialPalette.sourceKey(variantKey), null),
+            if (sharedPreferences?.contains(variantKey) == true) colorFor(dark) else null
+        )
+    }
+
+    private fun isDarkFor(dark: Boolean): Boolean = if (darkKey != null) dark else MaterialPalette.isDarkKey(key)
+
+    private fun shownColor(dark: Boolean): Int =
+        roleFor(dark)?.let { MaterialPalette.resolve(context.resources, it, isDarkFor(dark)) } ?: colorFor(dark)
 
     private fun showSourceDialog() {
         val density = context.resources.displayMetrics.density
         fun dp(value: Int) = (value * density).toInt()
-        val selected = materialRole
         var dialog: AlertDialog? = null
-        val outline = MaterialColors.getColor(context, MaterialR.attr.colorOnSurface, 0)
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(8), dp(24), dp(8))
         }
+        fillPalette(content) { dialog?.dismiss() }
+
+        val body = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        if (darkKey != null) {
+            val group = LayoutInflater.from(context)
+                .inflate(AppR.layout.view_color_variant_toggle, body, false) as MaterialButtonToggleGroup
+            listOf(false to AppR.string.color_variant_light, true to AppR.string.color_variant_dark).forEach { (dark, label) ->
+                val button = (LayoutInflater.from(context)
+                    .inflate(AppR.layout.view_choice_button, group, false) as MaterialButton).apply {
+                    id = View.generateViewId()
+                    setText(label)
+                    tag = dark
+                    applyChoiceColors(this)
+                }
+                group.addView(button, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                if (dark == editingDark) group.check(button.id)
+            }
+            group.addOnButtonCheckedListener { toggleGroup, checkedId, isChecked ->
+                if (!isChecked) return@addOnButtonCheckedListener
+                val dark = toggleGroup.findViewById<View>(checkedId)?.tag as? Boolean ?: return@addOnButtonCheckedListener
+                if (dark == editingDark) return@addOnButtonCheckedListener
+                toggleGroup.tickVibrate()
+                editingDark = dark
+                content.removeAllViews()
+                fillPalette(content) { dialog?.dismiss() }
+            }
+            body.addView(group, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                marginStart = dp(24)
+                marginEnd = dp(24)
+                bottomMargin = dp(4)
+            })
+        }
+        body.addView(FadingEdgeLayout(context).apply {
+            addView(ScrollView(context).apply {
+                isVerticalScrollBarEnabled = false
+                overScrollMode = View.OVER_SCROLL_NEVER
+                addView(content)
+            })
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+
+        dialog = ExpressiveDialog.show(
+            context = context,
+            icon = AppR.drawable.ic_palette,
+            title = title ?: "",
+            content = body,
+            fullWidthContent = true,
+            positive = ExpressiveDialog.Action(context.getString(AppR.string.color_custom)) { showCustomDialog() },
+            negative = ExpressiveDialog.Action(context.getString(android.R.string.cancel))
+        )
+    }
+
+    private fun fillPalette(content: LinearLayout, dismiss: () -> Unit) {
+        val density = context.resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        val selected = roleFor(editingDark)
+        val dark = isDarkFor(editingDark)
+        val outline = MaterialColors.getColor(context, MaterialR.attr.colorOnSurface, 0)
         MaterialPalette.Group.entries.forEach { group ->
             content.addView(MaterialTextView(context).apply {
                 setText(group.label)
@@ -101,7 +177,7 @@ class ColorPreference : Preference {
                     isBaselineAligned = false
                 }
                 pair.forEachIndexed { index, role ->
-                    val swatch = MaterialPalette.resolve(context.resources, role, isDarkVariant) ?: return@forEachIndexed
+                    val swatch = MaterialPalette.resolve(context.resources, role, dark) ?: return@forEachIndexed
                     val textColor = if (ColorUtils.calculateLuminance(swatch) > 0.5) 0xDE000000.toInt() else Color.WHITE
                     val chosen = role == selected
                     row.addView(MaterialTextView(context).apply {
@@ -128,7 +204,7 @@ class ColorPreference : Preference {
                         contentDescription = context.getString(role.label)
                         setOnClickListener {
                             saveMaterial(role, swatch)
-                            dialog?.dismiss()
+                            dismiss()
                         }
                     }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
                         if (index == 0 && pair.size > 1) marginEnd = dp(8)
@@ -139,21 +215,6 @@ class ColorPreference : Preference {
                 content.addView(row)
             }
         }
-        dialog = ExpressiveDialog.show(
-            context = context,
-            icon = AppR.drawable.ic_palette,
-            title = title ?: "",
-            content = FadingEdgeLayout(context).apply {
-                addView(ScrollView(context).apply {
-                    isVerticalScrollBarEnabled = false
-                    overScrollMode = View.OVER_SCROLL_NEVER
-                    addView(content)
-                })
-            },
-            fullWidthContent = true,
-            positive = ExpressiveDialog.Action(context.getString(AppR.string.color_custom)) { showCustomDialog() },
-            negative = ExpressiveDialog.Action(context.getString(android.R.string.cancel))
-        )
     }
 
     private fun showCustomDialog() {
@@ -176,7 +237,7 @@ class ColorPreference : Preference {
         }
 
         picker.showAlpha = showAlphaSlider
-        picker.color = color
+        picker.color = colorFor(editingDark)
         showColor(picker.color, fromText = false)
         picker.onColorChanged = { showColor(it, fromText = false) }
         hex.filters = arrayOf(InputFilter.LengthFilter(if (showAlphaSlider) 8 else 6))
@@ -194,7 +255,7 @@ class ColorPreference : Preference {
             content = view,
             fullWidthContent = true,
             positive = ExpressiveDialog.Action(context.getString(AppR.string.color_select)) {
-                sharedPreferences?.edit()?.putString(MaterialPalette.sourceKey(key), MaterialPalette.CUSTOM)?.apply()
+                sharedPreferences?.edit()?.putString(MaterialPalette.sourceKey(keyFor(editingDark)), MaterialPalette.CUSTOM)?.apply()
                 saveValue(picker.color)
             },
             negative = ExpressiveDialog.Action(context.getString(android.R.string.cancel))
@@ -214,27 +275,36 @@ class ColorPreference : Preference {
     }
 
     private fun saveMaterial(role: MaterialPalette.Role, @ColorInt resolved: Int) {
-        sharedPreferences?.edit()?.putString(MaterialPalette.sourceKey(key), role.id)?.apply()
+        sharedPreferences?.edit()?.putString(MaterialPalette.sourceKey(keyFor(editingDark)), role.id)?.apply()
         saveValue(resolved)
     }
 
+    private fun describe(dark: Boolean): String =
+        roleFor(dark)?.let { context.getString(it.label) } ?: String.format("#%06X", colorFor(dark) and 0xFFFFFF)
+
     private fun describeSource() {
-        summary = materialRole?.let { context.getString(it.label) } ?: String.format("#%06X", color and 0xFFFFFF)
+        summary = if (darkKey != null) {
+            context.getString(AppR.string.color_variant_summary, describe(false), describe(true))
+        } else {
+            describe(false)
+        }
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
 
-        holder.itemView.findViewById<ShapeIconView>(AppR.id.color_swatch)?.apply {
-            val shown = materialRole?.let { MaterialPalette.resolve(context.resources, it, isDarkVariant) } ?: color
-            setShapes(MaterialShapes.COOKIE_9, MaterialShapes.SUNNY)
-            setColors(shown, shown)
-            setOutline(MaterialColors.getColor(this, MaterialR.attr.colorOutline), resources.displayMetrics.density * OUTLINE_DP)
-            setCheckerboard(if (Color.alpha(shown) < 255) (resources.displayMetrics.density * CHECKER_DP).toInt() else 0)
-        }
+        holder.itemView.findViewById<ShapeIconView>(AppR.id.color_swatch)?.showSwatch(shownColor(false))
+        if (darkKey != null) holder.itemView.findViewById<ShapeIconView>(AppR.id.color_swatch_dark)?.showSwatch(shownColor(true))
 
         setFirstAndLastItemMargin(holder)
         setBackgroundResource(holder)
+    }
+
+    private fun ShapeIconView.showSwatch(shown: Int) {
+        setShapes(MaterialShapes.COOKIE_9, MaterialShapes.SUNNY)
+        setColors(shown, shown)
+        setOutline(MaterialColors.getColor(this, MaterialR.attr.colorOutline), resources.displayMetrics.density * OUTLINE_DP)
+        setCheckerboard(if (Color.alpha(shown) < 255) (resources.displayMetrics.density * CHECKER_DP).toInt() else 0)
     }
 
     override fun onSetInitialValue(defaultValue: Any?) {
@@ -245,6 +315,7 @@ class ColorPreference : Preference {
         } else {
             color = getPersistedInt(-0x1000000)
         }
+        darkKey?.let { darkColor = sharedPreferences?.getInt(it, darkDefault) ?: darkDefault }
         describeSource()
     }
 
@@ -258,8 +329,14 @@ class ColorPreference : Preference {
      * @param color The newly selected color
      */
     private fun saveValue(@ColorInt color: Int) {
-        this.color = color
-        persistInt(this.color)
+        val dark = darkKey?.takeIf { editingDark }
+        if (dark != null) {
+            darkColor = color
+            sharedPreferences?.edit()?.putInt(dark, color)?.apply()
+        } else {
+            this.color = color
+            persistInt(this.color)
+        }
         describeSource()
         notifyChanged()
         callChangeListener(color)

@@ -60,6 +60,8 @@
 
     <declare-styleable name="ColorPreference">
         <attr name="showAlphaSlider" format="boolean" />
+        <attr name="darkKey" format="string" />
+        <attr name="darkDefaultValue" format="color" />
     </declare-styleable>
 
     <declare-styleable name="SwitchPreference">

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <com.drdisagree.pixellauncherenhanced.ui.widgets.ShapeIconView
+        android:id="@+id/color_swatch"
+        android:layout_width="32dp"
+        android:layout_height="32dp" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.widgets.ShapeIconView
+        android:id="@+id/color_swatch_dark"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="6dp" />
+
+</LinearLayout>

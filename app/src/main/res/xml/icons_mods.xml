@@ -123,49 +123,31 @@
             android:defaultValue="0xff000000"
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_themediconcustomfgcolorlight"
-            android:title="@string/icon_foreground_color_light_title"
-            app:showAlphaSlider="true"
-            app:iconSpaceReserved="false" />
+            android:title="@string/icon_foreground_color_title"
+            app:darkDefaultValue="#FFFFFFFF"
+            app:darkKey="xposed_themediconcustomfgcolordark"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="true" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
             android:defaultValue="0xffffffff"
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_themediconcustombgcolorlight"
-            android:title="@string/icon_background_color_light_title"
-            app:showAlphaSlider="true"
-            app:iconSpaceReserved="false" />
+            android:title="@string/icon_background_color_title"
+            app:darkDefaultValue="#FF000000"
+            app:darkKey="xposed_themediconcustombgcolordark"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="true" />
 
         <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
             android:defaultValue="0xffffffff"
             android:dependency="xposed_themediconcustomcolor"
             android:key="xposed_foldercustomcolorlight"
-            android:title="@string/folder_color_light_title"
-            app:showAlphaSlider="true"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
-            android:defaultValue="0xffffffff"
-            android:dependency="xposed_themediconcustomcolor"
-            android:key="xposed_themediconcustomfgcolordark"
-            android:title="@string/icon_foreground_color_dark_title"
-            app:showAlphaSlider="true"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
-            android:defaultValue="0xff000000"
-            android:dependency="xposed_themediconcustomcolor"
-            android:key="xposed_themediconcustombgcolordark"
-            android:title="@string/icon_background_color_dark_title"
-            app:showAlphaSlider="true"
-            app:iconSpaceReserved="false" />
-
-        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
-            android:defaultValue="0xff000000"
-            android:dependency="xposed_themediconcustomcolor"
-            android:key="xposed_foldercustomcolordark"
-            android:title="@string/folder_color_dark_title"
-            app:showAlphaSlider="true"
-            app:iconSpaceReserved="false" />
+            android:title="@string/folder_color_title"
+            app:darkDefaultValue="#FF000000"
+            app:darkKey="xposed_foldercustomcolordark"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="true" />
 
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 

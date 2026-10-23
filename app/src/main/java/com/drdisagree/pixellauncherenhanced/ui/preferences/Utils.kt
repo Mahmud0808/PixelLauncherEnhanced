@@ -1,12 +1,17 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import android.content.res.ColorStateList
 import android.view.ViewGroup.MarginLayoutParams
+import androidx.core.graphics.ColorUtils
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.data.enums.SegmentPosition
 import com.drdisagree.pixellauncherenhanced.ui.drawables.SegmentedRowDrawable
 import com.drdisagree.pixellauncherenhanced.data.config.PrefsHelper
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.R as MaterialR
 
 object Utils {
 
@@ -73,5 +78,26 @@ object Utils {
             holder.isDividerAllowedAbove = false
             holder.isDividerAllowedBelow = false
         }
+    }
+
+    fun applyChoiceColors(button: MaterialButton) {
+        val checked = intArrayOf(android.R.attr.state_checked)
+        val disabled = intArrayOf(-android.R.attr.state_enabled)
+        val selectedFill = MaterialColors.getColor(button, androidx.appcompat.R.attr.colorPrimary)
+        val selectedText = MaterialColors.getColor(button, MaterialR.attr.colorOnPrimary)
+        val idleFill = MaterialColors.getColor(button, MaterialR.attr.colorSecondaryContainer)
+        val idleText = MaterialColors.getColor(button, MaterialR.attr.colorOnSecondaryContainer)
+        val faded = ColorUtils.setAlphaComponent(idleText, 0x61)
+        val fadedFill = ColorUtils.setAlphaComponent(idleFill, 0x61)
+        button.backgroundTintList = ColorStateList(
+            arrayOf(disabled, checked, intArrayOf()),
+            intArrayOf(fadedFill, selectedFill, idleFill)
+        )
+        button.setTextColor(ColorStateList(arrayOf(disabled, checked, intArrayOf()), intArrayOf(faded, selectedText, idleText)))
+        button.strokeWidth = 0
+        button.rippleColor = ColorStateList(
+            arrayOf(checked, intArrayOf()),
+            intArrayOf(ColorUtils.setAlphaComponent(selectedText, 0x1F), ColorUtils.setAlphaComponent(idleText, 0x1F))
+        )
     }
 }

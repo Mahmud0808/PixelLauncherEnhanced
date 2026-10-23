@@ -12,13 +12,12 @@ import android.widget.TextView
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceViewHolder
 import com.drdisagree.pixellauncherenhanced.R
-import com.google.android.material.R as MaterialR
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.withStyledAttributes
-import androidx.core.graphics.ColorUtils
+import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.applyChoiceColors
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setBackgroundResource
 import com.drdisagree.pixellauncherenhanced.ui.preferences.Utils.setFirstAndLastItemMargin
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.tickVibrate
@@ -196,27 +195,6 @@ class ListPreference : ListPreference {
             button.left < scroll.scrollX -> scroll.scrollTo(left, 0)
             button.right > scroll.scrollX + scroll.width -> scroll.scrollTo(right, 0)
         }
-    }
-
-    private fun applyChoiceColors(button: MaterialButton) {
-        val checked = intArrayOf(android.R.attr.state_checked)
-        val disabled = intArrayOf(-android.R.attr.state_enabled)
-        val selectedFill = MaterialColors.getColor(button, androidx.appcompat.R.attr.colorPrimary)
-        val selectedText = MaterialColors.getColor(button, MaterialR.attr.colorOnPrimary)
-        val idleFill = MaterialColors.getColor(button, MaterialR.attr.colorSecondaryContainer)
-        val idleText = MaterialColors.getColor(button, MaterialR.attr.colorOnSecondaryContainer)
-        val faded = ColorUtils.setAlphaComponent(idleText, 0x61)
-        val fadedFill = ColorUtils.setAlphaComponent(idleFill, 0x61)
-        button.backgroundTintList = ColorStateList(
-            arrayOf(disabled, checked, intArrayOf()),
-            intArrayOf(fadedFill, selectedFill, idleFill)
-        )
-        button.setTextColor(ColorStateList(arrayOf(disabled, checked, intArrayOf()), intArrayOf(faded, selectedText, idleText)))
-        button.strokeWidth = 0
-        button.rippleColor = ColorStateList(
-            arrayOf(checked, intArrayOf()),
-            intArrayOf(ColorUtils.setAlphaComponent(selectedText, 0x1F), ColorUtils.setAlphaComponent(idleText, 0x1F))
-        )
     }
 
     companion object {
