@@ -2,6 +2,8 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.util.TypedValue
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import java.util.concurrent.ConcurrentHashMap
@@ -31,7 +33,7 @@ object InjectedResources {
             .parameters(Int::class.javaPrimitiveType)
             .runBefore { param ->
                 val modResId = modResIds[param.args[0] as Int] ?: return@runBefore
-                param.result = modRes.getText(modResId)
+                param.result = runCatching { modRes.getText(modResId) }.getOrDefault("")
             }
 
         Resources::class.java
@@ -39,7 +41,8 @@ object InjectedResources {
             .parameters(Int::class.javaPrimitiveType, Resources.Theme::class.java)
             .runBefore { param ->
                 val modResId = modResIds[param.args[0] as Int] ?: return@runBefore
-                param.result = modRes.getDrawable(modResId, null)
+                param.result = runCatching { modRes.getDrawable(modResId, null) }
+                    .getOrDefault(ColorDrawable(Color.TRANSPARENT))
             }
 
         Resources::class.java
@@ -47,7 +50,9 @@ object InjectedResources {
             .parameters(Int::class.javaPrimitiveType, TypedValue::class.java, Boolean::class.javaPrimitiveType)
             .runBefore { param ->
                 val modResId = modResIds[param.args[0] as Int] ?: return@runBefore
-                modRes.getValue(modResId, param.args[1] as TypedValue, param.args[2] as Boolean)
+                val value = param.args[1] as TypedValue
+                runCatching { modRes.getValue(modResId, value, param.args[2] as Boolean) }
+                    .onFailure { value.type = TypedValue.TYPE_NULL }
                 param.result = null
             }
 

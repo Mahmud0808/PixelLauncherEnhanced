@@ -6,9 +6,14 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.os.SystemClock
 import android.app.Instrumentation
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.os.PatternMatcher
+import android.os.Process
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.os.RemoteException
@@ -134,6 +139,7 @@ class HookEntry : ServiceConnection {
         if (EntryList.getEntries(loadPackageParam.packageName).isNotEmpty()) {
             DebugRecorder.attach(mContext, loadPackageParam.packageName)
             registerDebugProbes(loadPackageParam.packageName)
+            restartOnModuleUpdate(loadPackageParam.packageName)
         }
 
         for (mod in EntryList.getEntries(loadPackageParam.packageName)) {
@@ -168,6 +174,28 @@ class HookEntry : ServiceConnection {
             }
             DebugRecorder.recordModResult(mod.simpleName, SystemClock.elapsedRealtime() - startedAt, prefsError, loadError)
         }
+    }
+
+    private fun restartOnModuleUpdate(packageName: String) {
+        if (packageName == FRAMEWORK_PACKAGE || isChildProcess) return
+
+        val filter = IntentFilter(Intent.ACTION_PACKAGE_REPLACED).apply {
+            addDataScheme("package")
+            addDataSchemeSpecificPart(BuildConfig.APPLICATION_ID, PatternMatcher.PATTERN_LITERAL)
+        }
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                Process.killProcess(Process.myPid())
+            }
+        }
+
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                mContext.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                mContext.registerReceiver(receiver, filter)
+            }
+        }.onFailure { log(this@HookEntry, it) }
     }
 
     private fun registerDebugProbes(packageName: String) {
