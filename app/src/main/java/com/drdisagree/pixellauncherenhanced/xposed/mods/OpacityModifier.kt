@@ -96,8 +96,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
             val folderEnabled = folderBackground != BACKGROUND_OFF
             folderBackgroundBlur = if (folderEnabled) getSliderInt(FOLDER_BACKGROUND_BLUR, DEFAULT_FOLDER_BLUR) else 0
             folderLiquid = folderBackground == BACKGROUND_LIQUID
-            folderStyle = GlassTarget.FOLDERS.readStyle(this::getSliderInt, this::getBoolean)
-            folderPanelStyle = folderStyle.copy(outline = false)
+            folderStyle = GlassTarget.FOLDERS.readStyle(this::getSliderInt, this::getInt)
+            folderPanelStyle = folderStyle.copy(outlineWidth = 0f)
             folderBackgroundOpacity = if (folderEnabled) {
                 getSliderInt(FOLDER_BACKGROUND_OPACITY, DEFAULT_FOLDER_TINT) * 255 / 100
             } else -1
@@ -622,7 +622,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
     }
 
     private fun queueFolderOutline(preview: Any, shape: Any?, corner: Float, radius: Float) {
-        if (folderLiquid || !folderStyle.outline) return
+        if (folderLiquid || folderStyle.outlineWidth <= 0f) return
         folderOutlinePath.reset()
         if (shape != null && shape.addShapeToPath(folderOutlinePath, radius)) {
             folderOutlinePath.offset(previewRect.left, previewRect.top)

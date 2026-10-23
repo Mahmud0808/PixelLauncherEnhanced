@@ -38,19 +38,24 @@ enum class GlassTarget(
     val vibrancyKey = "xposed_${id}glassvibrancy"
     val rimKey = "xposed_${id}glassrim"
     val shadowKey = "xposed_${id}glassshadow"
-    val outlineKey = "xposed_${id}glassborder"
+    val outlineWidthKey = "xposed_${id}glassoutlinewidth"
+    val outlineOpacityKey = "xposed_${id}glassoutlineopacity"
+    val outlineColorKey = "xposed_${id}glassoutlinecolor"
 
     val liquidKeys = listOf(refractionKey, depthKey, dispersionKey, rimKey, shadowKey)
-    val styleKeys = liquidKeys + vibrancyKey + outlineKey
+    val frostedKeys = listOf(outlineWidthKey, outlineOpacityKey, outlineColorKey)
+    val styleKeys = liquidKeys + vibrancyKey + frostedKeys
 
-    fun readStyle(readSlider: (String, Int) -> Int, readBoolean: (String, Boolean) -> Boolean) = GlassStyle(
+    fun readStyle(readSlider: (String, Int) -> Int, readInt: (String, Int) -> Int) = GlassStyle(
         refraction = readSlider(refractionKey, GlassStyle.DEFAULT_REFRACTION) / 100f,
         depth = readSlider(depthKey, GlassStyle.DEFAULT_DEPTH) / 100f,
         dispersion = readSlider(dispersionKey, GlassStyle.DEFAULT_DISPERSION) / 100f,
         vibrancy = readSlider(vibrancyKey, GlassStyle.DEFAULT_VIBRANCY) / 100f,
         rim = readSlider(rimKey, GlassStyle.DEFAULT_RIM) / 100f,
         shadow = readSlider(shadowKey, GlassStyle.DEFAULT_SHADOW) / 100f,
-        outline = readBoolean(outlineKey, GlassStyle.DEFAULT_OUTLINE)
+        outlineWidth = readSlider(outlineWidthKey, GlassStyle.DEFAULT_OUTLINE_WIDTH).toFloat(),
+        outlineOpacity = readSlider(outlineOpacityKey, GlassStyle.DEFAULT_OUTLINE_OPACITY) / 100f,
+        outlineColor = readInt(outlineColorKey, GlassStyle.DEFAULT_OUTLINE_COLOR)
     )
 
     companion object {

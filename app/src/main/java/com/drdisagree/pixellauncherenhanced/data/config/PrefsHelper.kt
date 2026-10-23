@@ -229,7 +229,7 @@ object PrefsHelper {
         val style = glassStyle(target)
         return when (key) {
             target.vibrancyKey -> true
-            target.outlineKey -> style == PanelBackground.FROSTED
+            in target.frostedKeys -> style == PanelBackground.FROSTED
             else -> style == PanelBackground.LIQUID
         }
     }

@@ -59,7 +59,7 @@ class FolderFrost(private val host: View) {
     var style = GlassStyle.DEFAULT
         set(value) {
             field = value
-            panelStyle = value.copy(outline = false)
+            panelStyle = value.copy(outlineWidth = 0f)
         }
     var home = false
     var progress = 0f

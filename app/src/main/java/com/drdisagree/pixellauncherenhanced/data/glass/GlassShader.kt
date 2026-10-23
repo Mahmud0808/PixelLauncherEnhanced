@@ -26,13 +26,7 @@ object GlassShader {
     private const val FROSTED_SAMPLE_RADIUS = 4
     private const val FROSTED_MIN_WIDTH = 16
 
-    private const val OUTLINE_WIDTH_DP = 1f
-    private const val OUTLINE_OPACITY = 0.15f
-
-    private val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        color = Color.WHITE
-    }
+    private val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val outlineRect = RectF()
     private val outlinePath = Path()
     private val outlineRadii = FloatArray(8)
@@ -204,12 +198,13 @@ object GlassShader {
     }
 
     private fun prepareOutline(style: GlassStyle?, alpha: Float, unit: Float): Float {
-        if (style?.outline != true) return 0f
-        val width = OUTLINE_WIDTH_DP * unit
-        val outlineAlpha = (OUTLINE_OPACITY * alpha.coerceIn(0f, 1f) * 255).roundToInt()
+        style ?: return 0f
+        val width = style.outlineWidth * unit
+        val outlineAlpha = (style.outlineOpacity.coerceIn(0f, 1f) * alpha.coerceIn(0f, 1f) * 255).roundToInt()
         if (width <= 0f || outlineAlpha <= 0) return 0f
 
         outlinePaint.strokeWidth = width
+        outlinePaint.color = style.outlineColor
         outlinePaint.alpha = outlineAlpha
         return width
     }

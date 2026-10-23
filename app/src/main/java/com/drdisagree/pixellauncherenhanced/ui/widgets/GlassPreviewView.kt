@@ -216,7 +216,7 @@ class GlassPreviewView @JvmOverloads constructor(
         canvas.drawBitmap(wallpaper, null, wallpaperRect, wallpaperPaint)
 
         val mode = PanelBackground.supported(RPrefs.getString(target.styleKey))
-        val style = target.readStyle(this::slider, RPrefs::getBoolean)
+        val style = target.readStyle(this::slider, RPrefs::getInt)
         val blur = slider(target.blurKey, DEFAULT_BLUR) * density
         val tint = slider(target.tintKey, DEFAULT_TINT)
 

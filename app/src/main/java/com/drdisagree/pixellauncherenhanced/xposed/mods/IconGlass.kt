@@ -117,7 +117,7 @@ class IconGlass(context: Context) : ModPack(context) {
             liquid = background == PanelBackground.LIQUID
             blurRadius = getSliderInt(ICON_BACKGROUND_BLUR, DEFAULT_BLUR)
             tintOpacity = getSliderInt(ICON_BACKGROUND_TINT, DEFAULT_TINT)
-            iconStyle = GlassTarget.ICONS.readStyle(this::getSliderInt, this::getBoolean)
+            iconStyle = GlassTarget.ICONS.readStyle(this::getSliderInt, this::getInt)
             drawerOpacity = getSliderInt(APP_DRAWER_BACKGROUND_OPACITY, -1) * 255 / 100
         }
 
