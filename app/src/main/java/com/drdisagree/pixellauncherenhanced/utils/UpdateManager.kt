@@ -10,6 +10,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
@@ -46,9 +48,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.net.ConnectException
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.net.URL
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLException
 
 object UpdateManager {
 
@@ -60,10 +66,18 @@ object UpdateManager {
         data class DevAvailable(val build: DevBuild) : State
         data class Downloading(val release: ReleaseInfo, val downloaded: Long, val total: Long) : State
         data class Ready(val release: ReleaseInfo, val file: File) : State
-        data class Failed(val error: Error, val release: ReleaseInfo?) : State
+        data class Failed(val error: Error, val release: ReleaseInfo?, val problem: Problem? = null) : State
     }
 
     enum class Error { CHECK, DOWNLOAD, SIGNATURE }
+
+    enum class Reason { OFFLINE, UNREACHABLE, TIMEOUT, SECURE, RATE_LIMIT, SERVER, HTTP, NO_APK, UNKNOWN }
+
+    data class Problem(val reason: Reason, val code: Int = 0, val retryAt: Long = 0L)
+
+    private class HttpError(val code: Int, val retryAt: Long) : IOException("HTTP $code")
+
+    private class NoApkError : IOException("No APK in release")
 
     private const val API_URL = "https://api.github.com/repos/Mahmud0808/PixelLauncherEnhanced/releases/latest"
     private const val CHANGELOG_URL = "https://api.github.com/repos/Mahmud0808/PixelLauncherEnhanced/releases?per_page=30"
@@ -158,27 +172,68 @@ object UpdateManager {
         mutableState.value = State.Checking
 
         val started = SystemClock.elapsedRealtime()
-        val release = withContext(Dispatchers.IO) { runCatching { fetchLatest() }.getOrNull() }
+        val result = withContext(Dispatchers.IO) { runCatching { fetchLatest() } }
+        val release = result.getOrNull()
+        var devError: Throwable? = null
         if (release != null && isDevBuild && !isNewer(release.version)) {
-            latestDev = withContext(Dispatchers.IO) {
-                runCatching { DevBuild.fromGitHub(fetch(DEV_RUNS_URL)) }.getOrNull()
-            } ?: latestDev
+            val dev = withContext(Dispatchers.IO) {
+                runCatching { DevBuild.fromGitHub(fetch(DEV_RUNS_URL)) ?: throw IOException("No dev build") }
+            }
+            dev.getOrNull()?.let { latestDev = it }
+            devError = dev.exceptionOrNull()
         }
         if (manual) delay(MIN_CHECK_MS - (SystemClock.elapsedRealtime() - started))
         if (release == null) {
-            mutableState.value = State.Failed(Error.CHECK, cachedRelease())
+            mutableState.value = State.Failed(Error.CHECK, cachedRelease(), problemOf(context, result.exceptionOrNull()))
             return null
         }
 
         RPrefs.putString(UPDATE_CACHE, release.toJson())
         RPrefs.putLong(UPDATE_LAST_CHECK, System.currentTimeMillis())
-        mutableState.value = resolve(context, release, latestDev)
+        mutableState.value = if (devError != null) {
+            State.Failed(Error.CHECK, release, problemOf(context, devError))
+        } else {
+            resolve(context, release, latestDev)
+        }
         cleanup(context)
         return release
     }
 
-    private fun fetchLatest(): ReleaseInfo =
-        runCatching { ReleaseInfo.fromGitHub(fetch(API_URL)) }.getOrNull() ?: fetchLatestFromWeb()
+    private fun problemOf(context: Context, error: Throwable?): Problem {
+        if (!context.isOnline()) return Problem(Reason.OFFLINE)
+        return when (error) {
+            is HttpError -> when {
+                error.retryAt > 0L || error.code == 429 -> Problem(Reason.RATE_LIMIT, error.code, error.retryAt)
+                error.code >= 500 -> Problem(Reason.SERVER, error.code)
+                else -> Problem(Reason.HTTP, error.code)
+            }
+
+            is NoApkError -> Problem(Reason.NO_APK)
+            is UnknownHostException, is ConnectException -> Problem(Reason.UNREACHABLE)
+            is SocketTimeoutException -> Problem(Reason.TIMEOUT)
+            is SSLException -> Problem(Reason.SECURE)
+            else -> Problem(Reason.UNKNOWN)
+        }
+    }
+
+    private fun Context.isOnline(): Boolean = runCatching {
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return true
+        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
+        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }.getOrDefault(true)
+
+    private fun fetchLatest(): ReleaseInfo {
+        val json = try {
+            fetch(API_URL)
+        } catch (apiError: IOException) {
+            return try {
+                fetchLatestFromWeb()
+            } catch (webError: IOException) {
+                throw (apiError as? HttpError)?.takeIf { webError !is HttpError } ?: webError
+            }
+        }
+        return ReleaseInfo.fromGitHub(json) ?: throw NoApkError()
+    }
 
     private fun fetchLatestFromWeb(): ReleaseInfo {
         val connection = (URL(WEB_LATEST_URL).openConnection() as HttpURLConnection).apply {
@@ -189,6 +244,8 @@ object UpdateManager {
             setRequestProperty("User-Agent", "PLEnhanced/${BuildConfig.VERSION_NAME}")
         }
         val tag = try {
+            val code = connection.responseCode
+            if (code !in 300..399) throw HttpError(code, 0L)
             connection.getHeaderField("Location")?.substringAfterLast(TAG_PATH, "")
         } finally {
             connection.disconnect()
@@ -229,11 +286,17 @@ object UpdateManager {
             setRequestProperty("User-Agent", "PLEnhanced/${BuildConfig.VERSION_NAME}")
         }
         try {
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) throw IOException("HTTP ${connection.responseCode}")
+            val code = connection.responseCode
+            if (code != HttpURLConnection.HTTP_OK) throw HttpError(code, connection.rateLimitReset())
             return connection.inputStream.bufferedReader().use { it.readText() }
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun HttpURLConnection.rateLimitReset(): Long {
+        if (getHeaderField("x-ratelimit-remaining") != "0") return 0L
+        return getHeaderField("x-ratelimit-reset")?.toLongOrNull()?.let { it * 1000L } ?: 0L
     }
 
     fun download(context: Context, release: ReleaseInfo) {
@@ -251,7 +314,8 @@ object UpdateManager {
                     setRequestProperty("User-Agent", "PLEnhanced/${BuildConfig.VERSION_NAME}")
                 }
                 try {
-                    if (connection.responseCode != HttpURLConnection.HTTP_OK) throw IOException("HTTP ${connection.responseCode}")
+                    val code = connection.responseCode
+                    if (code != HttpURLConnection.HTTP_OK) throw HttpError(code, 0L)
                     val total = connection.contentLengthLong.takeIf { it > 0 } ?: release.size
                     var downloaded = 0L
                     var reported = 0L
@@ -281,8 +345,9 @@ object UpdateManager {
             val file = result.getOrNull()
             if (file == null) {
                 partial.delete()
-                if (result.exceptionOrNull() !is CancellationException) {
-                    mutableState.value = State.Failed(Error.DOWNLOAD, release)
+                val error = result.exceptionOrNull()
+                if (error !is CancellationException) {
+                    mutableState.value = State.Failed(Error.DOWNLOAD, release, problemOf(appContext, error))
                 }
                 return@launch
             }

@@ -657,6 +657,16 @@
     <string name="update_status_download_failed">Download failed</string>
     <string name="update_status_signature_failed">Can\'t install this update</string>
     <string name="update_signature_failed_desc">It\'s signed differently from this build</string>
+    <string name="update_problem_offline">No internet connection</string>
+    <string name="update_problem_unreachable">Can\'t reach GitHub</string>
+    <string name="update_problem_timeout">GitHub took too long to respond</string>
+    <string name="update_problem_secure">Secure connection to GitHub failed</string>
+    <string name="update_problem_rate_limit">GitHub request limit reached. Try again later</string>
+    <string name="update_problem_rate_limit_until">GitHub request limit reached. Try again after %1$s</string>
+    <string name="update_problem_server">GitHub is having issues (HTTP %1$d)</string>
+    <string name="update_problem_http">GitHub returned HTTP %1$d</string>
+    <string name="update_problem_no_apk">Latest release has no APK</string>
+    <string name="update_problem_unknown">Unexpected error</string>
     <string name="update_installed_version">Installed: %s</string>
     <string name="update_version">Version %s</string>
     <string name="update_version_size">Version %1$s · %2$s</string>

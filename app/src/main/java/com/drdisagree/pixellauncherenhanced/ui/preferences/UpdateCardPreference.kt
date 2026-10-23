@@ -3,6 +3,7 @@ package com.drdisagree.pixellauncherenhanced.ui.preferences
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.drawable.GradientDrawable
+import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.text.format.Formatter
 import android.util.AttributeSet
@@ -23,6 +24,7 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.shape.MaterialShapes
 import java.lang.ref.WeakReference
+import java.util.Date
 import com.google.android.material.R as MaterialR
 
 class UpdateCardPreference(context: Context, attrs: AttributeSet?) : Preference(context, attrs) {
@@ -211,10 +213,32 @@ class UpdateCardPreference(context: Context, attrs: AttributeSet?) : Preference(
         )
 
         is State.Failed -> when (current.error) {
-            UpdateManager.Error.CHECK -> lastCheckedText()
-            UpdateManager.Error.DOWNLOAD -> current.release?.let { versionText(it.version, it.size) }.orEmpty()
+            UpdateManager.Error.CHECK -> current.problem?.let { problemText(it) } ?: lastCheckedText()
+            UpdateManager.Error.DOWNLOAD -> current.problem?.let { problemText(it) }
+                ?: current.release?.let { versionText(it.version, it.size) }.orEmpty()
+
             UpdateManager.Error.SIGNATURE -> context.getString(R.string.update_signature_failed_desc)
         }
+    }
+
+    private fun problemText(problem: UpdateManager.Problem): String = when (problem.reason) {
+        UpdateManager.Reason.OFFLINE -> context.getString(R.string.update_problem_offline)
+        UpdateManager.Reason.UNREACHABLE -> context.getString(R.string.update_problem_unreachable)
+        UpdateManager.Reason.TIMEOUT -> context.getString(R.string.update_problem_timeout)
+        UpdateManager.Reason.SECURE -> context.getString(R.string.update_problem_secure)
+        UpdateManager.Reason.RATE_LIMIT -> if (problem.retryAt > System.currentTimeMillis()) {
+            context.getString(
+                R.string.update_problem_rate_limit_until,
+                DateFormat.getTimeFormat(context).format(Date(problem.retryAt))
+            )
+        } else {
+            context.getString(R.string.update_problem_rate_limit)
+        }
+
+        UpdateManager.Reason.SERVER -> context.getString(R.string.update_problem_server, problem.code)
+        UpdateManager.Reason.HTTP -> context.getString(R.string.update_problem_http, problem.code)
+        UpdateManager.Reason.NO_APK -> context.getString(R.string.update_problem_no_apk)
+        UpdateManager.Reason.UNKNOWN -> context.getString(R.string.update_problem_unknown)
     }
 
     private fun versionText(version: String, size: Long): String =
