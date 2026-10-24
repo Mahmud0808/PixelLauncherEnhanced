@@ -69,6 +69,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private var folderBackgroundOpacity: Int = -1
     private val shapeCorners = WeakHashMap<Any, Pair<Float, Float>>()
     private val addToPathMethods = HashMap<Class<*>, Method?>()
+    private val folderPaths = WeakHashMap<Any, Pair<Float, Path>>()
+    private val folderGlassRect = RectF()
     private val folderOutlinePath = Path()
     private var pendingFolderOutline: Any? = null
     private var outlinedFolderBackground: GradientDrawable? = null
@@ -413,6 +415,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 frosted.liquid = folderLiquid
                 frosted.style = folderStyle
                 frosted.home = inDrawer
+                frosted.shapeSize = (folder.getFieldSilently("mFolderIcon")?.getFieldSilently("mBackground")
+                    ?.getFieldSilently("previewSize") as? Int)?.toFloat() ?: 0f
                 frosted.start(folder.blurTargets(dragLayer), dragLayer.width, dragLayer.height)
                 folderFrost = frosted
                 animateFolderBlur(1f, folder.getFieldSilently("mCurrentAnimator") as? Animator)
@@ -425,6 +429,9 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 val frost = param.thisObject.getExtraFieldSilently(FOLDER_FROST) as? FolderFrost
                     ?: return@runBefore
                 if (frost.progress <= 0f) return@runBefore
+                if (param.thisObject.getFieldSilently("mFolderIcon")?.getFieldSilently("mBackgroundIsVisible") == true) {
+                    return@runBefore
+                }
 
                 val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
                 val clip = param.thisObject.getFieldSilently("mClipPath").let {
@@ -511,6 +518,25 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         folderLiquid,
                         folderStyle
                     )
+                    return@runBefore
+                }
+                val folderPath = shape?.folderPath(scaledRadius.toFloat())
+                if (folderPath != null && drawFolderGlass(
+                        canvas = canvas,
+                        host = folderIcon,
+                        path = folderPath,
+                        left = offsetX.toFloat(),
+                        top = offsetY.toFloat(),
+                        size = scaledRadius * 2f,
+                        scale = 1f,
+                        corner = shapeCorner,
+                        blurRadius = blurRadius,
+                        alpha = 1f,
+                        home = inDrawer,
+                        dimColor = drawerTint
+                    )
+                ) {
+                    queueFolderOutline(preview, shape, shapeCorner, scaledRadius.toFloat())
                     return@runBefore
                 }
                 if (WallpaperGlass.draw(
@@ -621,6 +647,56 @@ class OpacityModifier(context: Context) : ModPack(context) {
         return WallpaperGlass.pathCorner(path, bounds).also { shapeCorners[this] = radius to it }
     }
 
+    private fun Any.folderPath(radius: Float): Path? {
+        folderPaths[this]?.takeIf { it.first == radius }?.let { return it.second }
+        val path = Path()
+        if (!addShapeToPath(path, radius)) return null
+        folderPaths[this] = radius to path
+        return path
+    }
+
+    private fun drawFolderGlass(
+        canvas: Canvas,
+        host: View,
+        path: Path,
+        left: Float,
+        top: Float,
+        size: Float,
+        scale: Float,
+        corner: Float,
+        blurRadius: Float,
+        alpha: Float,
+        home: Boolean,
+        dimColor: Int
+    ): Boolean {
+        val save = canvas.save()
+        canvas.translate(left, top)
+        canvas.scale(scale, scale)
+        if (folderLiquid) {
+            WallpaperGlass.drawLiquidShadow(
+                canvas, path, host.resources.displayMetrics.density, alpha, scale, folderStyle.shadow
+            )
+        }
+        canvas.clipPath(path)
+        folderGlassRect.set(0f, 0f, size, size)
+        val glass = WallpaperGlass.canvasPaint(
+            host = host,
+            canvas = canvas,
+            localRect = folderGlassRect,
+            corner = corner,
+            blurRadius = blurRadius,
+            alpha = alpha,
+            liquid = folderLiquid,
+            shapePath = path,
+            home = home,
+            dimColor = dimColor,
+            style = folderPanelStyle
+        )
+        if (glass != null) canvas.drawPaint(glass)
+        canvas.restoreToCount(save)
+        return glass != null
+    }
+
     private fun queueFolderOutline(preview: Any, shape: Any?, corner: Float, radius: Float) {
         if (folderLiquid || folderStyle.outlineWidth <= 0f) return
         folderOutlinePath.reset()
@@ -680,7 +756,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
             val offsetX = bounds.left
             val offsetY = bounds.top
             rect.set(background.bounds)
-            rect.insetByRatio(folderIcon.previewRatio())
+            rect.insetByRatio(folderIcon.previewRatio(rect.width()))
             if (manager == null || !hasBounds || rect.isEmpty) {
                 inner.draw(canvas)
                 return
@@ -726,11 +802,10 @@ class OpacityModifier(context: Context) : ModPack(context) {
         inset(width() * (1f - ratio) / 2f, height() * (1f - ratio) / 2f)
     }
 
-    private fun View.previewRatio(): Float {
+    private fun View.previewRatio(iconSize: Float): Float {
         val previewSize = getFieldSilently("mBackground")?.getFieldSilently("previewSize") as? Int ?: return 1f
-        val iconSize = getFieldSilently("mFolderName")?.getFieldSilently("mIconSize") as? Int ?: return 1f
-        if (previewSize <= 0 || iconSize <= 0) return 1f
-        return (previewSize.toFloat() / iconSize).coerceIn(0.1f, 1f)
+        if (previewSize <= 0 || iconSize <= 0f) return 1f
+        return (previewSize / iconSize).coerceIn(0.1f, 1f)
     }
 
     private inner class FloatingFolderGlass(
@@ -744,32 +819,63 @@ class OpacityModifier(context: Context) : ModPack(context) {
 
         override fun draw(canvas: Canvas) {
             rect.set(bounds)
-            rect.insetByRatio(folderIcon.previewRatio())
+            rect.insetByRatio(folderIcon.previewRatio(rect.width()))
             if (rect.isEmpty) {
                 inner.draw(canvas)
                 return
             }
-            val corner = folderIcon.folderShape()?.cornerRadius(rect.width() / 2f) ?: (rect.width() / 2f)
-            val glass = WallpaperGlass.canvasPaint(
-                host = host,
-                canvas = canvas,
-                localRect = rect,
-                corner = corner,
-                blurRadius = folderBackgroundBlur * host.resources.displayMetrics.density,
-                alpha = inner.alpha / 255f,
-                liquid = folderLiquid,
-                style = folderStyle
-            )
-            if (glass == null) {
+            val shape = folderIcon.folderShape()
+            val corner = shape?.cornerRadius(rect.width() / 2f) ?: (rect.width() / 2f)
+            val blurRadius = folderBackgroundBlur * host.resources.displayMetrics.density
+            val restRadius = (folderIcon.getFieldSilently("mBackground")?.getFieldSilently("previewSize") as? Int)
+                ?.takeIf { it > 0 }?.let { it / 2f }
+            val restPath = restRadius?.let { shape?.folderPath(it) }
+            val drawn = if (restRadius != null && restPath != null) {
+                drawFolderGlass(
+                    canvas = canvas,
+                    host = host,
+                    path = restPath,
+                    left = rect.left,
+                    top = rect.top,
+                    size = restRadius * 2f,
+                    scale = rect.width() / (restRadius * 2f),
+                    corner = shape?.cornerRadius(restRadius) ?: restRadius,
+                    blurRadius = blurRadius,
+                    alpha = inner.alpha / 255f,
+                    home = false,
+                    dimColor = 0
+                )
+            } else {
+                WallpaperGlass.canvasPaint(
+                    host = host,
+                    canvas = canvas,
+                    localRect = rect,
+                    corner = corner,
+                    blurRadius = blurRadius,
+                    alpha = inner.alpha / 255f,
+                    liquid = folderLiquid,
+                    style = folderStyle
+                )?.let { glass ->
+                    canvas.save()
+                    canvas.clipRect(rect)
+                    canvas.drawPaint(glass)
+                    canvas.restore()
+                    true
+                } ?: false
+            }
+            if (!drawn) {
                 inner.draw(canvas)
                 return
             }
 
             shapePath.reset()
-            shapePath.addRoundRect(rect, corner, corner, Path.Direction.CW)
+            if (shape != null && shape.addShapeToPath(shapePath, rect.width() / 2f)) {
+                shapePath.offset(rect.left, rect.top)
+            } else {
+                shapePath.addRoundRect(rect, corner, corner, Path.Direction.CW)
+            }
             val saved = canvas.save()
             canvas.clipPath(shapePath)
-            canvas.drawPaint(glass)
             val base = host.context.folderBackgroundColor()
             if (base != null) {
                 val tint = if (folderBackgroundOpacity >= 0) folderBackgroundOpacity else Color.alpha(base)

@@ -93,6 +93,7 @@ class IconGlass(context: Context) : ModPack(context) {
     private var drawerOpacity = -1
     private val alphaMasks = WeakHashMap<Bitmap, Bitmap>()
     private val shapeCache = WeakHashMap<Any, ShapeParts>()
+    private var lastIconShape: ShapeParts? = null
     private val delegateCache = WeakHashMap<Any, DelegateParts>()
     private val ancestry = WeakHashMap<View, Ancestry>()
     private val fullBounds = Rect()
@@ -203,6 +204,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 val bounds = param.args.getOrNull(3) as? Rect ?: return@runBefore
                 val paint = param.args.getOrNull(4) as? Paint ?: return@runBefore
                 val shapeParts = shapeParts(shape) ?: return@runBefore
+                lastIconShape = shapeParts
                 val parts = delegateParts(param.thisObject) ?: return@runBefore
                 val path = shapeParts.path
                 val pathSize = shapeParts.size
@@ -403,6 +405,8 @@ class IconGlass(context: Context) : ModPack(context) {
     ) : Drawable() {
 
         private val rect = RectF()
+        private val glassRect = RectF()
+        private val shapeMatrix = Matrix()
         private var visible: RectF? = null
         private val visibleFor = Rect()
 
@@ -422,17 +426,29 @@ class IconGlass(context: Context) : ModPack(context) {
             }
 
             val drawerIcon = drawerSource()
+            val shape = lastIconShape?.takeIf { clip != null && !clip.isEmpty }
+            if (shape != null) {
+                val shapeBounds = pathBounds(shape.path)
+                shapeMatrix.setRectToRect(shapeBounds, rect, Matrix.ScaleToFit.FILL)
+                glassRect.set(shapeBounds)
+                corner = shapeCorner(shape.path, shapeBounds)
+            } else {
+                glassRect.set(rect)
+            }
+            val shapeSave = shape?.let { canvas.save().also { canvas.concat(shapeMatrix) } }
             val glass = WallpaperGlass.canvasPaint(
                 host = host,
                 canvas = canvas,
-                localRect = rect,
+                localRect = glassRect,
                 corner = corner,
                 blurRadius = drawerIcon?.glassBlurRadius() ?: host.glassBlurRadius(),
                 alpha = inner.alpha / 255f,
                 liquid = liquid,
                 style = iconStyle,
+                shapePath = shape?.path,
                 home = drawerIcon != null
             )
+            shapeSave?.let { canvas.restoreToCount(it) }
             if (glass == null) {
                 inner.draw(canvas)
                 return
@@ -440,7 +456,7 @@ class IconGlass(context: Context) : ModPack(context) {
 
             if (maskByInner) {
                 val layer = canvas.saveLayer(rect, null)
-                canvas.drawPaint(glass)
+                drawGlass(canvas, glass, shape)
                 drawerIcon?.let { drawDrawerTint(canvas, it) }
                 clip?.let { drawOutline(canvas, it) }
                 val mask = canvas.saveLayer(rect, maskPaint)
@@ -448,7 +464,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 canvas.restoreToCount(mask)
                 canvas.restoreToCount(layer)
             } else {
-                canvas.drawPaint(glass)
+                drawGlass(canvas, glass, shape)
                 drawerIcon?.let { drawDrawerTint(canvas, it) }
             }
             val tintAlpha = tintOpacity.coerceIn(0, 100) * 255 / 100
@@ -467,6 +483,18 @@ class IconGlass(context: Context) : ModPack(context) {
                 canvas, clip, iconStyle.takeUnless { liquid }, inner.alpha / 255f,
                 host.resources.displayMetrics.density
             )
+        }
+
+        private fun drawGlass(canvas: Canvas, glass: Paint, shape: ShapeParts?) {
+            if (shape == null) {
+                canvas.drawPaint(glass)
+                return
+            }
+            val save = canvas.save()
+            canvas.concat(shapeMatrix)
+            canvas.clipPath(shape.path)
+            canvas.drawPaint(glass)
+            canvas.restoreToCount(save)
         }
 
         private fun drawerSource(): View? {
@@ -586,6 +614,8 @@ class IconGlass(context: Context) : ModPack(context) {
         var size = 0f
         var attached = false
 
+        fun drawsFor(view: View): Boolean = host.get() === view
+
         fun refresh(): Boolean {
             val view = host.get() ?: return false
             if (!attached) return false
@@ -613,6 +643,8 @@ class IconGlass(context: Context) : ModPack(context) {
             ) ?: return false
             val extent = ceil(size).toInt().coerceAtLeast(1)
             node.setPosition(0, 0, extent, extent)
+            node.setClipToBounds(false)
+            node.setHasOverlappingRendering(false)
             val canvas = node.beginRecording(extent, extent)
             canvas.drawPaint(glass)
             drawDrawerScrim(canvas, view)
@@ -622,7 +654,7 @@ class IconGlass(context: Context) : ModPack(context) {
     }
 
     private fun glassNode(drawable: Drawable, host: View): GlassNode {
-        glassNodes[drawable]?.let { return it }
+        glassNodes[drawable]?.takeIf { it.drawsFor(host) }?.let { return it }
         val node = GlassNode(host)
         glassNodes[drawable] = node
         val nodes = hostNodes.getOrPut(host) {

@@ -28,6 +28,7 @@ import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import java.lang.ref.WeakReference
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -59,9 +60,12 @@ class FolderFrost(private val host: View) {
     var style = GlassStyle.DEFAULT
         set(value) {
             field = value
-            panelStyle = value.copy(outlineWidth = 0f)
+            panelStyle = value.copy(outlineWidth = 0f, shadow = 0f)
         }
     var home = false
+    var shapeSize = 0f
+    private val maskPath = Path()
+    private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     var progress = 0f
         set(value) {
             field = value
@@ -178,6 +182,9 @@ class FolderFrost(private val host: View) {
         }
     }.getOrNull()
 
+    private fun usesShapeMask(): Boolean =
+        liquid && shapeSize > 0f && max(pathBounds.width(), pathBounds.height()) <= shapeSize * SHAPE_MASK_MAX_SCALE
+
     fun drawOutline(canvas: Canvas, clipPath: Path?, backgroundBounds: Rect, cornerRadius: Float) {
         if (progress <= 0f || liquid) return
         val clip = resolveClip(clipPath, backgroundBounds, cornerRadius) ?: return
@@ -215,19 +222,45 @@ class FolderFrost(private val host: View) {
         }
         canvas.save()
         canvas.clipPath(clip)
-        val glass = WallpaperGlass.draw(
-            host = host,
-            canvas = canvas,
-            rect = pathBounds,
-            corner = corner,
-            bottomCorner = corner,
-            blurRadius = backdropRadius ?: maxRadius,
-            tintColor = if (home) 0 else backdropTint,
-            liquid = liquid,
-            dimColor = if (home) backdropTint else dim,
-            home = home,
-            style = panelStyle
-        )
+        val tintColor = if (home) 0 else backdropTint
+        val dimColor = if (home) backdropTint else dim
+        val glass = if (usesShapeMask()) {
+            maskPath.set(clip)
+            WallpaperGlass.canvasPaint(
+                host = host,
+                canvas = canvas,
+                localRect = pathBounds,
+                corner = corner,
+                blurRadius = backdropRadius ?: maxRadius,
+                alpha = 1f,
+                liquid = true,
+                shapePath = maskPath,
+                home = home,
+                dimColor = dimColor,
+                style = panelStyle
+            )?.let { paint ->
+                canvas.drawPaint(paint)
+                if (tintColor ushr 24 != 0) {
+                    tintPaint.color = tintColor
+                    canvas.drawPaint(tintPaint)
+                }
+                true
+            } ?: false
+        } else {
+            WallpaperGlass.draw(
+                host = host,
+                canvas = canvas,
+                rect = pathBounds,
+                corner = corner,
+                bottomCorner = corner,
+                blurRadius = backdropRadius ?: maxRadius,
+                tintColor = tintColor,
+                liquid = liquid,
+                dimColor = dimColor,
+                home = home,
+                style = panelStyle
+            )
+        }
         canvas.restore()
 
         if (!glass) wallpaperBlur?.apply {
@@ -317,6 +350,7 @@ class FolderFrost(private val host: View) {
     }
 
     companion object {
+        private const val SHAPE_MASK_MAX_SCALE = 2f
         private const val LENS_SHADER = """
             uniform shader image;
             uniform float2 origin;
