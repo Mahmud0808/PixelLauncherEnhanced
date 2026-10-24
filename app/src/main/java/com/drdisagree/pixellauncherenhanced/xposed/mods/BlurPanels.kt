@@ -262,7 +262,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             .hookMethod("setWallpaperOffsets")
             .suppressError()
             .runAfter { param ->
-                (param.args.getOrNull(1) as? Float)?.let { WallpaperGlass.offsetX = it }
+                (param.args.getOrNull(1) as? Number)?.let { WallpaperGlass.offsetX = it.toFloat() }
                 WallpaperGlass.onOffsetsChanged()
             }
 
@@ -270,7 +270,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             .hookMethod("setWallpaperZoomOut")
             .suppressError()
             .runAfter { param ->
-                (param.args.getOrNull(1) as? Float)?.let { WallpaperGlass.zoom = it }
+                (param.args.getOrNull(1) as? Number)?.let { WallpaperGlass.zoom = it.toFloat() }
                 WallpaperGlass.onOffsetsChanged()
             }
 

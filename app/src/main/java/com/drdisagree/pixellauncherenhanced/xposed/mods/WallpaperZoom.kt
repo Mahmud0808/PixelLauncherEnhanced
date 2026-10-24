@@ -3,6 +3,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.Context
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ALLOW_WALLPAPER_ZOOMING
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
@@ -17,6 +18,11 @@ class WallpaperZoom(context: Context) : ModPack(context) {
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             mWallpaperZooming = getBoolean(ALLOW_WALLPAPER_ZOOMING, true)
+        }
+
+        if (!mWallpaperZooming) {
+            WallpaperGlass.zoom = 1f
+            WallpaperGlass.onOffsetsChanged()
         }
     }
 
@@ -35,7 +41,7 @@ class WallpaperZoom(context: Context) : ModPack(context) {
                     .hookMethod("setWallpaperZoomOut")
                     .runBefore { param2 ->
                         if (!mWallpaperZooming && param2.thisObject == mWallpaperManager) {
-                            param2.args[1] = 1
+                            param2.args[1] = 1f
                         }
                     }
             }
