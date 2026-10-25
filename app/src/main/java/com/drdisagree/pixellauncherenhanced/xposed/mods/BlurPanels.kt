@@ -1301,12 +1301,17 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun ViewGroup.withoutStacked(sections: List<View>): List<View> {
         if (sections.size < 2) return sections
         val bounds = sections.map { target -> RectF().also { targetBounds(target, it) } }
-        return sections.filterIndexed { index, _ -> (0 until index).none { bounds[it].matches(bounds[index]) } }
+        return sections.filterIndexed { index, _ ->
+            bounds.indices.none { other ->
+                other != index && bounds[other].covers(bounds[index]) &&
+                        (other < index || !bounds[index].covers(bounds[other]))
+            }
+        }
     }
 
-    private fun RectF.matches(other: RectF): Boolean {
-        return abs(left - other.left) <= FRAME_EDGE_SLACK && abs(top - other.top) <= FRAME_EDGE_SLACK &&
-                abs(right - other.right) <= FRAME_EDGE_SLACK && abs(bottom - other.bottom) <= FRAME_EDGE_SLACK
+    private fun RectF.covers(other: RectF): Boolean {
+        return left - other.left <= FRAME_EDGE_SLACK && top - other.top <= FRAME_EDGE_SLACK &&
+                other.right - right <= FRAME_EDGE_SLACK && other.bottom - bottom <= FRAME_EDGE_SLACK
     }
 
     private fun ViewGroup.sectionPanels(): List<View> {
