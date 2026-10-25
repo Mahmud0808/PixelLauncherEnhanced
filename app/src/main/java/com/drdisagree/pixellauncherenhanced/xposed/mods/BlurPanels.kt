@@ -800,7 +800,8 @@ class BlurPanels(context: Context) : ModPack(context) {
         val ownRadius = shape?.cornerRadius?.takeIf { it > 0f }
         val cornerRadius = ownRadius ?: widgetCornerRadius()
         val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
-        val cornerRadii = shape?.perCornerRadii(rect) ?: frameRadii(rect, corner)
+        val cornerRadii = shape?.perCornerRadii(rect)
+            ?: if (ownRadius == null) frameRadii(rect, corner) else null
 
         val mask = target.shapeMask()?.takeIf { WallpaperGlass.isAvailable() }
         val layer = if (mask != null) canvas.saveLayer(rect, null) else -1
