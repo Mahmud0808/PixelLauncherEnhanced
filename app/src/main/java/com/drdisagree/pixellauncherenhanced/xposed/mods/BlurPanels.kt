@@ -122,6 +122,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     private val panelRadii = FloatArray(8)
     private val panelFrame = RectF()
     private val frameBounds = RectF()
+    private val sourceBounds = RectF()
     private val imageRect = RectF()
     private var dockPanelOn = false
     private var wallpaperIsLight: Boolean? = null
@@ -883,6 +884,27 @@ class BlurPanels(context: Context) : ModPack(context) {
         return panelRadii
     }
 
+    private fun View.sourcePanel(out: RectF): Float? {
+        val host = getFieldSilently("mSourceView") as? ViewGroup ?: return null
+        if (host.width <= 0 || host.height <= 0) return null
+
+        val target = host.panelTargets().singleOrNull() ?: return null
+        if (!host.targetBounds(target, sourceBounds)) return null
+
+        val scaleX = width / host.width.toFloat()
+        val scaleY = height / host.height.toFloat()
+        val shape = target.panelShape()?.cornerRadius?.takeIf { it > 0f } ?: widgetCornerRadius()
+        val corner = minOf(shape, minOf(sourceBounds.width(), sourceBounds.height()) / 2f)
+
+        out.set(
+            sourceBounds.left * scaleX,
+            sourceBounds.top * scaleY,
+            sourceBounds.right * scaleX,
+            sourceBounds.bottom * scaleY
+        )
+        return minOf(corner * minOf(scaleX, scaleY), minOf(out.width(), out.height()) / 2f)
+    }
+
     private fun View.installFloatingWidgetPanel() {
         if (background is BlurPanelDrawable) return
         hosts.add(this)
@@ -892,7 +914,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             if (width <= 0 || height <= 0) return@BlurPanelDrawable
 
             rect.set(0f, 0f, width.toFloat(), height.toFloat())
-            val cornerRadius = (getFieldSilently("mOutlineRadius") as? Float)?.takeIf { it > 0f }
+            val cornerRadius = sourcePanel(rect)
+                ?: (getFieldSilently("mOutlineRadius") as? Float)?.takeIf { it > 0f }
                 ?: widgetCornerRadius()
             val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
 
