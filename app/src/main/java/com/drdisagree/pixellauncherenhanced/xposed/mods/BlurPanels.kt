@@ -122,6 +122,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     private val panelRadii = FloatArray(8)
     private val panelFrame = RectF()
     private val frameBounds = RectF()
+    private val imageRect = RectF()
     private var dockPanelOn = false
     private var wallpaperIsLight: Boolean? = null
     private var wallpaperListenerRegistered = false
@@ -800,7 +801,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
         val cornerRadii = shape?.perCornerRadii(rect) ?: frameRadii(rect, corner)
 
-        val mask = target.shapeMask()
+        val mask = target.shapeMask()?.takeIf { WallpaperGlass.isAvailable() }
         val layer = if (mask != null) canvas.saveLayer(rect, null) else -1
 
         val drawn = if (mask != null && liquid) {
@@ -1139,11 +1140,6 @@ class BlurPanels(context: Context) : ModPack(context) {
             val isLargeArea = child.width * child.height >= hostArea * LARGE_BACKGROUND_RATIO
             val isLarge = isLargeArea || child in sections
 
-            if (isLarge && child.shapeMask() != null && !WallpaperGlass.isAvailable()) {
-                if (child is ViewGroup) child.clearLargeBackgrounds(hostArea, colors, sections)
-                continue
-            }
-
             if (isLarge) {
                 child.background?.takeIf { it.isFilled() }?.let { background ->
                     if (isLargeArea) {
@@ -1372,7 +1368,18 @@ class BlurPanels(context: Context) : ModPack(context) {
         if (current !== this) return false
 
         out.set(left, top, left + target.width, top + target.height)
+        target.narrowToImage(out)
         return !out.isEmpty
+    }
+
+    private fun View.narrowToImage(out: RectF) {
+        val image = (this as? ImageView)?.drawable ?: return
+        if (image.intrinsicWidth <= 0 || image.intrinsicHeight <= 0) return
+
+        imageRect.set(image.bounds)
+        imageMatrix.mapRect(imageRect)
+        imageRect.offset(out.left + paddingLeft, out.top + paddingTop)
+        if (!imageRect.isEmpty) out.intersect(imageRect)
     }
 
     private fun Drawable.isPlainShape(): Boolean {
