@@ -1164,6 +1164,11 @@ class BlurPanels(context: Context) : ModPack(context) {
             val isLargeArea = child.width * child.height >= hostArea * LARGE_BACKGROUND_RATIO
             val isLarge = isLargeArea || child in sections
 
+            if (isLarge && child.shapeMask() != null && !WallpaperGlass.isAvailable()) {
+                if (child is ViewGroup) child.clearLargeBackgrounds(hostArea, colors, sections)
+                continue
+            }
+
             if (isLarge) {
                 child.background?.takeIf { it.isFilled() }?.let { background ->
                     if (isLargeArea) {
