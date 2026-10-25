@@ -238,7 +238,7 @@ class BlurPanel(private val host: View) {
     }
 
     private fun View.effectiveAlpha(): Float {
-        var result = if (isShown) alpha else 0f
+        var result = alpha
         var current = parent
         while (current is View && result > 0f) {
             result *= current.alpha
