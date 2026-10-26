@@ -10,6 +10,7 @@ import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.PorterDuffXfermode
@@ -120,6 +121,9 @@ class BlurPanels(context: Context) : ModPack(context) {
     private val hosts: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
     private val rect = RectF()
     private val panelRadii = FloatArray(8)
+    private val shadowRect = RectF()
+    private val shadowRadii = FloatArray(8)
+    private val shadowPath = Path()
     private var dockPanelOn = false
     private var wallpaperIsLight: Boolean? = null
     private var wallpaperListenerRegistered = false
@@ -210,6 +214,14 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        findClass("com.android.launcher3.CellLayout", suppressError = true)
+            .hookMethod("onDraw")
+            .suppressError()
+            .runAfter { param ->
+                val canvas = param.args.getOrNull(0) as? Canvas ?: return@runAfter
+                drawWidgetShadows(param.thisObject as ViewGroup, canvas)
+            }
+
         listOf(
             "com.android.quickstep.util.BaseDepthControllerImpl",
             "com.android.quickstep.util.BaseDepthController",
@@ -773,22 +785,80 @@ class BlurPanels(context: Context) : ModPack(context) {
         hosts.add(this)
 
         background = BlurPanelDrawable(background, onShown = { panel().refreshSoon() }) { canvas ->
-            if (isSkippedSearchBar()) return@BlurPanelDrawable
-            val blurRadius = panelBlur()
-            val blurTint = panelTint()
-            val liquid = panelLiquid()
-            if (!panelGlass()) return@BlurPanelDrawable
-
-            val targets = panelTargets()
-            if (targets.isEmpty()) {
-                if ((getExtraFieldSilently(PANEL_TARGET) as? List<*>)?.isNotEmpty() == true) panel().waitForContent()
-                return@BlurPanelDrawable
-            }
-            targets.forEach { drawPanelTarget(canvas, it, blurRadius, blurTint, liquid) }
+            val shadows = ArrayList<WidgetShadow>()
+            drawWidgetPanel(canvas, shadows)
+            updateWidgetShadows(shadows)
         }
     }
 
-    private fun ViewGroup.drawPanelTarget(canvas: Canvas, target: View, blurRadius: Int, blurTint: Int, liquid: Boolean) {
+    private fun ViewGroup.drawWidgetPanel(canvas: Canvas, shadows: MutableList<WidgetShadow>) {
+        if (isSkippedSearchBar()) return
+        val blurRadius = panelBlur()
+        val blurTint = panelTint()
+        val liquid = panelLiquid()
+        if (!panelGlass()) return
+
+        val targets = panelTargets()
+        if (targets.isEmpty()) {
+            if ((getExtraFieldSilently(PANEL_TARGET) as? List<*>)?.isNotEmpty() == true) panel().waitForContent()
+            return
+        }
+        targets.forEach { drawPanelTarget(canvas, it, blurRadius, blurTint, liquid, shadows) }
+    }
+
+    private fun ViewGroup.updateWidgetShadows(shadows: List<WidgetShadow>) {
+        val previous = getExtraFieldSilently(WIDGET_SHADOWS) as? List<*> ?: emptyList<WidgetShadow>()
+        if (previous == shadows) return
+        setExtraField(WIDGET_SHADOWS, shadows)
+        (parent?.parent as? View)?.postInvalidateOnAnimation()
+    }
+
+    private fun drawWidgetShadows(cellLayout: ViewGroup, canvas: Canvas) {
+        val container = cellLayout.getFieldSilently("mShortcutsAndWidgets") as? ViewGroup ?: return
+        if (container.visibility != View.VISIBLE) return
+        val density = cellLayout.resources.displayMetrics.density
+
+        for (index in 0 until container.childCount) {
+            val child = container.getChildAt(index)
+            if (child.visibility != View.VISIBLE || child.alpha <= 0f) continue
+            val shadows = child.getExtraFieldSilently(WIDGET_SHADOWS) as? List<*> ?: continue
+            if (shadows.isEmpty()) continue
+
+            val save = canvas.save()
+            canvas.translate(container.left + container.translationX, container.top + container.translationY)
+            canvas.translate(child.left.toFloat(), child.top.toFloat())
+            canvas.concat(child.matrix)
+            shadows.filterIsInstance<WidgetShadow>().forEach { shadow ->
+                shadowRect.set(shadow.left, shadow.top, shadow.right, shadow.bottom)
+                shadow.radii.forEachIndexed { i, radius -> shadowRadii[i] = radius }
+                shadowPath.reset()
+                shadowPath.addRoundRect(shadowRect, shadowRadii, Path.Direction.CW)
+                WallpaperGlass.drawLiquidShadow(
+                    canvas, shadowPath, density, child.alpha * container.alpha, strength = shadow.strength,
+                    shapeKey = listOf(shadowRect.width(), shadowRect.height(), shadow.radii)
+                )
+            }
+            canvas.restoreToCount(save)
+        }
+    }
+
+    private data class WidgetShadow(
+        val left: Float,
+        val top: Float,
+        val right: Float,
+        val bottom: Float,
+        val radii: List<Float>,
+        val strength: Float
+    )
+
+    private fun ViewGroup.drawPanelTarget(
+        canvas: Canvas,
+        target: View,
+        blurRadius: Int,
+        blurTint: Int,
+        liquid: Boolean,
+        shadows: MutableList<WidgetShadow>
+    ) {
         if (!targetBounds(target, rect)) return
 
         val shape = target.background?.gradientShape()
@@ -814,7 +884,12 @@ class BlurPanels(context: Context) : ModPack(context) {
             style = panelStyle(),
             dimColor = dockBackdropTint(),
             frostedBackdrop = dockBackdropRadius(),
-            cornerRadii = cornerRadii
+            cornerRadii = cornerRadii,
+            deferShadow = { bounds, radii ->
+                shadows.add(
+                    WidgetShadow(bounds.left, bounds.top, bounds.right, bounds.bottom, radii.toList(), panelStyle().shadow)
+                )
+            }
         )
 
         if (mask != null) {
@@ -1387,6 +1462,7 @@ class BlurPanels(context: Context) : ModPack(context) {
 
         private const val BLUR_PANEL = "pleBlurPanel"
         private const val PANEL_TARGET = "plePanelTarget"
+        private const val WIDGET_SHADOWS = "pleWidgetShadows"
         private const val DEFAULT_BLUR = 5
         private const val DEFAULT_TINT = 40
         private const val HOTSEAT_SEARCH_ID = "search_container_hotseat"

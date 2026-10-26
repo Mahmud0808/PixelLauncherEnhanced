@@ -542,7 +542,8 @@ object WallpaperGlass {
         home: Boolean = false,
         frostedBackdrop: Float = 0f,
         style: GlassStyle = GlassStyle.DEFAULT,
-        cornerRadii: FloatArray? = null
+        cornerRadii: FloatArray? = null,
+        deferShadow: ((RectF, FloatArray) -> Unit)? = null
     ): Boolean {
         track(host)
         checkWallpaper(host.context)
@@ -592,10 +593,14 @@ object WallpaperGlass {
         }
 
         if (useLiquid) {
-            drawLiquidShadow(
-                canvas, clipPath, host.resources.displayMetrics.density, alpha, strength = style.shadow,
-                shapeKey = listOf(rect.width(), rect.height(), radii.toList())
-            )
+            if (deferShadow != null) {
+                deferShadow(rect, radii)
+            } else {
+                drawLiquidShadow(
+                    canvas, clipPath, host.resources.displayMetrics.density, alpha, strength = style.shadow,
+                    shapeKey = listOf(rect.width(), rect.height(), radii.toList())
+                )
+            }
             canvas.drawPath(clipPath, liquidPaint(bitmap, rect, radii, hostScale, alpha, dim, style))
             drawTint(canvas, tintColor, alpha)
             return true
