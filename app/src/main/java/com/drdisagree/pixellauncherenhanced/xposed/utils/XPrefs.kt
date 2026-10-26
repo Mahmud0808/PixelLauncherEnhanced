@@ -38,9 +38,11 @@ object XPrefs {
             Xprefs.getString(DEBUG_REPORT_REQUEST, null)?.let { DebugRecorder.respond(it) }
             return
         }
-        if (key.isEmpty() ||
-            key[0].isNullOrEmpty() ||
-            PREF_UPDATE_EXCLUSIONS.any { exclusion -> key[0]?.equals(exclusion) == true }
+        val name = key.firstOrNull()
+        if (name.isNullOrEmpty() ||
+            PREF_UPDATE_EXCLUSIONS.any { exclusion -> name == exclusion } ||
+            name.startsWith(BootLoopProtector.LOAD_TIME_KEY_KEY) ||
+            name.startsWith(BootLoopProtector.PACKAGE_STRIKE_KEY_KEY)
         ) return
 
         HookEntry.runningMods.forEach { thisMod ->

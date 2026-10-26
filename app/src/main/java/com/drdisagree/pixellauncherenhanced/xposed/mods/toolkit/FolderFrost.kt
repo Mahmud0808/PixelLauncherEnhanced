@@ -218,7 +218,9 @@ class FolderFrost(private val host: View) {
         }
         val dim = scrimColor()?.takeIf { !home } ?: 0
         if (liquid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            WallpaperGlass.drawLiquidShadow(canvas, clip, host.resources.displayMetrics.density, progress, strength = style.shadow)
+            WallpaperGlass.drawLiquidShadow(
+                canvas, clip, host.resources.displayMetrics.density, progress, strength = style.shadow, cached = false
+            )
         }
         canvas.save()
         canvas.clipPath(clip)

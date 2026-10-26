@@ -62,7 +62,7 @@ object GlassShader {
         }
 
         float maskDistance(float2 coord) {
-            float m = mask.eval((coord - maskOrigin) * maskScale).r;
+            float m = mask.eval((coord - maskOrigin) * maskScale).a;
             return (0.5 - m) * 2.0 * maskRange;
         }
 

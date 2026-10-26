@@ -70,6 +70,8 @@ class OpacityModifier(context: Context) : ModPack(context) {
     private val shapeCorners = WeakHashMap<Any, Pair<Float, Float>>()
     private val addToPathMethods = HashMap<Class<*>, Method?>()
     private val folderPaths = WeakHashMap<Any, Pair<Float, Path>>()
+    private var folderColorKey: Int? = null
+    private var folderColor: Int? = null
     private val folderGlassRect = RectF()
     private val folderOutlinePath = Path()
     private var pendingFolderOutline: Any? = null
@@ -732,11 +734,16 @@ class OpacityModifier(context: Context) : ModPack(context) {
     }
 
     private fun Context.folderBackgroundColor(): Int? {
+        val key = System.identityHashCode(resources) * 31 + resources.configuration.hashCode()
+        if (key == folderColorKey) return folderColor
         val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
                 Configuration.UI_MODE_NIGHT_YES
         val name = if (night) "folder_background_dark" else "folder_background_light"
-        val id = ResourceIds.find(resources, name, "color", packageName).takeIf { it != 0 } ?: return null
-        return runCatching { getColor(id) }.getOrNull()
+        val id = ResourceIds.find(resources, name, "color", packageName).takeIf { it != 0 }
+        val color = id?.let { runCatching { getColor(it) }.getOrNull() }
+        folderColorKey = key
+        folderColor = color
+        return color
     }
 
     private inner class LiveFolderPreview(

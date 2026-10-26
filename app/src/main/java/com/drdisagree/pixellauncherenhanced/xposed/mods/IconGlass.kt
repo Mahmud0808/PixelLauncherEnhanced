@@ -29,6 +29,7 @@ import android.widget.ImageView
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_PERFORMANCE_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND_TINT
@@ -120,6 +121,7 @@ class IconGlass(context: Context) : ModPack(context) {
             tintOpacity = getSliderInt(ICON_BACKGROUND_TINT, DEFAULT_TINT)
             iconStyle = GlassTarget.ICONS.readStyle(this::getSliderInt, this::getInt)
             drawerOpacity = getSliderInt(APP_DRAWER_BACKGROUND_OPACITY, -1) * 255 / 100
+            WallpaperGlass.performanceMode = getBoolean(GLASS_PERFORMANCE_MODE, false)
         }
 
         when (key.firstOrNull()) {
@@ -252,7 +254,7 @@ class IconGlass(context: Context) : ModPack(context) {
                     node.alpha = paint.alpha / 255f
                     node.path = path
                     node.size = pathSize
-                    node.attached = node.record()
+                    node.attached = node.recordIfChanged()
                     if (!node.attached) {
                         canvas.restoreToCount(save)
                         return@runBefore
@@ -616,6 +618,10 @@ class IconGlass(context: Context) : ModPack(context) {
 
         fun drawsFor(view: View): Boolean = host.get() === view
 
+        private var recordedKey: List<Any?>? = null
+        private val recordedMatrix = Matrix()
+        private val location = IntArray(2)
+
         fun refresh(): Boolean {
             val view = host.get() ?: return false
             if (!attached) return false
@@ -625,8 +631,29 @@ class IconGlass(context: Context) : ModPack(context) {
             return record()
         }
 
+        private fun contentKey(view: View): List<Any?> {
+            val live = !WallpaperGlass.performanceMode
+            if (live) view.getLocationInWindow(location)
+            val position = if (live) (location[0].toLong() shl 32) or (location[1].toLong() and 0xFFFFFFFFL) else 0L
+            return listOf(
+                rect.left, rect.top, rect.right, rect.bottom, corner, alpha, path, size, position,
+                view.glassBlurRadius(), view.samplesHome(), BlurPanels.dockBackdropRadius(view),
+                BlurPanels.dockBackdropTint(view), drawerScrimColor(view),
+                view.openFolder()?.let { OpacityModifier.folderFrost(it)?.progress },
+                if (live) WallpaperGlass.generation else 0, WallpaperGlass.isDepthBlurred, iconStyle, liquid
+            )
+        }
+
+        fun recordIfChanged(): Boolean {
+            val view = host.get() ?: return false
+            if (node.hasDisplayList() && matrix == recordedMatrix && contentKey(view) == recordedKey) return true
+            return record()
+        }
+
         fun record(): Boolean {
             val view = host.get() ?: return false
+            recordedKey = contentKey(view)
+            recordedMatrix.set(matrix)
             val glass = WallpaperGlass.matrixPaint(
                 host = view,
                 matrix = matrix,
@@ -640,11 +667,15 @@ class IconGlass(context: Context) : ModPack(context) {
                 home = view.samplesHome(),
                 frostedBackdrop = BlurPanels.dockBackdropRadius(view),
                 dimColor = BlurPanels.dockBackdropTint(view)
-            ) ?: return false
+            ) ?: run {
+                recordedKey = null
+                return false
+            }
             val extent = ceil(size).toInt().coerceAtLeast(1)
             node.setPosition(0, 0, extent, extent)
             node.setClipToBounds(false)
             node.setHasOverlappingRendering(false)
+            node.setUseCompositingLayer(WallpaperGlass.performanceMode, null)
             val canvas = node.beginRecording(extent, extent)
             canvas.drawPaint(glass)
             drawDrawerScrim(canvas, view)

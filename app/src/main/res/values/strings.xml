@@ -431,6 +431,8 @@
     <string name="color_variant_summary">Light: %1$s\nDark: %2$s</string>
     <string name="prevent_wallpaper_dimming_restart_title">Prevent wallpaper dimming caused restart</string>
     <string name="prevent_wallpaper_dimming_restart_summary">May need manual restart for launcher to pick up Live Wallpaper color update</string>
+    <string name="glass_performance_mode_title">Prioritize performance</string>
+    <string name="glass_performance_mode_summary">Smoother animations. Glass updates once movement stops, not during it</string>
     <string name="hide_apps">Hide apps</string>
     <string name="unhide_apps">Show hidden apps</string>
     <string name="developer">Developer</string>

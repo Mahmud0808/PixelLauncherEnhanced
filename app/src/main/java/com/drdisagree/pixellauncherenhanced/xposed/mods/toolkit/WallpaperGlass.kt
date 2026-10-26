@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BlurMaskFilter
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.HardwareRenderer
@@ -13,6 +14,8 @@ import android.graphics.Color
 import android.graphics.ColorSpace
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Rect
@@ -37,13 +40,18 @@ import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
 import java.io.File
+import java.lang.ref.WeakReference
+import java.lang.reflect.Field
 import java.util.Collections
 import java.util.WeakHashMap
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 object WallpaperGlass {
 
@@ -62,7 +70,12 @@ object WallpaperGlass {
     private const val SHADOW_DY_RATIO = 0.375f
     private const val SHADOW_ALPHA = 32
     private const val MASK_PADDING = 8
-    private const val MASK_CACHE_SIZE = 8
+    private const val MASK_CACHE_SIZE = 24
+    private const val BLUR_SIGMA_SCALE = 0.57735f
+    private const val MASK_SIZE_STEP = 8
+    private const val SETTLE_DELAY_MS = 90L
+    private const val SHADOW_CACHE_SIZE = 32
+    private const val SHADOW_SCALE_STEPS = 4f
     private const val BLUR_CACHE_SIZE = 10
     private const val LIQUID_BLUR_RATIO = 3f
     private const val DEPTH_LEVELS = 3
@@ -72,6 +85,10 @@ object WallpaperGlass {
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
     private val shadowBounds = RectF()
+    private val shadowCache = LinkedHashMap<Any, Bitmap>(SHADOW_CACHE_SIZE, 0.75f, true)
+    private val shadowDrawPaint = Paint(Paint.FILTER_BITMAP_FLAG).apply { color = Color.BLACK }
+    private val shadowMatrix = Matrix()
+    private val shadowValues = FloatArray(9)
     private val clipPath = Path()
     private val radii = FloatArray(8)
     private val source = Rect()
@@ -89,7 +106,7 @@ object WallpaperGlass {
     private val shaderTarget = RectF()
     private var iconLiquidShader: RuntimeShader? = null
     private val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() }
-    private val maskCache = LinkedHashMap<Any, BitmapShader>()
+    private val maskCache = LinkedHashMap<Any, MaskEntry>(MASK_CACHE_SIZE, 0.75f, true)
     private val emptyMaskShader by lazy {
         BitmapShader(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
     }
@@ -117,6 +134,9 @@ object WallpaperGlass {
     private val trackLocation = IntArray(2)
     private val trackBuffer = ArrayList<View>()
     private val dirtyRoots: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
+    private val settleRunners = WeakHashMap<View, Runnable>()
+    private val settledRoots: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
+    var performanceMode = false
 
     private fun track(host: View) {
         if (host in listeners || !host.isAttachedToWindow) return
@@ -146,8 +166,12 @@ object WallpaperGlass {
 
     private fun checkMoved(root: View): Boolean {
         val views = rootListeners[root] ?: return true
-        val all = dirtyRoots.remove(root)
+        val settled = settledRoots.remove(root)
+        val dirty = dirtyRoots.remove(root)
+        if (performanceMode && dirty && !settled) settleLater(root)
+        val all = settled || (dirty && !performanceMode)
         var refreshed = false
+        var deferred = false
         trackBuffer.clear()
         trackBuffer.addAll(views)
         for (view in trackBuffer) {
@@ -160,26 +184,58 @@ object WallpaperGlass {
                 lastPositions[view] = position
                 lastScales[view] = scale
                 lastScrims[view] = scrim
-                if (refresh(view)) refreshed = true
+                if (performanceMode && !all) {
+                    deferred = true
+                } else if (refresh(view)) {
+                    refreshed = true
+                }
             }
         }
         trackBuffer.clear()
+        if (deferred) settleLater(root)
         if (refreshed) root.invalidate()
         return true
     }
 
+    private fun settleLater(root: View) {
+        val settle = settleRunners.getOrPut(root) {
+            val rootRef = WeakReference(root)
+            Runnable {
+                val target = rootRef.get() ?: return@Runnable
+                settledRoots.add(target)
+                target.invalidate()
+            }
+        }
+        root.removeCallbacks(settle)
+        root.postDelayed(settle, SETTLE_DELAY_MS)
+    }
+
+    var generation = 0
+        private set
+
     private fun invalidateTracked() {
+        generation++
         for (root in rootListeners.keys) {
             if (root == null || !dirtyRoots.add(root)) continue
             root.invalidate()
         }
     }
 
+    private var cellLayoutClass: Class<*>? = null
+    private var cellBackgroundField: Field? = null
+
     private fun View.cellScrim(): Int {
         var current: View? = this
         while (current != null) {
-            if (current.javaClass.name.endsWith(".CellLayout")) {
-                val background = current.getFieldSilently("mBackground") as? Drawable ?: return 0
+            val type = current.javaClass
+            if (type === cellLayoutClass || (cellLayoutClass == null && type.name.endsWith(".CellLayout"))) {
+                if (cellLayoutClass == null) {
+                    cellLayoutClass = type
+                    cellBackgroundField = generateSequence<Class<*>>(type) { it.superclass }
+                        .firstNotNullOfOrNull { runCatching { it.getDeclaredField("mBackground") }.getOrNull() }
+                        ?.apply { isAccessible = true }
+                }
+                val background = cellBackgroundField?.get(current) as? Drawable ?: return 0
                 if (background.alpha == 0) return 0
                 val color = (background.current as? GradientDrawable)?.color?.defaultColor ?: return 0
                 return ColorUtils.setAlphaComponent(color, Color.alpha(color) * background.alpha / 255)
@@ -647,12 +703,15 @@ object WallpaperGlass {
             val mask = shapePath?.let { path -> shapeMask(path, localRect, edge) { it.drawPath(path, maskPaint) } }
                 ?: maskDrawer?.let { shapeMask(maskKey ?: it, localRect, edge, it) }
             if (mask != null) {
-                val padding = maskPadding(edge)
-                shader.setInputShader("mask", mask)
+                shader.setInputShader("mask", mask.shader)
                 shader.setFloatUniform("useMask", 1f)
-                shader.setFloatUniform("maskOrigin", localRect.left - padding, localRect.top - padding)
-                shader.setFloatUniform("maskScale", 1f)
-                shader.setFloatUniform("maskRange", maskBlurRadius(edge) * MASK_RAMP)
+                shader.setFloatUniform(
+                    "maskOrigin",
+                    localRect.left + mask.originX / mask.scale,
+                    localRect.top + mask.originY / mask.scale
+                )
+                shader.setFloatUniform("maskScale", mask.scale)
+                shader.setFloatUniform("maskRange", mask.range / mask.scale)
             } else {
                 disableMask(shader)
             }
@@ -683,23 +742,48 @@ object WallpaperGlass {
 
     private fun maskPadding(edge: Float): Int = MASK_PADDING + maskBlurRadius(edge) * 3
 
-    private fun shapeMask(source: Any, bounds: RectF, edge: Float, drawer: (Canvas) -> Unit): BitmapShader {
-        val key = listOf(source, bounds.width().roundToInt(), bounds.height().roundToInt(), maskBlurRadius(edge))
+    private class MaskEntry(
+        val shader: BitmapShader,
+        val originX: Float,
+        val originY: Float,
+        val scale: Float,
+        val range: Float
+    )
+
+    private fun shapeMask(source: Any, bounds: RectF, edge: Float, drawer: (Canvas) -> Unit): MaskEntry {
+        val bucketWidth = max(MASK_SIZE_STEP, (bounds.width() / MASK_SIZE_STEP).roundToInt() * MASK_SIZE_STEP)
+        val scale = bucketWidth / max(1f, bounds.width())
+        val bucketHeight = max(1, (bounds.height() * scale).roundToInt())
+        val blurRadius = maskBlurRadius(edge * scale)
+        val key = listOf(source, bucketWidth, bucketHeight, blurRadius)
         maskCache[key]?.let { return it }
 
-        val padding = maskPadding(edge)
-        val width = bounds.width().roundToInt() + padding * 2
-        val height = bounds.height().roundToInt() + padding * 2
-        val bitmap = Bitmap.createBitmap(max(1, width), max(1, height), Bitmap.Config.ARGB_8888)
-        Canvas(bitmap).apply {
-            translate(padding - bounds.left, padding - bounds.top)
+        val padding = maskPadding(edge * scale)
+        val sharp = Bitmap.createBitmap(bucketWidth + padding * 2, bucketHeight + padding * 2, Bitmap.Config.ALPHA_8)
+        Canvas(sharp).apply {
+            translate(padding.toFloat(), padding.toFloat())
+            scale(scale, scale)
+            translate(-bounds.left, -bounds.top)
             drawer(this)
         }
-        val blurred = BitmapShader(GlassShader.boxBlur(bitmap, maskBlurRadius(edge)), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-            .apply { filterMode = BitmapShader.FILTER_MODE_LINEAR }
+        val sigma = sqrt(blurRadius * (blurRadius + 1f))
+        val blurPaint = Paint().apply {
+            maskFilter = BlurMaskFilter(max(0.5f, (sigma - 0.5f) / BLUR_SIGMA_SCALE), BlurMaskFilter.Blur.NORMAL)
+        }
+        val offset = IntArray(2)
+        val blurred = sharp.extractAlpha(blurPaint, offset)
+        sharp.recycle()
+        val entry = MaskEntry(
+            BitmapShader(blurred, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+                .apply { filterMode = BitmapShader.FILTER_MODE_LINEAR },
+            offset[0] - padding.toFloat(),
+            offset[1] - padding.toFloat(),
+            scale,
+            blurRadius * MASK_RAMP
+        )
         if (maskCache.size >= MASK_CACHE_SIZE) maskCache.remove(maskCache.keys.first())
-        maskCache[key] = blurred
-        return blurred
+        maskCache[key] = entry
+        return entry
     }
 
     fun pathCorner(path: Path, bounds: RectF): Float {
@@ -726,14 +810,65 @@ object WallpaperGlass {
         density: Float,
         alpha: Float = 1f,
         unitScale: Float = 1f,
-        strength: Float = 1f
+        strength: Float = 1f,
+        cached: Boolean = true
     ) {
         path.computeBounds(shadowBounds, true)
-        if (!prepareShadow(shadowBlur(density / unitScale, shadowBounds), alpha, strength)) return
+        if (shadowBounds.isEmpty) return
+        if (!cached) {
+            if (!prepareShadow(shadowBlur(density / unitScale, shadowBounds), alpha, strength)) return
+            canvas.save()
+            canvas.clipOutPath(path)
+            canvas.drawPath(path, shadowPaint)
+            canvas.restore()
+            return
+        }
+        val blur = shadowBlur(density / unitScale, shadowBounds)
+        val shadowAlpha = (SHADOW_ALPHA * alpha.coerceIn(0f, 1f) * strength).roundToInt().coerceIn(0, 255)
+        if (shadowAlpha <= 0 || blur <= 0f) return
+
+        @Suppress("DEPRECATION")
+        canvas.getMatrix(shadowMatrix)
+        shadowMatrix.getValues(shadowValues)
+        val deviceScale = hypot(shadowValues[Matrix.MSCALE_X], shadowValues[Matrix.MSKEW_Y])
+        val scale = (ceil(deviceScale * SHADOW_SCALE_STEPS) / SHADOW_SCALE_STEPS).coerceIn(0.25f, 4f)
+        val generation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) path.generationId else 0
+        val key = listOf(
+            System.identityHashCode(path), generation,
+            shadowBounds.left, shadowBounds.top, shadowBounds.right, shadowBounds.bottom,
+            (blur * 8f).roundToInt(), scale
+        )
+        val bitmap = shadowCache[key] ?: renderShadow(path, blur, scale).also {
+            shadowCache[key] = it
+            while (shadowCache.size > SHADOW_CACHE_SIZE) shadowCache.remove(shadowCache.keys.first())
+        }
+        val padding = shadowPadding(blur)
+        shadowDrawPaint.alpha = shadowAlpha
         canvas.save()
-        canvas.clipOutPath(path)
-        canvas.drawPath(path, shadowPaint)
+        canvas.translate(shadowBounds.left - padding, shadowBounds.top - padding)
+        canvas.scale(1f / scale, 1f / scale)
+        canvas.drawBitmap(bitmap, 0f, 0f, shadowDrawPaint)
         canvas.restore()
+    }
+
+    private fun shadowPadding(blur: Float): Float = ceil(blur * (2f + SHADOW_DY_RATIO) + 2f)
+
+    private fun renderShadow(path: Path, blur: Float, scale: Float): Bitmap {
+        val padding = shadowPadding(blur)
+        val width = max(1, ceil((shadowBounds.width() + padding * 2) * scale).toInt())
+        val height = max(1, ceil((shadowBounds.height() + padding * 2) * scale).toInt())
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ALPHA_8)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            setShadowLayer(blur, blur * SHADOW_DX_RATIO, blur * SHADOW_DY_RATIO, Color.BLACK)
+        }
+        Canvas(bitmap).apply {
+            scale(scale, scale)
+            translate(padding - shadowBounds.left, padding - shadowBounds.top)
+            drawPath(path, paint)
+            drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) })
+        }
+        return bitmap
     }
 
     private fun shadowBlur(unit: Float, bounds: RectF): Float =

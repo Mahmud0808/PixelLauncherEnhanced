@@ -176,6 +176,7 @@ object Constants {
     const val HIDE_NAVIGATION_SPACE = "xposed_hidenavigationspace"
     const val QUICK_LAUNCH = "xposed_quicklaunch"
     const val PREVENT_WALLPAPER_DIMMING_RESTART = "xposed_preventwallpaperdimmingrestart"
+    const val GLASS_PERFORMANCE_MODE = "xposed_glassperformancemode"
 
     const val UPDATE_AUTO_CHECK = "update_autocheck"
     const val UPDATE_CACHE = "update_cache"

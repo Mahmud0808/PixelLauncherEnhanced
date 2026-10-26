@@ -34,6 +34,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_DARK_
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_PERFORMANCE_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_BLUR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND_OPACITY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_CUSTOM_COLOR_DARK
@@ -109,6 +110,15 @@ object PrefsHelper {
 
             FOLDER_BACKGROUND,
             WIDGET_BACKGROUND -> true
+
+            GLASS_PERFORMANCE_MODE -> listOf(
+                getBoolean(HOME_THEMED_ICONS) to ICON_BACKGROUND,
+                true to FOLDER_BACKGROUND,
+                true to WIDGET_BACKGROUND,
+                !getBoolean(DISABLE_DOCK) to DOCK_BACKGROUND,
+                true to SEARCH_BAR_BACKGROUND,
+                true to DRAWER_SEARCH_BACKGROUND
+            ).any { (shown, pref) -> shown && PanelBackground.supported(getString(pref)) != PanelBackground.OFF }
 
             FOLDER_BACKGROUND_OPACITY,
             FOLDER_BACKGROUND_BLUR -> PanelBackground.supported(getString(FOLDER_BACKGROUND)) != PanelBackground.OFF
