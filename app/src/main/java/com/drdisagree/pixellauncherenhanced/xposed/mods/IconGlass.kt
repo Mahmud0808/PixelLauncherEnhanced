@@ -646,13 +646,14 @@ class IconGlass(context: Context) : ModPack(context) {
 
         fun recordIfChanged(): Boolean {
             val view = host.get() ?: return false
-            if (node.hasDisplayList() && matrix == recordedMatrix && contentKey(view) == recordedKey) return true
-            return record()
+            val key = contentKey(view)
+            if (node.hasDisplayList() && matrix == recordedMatrix && key == recordedKey) return true
+            return record(key)
         }
 
-        fun record(): Boolean {
+        fun record(key: List<Any?>? = null): Boolean {
             val view = host.get() ?: return false
-            recordedKey = contentKey(view)
+            recordedKey = key ?: contentKey(view)
             recordedMatrix.set(matrix)
             val glass = WallpaperGlass.matrixPaint(
                 host = view,

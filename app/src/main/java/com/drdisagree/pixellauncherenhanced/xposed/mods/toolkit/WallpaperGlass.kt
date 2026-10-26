@@ -76,6 +76,7 @@ object WallpaperGlass {
     private const val SETTLE_DELAY_MS = 90L
     private const val SHADOW_CACHE_SIZE = 32
     private const val SHADOW_SCALE_STEPS = 4f
+    private const val VOLATILE_SHADOW_CHANGES = 3
     private const val BLUR_CACHE_SIZE = 10
     private const val LIQUID_BLUR_RATIO = 3f
     private const val DEPTH_LEVELS = 3
@@ -89,6 +90,7 @@ object WallpaperGlass {
     private val shadowDrawPaint = Paint(Paint.FILTER_BITMAP_FLAG).apply { color = Color.BLACK }
     private val shadowMatrix = Matrix()
     private val shadowValues = FloatArray(9)
+    private val shadowGenerations = WeakHashMap<Path, IntArray>()
     private val clipPath = Path()
     private val radii = FloatArray(8)
     private val source = Rect()
@@ -590,7 +592,10 @@ object WallpaperGlass {
         }
 
         if (useLiquid) {
-            drawLiquidShadow(canvas, clipPath, host.resources.displayMetrics.density, alpha, strength = style.shadow)
+            drawLiquidShadow(
+                canvas, clipPath, host.resources.displayMetrics.density, alpha, strength = style.shadow,
+                shapeKey = listOf(rect.width(), rect.height(), radii.toList())
+            )
             canvas.drawPath(clipPath, liquidPaint(bitmap, rect, radii, hostScale, alpha, dim, style))
             drawTint(canvas, tintColor, alpha)
             return true
@@ -811,11 +816,13 @@ object WallpaperGlass {
         alpha: Float = 1f,
         unitScale: Float = 1f,
         strength: Float = 1f,
-        cached: Boolean = true
+        cached: Boolean = true,
+        shapeKey: Any? = null
     ) {
         path.computeBounds(shadowBounds, true)
         if (shadowBounds.isEmpty) return
-        if (!cached) {
+        val generation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) path.generationId else 0
+        if (!cached || (shapeKey == null && path.isVolatile(generation))) {
             if (!prepareShadow(shadowBlur(density / unitScale, shadowBounds), alpha, strength)) return
             canvas.save()
             canvas.clipOutPath(path)
@@ -832,11 +839,9 @@ object WallpaperGlass {
         shadowMatrix.getValues(shadowValues)
         val deviceScale = hypot(shadowValues[Matrix.MSCALE_X], shadowValues[Matrix.MSKEW_Y])
         val scale = (ceil(deviceScale * SHADOW_SCALE_STEPS) / SHADOW_SCALE_STEPS).coerceIn(0.25f, 4f)
-        val generation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) path.generationId else 0
         val key = listOf(
-            System.identityHashCode(path), generation,
-            shadowBounds.left, shadowBounds.top, shadowBounds.right, shadowBounds.bottom,
-            (blur * 8f).roundToInt(), scale
+            shapeKey ?: System.identityHashCode(path), if (shapeKey == null) generation else 0,
+            shadowBounds.width(), shadowBounds.height(), (blur * 8f).roundToInt(), scale
         )
         val bitmap = shadowCache[key] ?: renderShadow(path, blur, scale).also {
             shadowCache[key] = it
@@ -849,6 +854,17 @@ object WallpaperGlass {
         canvas.scale(1f / scale, 1f / scale)
         canvas.drawBitmap(bitmap, 0f, 0f, shadowDrawPaint)
         canvas.restore()
+    }
+
+    private fun Path.isVolatile(generation: Int): Boolean {
+        val state = shadowGenerations.getOrPut(this) { intArrayOf(generation, 0) }
+        if (state[0] == generation) {
+            state[1] = 0
+        } else {
+            state[0] = generation
+            state[1]++
+        }
+        return state[1] >= VOLATILE_SHADOW_CHANGES
     }
 
     private fun shadowPadding(blur: Float): Float = ceil(blur * (2f + SHADOW_DY_RATIO) + 2f)
