@@ -13,6 +13,7 @@ object BackupCrypto {
     val SETTINGS_MAGIC = "PLESET1".toByteArray()
     val HOME_LAYOUT_MAGIC = "PLELAY1".toByteArray()
     val DRAWER_LAYOUT_MAGIC = "PLEDRW1".toByteArray()
+    val FULL_MAGIC = "PLEALL1".toByteArray()
 
     fun wrongTypeMessage(data: ByteArray, expected: ByteArray): Int? {
         return when {
@@ -24,6 +25,9 @@ object BackupCrypto {
 
             expected !== DRAWER_LAYOUT_MAGIC && hasMagic(DRAWER_LAYOUT_MAGIC, data) ->
                 R.string.backup_wrong_type_drawer_layout
+
+            expected !== FULL_MAGIC && hasMagic(FULL_MAGIC, data) ->
+                R.string.backup_wrong_type_full
 
             else -> null
         }

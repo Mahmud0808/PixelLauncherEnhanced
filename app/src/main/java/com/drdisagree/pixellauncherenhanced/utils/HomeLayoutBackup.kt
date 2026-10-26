@@ -9,7 +9,17 @@ import android.os.Process
 import android.os.UserManager
 import android.provider.DocumentsContract
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_COLUMNS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_GRID_ROWS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_SEARCH_BAR_ABOVE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_GRID_COLUMNS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_GRID_ROWS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_AT_A_GLANCE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_ARRANGEMENT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_FILL
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO_SCREENS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_FIRST_SCREEN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
@@ -44,6 +54,18 @@ object HomeLayoutBackup {
                 ".plebackup"
 
     suspend fun backup(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
+        try {
+            val bytes = backupBytes(context)
+            val output = context.contentResolver.openOutputStream(uri, "wt")
+                ?: throw BackupException(R.string.home_layout_failed)
+            output.use { it.write(bytes) }
+        } catch (e: Exception) {
+            runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
+            throw e
+        }
+    }
+
+    suspend fun backupBytes(context: Context): ByteArray = withContext(Dispatchers.IO) {
         val launcher = currentLauncher()
         val workDir = createWorkDir(context)
 
@@ -61,6 +83,7 @@ object HomeLayoutBackup {
                 RPrefs.getInt(NO_DRAWER_FIRST_SCREEN, -1)
                     .takeIf { it > 0 && RPrefs.getBoolean(NO_DRAWER_MODE) }
                     ?.let { put(KEY_FIRST_MOD_SCREEN, it) }
+                put(KEY_LAYOUT_PREFS, PrefsSnapshot.capture { it in LAYOUT_KEYS })
             }
 
             val archive = ByteArrayOutputStream()
@@ -74,27 +97,25 @@ object HomeLayoutBackup {
                 zip.closeEntry()
             }
 
-            val output = context.contentResolver.openOutputStream(uri, "wt")
-                ?: throw BackupException(R.string.home_layout_failed)
-
-            output.use {
-                it.write(BackupCrypto.encrypt(BackupCrypto.HOME_LAYOUT_MAGIC, archive.toByteArray()))
-            }
-        } catch (e: Exception) {
-            runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
-            throw e
+            BackupCrypto.encrypt(BackupCrypto.HOME_LAYOUT_MAGIC, archive.toByteArray())
         } finally {
             workDir.deleteRecursively()
         }
     }
 
     suspend fun restore(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw BackupException(R.string.home_layout_invalid_file)
+        restoreBytes(context, bytes)
+    }
+
+    suspend fun restoreBytes(context: Context, bytes: ByteArray) = withContext(Dispatchers.IO) {
         val launcher = currentLauncher()
         val workDir = createWorkDir(context)
 
         try {
             val staged = File(workDir, DB_ENTRY)
-            val metadata = extractBackup(context, uri, staged)
+            val metadata = extractBackup(bytes, staged)
             val dbName = currentDbName(launcher)
             val backupDbName = metadata.getString(KEY_DB_NAME)
 
@@ -113,7 +134,12 @@ object HomeLayoutBackup {
                 )
             }
 
-            val noDrawerMode = RPrefs.getBoolean(NO_DRAWER_MODE)
+            val layoutPrefs = metadata.optJSONObject(KEY_LAYOUT_PREFS)
+            val noDrawerMode = if (layoutPrefs != null) {
+                PrefsSnapshot.boolean(layoutPrefs, NO_DRAWER_MODE) == true
+            } else {
+                RPrefs.getBoolean(NO_DRAWER_MODE)
+            }
             val firstModScreen = if (metadata.has(KEY_FIRST_MOD_SCREEN)) {
                 metadata.getInt(KEY_FIRST_MOD_SCREEN)
             } else {
@@ -133,6 +159,12 @@ object HomeLayoutBackup {
                 )
             }
 
+            stopLauncher(launcher)
+            layoutPrefs?.let { prefs ->
+                val editor = RPrefs.getPrefs.edit()
+                PrefsSnapshot.apply(editor, prefs) { it in LAYOUT_KEYS }
+                if (!editor.commit()) throw BackupException(R.string.home_layout_failed)
+            }
             RPrefs.clearPrefs(NO_DRAWER_FIRST_SCREEN, NO_DRAWER_AUTO_SCREENS)
             if (noDrawerMode && firstModScreen != null) {
                 RPrefs.putInt(NO_DRAWER_FIRST_SCREEN, firstModScreen)
@@ -229,11 +261,8 @@ object HomeLayoutBackup {
         }
     }
 
-    private fun extractBackup(context: Context, uri: Uri, staged: File): JSONObject {
+    private fun extractBackup(bytes: ByteArray, staged: File): JSONObject {
         var metadata: JSONObject? = null
-
-        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            ?: throw BackupException(R.string.home_layout_invalid_file)
 
         BackupCrypto.wrongTypeMessage(bytes, BackupCrypto.HOME_LAYOUT_MAGIC)?.let {
             throw BackupException(it)
@@ -305,6 +334,14 @@ object HomeLayoutBackup {
         return target
     }
 
+    fun stopLauncher() = stopLauncher(currentLauncher())
+
+    private fun stopLauncher(launcher: LauncherTarget) {
+        if (!Shell.cmd("am force-stop ${launcher.packageName}").exec().isSuccess) {
+            throw BackupException(R.string.home_layout_failed)
+        }
+    }
+
     private fun pushDatabase(launcher: LauncherTarget, dbName: String, staged: File) {
         val target = "${launcher.databasesDir}/$dbName"
         val result = Shell.cmd(
@@ -372,6 +409,22 @@ object HomeLayoutBackup {
     private const val ITEM_TYPE_DEEP_SHORTCUT = 6
     private const val ITEM_TYPE_APP_PAIR = 10
     private const val FLAG_WIDGET_ID_NOT_VALID = 1
+
+    private const val KEY_LAYOUT_PREFS = "layoutPrefs"
+
+    private val LAYOUT_KEYS = setOf(
+        DESKTOP_GRID_COLUMNS,
+        DESKTOP_GRID_ROWS,
+        FOLDER_GRID_COLUMNS,
+        FOLDER_GRID_ROWS,
+        DISABLE_DOCK,
+        DESKTOP_SEARCH_BAR,
+        DOCK_SEARCH_BAR_ABOVE,
+        HIDE_AT_A_GLANCE,
+        NO_DRAWER_MODE,
+        NO_DRAWER_ARRANGEMENT,
+        NO_DRAWER_AUTO_FILL
+    )
 
     private val DB_FILE_PREF_REGEX = Regex("<string name=\"migration_src_db_file\">([^<]+)</string>")
     private val LAYOUT_DB_REGEX = Regex("launcher(?:_(\\d+)_by_(\\d+))?\\.db")

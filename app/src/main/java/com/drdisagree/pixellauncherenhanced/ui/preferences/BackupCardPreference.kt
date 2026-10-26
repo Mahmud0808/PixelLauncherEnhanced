@@ -9,7 +9,6 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.enums.TilePalette
 import com.drdisagree.pixellauncherenhanced.ui.widgets.ShapeIconView
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.shape.MaterialShapes
 
 class BackupCardPreference(context: Context, attrs: AttributeSet?) : Preference(context, attrs) {
@@ -32,16 +31,16 @@ class BackupCardPreference(context: Context, attrs: AttributeSet?) : Preference(
         val root = holder.itemView
 
         root.findViewById<ShapeIconView>(R.id.backup_emblem).apply {
-            val iconColor = MaterialColors.getColor(this, palette.icon)
+            val iconColor = palette.iconColor(this)
             setShapes(SHAPES[palette.ordinal % SHAPES.size], MaterialShapes.COOKIE_12)
             setIcon(icon, iconColor)
-            setColors(MaterialColors.getColor(this, palette.shape), iconColor)
+            setColors(palette.shapeColor(this), iconColor)
         }
         root.findViewById<MaterialButton>(R.id.backup_button).setOnClickListener { onBackup?.invoke() }
         root.findViewById<MaterialButton>(R.id.restore_button).setOnClickListener { onRestore?.invoke() }
     }
 
     companion object {
-        private val SHAPES = listOf(MaterialShapes.COOKIE_9, MaterialShapes.SUNNY, MaterialShapes.CLOVER_4)
+        private val SHAPES = listOf(MaterialShapes.COOKIE_9, MaterialShapes.SUNNY, MaterialShapes.CLOVER_4, MaterialShapes.SOFT_BURST)
     }
 }

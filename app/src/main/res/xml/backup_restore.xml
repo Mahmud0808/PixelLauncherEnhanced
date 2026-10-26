@@ -26,4 +26,12 @@
         app:cardPalette="tertiary"
         app:iconSpaceReserved="false" />
 
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.BackupCardPreference
+        android:icon="@drawable/ic_backup_restore"
+        android:key="xposed_backupcardfull"
+        android:summary="@string/backup_card_full_desc"
+        android:title="@string/section_full_backup_title"
+        app:cardPalette="neutral"
+        app:iconSpaceReserved="false" />
+
 </PreferenceScreen>

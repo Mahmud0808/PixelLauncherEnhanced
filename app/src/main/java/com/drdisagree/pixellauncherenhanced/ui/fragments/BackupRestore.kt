@@ -14,6 +14,7 @@ import com.drdisagree.pixellauncherenhanced.ui.preferences.BackupCardPreference
 import com.drdisagree.pixellauncherenhanced.utils.BackupCrypto
 import com.drdisagree.pixellauncherenhanced.utils.BackupException
 import com.drdisagree.pixellauncherenhanced.utils.DrawerLayoutBackup
+import com.drdisagree.pixellauncherenhanced.utils.FullBackup
 import com.drdisagree.pixellauncherenhanced.utils.HomeLayoutBackup
 import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
 import com.drdisagree.pixellauncherenhanced.utils.SettingsBackup
@@ -58,6 +59,25 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
             }
         }
 
+    private var fullIncludeHiddenApps = true
+
+    private val backupFullLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+            if (uri != null) {
+                val includeHiddenApps = fullIncludeHiddenApps
+                runBackupTask(R.string.full_backup_success) {
+                    FullBackup.backup(it, uri, includeHiddenApps)
+                }
+            }
+        }
+
+    private val restoreFullLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) verifyBackup(uri, BackupCrypto.FULL_MAGIC, R.string.full_invalid_file) {
+                confirmRestoreFull(uri)
+            }
+        }
+
     private val backupSettingsLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
             if (uri != null) {
@@ -92,6 +112,11 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         super.onCreatePreferences(savedInstanceState, rootKey)
 
+        findPreference<BackupCardPreference>(CARD_FULL)?.apply {
+            onBackup = { chooseFullBackupOptions() }
+            onRestore = { restoreFullLauncher.launch(BACKUP_MIME_TYPES) }
+        }
+
         findPreference<BackupCardPreference>(CARD_HOME)?.apply {
             onBackup = { backupLayoutLauncher.launch(HomeLayoutBackup.defaultFileName) }
             onRestore = { restoreLayoutLauncher.launch(BACKUP_MIME_TYPES) }
@@ -105,6 +130,66 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
         findPreference<BackupCardPreference>(CARD_SETTINGS)?.apply {
             onBackup = { backupSettingsLauncher.launch(SettingsBackup.defaultFileName) }
             onRestore = { restoreSettingsLauncher.launch(BACKUP_MIME_TYPES) }
+        }
+    }
+
+    private fun chooseFullBackupOptions() {
+        var checked = true
+        val context = requireContext()
+
+        ExpressiveDialog.show(
+            context = context,
+            icon = R.drawable.ic_upload,
+            title = getString(R.string.backup_full_title),
+            content = ExpressiveDialog.toggleRow(
+                context,
+                getString(R.string.backup_drawer_layout_include_hidden_apps),
+                checked
+            ) { checked = it },
+            positive = ExpressiveDialog.Action(getString(R.string.backup_button)) {
+                fullIncludeHiddenApps = checked
+                backupFullLauncher.launch(FullBackup.defaultFileName)
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
+    }
+
+    private fun confirmRestoreFull(uri: Uri) {
+        ExpressiveDialog.show(
+            context = requireContext(),
+            icon = R.drawable.ic_download,
+            title = getString(R.string.restore_full_title),
+            message = getString(R.string.restore_full_confirm_desc),
+            positive = ExpressiveDialog.Action(getString(R.string.restore_home_layout_button)) {
+                restoreFull(uri)
+            },
+            negative = ExpressiveDialog.Action(getString(android.R.string.cancel))
+        )
+    }
+
+    private fun restoreFull(uri: Uri) {
+        val context = requireContext().applicationContext
+
+        lifecycleScope.launch {
+            val message = try {
+                val homeError = FullBackup.restore(context, uri)
+                context.restartLauncher()
+                activity?.recreate()
+                if (homeError == null) {
+                    context.getString(R.string.full_restore_success)
+                } else {
+                    context.getString(
+                        R.string.full_restore_home_skipped,
+                        context.getString(homeError.messageRes, *homeError.formatArgs)
+                    )
+                }
+            } catch (e: BackupException) {
+                context.getString(e.messageRes, *e.formatArgs)
+            } catch (e: Exception) {
+                context.getString(R.string.backup_failed)
+            }
+
+            Messages.show(activity ?: context, message, long = true)
         }
     }
 
@@ -238,6 +323,7 @@ class BackupRestore : ControlledPreferenceFragmentCompat() {
     companion object {
         private val BACKUP_MIME_TYPES = arrayOf("application/octet-stream", "*/*")
         private const val BACKUP_HEADER_SIZE = 16
+        private const val CARD_FULL = "xposed_backupcardfull"
         private const val CARD_HOME = "xposed_backupcardhome"
         private const val CARD_DRAWER = "xposed_backupcarddrawer"
         private const val CARD_SETTINGS = "xposed_backupcardsettings"

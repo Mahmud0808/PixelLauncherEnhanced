@@ -6,8 +6,16 @@ import android.provider.DocumentsContract
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_GRID_COLUMNS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_LONG_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_FOLDERS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_FOLDERS_ENABLED
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_AT_BOTTOM
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_APPS_FROM_APP_DRAWER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
@@ -30,35 +38,41 @@ object DrawerLayoutBackup {
 
     suspend fun backup(context: Context, uri: Uri, includeHiddenApps: Boolean) = withContext(Dispatchers.IO) {
         try {
-            val root = JSONObject()
-                .put(KEY_BACKUP_TYPE, BACKUP_TYPE)
-                .put(KEY_FORMAT_VERSION, FORMAT_VERSION)
-                .put(KEY_APP_VERSION, BuildConfig.VERSION_NAME)
-                .put(KEY_TABS, JSONArray(DrawerTab.serialize(DrawerTabsStore.load())))
-                .put(KEY_FOLDERS, JSONArray(DrawerFolder.serialize(DrawerFoldersStore.load())))
-
-            if (includeHiddenApps) {
-                root.put(KEY_HIDDEN_APPS, JSONArray(RPrefs.getStringSet(APP_BLOCK_LIST, emptySet()).orEmpty().sorted()))
-                root.put(KEY_HIDE_APPS_ENABLED, RPrefs.getBoolean(HIDE_APPS_FROM_APP_DRAWER))
-                root.put(KEY_SEARCH_HIDDEN_APPS, RPrefs.getBoolean(SEARCH_HIDDEN_APPS))
-            }
-
+            val bytes = backupBytes(includeHiddenApps)
             val output = context.contentResolver.openOutputStream(uri, "wt")
                 ?: throw BackupException(R.string.backup_failed)
-
-            output.use {
-                it.write(BackupCrypto.encrypt(BackupCrypto.DRAWER_LAYOUT_MAGIC, root.toString().toByteArray()))
-            }
+            output.use { it.write(bytes) }
         } catch (e: Exception) {
             runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
             throw e
         }
     }
 
+    fun backupBytes(includeHiddenApps: Boolean): ByteArray {
+        val root = JSONObject()
+            .put(KEY_BACKUP_TYPE, BACKUP_TYPE)
+            .put(KEY_FORMAT_VERSION, FORMAT_VERSION)
+            .put(KEY_APP_VERSION, BuildConfig.VERSION_NAME)
+            .put(KEY_TABS, JSONArray(DrawerTab.serialize(DrawerTabsStore.load())))
+            .put(KEY_FOLDERS, JSONArray(DrawerFolder.serialize(DrawerFoldersStore.load())))
+            .put(KEY_LAYOUT_PREFS, PrefsSnapshot.capture { it in LAYOUT_KEYS })
+
+        if (includeHiddenApps) {
+            root.put(KEY_HIDDEN_APPS, JSONArray(RPrefs.getStringSet(APP_BLOCK_LIST, emptySet()).orEmpty().sorted()))
+            root.put(KEY_HIDE_APPS_ENABLED, RPrefs.getBoolean(HIDE_APPS_FROM_APP_DRAWER))
+            root.put(KEY_SEARCH_HIDDEN_APPS, RPrefs.getBoolean(SEARCH_HIDDEN_APPS))
+        }
+
+        return BackupCrypto.encrypt(BackupCrypto.DRAWER_LAYOUT_MAGIC, root.toString().toByteArray())
+    }
+
     suspend fun restore(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw BackupException(R.string.drawer_layout_invalid_file)
+        restoreBytes(bytes)
+    }
 
+    fun restoreBytes(bytes: ByteArray) {
         BackupCrypto.wrongTypeMessage(bytes, BackupCrypto.DRAWER_LAYOUT_MAGIC)?.let {
             throw BackupException(it)
         }
@@ -76,6 +90,10 @@ object DrawerLayoutBackup {
         editor.putString(DRAWER_TABS, DrawerTab.serialize(DrawerTab.parse(root.getJSONArray(KEY_TABS).toString())))
         root.optJSONArray(KEY_FOLDERS)?.let { folders ->
             editor.putString(DRAWER_FOLDERS, DrawerFolder.serialize(DrawerFolder.parse(folders.toString())))
+        }
+
+        root.optJSONObject(KEY_LAYOUT_PREFS)?.let { prefs ->
+            PrefsSnapshot.apply(editor, prefs) { it in LAYOUT_KEYS }
         }
 
         root.optJSONArray(KEY_HIDDEN_APPS)?.let { hiddenApps ->
@@ -98,4 +116,16 @@ object DrawerLayoutBackup {
     private const val KEY_HIDDEN_APPS = "hiddenApps"
     private const val KEY_HIDE_APPS_ENABLED = "hideAppsEnabled"
     private const val KEY_SEARCH_HIDDEN_APPS = "searchHiddenApps"
+    private const val KEY_LAYOUT_PREFS = "layoutPrefs"
+
+    private val LAYOUT_KEYS = setOf(
+        DRAWER_TABS_ENABLED,
+        DRAWER_TABS_AT_BOTTOM,
+        DRAWER_FOLDERS_ENABLED,
+        APP_DRAWER_GRID_COLUMNS,
+        APP_DRAWER_GRID_ROW_HEIGHT_MULTIPLIER,
+        DRAWER_SEARCH_BAR,
+        APP_DRAWER_ICON_LABELS,
+        APP_DRAWER_LONG_LABELS
+    )
 }

@@ -6,6 +6,7 @@
             <enum name="primary" value="0" />
             <enum name="secondary" value="1" />
             <enum name="tertiary" value="2" />
+            <enum name="neutral" value="3" />
         </attr>
     </declare-styleable>
 

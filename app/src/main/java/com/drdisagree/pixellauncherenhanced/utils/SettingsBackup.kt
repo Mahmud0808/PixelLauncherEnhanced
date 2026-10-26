@@ -14,7 +14,6 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_FIRST_SCREEN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
-import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.LOAD_TIME_KEY_KEY
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.PACKAGE_STRIKE_KEY_KEY
@@ -23,7 +22,6 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 
 object SettingsBackup {
@@ -35,44 +33,34 @@ object SettingsBackup {
 
     suspend fun backup(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
         try {
-            val prefs = JSONObject()
-
-            RPrefs.getPrefs.all.forEach { (key, value) ->
-                if (key == null || value == null || isExcluded(key)) return@forEach
-
-                val (type, json) = when (value) {
-                    is Boolean -> TYPE_BOOLEAN to value
-                    is Int -> TYPE_INT to value
-                    is Long -> TYPE_LONG to value
-                    is Float -> TYPE_FLOAT to value.toDouble()
-                    is String -> TYPE_STRING to value
-                    is Set<*> -> TYPE_STRING_SET to JSONArray(value.filterIsInstance<String>())
-                    else -> return@forEach
-                }
-
-                prefs.put(key, JSONObject().put(KEY_TYPE, type).put(KEY_VALUE, json))
-            }
-
-            val root = JSONObject()
-                .put(KEY_BACKUP_TYPE, BACKUP_TYPE)
-                .put(KEY_FORMAT_VERSION, FORMAT_VERSION)
-                .put(KEY_APP_VERSION, BuildConfig.VERSION_NAME)
-                .put(KEY_PREFS, prefs)
-
+            val bytes = backupBytes()
             val output = context.contentResolver.openOutputStream(uri, "wt")
                 ?: throw BackupException(R.string.backup_failed)
 
-            output.use { it.write(BackupCrypto.encrypt(BackupCrypto.SETTINGS_MAGIC, root.toString().toByteArray())) }
+            output.use { it.write(bytes) }
         } catch (e: Exception) {
             runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
             throw e
         }
     }
 
+    fun backupBytes(): ByteArray {
+        val root = JSONObject()
+            .put(KEY_BACKUP_TYPE, BACKUP_TYPE)
+            .put(KEY_FORMAT_VERSION, FORMAT_VERSION)
+            .put(KEY_APP_VERSION, BuildConfig.VERSION_NAME)
+            .put(KEY_PREFS, PrefsSnapshot.capture { !isExcluded(it) })
+
+        return BackupCrypto.encrypt(BackupCrypto.SETTINGS_MAGIC, root.toString().toByteArray())
+    }
+
     suspend fun restore(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw BackupException(R.string.settings_invalid_file)
+        restoreBytes(bytes)
+    }
 
+    fun restoreBytes(bytes: ByteArray) {
         BackupCrypto.wrongTypeMessage(bytes, BackupCrypto.SETTINGS_MAGIC)?.let {
             throw BackupException(it)
         }
@@ -81,35 +69,7 @@ object SettingsBackup {
         val prefs = root.optJSONObject(KEY_PREFS)
             ?: throw BackupException(R.string.settings_invalid_file)
         val editor = RPrefs.getPrefs.edit()
-
-        RPrefs.getPrefs.all.keys
-            .filterNot { isExcluded(it) }
-            .forEach { editor.remove(it) }
-
-        prefs.keys().forEach { key ->
-            if (isExcluded(key)) return@forEach
-
-            val entry = prefs.optJSONObject(key) ?: return@forEach
-
-            runCatching {
-                when (entry.getString(KEY_TYPE)) {
-                    TYPE_BOOLEAN -> editor.putBoolean(key, entry.getBoolean(KEY_VALUE))
-                    TYPE_INT -> editor.putInt(key, entry.getInt(KEY_VALUE))
-                    TYPE_LONG -> editor.putLong(key, entry.getLong(KEY_VALUE))
-                    TYPE_FLOAT -> editor.putFloat(key, entry.getDouble(KEY_VALUE).toFloat())
-                    TYPE_STRING -> editor.putString(
-                        key,
-                        entry.getString(KEY_VALUE).let {
-                            if (key in PanelBackground.KEYS) PanelBackground.supported(it) else it
-                        }
-                    )
-                    TYPE_STRING_SET -> {
-                        val array = entry.getJSONArray(KEY_VALUE)
-                        editor.putStringSet(key, (0 until array.length()).mapTo(HashSet()) { array.getString(it) })
-                    }
-                }
-            }
-        }
+        PrefsSnapshot.apply(editor, prefs) { !isExcluded(it) }
 
         if (!editor.commit()) throw BackupException(R.string.backup_failed)
     }
@@ -137,15 +97,6 @@ object SettingsBackup {
     private const val KEY_FORMAT_VERSION = "formatVersion"
     private const val KEY_APP_VERSION = "appVersion"
     private const val KEY_PREFS = "prefs"
-    private const val KEY_TYPE = "type"
-    private const val KEY_VALUE = "value"
-
-    private const val TYPE_BOOLEAN = "boolean"
-    private const val TYPE_INT = "int"
-    private const val TYPE_LONG = "long"
-    private const val TYPE_FLOAT = "float"
-    private const val TYPE_STRING = "string"
-    private const val TYPE_STRING_SET = "stringSet"
 
     private val EXCLUDED_KEYS = setOf(
         APP_BLOCK_LIST,
