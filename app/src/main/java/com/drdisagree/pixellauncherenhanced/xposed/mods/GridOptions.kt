@@ -255,6 +255,21 @@ class GridOptions(context: Context) : ModPack(context) {
                 param.result = page == 0 && rank < FOLDER_PREVIEW_ITEMS
             }
 
+        findClass("com.android.launcher3.folder.ClippedFolderIconLayoutRule", suppressError = true)
+            .hookMethod("computeSpringAnimationItemParams")
+            .suppressError()
+            .runBefore { param ->
+                if (folderGridColumns == 0) return@runBefore
+
+                val index = param.args.getOrNull(0) as? Int ?: return@runBefore
+                val count = param.args.getOrNull(1) as? Int ?: return@runBefore
+                val page = param.args.getOrNull(2) as? Int ?: return@runBefore
+                val columns = param.args.getOrNull(3) as? Int ?: return@runBefore
+                if (page != 0 || count <= FOLDER_PREVIEW_ITEMS || columns < 2) return@runBefore
+
+                param.args[0] = previewCell(index, columns)
+            }
+
         findClass("com.android.launcher3.deviceprofile.FolderProfile", suppressError = true)
             .hookConstructor()
             .suppressError()
@@ -392,6 +407,19 @@ class GridOptions(context: Context) : ModPack(context) {
         when (border) {
             is Point -> setFieldSilently(fields.borderSpace, Point(scaled(border.x), scaled(border.y)))
             is Int -> setFieldSilently(fields.borderSpace, scaled(border))
+        }
+    }
+
+    private fun previewCell(index: Int, columns: Int): Int {
+        if (index < FOLDER_PREVIEW_ITEMS) return (index / 2) * columns + index % 2
+        var remaining = index - FOLDER_PREVIEW_ITEMS
+        var cell = 0
+        while (true) {
+            if (cell / columns >= 2 || cell % columns >= 2) {
+                if (remaining == 0) return cell
+                remaining--
+            }
+            cell++
         }
     }
 
