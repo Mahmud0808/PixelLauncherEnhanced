@@ -19,10 +19,12 @@ import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.lang.reflect.Constructor
 import java.lang.reflect.Proxy
+import java.util.Collections
 
 class LockLayout(context: Context) : ModPack(context) {
 
     private var lockLayout = false
+    private val hookedListenerClasses = Collections.synchronizedSet(mutableSetOf<String>())
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -88,6 +90,7 @@ class LockLayout(context: Context) : ModPack(context) {
                 if (!lockLayout) return@runBefore
 
                 val taskbarReturnPropertiesListener = param.args[param.args.size - 1]
+                if (!hookedListenerClasses.add(taskbarReturnPropertiesListener::class.java.name)) return@runBefore
 
                 taskbarReturnPropertiesListener::class.java
                     .hookMethod("updateDragShadow")

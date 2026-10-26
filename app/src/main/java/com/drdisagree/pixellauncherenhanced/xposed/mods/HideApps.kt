@@ -126,14 +126,10 @@ class HideApps(context: Context) : ModPack(context) {
             .hookMethod("onCreate")
             .capability("Hotseat predictions,Hotseat organizer")
             .runAfter { param ->
-                if (hotseatPredictionControllerInstance == null) {
-                    hotseatPredictionControllerInstance =
-                        param.thisObject.getField("mHotseatPredictionController")
-                }
-                if (hybridHotseatOrganizerClassInstance == null) {
-                    hybridHotseatOrganizerClassInstance =
-                        hotseatPredictionControllerInstance.getFieldSilently("mHotseatOrganizer")
-                }
+                hotseatPredictionControllerInstance =
+                    param.thisObject.getField("mHotseatPredictionController")
+                hybridHotseatOrganizerClassInstance =
+                    hotseatPredictionControllerInstance.getFieldSilently("mHotseatOrganizer")
             }
 
         allAppsStoreClass

@@ -1,6 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
+import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +17,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.clearExtraFields
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
@@ -26,6 +28,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.ref.WeakReference
 import kotlin.time.Duration.Companion.milliseconds
 
 class LauncherUtils(context: Context) : ModPack(context) {
@@ -73,6 +76,24 @@ class LauncherUtils(context: Context) : ModPack(context) {
                 }
             }
 
+        DebugRecorder.registerProbe("launcherActivities") { launcherActivitiesState() }
+
+        QuickstepLauncherClass
+            .hookMethod("onCreate")
+            .runAfter { param ->
+                synchronized(launcherActivities) {
+                    launcherActivities.removeAll { it.get() == null }
+                    launcherActivities.add(WeakReference(param.thisObject as Activity))
+                }
+            }
+
+        QuickstepLauncherClass
+            .hookMethod("onDestroy")
+            .runAfter { param ->
+                val activity = param.thisObject
+                Handler(Looper.getMainLooper()).post { activity.clearExtraFields() }
+            }
+
         if (LauncherAppStateCompanionClass != null) {
             QuickstepLauncherClass
                 .hookMethod("onCreate")
@@ -95,6 +116,19 @@ class LauncherUtils(context: Context) : ModPack(context) {
         private var InvariantDeviceProfileClass: Class<*>? = null
         private var BaseIconCacheClass: Class<*>? = null
         private var QuickstepLauncherClass: Class<*>? = null
+        private val launcherActivities = ArrayList<WeakReference<Activity>>()
+
+        private fun launcherActivitiesState(): String {
+            repeat(2) {
+                Runtime.getRuntime().gc()
+                System.runFinalization()
+            }
+            val alive = synchronized(launcherActivities) {
+                launcherActivities.removeAll { it.get() == null }
+                launcherActivities.mapNotNull { it.get() }
+            }
+            return "alive=${alive.size}, destroyed=${alive.count { it.isDestroyed }}"
+        }
         private var LauncherAppStateClass: Class<*>? = null
         private var LauncherAppStateCompanionClass: Class<*>? = null
 

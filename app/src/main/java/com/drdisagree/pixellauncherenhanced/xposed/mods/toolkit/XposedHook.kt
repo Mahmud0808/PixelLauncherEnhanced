@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.content.res.XResources
+import android.view.View
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.Helpers.toPx
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodReplacement
@@ -953,8 +954,18 @@ private class IdentityKey(
 
 private val extraFieldsQueue = ReferenceQueue<Any>()
 private val extraFields = HashMap<IdentityKey, HashMap<String, Any?>>()
+private const val EXTRA_FIELDS_TAG = 0x7E504C45
 
-private fun Any.extraFields(create: Boolean): HashMap<String, Any?>? = synchronized(extraFields) {
+@Suppress("UNCHECKED_CAST")
+private fun Any.extraFields(create: Boolean): HashMap<String, Any?>? {
+    if (this is View) {
+        (getTag(EXTRA_FIELDS_TAG) as? HashMap<String, Any?>)?.let { return it }
+        return if (create) HashMap<String, Any?>().also { setTag(EXTRA_FIELDS_TAG, it) } else null
+    }
+    return weakExtraFields(create)
+}
+
+private fun Any.weakExtraFields(create: Boolean): HashMap<String, Any?>? = synchronized(extraFields) {
     while (true) {
         val stale = extraFieldsQueue.poll() ?: break
         extraFields.remove(stale)
@@ -966,6 +977,15 @@ private fun Any.extraFields(create: Boolean): HashMap<String, Any?>? = synchroni
     } else {
         null
     }
+}
+
+fun Any?.clearExtraFields() {
+    if (this == null) return
+    if (this is View) {
+        setTag(EXTRA_FIELDS_TAG, null)
+        return
+    }
+    synchronized(extraFields) { extraFields.remove(IdentityKey(this, null)) }
 }
 
 fun Any?.getExtraField(fieldName: String): Any {

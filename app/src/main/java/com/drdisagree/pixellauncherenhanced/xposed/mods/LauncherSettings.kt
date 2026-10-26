@@ -52,6 +52,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.Proxy
 import java.util.Arrays
+import java.util.Collections
 import kotlin.time.Duration.Companion.milliseconds
 
 class LauncherSettings(context: Context) : ModPack(context) {
@@ -62,6 +63,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
     private var toggleHideAppsInPopup = false
     private var toggleLockInPopup = false
     private var layoutLocked = false
+    private val hookedPreferenceClasses = Collections.synchronizedSet(mutableSetOf<String>())
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -205,6 +207,8 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 }
 
                 preferenceScreen.callMethod("addPreference", myPreference)
+
+                if (!hookedPreferenceClasses.add(myPreference.javaClass.name)) return@runAfter
 
                 myPreference.javaClass
                     .hookMethod("onBindViewHolder")

@@ -463,6 +463,16 @@ class DebugReport(private val context: Context) {
         if (probes?.optString("rootProxyConnected") == "false") {
             findings.add(Finding(Severity.WARNING, "The launcher cannot reach the root service", "Grant root to PLEnhanced"))
         }
+        Regex("destroyed=([0-9]+)").find(probes?.optString("launcherActivities").orEmpty())
+            ?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it > 0 }?.let { destroyed ->
+                findings.add(
+                    Finding(
+                        Severity.WARNING,
+                        "$destroyed closed launcher ${plural(destroyed, "screen is", "screens are")} still in memory",
+                        "This slows the launcher down over time"
+                    )
+                )
+            }
         probes?.optString("wallpaperGlass")?.takeIf { it.contains("available=false") && it.contains("checked=true") }?.let {
             findings.add(Finding(Severity.WARNING, "Wallpaper glass is unavailable", it))
         }
@@ -535,6 +545,8 @@ class DebugReport(private val context: Context) {
             text.lines().filter { PACKAGE_FIELDS.containsMatchIn(it) }.distinct().joinToString("\n")
         }
         rootToFile("launcher/dumpsys_wallpaper.txt", "dumpsys wallpaper")
+        rootToFile("launcher/gfxinfo.txt", "dumpsys gfxinfo $packageName | sed -n '1,/HISTOGRAM/p'")
+        rootToFile("launcher/meminfo.txt", "dumpsys meminfo $packageName | sed -n '1,/SQL/p'")
         rootToFile("launcher/device_config.txt", "device_config list launcher")
         rootToFile("launcher/aconfig_flags.txt", "aflags list 2>&1 | grep -E 'com\\.android\\.launcher3'")
         rootToFile("launcher/overlays.txt", "cmd overlay list") { trimOverlays(it, packageName) }
