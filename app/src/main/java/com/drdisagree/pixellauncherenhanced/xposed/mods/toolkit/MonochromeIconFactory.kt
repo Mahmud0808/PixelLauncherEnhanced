@@ -24,14 +24,13 @@ import android.graphics.ColorFilter
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.Picture
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
@@ -45,7 +44,6 @@ import kotlin.math.roundToInt
 /**
  * Utility class to generate monochrome icons version for a given drawable.
  */
-@RequiresApi(Build.VERSION_CODES.Q)
 @Suppress("deprecation")
 open class MonochromeIconFactory internal constructor(
     iconBitmapSize: Int,
@@ -100,8 +98,18 @@ open class MonochromeIconFactory internal constructor(
     }
 
     private fun drawDrawable(drawable: Drawable?) {
-        drawable?.setBounds(0, 0, mBitmapSize, mBitmapSize)
-        drawable?.draw(mFlatCanvas)
+        drawable ?: return
+        drawable.setBounds(0, 0, mBitmapSize, mBitmapSize)
+        try {
+            drawable.draw(mFlatCanvas)
+        } catch (_: IllegalArgumentException) {
+            val picture = Picture()
+            drawable.draw(picture.beginRecording(mBitmapSize, mBitmapSize))
+            picture.endRecording()
+            val software = Bitmap.createBitmap(picture, mBitmapSize, mBitmapSize, Bitmap.Config.ARGB_8888)
+            mFlatCanvas.drawBitmap(software, 0f, 0f, null)
+            software.recycle()
+        }
     }
 
     /**

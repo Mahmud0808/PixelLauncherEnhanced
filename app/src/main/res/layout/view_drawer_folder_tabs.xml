@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fadingEdgeLength="28dp"
+    android:overScrollMode="never"
+    android:requiresFadingEdge="horizontal"
+    android:layout_marginHorizontal="@dimen/ui_container_margin_side"
+    android:paddingBottom="12dp"
+    android:scrollbars="none">
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/tabs"
+        style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:selectionRequired="true"
+        app:singleSelection="true" />
+
+</HorizontalScrollView>

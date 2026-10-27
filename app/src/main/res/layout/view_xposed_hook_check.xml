@@ -1,68 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/item_background_material_error"
     android:clickable="true"
-    android:layout_marginHorizontal="@dimen/ui_container_margin_side"
-    android:layout_marginVertical="@dimen/ui_container_margin_side"
-    android:paddingStart="6dp"
-    android:paddingEnd="24dp">
+    android:focusable="true"
+    android:paddingHorizontal="@dimen/ui_container_margin_side"
+    android:paddingTop="20dp">
 
-    <ImageView
-        android:id="@+id/module_icon"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="18dp"
-        android:contentDescription="@string/icon"
-        android:src="@drawable/ic_xposed_disabled"
-        app:tint="?colorOnError" />
-
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_marginHorizontal="18dp"
-        android:layout_marginVertical="16dp"
-        android:layout_toStartOf="@id/btn_more"
-        android:layout_toEndOf="@id/module_icon"
-        android:orientation="vertical">
+        android:duplicateParentState="true"
+        app:cardBackgroundColor="?attr/colorErrorContainer"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
-        <TextView
-            android:id="@+id/title"
-            style="@style/TextAppearance.Material3.TitleMedium"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/xposed_module_disabled_title"
-            android:textColor="?colorOnError" />
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <TextView
-            android:id="@+id/summary"
-            style="@style/TextAppearance.Material3.BodyMedium"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:alpha="0.8"
-            android:text="@string/xposed_module_disabled_desc"
-            android:textColor="?colorOnError" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-    </LinearLayout>
+                <ImageView
+                    android:id="@+id/module_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginTop="2dp"
+                    android:contentDescription="@string/icon"
+                    android:src="@drawable/ic_xposed_disabled"
+                    app:tint="?attr/colorOnErrorContainer" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_more"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:backgroundTint="?attr/colorErrorContainer"
-        android:minWidth="0dp"
-        android:minHeight="0dp"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="6dp"
-        android:text="@string/more"
-        android:textColor="?attr/colorOnErrorContainer" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-</RelativeLayout>
+                    <TextView
+                        android:id="@+id/title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/xposed_module_disabled_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnErrorContainer"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/summary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/xposed_module_disabled_desc"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnErrorContainer" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_more"
+                style="@style/Widget.Material3Expressive.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="?attr/colorError"
+                android:text="@string/more"
+                android:textColor="?attr/colorOnError" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>

@@ -19,53 +19,131 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 > 🚫 Not supported
 
 <details>
-<summary>Icons</summary>
+<summary>Home screen</summary>
 
-| Feature                    | Pixel Launcher | Launcher3 Launcher |
-|----------------------------|:--------------:|:------------------:|
-| Force themed icons         |       ✅        |         ✅          |
-| Remove shortcut icon badge |       ✅        |         ✅          |
-| Icon size                  |       ✅        |         ✅          |
-| Text size                  |       ✅        |         ✅          |
-| Custom themed icon color   |       ✅        |         ⚠️         |
+| Feature                     | Pixel Launcher | Launcher3 Launcher |
+|-----------------------------|:--------------:|:------------------:|
+| Homescreen columns and rows |       ✅        |         ✅          |
+| Icon labels on desktop      |       ✅        |         ✅          |
+| Page transitions            |       ✅        |         ✅          |
+| Endless page scrolling      |       ✅        |         ✅          |
+| Hide At A Glance            |       ✅        |         ✅          |
+| Lock layout                 |       ✅        |         ✅          |
+| Wallpaper zooming           |       ✅        |         ✅          |
+| Hide statusbar              |       ✅        |         ✅          |
+| Hide top shadow             |       ✅        |         ✅          |
+| Dark statusbar icon         |       ✅        |         ✅          |
+| Hide page indicator         |       ✅        |         ✅          |
+| Dark page indicator         |       ✅        |         ✅          |
 
 </details>
 
 <details>
-<summary>Home screen</summary>
+<summary>Dock</summary>
 
-| Feature                 | Pixel Launcher | Launcher3 Launcher |
-|-------------------------|:--------------:|:------------------:|
-| Lock layout             |       ✅        |         ✅          |
-| Double tap to sleep     |       ✅        |         ✅          |
-| Wallpaper zooming       |       ✅        |         ✅          |
-| Hide statusbar          |       ✅        |         ✅          |
-| Hide top shadow         |       ✅        |         ✅          |
-| Dark statusbar icon     |       ✅        |         ✅          |
-| Dark page indicator     |       ✅        |         ✅          |
-| Icon labels on desktop  |       ✅        |         ✅          |
-| Homescreen columns      |       ✅        |         ✅          |
-| Homescreen rows         |       ✅        |         ✅          |
-| Hide At A Glance        |       ✅        |         ✅          |
-| Hide desktop search bar |       ✅        |         ✅          |
-| Search bar opacity      |       ✅        |         🚫         |
-| Dock spacing            |       ✅        |         ✅          |
+| Feature                             | Pixel Launcher | Launcher3 Launcher |
+|-------------------------------------|:--------------:|:------------------:|
+| Disable dock                        |       ✅        |         ✅          |
+| Hide desktop search bar             |       ✅        |         ✅          |
+| Search bar above dock icons         |       ✅        |         ✅          |
+| Dock frosted and liquid glass       |       ✅        |         ✅          |
+| Dock tint color                     |       ✅        |         ✅          |
+| Floating or attached dock           |       ✅        |         ✅          |
+| Dock margin, padding and corner     |       ✅        |         ✅          |
+| Dock top and bottom spacing         |       ✅        |         ✅          |
+| Search bar frosted and liquid glass |       ✅        |         🚫          |
+
+</details>
+
+<details>
+<summary>Folders</summary>
+
+| Feature                         | Pixel Launcher | Launcher3 Launcher |
+|---------------------------------|:--------------:|:------------------:|
+| Folder columns and rows         |       ✅        |         ✅          |
+| Tap folder to open first app    |       ✅        |         ✅          |
+| Folder cover mode               |       ✅        |         ✅          |
+| Folder frosted and liquid glass |       ✅        |         ✅          |
+| Folder background tint          |       ✅        |         ✅          |
+
+</details>
+
+<details>
+<summary>Widgets</summary>
+
+| Feature                         | Pixel Launcher | Launcher3 Launcher |
+|---------------------------------|:--------------:|:------------------:|
+| Free widget resizing            |       ✅        |         ✅          |
+| Widget frosted and liquid glass |       ✅        |         ✅          |
+| Remove widget backgrounds       |       ✅        |         ✅          |
 
 </details>
 
 <details>
 <summary>App drawer</summary>
 
-| Feature                       | Pixel Launcher | Launcher3 Launcher |
-|-------------------------------|:--------------:|:------------------:|
-| Themed icons                  |       ✅        |         ✅          |
-| Toggle app search bar         |       ✅        |         ✅          |
-| Icon labels in app drawer     |       ✅        |         ✅          |
-| Hide apps from app drawer     |       ✅        |         ✅          |
-| Search hidden apps            |       ✅        |         ✅          |
-| App drawer background opacity |       ✅        |         ✅          |
-| App drawer columns            |       ✅        |         ✅          |
-| Row height multiplier         |       ✅        |         ✅          |
+| Feature                                  | Pixel Launcher | Launcher3 Launcher |
+|------------------------------------------|:--------------:|:------------------:|
+| App drawer columns                       |       ✅        |         ✅          |
+| Row height multiplier                    |       ✅        |         ✅          |
+| Icon labels in app drawer                |       ✅        |         ✅          |
+| Show long app names                      |       ✅        |         ✅          |
+| Hide apps from app drawer                |       ✅        |         ✅          |
+| Search hidden apps                       |       ✅        |         ✅          |
+| Toggle hidden apps from homescreen popup |       ✅        |         ✅          |
+| App drawer background opacity            |       ✅        |         ✅          |
+| Hide scrollbar                           |       ✅        |         ✅          |
+| Hide drag handle                         |       ✅        |         ✅          |
+| Scroll fade                              |       ✅        |         ✅          |
+| Toggle app search bar                    |       ✅        |         ✅          |
+| App search bar frosted and liquid glass  |       ✅        |         ✅          |
+| Quick launch                             |       ✅        |         ✅          |
+| App drawer tabs                          |       ✅        |         ✅          |
+| Tabs at the bottom                       |       ✅        |         ✅          |
+| Edit apps in built-in tabs               |       ✅        |         ✅          |
+| Disable app drawer                       |       ✅        |         ✅          |
+
+</details>
+
+<details>
+<summary>Icons</summary>
+
+| Feature                        | Pixel Launcher | Launcher3 Launcher |
+|--------------------------------|:--------------:|:------------------:|
+| Icon packs with fallback order |       ✅        |         ✅          |
+| Themed icon packs              |       ✅        |         ✅          |
+| Per-app icons                  |       ✅        |         ✅          |
+| Per-app themed icons           |       ✅        |         ✅          |
+| Separate home screen icons     |       ✅        |         ✅          |
+| Rename apps and shortcuts      |       ✅        |         ✅          |
+| Home screen shortcut icons     |       ✅        |         ✅          |
+| Custom icon shape              |       ✅        |         ✅          |
+| Icon size                      |       ✅        |         ✅          |
+| Text size                      |       ✅        |         ✅          |
+| Remove shortcut icon badge     |       ✅        |         ✅          |
+| Themed icons                   |       ✅        |         ✅          |
+| Themed icons in app drawer     |       ✅        |         ✅          |
+| Force themed icons             |       ✅        |         ✅          |
+| Frosted and liquid glass icons |       ✅        |         ✅          |
+| Custom themed icon color       |       ✅        |         ✅          |
+| Notification dot count         |       ✅        |         ✅          |
+| Hide notification dots per app |       ✅        |         ✅          |
+| Edit app in app popup          |       ✅        |         ✅          |
+| Kill app in app popup          |       ✅        |         ✅          |
+| Uninstall in app popup         |       ✅        |         ✅          |
+
+</details>
+
+<details>
+<summary>Gestures</summary>
+
+| Feature                        | Pixel Launcher | Launcher3 Launcher |
+|--------------------------------|:--------------:|:------------------:|
+| Double tap actions             |       ✅        |         ✅          |
+| Pinch in and out actions       |       ✅        |         ✅          |
+| Icon swipe up and down actions |       ✅        |         ✅          |
+| Hide gesture indicator         |       ✅        |         ✅          |
+| Hide navigation bar space      |       ✅        |         ✅          |
 
 </details>
 
@@ -74,25 +152,43 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 
 | Feature                    | Pixel Launcher | Launcher3 Launcher |
 |----------------------------|:--------------:|:------------------:|
-| Clear all button           |       ✅        |         ✅          |
-| Remove screenshot button   |       ✅        |         ✅          |
 | Disable recents live tile  |       ✅        |         ✅          |
-| Recents background opacity |       ✅        |         ✅          |
+| Kill app in recents        |       ✅        |         ✅          |
+| Uninstall in recents       |       ✅        |         ✅          |
+| Lock apps in recents       |       ✅        |         ✅          |
 | Freeform mode gesture      |       ✅        |         ✅          |
+| Clear all button           |       ✅        |         ✅          |
+| Fixed button width         |       ✅        |         ✅          |
+| Remove screenshot button   |       ✅        |         ✅          |
+| Disable selection          |       ✅        |         🚫          |
+| Memory info in recents     |       ✅        |         ✅          |
+| Recents background opacity |       ✅        |         ✅          |
 
 </details>
 
 <details>
-<summary>Miscellaneous</summary>
+<summary>Backup & restore</summary>
+
+| Feature                    | Pixel Launcher | Launcher3 Launcher |
+|----------------------------|:--------------:|:------------------:|
+| Back up home screen layout |       ✅        |         ✅          |
+| Restore home screen layout |       ✅        |         ✅          |
+| Back up app drawer layout  |       ✅        |         ✅          |
+| Restore app drawer layout  |       ✅        |         ✅          |
+| Back up settings           |       ✅        |         ✅          |
+| Restore settings           |       ✅        |         ✅          |
+
+</details>
+
+<details>
+<summary>Advanced</summary>
 
 | Feature                                  | Pixel Launcher | Launcher3 Launcher |
 |------------------------------------------|:--------------:|:------------------:|
-| Hide gesture indicator                   |       ✅        |         ✅          |
-| Hide navigation bar space                |       ✅        |         ✅          |
-| Show entry in launcher settings          |       ✅        |         ✅          |
 | Prevent wallpaper dimming caused restart |       ✅        |         ✅          |
-| Developer options                        |       ✅        |         🚫         |
-| Restart                                  |       ✅        |         ✅          |
+| Developer options                        |       ✅        |         🚫          |
+| Show entry in launcher settings          |       ✅        |         ✅          |
+| Show entry in homescreen popup           |       ✅        |         ✅          |
 
 </details>
 
@@ -101,6 +197,8 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 - **Root access:** A few features require root to function properly.
 
 - **Xposed Framework:** Make sure you have the Xposed framework installed.
+
+- **Android version:** Android 12 or newer is required.
 
 # 🔧 Installation
 
@@ -124,7 +222,11 @@ This module is only compatible with devices using the following launcher package
 
 Root access is a requirement for the following features:
 
-- Double tap to sleep
+- Home screen gesture actions that turn off the screen, open the notifications, quick settings, recent apps or assistant, or take a screenshot
+
+- Kill app
+
+- Home screen layout backup and restore
 
 - Restart launcher
 

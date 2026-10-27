@@ -2,46 +2,32 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
 import android.util.ArraySet
 import java.lang.reflect.Method
+import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
+
+private val methodPresence = ConcurrentHashMap<List<Any?>, Boolean>()
 
 fun Any?.hasMethod(methodName: String, vararg parameterTypes: Class<*>?): Boolean {
     if (this == null) return false
+    val type = this as? Class<*> ?: this::class.java
+    val key = listOf(type, methodName, *parameterTypes)
+    return methodPresence.getOrPut(key) { type.findsMethod(methodName, parameterTypes) }
+}
 
-    if (this is Class<*>) return if (parameterTypes.isEmpty()) {
-        declaredMethods.toList().union(methods.toList()).any { it.name == methodName }
-    } else {
+private fun Class<*>.findsMethod(methodName: String, parameterTypes: Array<out Class<*>?>): Boolean {
+    if (parameterTypes.isEmpty()) {
+        return declaredMethods.any { it.name == methodName } || methods.any { it.name == methodName }
+    }
+    return try {
+        getDeclaredMethod(methodName, *parameterTypes)
+        true
+    } catch (_: NoSuchMethodException) {
         try {
-            getDeclaredMethod(methodName, *parameterTypes)
+            getMethod(methodName, *parameterTypes)
             true
         } catch (_: NoSuchMethodException) {
-            try {
-                getMethod(methodName, *parameterTypes)
-                true
-            } catch (_: NoSuchMethodException) {
-                false
-            }
+            false
         }
-    }
-
-    return try {
-        if (parameterTypes.isEmpty()) {
-            this::class.java.declaredMethods.toList().union(this::class.java.methods.toList())
-                .any { it.name == methodName }
-        } else {
-            try {
-                this::class.java.getDeclaredMethod(methodName, *parameterTypes)
-                true
-            } catch (_: NoSuchMethodException) {
-                try {
-                    this::class.java.getMethod(methodName, *parameterTypes)
-                    true
-                } catch (_: NoSuchMethodException) {
-                    false
-                }
-            }
-        }
-    } catch (_: NoSuchMethodException) {
-        false
     }
 }
 

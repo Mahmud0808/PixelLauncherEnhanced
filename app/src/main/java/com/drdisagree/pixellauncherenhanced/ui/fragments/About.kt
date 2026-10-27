@@ -1,12 +1,16 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.LinearInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
@@ -16,12 +20,17 @@ import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentAboutBinding
+import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.utils.HapticUtils.weakVibrate
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.setupToolbar
 import com.drdisagree.pixellauncherenhanced.utils.Presets
+import com.drdisagree.pixellauncherenhanced.utils.UpdateManager
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.shape.MaterialShapes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nl.dionsegijn.konfetti.xml.image.ImageUtil
+import com.google.android.material.R as MaterialR
 
 class About : Fragment() {
 
@@ -54,7 +63,18 @@ class About : Fragment() {
         }
         binding.appIcon.setOnClickListener { view ->
             view.weakVibrate()
+            pulseBackdrop()
             launchRandomKonfetti()
+        }
+        binding.iconBackdrop.setOnClickListener { view ->
+            view.weakVibrate()
+            pulseBackdrop()
+            launchRandomKonfetti()
+        }
+        setupBackdrop()
+        binding.versionCode.background = GradientDrawable().apply {
+            cornerRadius = Float.MAX_VALUE
+            setColor(MaterialColors.getColor(binding.versionCode, MaterialR.attr.colorSecondaryContainer))
         }
         binding.versionCode.text = getString(
             R.string.version_codes,
@@ -66,8 +86,71 @@ class About : Fragment() {
         binding.btnGithub.setOnClickListener { openUrl("https://github.com/Mahmud0808/PixelLauncherEnhanced") }
         binding.developer.setOnClickListener { openUrl("https://github.com/Mahmud0808") }
         binding.buymeacoffee.setOnClickListener { openUrl("https://buymeacoffee.com/drdisagree") }
+        binding.updatesCard.setOnClickListener { (activity as? MainActivity)?.openScreen(Updates::class.java) }
+        binding.updatesEmblem.apply {
+            val content = MaterialColors.getColor(this, MaterialR.attr.colorOnPrimaryContainer)
+            setShapes(MaterialShapes.COOKIE_12, MaterialShapes.SUNNY)
+            setColors(MaterialColors.getColor(this, MaterialR.attr.colorPrimaryContainer), content)
+            setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_update), content)
+        }
+        bindUpdates()
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindUpdates()
+    }
+
+    private fun bindUpdates() {
+        val release = UpdateManager.availableUpdate()
+        binding.updatesSummary.text = release?.let { getString(R.string.update_banner_desc, it.version) }
+            ?: getString(R.string.update_installed_version, UpdateManager.installedVersion)
+        binding.updatesSummary.setTextColor(
+            MaterialColors.getColor(
+                binding.updatesSummary,
+                if (release != null) androidx.appcompat.R.attr.colorPrimary else MaterialR.attr.colorOnSurfaceVariant
+            )
+        )
+        binding.updatesEmblem.setPressedState(release != null)
+    }
+
+    private fun setupBackdrop() {
+        val backdrop = binding.iconBackdrop
+        backdrop.setShapes(MaterialShapes.COOKIE_7, MaterialShapes.SOFT_BOOM)
+        backdrop.setIcon(null, 0)
+        val color = MaterialColors.getColor(backdrop, MaterialR.attr.colorPrimaryContainer)
+        backdrop.setColors(color, color)
+        (binding.appIcon.drawable as? AdaptiveIconDrawable)?.let {
+            backdrop.setAdaptiveIcon(it)
+            binding.appIcon.visibility = View.GONE
+        }
+        if (!ValueAnimator.areAnimatorsEnabled()) return
+        val spin = ValueAnimator.ofFloat(0f, 360f).apply {
+            addUpdateListener { backdrop.shapeRotation = it.animatedValue as Float }
+            duration = BACKDROP_SPIN_MS
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+        }
+        backdrop.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                if (spin.isPaused) spin.resume() else if (!spin.isStarted) spin.start()
+            }
+
+            override fun onViewDetachedFromWindow(v: View) {
+                spin.pause()
+            }
+        })
+    }
+
+    private val releaseBackdrop = Runnable { binding.iconBackdrop.setPressedState(false) }
+
+    private fun pulseBackdrop() {
+        val backdrop = binding.iconBackdrop
+        backdrop.removeCallbacks(releaseBackdrop)
+        backdrop.setPressedState(true)
+        backdrop.postDelayed(releaseBackdrop, HEART_HOLD_MS)
     }
 
     private fun openUrl(url: String) {
@@ -101,6 +184,11 @@ class About : Fragment() {
 
             effects.random().invoke()
         }
+    }
+
+    companion object {
+        private const val BACKDROP_SPIN_MS = 60000L
+        private const val HEART_HOLD_MS = 900L
     }
 
     @Suppress("DEPRECATION")

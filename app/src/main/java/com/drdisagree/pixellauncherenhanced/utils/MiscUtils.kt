@@ -1,5 +1,8 @@
 package com.drdisagree.pixellauncherenhanced.utils
 
+import com.google.android.material.appbar.AppBarLayout
+import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.doOnNextLayout
 import android.util.TypedValue
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
@@ -36,6 +39,13 @@ object MiscUtils {
             toolbar,
             collapsingToolbarLayout
         )
+    }
+
+    fun syncAppBarWithList(appBarLayout: AppBarLayout, list: RecyclerView) {
+        list.doOnNextLayout {
+            appBarLayout.setExpanded(!list.canScrollVertically(-1), false)
+        }
+        list.requestLayout()
     }
 
     fun setupToolbar(

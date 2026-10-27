@@ -1,6 +1,17 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.PixelLauncherEnhanced" parent="Theme.Material3Expressive.Light.NoActionBar">
+        <item name="snackbarStyle">@style/Widget.App.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/Widget.Material3Expressive.Button.TextButton.Snackbar</item>
+        <item name="materialAlertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="android:alertDialogTheme">@style/MaterialComponents.MaterialAlertDialog</item>
+        <item name="actionOverflowMenuStyle">@style/PopupMenu.Overflow</item>
+        <item name="popupMenuStyle">@style/PopupMenu.Popup</item>
+        <item name="actionBarItemBackground">@drawable/ripple_toolbar_action</item>
+        <item name="actionOverflowButtonStyle">@style/Toolbar.OverflowButton</item>
+        <item name="dropDownListViewStyle">@style/PopupMenu.ListView</item>
+        <item name="materialSwitchStyle">@style/Widget.App.Switch</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
@@ -59,4 +70,14 @@
     </style>
 
     <style name="Theme.PixelLauncherEnhanced" parent="Base.Theme.PixelLauncherEnhanced" />
+
+    <style name="Theme.PixelLauncherEnhanced.Sheet" parent="Theme.PixelLauncherEnhanced">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 </resources>

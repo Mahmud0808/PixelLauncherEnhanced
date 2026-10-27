@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
@@ -51,6 +52,8 @@ class QuickLaunch(context: Context) : ModPack(context) {
 	}
 
 	override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
+		DebugRecorder.registerCapture("recyclerRef") { quickLaunch && containerRef?.get() == null }
+
 		// Core: hook container inflation & keep lightweight references to list / recycler / search box
 		listOf(
 			"com.google.android.apps.nexuslauncher.allapps.SearchContainerView", // Pixel specific
@@ -68,7 +71,6 @@ class QuickLaunch(context: Context) : ModPack(context) {
 						recyclerRef = WeakReference(it)
 					}
 					val searchView = locateSearchEditText(container) ?: return@runAfter
-					if (!quickLaunch) return@runAfter
 					attachEditorListener(searchView)
 				}
 		}
@@ -103,6 +105,29 @@ class QuickLaunch(context: Context) : ModPack(context) {
 				}
 		}
 
+		findClass(
+			"com.android.launcher3.allapps.search.AllAppsSearchBarController",
+			suppressError = true
+		)
+			.hookMethod("onEditorAction")
+			.suppressError()
+			.runBefore { param ->
+				if (!quickLaunch) return@runBefore
+				val view = param.args[0] as? TextView ?: return@runBefore
+				if (!isEnterAction(param.args[1] as Int, param.args[2] as? KeyEvent)) return@runBefore
+
+				runCatching {
+					param.thisObject.getFieldSilently("mLauncher")
+						?.callMethod("getAppsView") as? ViewGroup
+				}.getOrNull()?.let { appsView ->
+					containerRef = WeakReference(appsView)
+					runCatching { appsView.callMethod("getSearchResultList") }.getOrNull()
+						?.let { alphaListRef = WeakReference(it) }
+				}
+
+				if (tryQuickLaunch(view.context)) param.result = true
+			}
+
 		// Keep alphaListRef fresh when search results mutate
         try {
             findClass(
@@ -129,33 +154,39 @@ class QuickLaunch(context: Context) : ModPack(context) {
 	private fun attachEditorListener(edit: EditText) {
 		val previous = getExistingOnEditorActionListener(edit)
 		val wrapper = TextView.OnEditorActionListener { v, actionId, event ->
-			val isEnter = actionId == EditorInfo.IME_ACTION_SEARCH || (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)
-			if (!isEnter) return@OnEditorActionListener previous?.onEditorAction(v, actionId, event) ?: false
+			if (!isEnterAction(actionId, event)) return@OnEditorActionListener previous?.onEditorAction(v, actionId, event) ?: false
 			if (!quickLaunch) return@OnEditorActionListener previous?.onEditorAction(v, actionId, event) ?: false
 
-			val inlineInfo = fetchFirstAppInfoFromModel()
-			if (inlineInfo != null && inlineInfo.isLaunchableApp()) {
-				launchInfoFromAny(v.context, inlineInfo)
-				return@OnEditorActionListener true
-			}
-
-			val firstWrapper = currentFirstWrapper()
-			if (firstWrapper != null) {
-				val directInfo = resolvePossibleInfo(firstWrapper)
-				if (directInfo != null && directInfo.isLaunchableApp()) {
-					launchInfoFromAny(v.context, directInfo)
-					return@OnEditorActionListener true
-				}
-				extractFromSearchTarget(firstWrapper)?.let { cu ->
-					launchDirect(v.context, cu.component, cu.user, "instantTarget")
-					return@OnEditorActionListener true
-				}
-			}
+			if (tryQuickLaunch(v.context)) return@OnEditorActionListener true
 			// Fall back to original listener (Google search) if present
 			return@OnEditorActionListener previous?.onEditorAction(v, actionId, event) ?: false
 		}
 		// Install our wrapper
 		edit.setOnEditorActionListener(wrapper)
+	}
+
+	private fun isEnterAction(actionId: Int, event: KeyEvent?): Boolean {
+		return actionId == EditorInfo.IME_ACTION_SEARCH || (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)
+	}
+
+	private fun tryQuickLaunch(context: Context): Boolean {
+		val inlineInfo = fetchFirstAppInfoFromModel()
+		if (inlineInfo != null && inlineInfo.isLaunchableApp()) {
+			launchInfoFromAny(context, inlineInfo)
+			return true
+		}
+
+		val firstWrapper = currentFirstWrapper() ?: return false
+		val directInfo = resolvePossibleInfo(firstWrapper)
+		if (directInfo != null && directInfo.isLaunchableApp()) {
+			launchInfoFromAny(context, directInfo)
+			return true
+		}
+		extractFromSearchTarget(firstWrapper)?.let { cu ->
+			launchDirect(context, cu.component, cu.user, "instantTarget")
+			return true
+		}
+		return false
 	}
 
 	@SuppressLint("DiscouragedPrivateApi")
@@ -235,7 +266,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 					}
 
 					// If component still missing, try to synthesize it
-					val ctx = (containerRef?.get() as? View)?.context ?: (recyclerRef?.get() as? View)?.context
+					val ctx = (containerRef?.get() as? View)?.context ?: recyclerRef?.get()?.context
 					if (foundComponent == null && ctx != null && pkg != null) {
 						// If extras exposes explicit class (matches Pixel pattern for certain result types, e.g. 32768)
 						val explicitClass = extras?.let { b ->

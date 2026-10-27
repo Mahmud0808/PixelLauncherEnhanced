@@ -1,9 +1,19 @@
 package com.drdisagree.pixellauncherenhanced.xposed
 
+import de.robv.android.xposed.XposedHelpers
+import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
+import android.os.SystemClock
 import android.app.Instrumentation
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.os.PatternMatcher
+import android.os.Process
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.os.RemoteException
@@ -25,11 +35,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
 import java.util.Queue
+import java.util.concurrent.Executors
 import java.util.concurrent.CompletableFuture
 
 class HookEntry : ServiceConnection {
@@ -126,27 +136,83 @@ class HookEntry : ServiceConnection {
             forceConnectRootService()
         }
 
+        if (EntryList.getEntries(loadPackageParam.packageName).isNotEmpty()) {
+            DebugRecorder.attach(mContext, loadPackageParam.packageName)
+            registerDebugProbes(loadPackageParam.packageName)
+            restartOnModuleUpdate(loadPackageParam.packageName)
+        }
+
         for (mod in EntryList.getEntries(loadPackageParam.packageName)) {
-            try {
-                val modInstance = mod.getConstructor(Context::class.java).newInstance(mContext)
+            val startedAt = SystemClock.elapsedRealtime()
+            var prefsError: Throwable? = null
+            var loadError: Throwable? = null
+            DebugRecorder.withOwner(mod.simpleName) {
+                try {
+                    val modInstance = mod.getConstructor(Context::class.java).newInstance(mContext)
 
-                if (XprefsIsInitialized) {
-                    try {
-                        modInstance.updatePrefs()
-                    } catch (throwable: Throwable) {
-                        log(this@HookEntry, "Failed to update prefs in ${mod.name}")
-                        log(this@HookEntry, throwable)
+                    if (XprefsIsInitialized) {
+                        try {
+                            modInstance.updatePrefs()
+                        } catch (throwable: Throwable) {
+                            prefsError = throwable
+                            log(this@HookEntry, "Failed to update prefs in ${mod.name}")
+                            log(this@HookEntry, throwable)
+                        }
                     }
-                }
 
-                modInstance.handleLoadPackage(loadPackageParam)
-                runningMods.add(modInstance)
-            } catch (invocationTargetException: InvocationTargetException) {
-                log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
-                log(this@HookEntry, invocationTargetException.cause)
-            } catch (throwable: Throwable) {
-                log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
-                log(this@HookEntry, throwable)
+                    modInstance.handleLoadPackage(loadPackageParam)
+                    runningMods.add(modInstance)
+                } catch (invocationTargetException: InvocationTargetException) {
+                    loadError = invocationTargetException.cause ?: invocationTargetException
+                    log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
+                    log(this@HookEntry, invocationTargetException.cause)
+                } catch (throwable: Throwable) {
+                    loadError = throwable
+                    log(this@HookEntry, "Start Error Dump - Occurred in ${mod.name}")
+                    log(this@HookEntry, throwable)
+                }
+            }
+            DebugRecorder.recordModResult(mod.simpleName, SystemClock.elapsedRealtime() - startedAt, prefsError, loadError)
+        }
+    }
+
+    private fun restartOnModuleUpdate(packageName: String) {
+        if (packageName == FRAMEWORK_PACKAGE || isChildProcess) return
+
+        val filter = IntentFilter(Intent.ACTION_PACKAGE_REPLACED).apply {
+            addDataScheme("package")
+            addDataSchemeSpecificPart(BuildConfig.APPLICATION_ID, PatternMatcher.PATTERN_LITERAL)
+        }
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                Process.killProcess(Process.myPid())
+            }
+        }
+
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                mContext.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                mContext.registerReceiver(receiver, filter)
+            }
+        }.onFailure { log(this@HookEntry, it) }
+    }
+
+    private fun registerDebugProbes(packageName: String) {
+        DebugRecorder.registerProbe("rootProxyConnected") { rootProxyIPC != null }
+        DebugRecorder.registerProbe("xprefsInitialized") { XprefsIsInitialized }
+        DebugRecorder.registerProbe("bootLoopStrikes") {
+            Xprefs.getInt("${BootLoopProtector.PACKAGE_STRIKE_KEY_KEY}$packageName", 0)
+        }
+        DebugRecorder.registerProbe("runningMods") { runningMods.joinToString { it.javaClass.simpleName } }
+        DebugRecorder.registerModInstances { runningMods.toList() }
+        DebugRecorder.registerProbe("wallpaperGlass") { WallpaperGlass.debugState() }
+        DebugRecorder.registerProbe("iconPacks") { IconPackManager.debugState() }
+        DebugRecorder.registerProbe("activities") {
+            val thread = XposedHelpers.callStaticMethod(Class.forName("android.app.ActivityThread"), "currentActivityThread")
+            (XposedHelpers.getObjectField(thread, "mActivities") as? Map<*, *>)?.values?.joinToString { record ->
+                val activity = XposedHelpers.getObjectField(record, "activity")
+                "${activity?.javaClass?.name} paused=${XposedHelpers.getObjectField(record, "paused")}"
             }
         }
     }
@@ -171,22 +237,27 @@ class HookEntry : ServiceConnection {
     }
 
     private fun forceConnectRootService() {
-        CoroutineScope(Dispatchers.Main).launch {
+        if (isConnectingRootService) return
+        isConnectingRootService = true
+
+        CoroutineScope(Dispatchers.IO).launch {
             val mUserManager = mContext.getSystemService(Context.USER_SERVICE) as? UserManager
+            var waitedForUnlock = false
 
-            withContext(Dispatchers.IO) {
-                while (mUserManager == null || !mUserManager.isUserUnlocked) {
-                    // device is still CE encrypted
-                    delay(2000)
-                }
-
-                delay(5000) // wait for the unlocked account to settle down a bit
-
-                while (rootProxyIPC == null) {
-                    connectRootService()
-                    delay(5000)
-                }
+            while (mUserManager == null || !mUserManager.isUserUnlocked) {
+                // device is still CE encrypted
+                waitedForUnlock = true
+                delay(2000)
             }
+
+            if (waitedForUnlock) delay(5000) // wait for the unlocked account to settle down a bit
+
+            while (rootProxyIPC == null) {
+                connectRootService()
+                delay(5000)
+            }
+
+            isConnectingRootService = false
         }
     }
 
@@ -210,13 +281,17 @@ class HookEntry : ServiceConnection {
     }
 
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-        rootProxyIPC = IRootProviderProxy.Stub.asInterface(service)
+        val proxy = IRootProviderProxy.Stub.asInterface(service)
+        rootProxyIPC = proxy
 
         synchronized(proxyQueue) {
             while (!proxyQueue.isEmpty()) {
-                try {
-                    proxyQueue.poll()!!.run(rootProxyIPC!!)
-                } catch (_: Throwable) {
+                val runnable = proxyQueue.poll()!!
+                proxyExecutor.execute {
+                    try {
+                        runnable.run(proxy)
+                    } catch (_: Throwable) {
+                    }
                 }
             }
         }
@@ -243,22 +318,33 @@ class HookEntry : ServiceConnection {
         val runningMods = ArrayList<ModPack>()
         var isChildProcess = false
 
+        @Volatile
         private var rootProxyIPC: IRootProviderProxy? = null
+
+        @Volatile
+        private var isConnectingRootService = false
         private val proxyQueue: Queue<ProxyRunnable> = LinkedList()
+        private val proxyExecutor = Executors.newSingleThreadExecutor()
 
         fun enqueueProxyCommand(runnable: ProxyRunnable) {
-            rootProxyIPC?.let {
-                try {
-                    runnable.run(it)
-                } catch (_: RemoteException) {
+            rootProxyIPC?.let { proxy ->
+                proxyExecutor.execute {
+                    try {
+                        runnable.run(proxy)
+                    } catch (_: RemoteException) {
+                    }
                 }
             } ?: run {
                 synchronized(proxyQueue) {
                     proxyQueue.add(runnable)
                 }
 
-                instance!!.forceConnectRootService()
+                instance?.forceConnectRootService()
             }
+        }
+
+        fun connectRootProxy() {
+            if (rootProxyIPC == null) instance?.forceConnectRootService()
         }
     }
 }

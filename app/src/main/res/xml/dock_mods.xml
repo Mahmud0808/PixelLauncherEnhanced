@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PageHeaderPreference
+        android:key="page_header_dock"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_home_screen_search_bar"
+        android:icon="@drawable/ic_section_dock"
+        android:title="@string/section_dock_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_disabledock"
+            android:summary="@string/disable_dock_desc"
+            android:title="@string/disable_dock_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_desktopsearchbar"
+            android:summary="@string/hide_desktop_search_bar_desc"
+            android:title="@string/hide_desktop_search_bar_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_docksearchbarabove"
+            android:summary="@string/dock_search_bar_above_desc"
+            android:title="@string/dock_search_bar_above_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_dock_background_section"
+        android:icon="@drawable/ic_section_background"
+        android:title="@string/section_dock_background_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="off"
+            android:dialogTitle="@string/dock_background_title"
+            android:entries="@array/panel_background_str"
+            android:entryValues="@array/panel_background_value"
+            android:key="xposed_dockbackground"
+            android:summary="@string/panel_background_desc"
+            app:summaryWarning="true"
+            android:title="@string/dock_background_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_dock"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="dock" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_dock_spacing_page"
+            android:summary="@string/dock_spacing_page_desc"
+            android:title="@string/fragment_dock_spacing_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.DockSpacingMods"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_search_bar_background_section"
+        android:icon="@drawable/ic_section_search_bar"
+        android:title="@string/section_search_bar_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="off"
+            android:dialogTitle="@string/search_bar_background_title"
+            android:entries="@array/panel_background_str"
+            android:entryValues="@array/panel_background_value"
+            android:key="xposed_searchbarbackground"
+            android:summary="@string/panel_background_desc"
+            app:summaryWarning="true"
+            android:title="@string/search_bar_background_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_searchbar"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="searchbar" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,17 +1,21 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
-import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
 import android.text.TextUtils
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FORCE_THEMED_ICONS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadIcons
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MonochromeIconFactory
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceIds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
@@ -24,35 +28,107 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ThemedIcons(context: Context) : ModPack(context) {
 
     private var forceThemedIcons: Boolean = false
     private var appDrawerThemedIcons: Boolean = false
+    private var homeThemedIcons: Boolean = false
+    private var taskIconCacheRef: WeakReference<Any>? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
-            forceThemedIcons = getBoolean(FORCE_THEMED_ICONS, false)
-            appDrawerThemedIcons = getBoolean(APP_DRAWER_THEMED_ICONS, false)
+            homeThemedIcons = getBoolean(HOME_THEMED_ICONS, false)
+            forceThemedIcons = homeThemedIcons && getBoolean(FORCE_THEMED_ICONS, false)
+            appDrawerThemedIcons = homeThemedIcons && getBoolean(APP_DRAWER_THEMED_ICONS, false)
         }
 
         when (key.firstOrNull()) {
-            in setOf(
-                FORCE_THEMED_ICONS,
-                APP_DRAWER_THEMED_ICONS
-            ) -> reloadIcons()
+            FORCE_THEMED_ICONS -> {
+                reloadIcons()
+                taskIconCacheRef?.get().callMethodSilently("clearCache")
+            }
+
+            APP_DRAWER_THEMED_ICONS -> reloadIcons()
+
+            HOME_THEMED_ICONS -> {
+                if (Xprefs.contains(HOME_THEMED_ICONS) && systemThemedIcons() != homeThemedIcons) {
+                    setSystemThemedIcons(homeThemedIcons)
+                }
+                reloadIcons()
+            }
         }
     }
 
-    @SuppressLint("DiscouragedApi")
+    private fun themedIconsUri(path: String) = Uri.parse("content://${mContext.packageName}.grid_control/$path")
+
+    private fun gridProxy(): Any? = runCatching {
+        findClass("com.android.launcher3.dagger.LauncherComponentProvider", suppressError = true)
+            .callStaticMethod("get", mContext)
+            .callMethod("getGridCustomizationsProxy")
+    }.getOrNull()
+
+    private fun systemThemedIcons(): Boolean? {
+        val uri = themedIconsUri("get_icon_themed")
+        val proxy = gridProxy()
+        val query = proxy?.javaClass?.methods?.firstOrNull {
+            it.name == "query" && it.parameterTypes.size == 5 && it.parameterTypes[0] == Uri::class.java
+        }
+
+        return runCatching {
+            val cursor = if (proxy != null && query != null) {
+                query.invoke(proxy, uri, null, null, null, null) as? Cursor
+            } else {
+                mContext.contentResolver.query(uri, null, null, null, null)
+            }
+
+            cursor?.use { if (it.moveToFirst()) it.getInt(it.getColumnIndexOrThrow("boolean_value")) == 1 else null }
+        }.getOrNull()
+    }
+
+    private fun setSystemThemedIcons(enabled: Boolean) {
+        val uri = themedIconsUri("icon_themed")
+        val values = ContentValues().apply { put("boolean_value", enabled) }
+        val proxy = gridProxy()
+        val update = proxy?.javaClass?.methods
+            ?.filter { it.name == "update" && it.parameterTypes.firstOrNull() == Uri::class.java }
+            ?.maxByOrNull { it.parameterTypes.size }
+
+        runCatching {
+            if (proxy != null && update != null) {
+                val args = arrayOfNulls<Any>(update.parameterTypes.size)
+                args[0] = uri
+                args[1] = values
+                update.invoke(proxy, *args)
+            } else {
+                mContext.contentResolver.update(uri, values, null, null)
+            }
+        }.onFailure { log(this@ThemedIcons, it) }
+    }
+
+    private fun syncThemedIconsPref() {
+        val system = systemThemedIcons() ?: return
+        if (!Xprefs.contains(HOME_THEMED_ICONS) || Xprefs.getBoolean(HOME_THEMED_ICONS, false) != system) {
+            runCatching { Xprefs.edit().putBoolean(HOME_THEMED_ICONS, system).apply() }
+        }
+    }
+
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        findClass("com.android.launcher3.model.LoaderTask", suppressError = true)
+            .hookMethod("run")
+            .suppressError()
+            .runAfter { syncThemedIconsPref() }
 
         try {
             // Only for modified Launcher3
@@ -64,7 +140,7 @@ class ThemedIcons(context: Context) : ModPack(context) {
                 .hookMethod("getMonochromeDrawable")
                 .throwError() // Available only in modified launcher3
                 .runAfter { param ->
-                    if (param.result == null && forceThemedIcons) {
+                    if (param.result == null && forceThemedIcons && !param.args[0].isFolderIcon()) {
                         val mIconBitmapSize = param.thisObject.getField("mIconBitmapSize") as Int
 
                         param.result = MonochromeIconFactory(mIconBitmapSize, true)
@@ -74,9 +150,13 @@ class ThemedIcons(context: Context) : ModPack(context) {
         } catch (_: Throwable) {
             val baseIconFactoryClass = findClass("com.android.launcher3.icons.BaseIconFactory")
 
+            val monochromeHookInstalled = AtomicBoolean(false)
+
             baseIconFactoryClass
                 .hookConstructor()
                 .runAfter { param ->
+                    if (!monochromeHookInstalled.compareAndSet(false, true)) return@runAfter
+
                     val mIconBitmapSize = param.thisObject.getAnyField(
                         "mIconBitmapSize",
                         "iconBitmapSize"
@@ -86,7 +166,7 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     AdaptiveIconDrawable::class.java
                         .hookMethod("getMonochrome")
                         .runAfter runAfter2@{ param2 ->
-                            if (param2.result == null && forceThemedIcons) {
+                            if (param2.result == null && forceThemedIcons && !param2.thisObject.isFolderIcon()) {
                                 // If it's from com.android.launcher3.icons.IconProvider class and
                                 // mentioned methods, monochrome is already included
                                 Thread.currentThread().stackTrace.firstOrNull {
@@ -134,8 +214,12 @@ class ThemedIcons(context: Context) : ModPack(context) {
 
         bubbleTextViewClass
             .hookMethod("shouldUseTheme")
+            .also { if (Build.VERSION.SDK_INT >= 37) it.suppressError() }
             .runAfter { param ->
-                if (param.result == false && appDrawerThemedIcons) {
+                if (!appDrawerThemedIcons) {
+                    val mDisplay = param.thisObject.getField("mDisplay") as Int
+                    if (param.result == true && mDisplay in DRAWER_DISPLAYS) param.result = false
+                } else if (param.result == false) {
                     val context = param.thisObject.callMethod("getContext") as Context
                     val mDisplay = param.thisObject.getField("mDisplay") as Int
 
@@ -147,6 +231,91 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     )
                 }
             }
+
+        if (Build.VERSION.SDK_INT >= 37) {
+            bubbleTextViewClass
+                .hookMethod("getIconCreationFlagsForInfo")
+                .runBefore { param ->
+                    if (!appDrawerThemedIcons) return@runBefore
+
+                    val context = param.thisObject.callMethod("getContext") as Context
+                    val mDisplay = param.thisObject.getField("mDisplay") as Int
+                    val mHideBadge = param.thisObject.getField("mHideBadge") as Boolean
+                    val mSkipUserBadge = param.thisObject.getField("mSkipUserBadge") as Boolean
+
+                    val shouldUseTheme = mDisplay.shouldUseTheme(
+                        context,
+                        themesClass,
+                        themeManagerClass,
+                        themePreferenceClass
+                    )
+
+                    var flags = if (shouldUseTheme) FLAG_THEMED else 0
+
+                    if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) {
+                        flags = flags or FLAG_NO_BADGE
+                    }
+                    if (mSkipUserBadge) {
+                        flags = flags or FLAG_SKIP_USER_BADGE
+                    }
+
+                    param.result = flags
+                }
+
+            val cacheLookupFlagClass =
+                findClass("com.android.launcher3.icons.cache.CacheLookupFlag")
+
+            bubbleTextViewClass
+                .hookMethod("verifyHighRes")
+                .runBefore { param ->
+                    if (!appDrawerThemedIcons) return@runBefore
+
+                    val context = param.thisObject.callMethod("getContext") as Context
+                    val mDisplay = param.thisObject.getField("mDisplay") as Int
+
+                    verifyHighResThemeOverride.set(
+                        mDisplay.shouldUseTheme(
+                            context,
+                            themesClass,
+                            themeManagerClass,
+                            themePreferenceClass
+                        )
+                    )
+                }
+                .runAfter {
+                    verifyHighResThemeOverride.remove()
+                }
+
+            cacheLookupFlagClass
+                .hookMethod("updateMask")
+                .runBefore { param ->
+                    if (!appDrawerThemedIcons || param.args[0] != 8) return@runBefore
+
+                    val addMask = verifyHighResThemeOverride.get() ?: return@runBefore
+                    verifyHighResThemeOverride.remove()
+                    param.args[1] = addMask
+                }
+
+            bubbleTextViewClass
+                .hookMethod("applyFromWorkspaceItem")
+                .parameters("com.android.launcher3.model.data.WorkspaceItemInfo")
+                .runAfter { param ->
+                    if (!appDrawerThemedIcons) return@runAfter
+
+                    val context = param.thisObject.callMethod("getContext") as Context
+                    val mDisplay = param.thisObject.getField("mDisplay") as Int
+
+                    if (mDisplay.shouldUseTheme(
+                            context,
+                            themesClass,
+                            themeManagerClass,
+                            themePreferenceClass
+                        )
+                    ) {
+                        param.thisObject.callMethod("verifyHighRes")
+                    }
+                }
+        }
 
         bubbleTextViewClass
             .hookMethod("applyIconAndLabel")
@@ -192,7 +361,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     "appColor",
                     iconDrawable.callMethodSilently("getIconColor")
                 )
-                val notificationDotColorAttr = context.resources.getIdentifier(
+                val notificationDotColorAttr = ResourceIds.find(
+                    context.resources,
                     "notificationDotColor",
                     "attr",
                     context.packageName
@@ -202,7 +372,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                         LauncherUtils.getAttrColor(context, notificationDotColorAttr)
                     } else {
                         context.resources.getColor(
-                            context.resources.getIdentifier(
+                            ResourceIds.find(
+                                context.resources,
                                 "system_accent3_200",
                                 "color",
                                 context.packageName
@@ -279,7 +450,8 @@ class ThemedIcons(context: Context) : ModPack(context) {
                     if (info.getFieldSilently("contentDescription") != null) {
                         val charSequence = if (info.callMethod("isDisabled") as Boolean) {
                             context.getString(
-                                context.resources.getIdentifier(
+                                ResourceIds.find(
+                                    context.resources,
                                     "disabled_app_label",
                                     "string",
                                     mContext.packageName
@@ -296,31 +468,70 @@ class ThemedIcons(context: Context) : ModPack(context) {
 
                 param.result = null
             }
+
+        val taskIconCache = "com.android.quickstep.TaskIconCache"
+        val taskIconCallers = listOf(
+            $$"$$taskIconCache$TaskBitmapInfoCacheEntry" to "toTaskCacheEntry",
+            $$"$$taskIconCache$getIconInBackground$2" to "onBitmapInfoReceived"
+        ) + (1..MAX_TASK_ICON_LAMBDA).map { $$"$$taskIconCache$getIcon$$$it" to "invokeSuspend" }
+
+        findClass(taskIconCache, suppressError = true)
+            .hookConstructor()
+            .suppressError()
+            .runAfter { param -> taskIconCacheRef = WeakReference(param.thisObject) }
+
+        taskIconCallers.forEach { (className, methodName) ->
+            findClass(className, suppressError = true)
+                .hookMethod(methodName)
+                .suppressError()
+                .runAround(
+                    before = { param ->
+                        param.setObjectExtra(TASK_ICON_OUTER, inTaskIcon.get())
+                        inTaskIcon.set(true)
+                    },
+                    after = { param ->
+                        if (param.getObjectExtra(TASK_ICON_OUTER) == null) inTaskIcon.remove()
+                    }
+                )
+        }
+
+        findClass("com.android.launcher3.icons.BitmapInfo", suppressError = true)
+            .hookMethod("newIcon")
+            .suppressError()
+            .runBefore { param ->
+                if (inTaskIcon.get() != true) return@runBefore
+                val index = param.args.indexOfFirst { it is Int }
+                if (index < 0) return@runBefore
+
+                val themed = runCatching {
+                    DISPLAY_WORKSPACE.shouldUseTheme(
+                        mContext,
+                        themesClass,
+                        themeManagerClass,
+                        themePreferenceClass
+                    )
+                }.getOrDefault(false)
+
+                if (themed) param.args[index] = (param.args[index] as Int) or FLAG_THEMED
+            }
     }
+
+    private fun Any?.isFolderIcon(): Boolean = this?.javaClass?.name?.endsWith(".FolderAdaptiveIcon") == true
 
     private fun Int.shouldUseTheme(
         context: Context,
         themesClass: Class<*>?,
         themeManagerClass: Class<*>?,
         themePreferenceClass: Class<*>?
-    ) = this in setOf(
-        DISPLAY_WORKSPACE,
-        DISPLAY_ALL_APPS,
-        DISPLAY_FOLDER,
-        DISPLAY_TASKBAR,
-        DISPLAY_SEARCH_RESULT,
-        DISPLAY_SEARCH_RESULT_SMALL,
-        DISPLAY_PREDICTION_ROW,
-        DISPLAY_SEARCH_RESULT_APP_ROW
-    ) && try {
+    ) = this in THEMED_DISPLAYS && runCatching {
         themesClass.callStaticMethod("isThemedIconEnabled", context)
-    } catch (_: Throwable) {
-        try {
+    }.getOrElse {
+        runCatching {
             themeManagerClass
                 .getStaticField("INSTANCE")
                 .callMethod("get", context)
                 .callMethod("isMonoThemeEnabled")
-        } catch (_: Throwable) {
+        }.getOrElse {
             themePreferenceClass.getStaticField("MONO_THEME_VALUE") == themeManagerClass
                 .getStaticField("INSTANCE")
                 .callMethod("get", context)
@@ -330,17 +541,40 @@ class ThemedIcons(context: Context) : ModPack(context) {
     } as Boolean
 
     companion object {
-        const val FLAG_THEMED: Int = 1 shl 0
-        const val FLAG_NO_BADGE: Int = 1 shl 1
-        const val FLAG_SKIP_USER_BADGE: Int = 1 shl 2
+        private const val FLAG_THEMED: Int = 1 shl 0
+        private const val FLAG_NO_BADGE: Int = 1 shl 1
+        private const val FLAG_SKIP_USER_BADGE: Int = 1 shl 2
 
-        const val DISPLAY_WORKSPACE: Int = 0
-        const val DISPLAY_ALL_APPS: Int = 1
-        const val DISPLAY_FOLDER: Int = 2
-        const val DISPLAY_TASKBAR: Int = 5
-        const val DISPLAY_SEARCH_RESULT: Int = 6
-        const val DISPLAY_SEARCH_RESULT_SMALL: Int = 7
-        const val DISPLAY_PREDICTION_ROW: Int = 8
-        const val DISPLAY_SEARCH_RESULT_APP_ROW: Int = 9
+        private const val DISPLAY_WORKSPACE: Int = 0
+        private const val DISPLAY_ALL_APPS: Int = 1
+        private const val DISPLAY_FOLDER: Int = 2
+        private const val DISPLAY_TASKBAR: Int = 5
+        private const val DISPLAY_SEARCH_RESULT: Int = 6
+        private const val DISPLAY_SEARCH_RESULT_SMALL: Int = 7
+        private const val DISPLAY_PREDICTION_ROW: Int = 8
+        private const val DISPLAY_SEARCH_RESULT_APP_ROW: Int = 9
+
+        private val DRAWER_DISPLAYS = setOf(
+            DISPLAY_ALL_APPS,
+            DISPLAY_PREDICTION_ROW,
+            DISPLAY_SEARCH_RESULT_APP_ROW
+        )
+
+        private val THEMED_DISPLAYS = setOf(
+            DISPLAY_WORKSPACE,
+            DISPLAY_ALL_APPS,
+            DISPLAY_FOLDER,
+            DISPLAY_TASKBAR,
+            DISPLAY_SEARCH_RESULT,
+            DISPLAY_SEARCH_RESULT_SMALL,
+            DISPLAY_PREDICTION_ROW,
+            DISPLAY_SEARCH_RESULT_APP_ROW
+        )
+
+        private val verifyHighResThemeOverride = ThreadLocal<Boolean?>()
+        private val inTaskIcon = ThreadLocal<Boolean?>()
+
+        private const val TASK_ICON_OUTER = "pleTaskIconOuter"
+        private const val MAX_TASK_ICON_LAMBDA = 9
     }
 }

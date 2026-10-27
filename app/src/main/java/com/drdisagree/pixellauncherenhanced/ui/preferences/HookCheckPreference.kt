@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
@@ -20,9 +19,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ACTION_HOOK_CH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ACTION_HOOK_CHECK_RESULT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
+import com.drdisagree.pixellauncherenhanced.utils.ExpressiveDialog
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.PACKAGE_STRIKE_KEY_KEY
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.lang.ref.WeakReference
 
 class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(context, attrs) {
@@ -74,22 +73,7 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
             }
 
             itemView.findViewById<MaterialButton>(R.id.btn_more).setOnClickListener {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle(context.resources.getString(R.string.attention))
-                    .setMessage(
-                        if (!hasBootlooped) {
-                            buildString {
-                                append(appContext.resources.getString(R.string.lsposed_warn))
-                            }
-                        } else {
-                            context.resources.getString(R.string.lsposed_bootloop_warn)
-                        }
-                    )
-                    .setPositiveButton(context.resources.getString(R.string.understood)) { dialog: DialogInterface, _: Int ->
-                        dialog.dismiss()
-                    }
-                    .setCancelable(true)
-                    .show()
+                showHelp(context)
             }
         }
     }
@@ -117,8 +101,6 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
 
     private val delayedHookCheck: Runnable = Runnable {
         if (!isHooked) {
-            RPrefs.putBoolean(XPOSED_HOOK_CHECK, false)
-
             hasBootlooped = false
             for (packageName in hookPackages) {
                 val strikeKey = "$PACKAGE_STRIKE_KEY_KEY$packageName"
@@ -128,6 +110,8 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
                     break
                 }
             }
+
+            RPrefs.putBoolean(XPOSED_HOOK_CHECK, false)
 
             notifyChanged()
         }
@@ -178,5 +162,23 @@ class HookCheckPreference(context: Context, attrs: AttributeSet?) : Preference(c
     companion object {
         private var hasBootlooped: Boolean = false
         var isHooked: Boolean = false
+
+        val bootlooped: Boolean
+            get() = hasBootlooped
+
+        fun showHelp(context: Context) {
+            ExpressiveDialog.show(
+                context = context,
+                icon = if (hasBootlooped) R.drawable.ic_error else R.drawable.ic_info,
+                title = context.getString(R.string.attention),
+                message = if (!hasBootlooped) {
+                    appContext.getString(R.string.lsposed_warn)
+                } else {
+                    context.getString(R.string.lsposed_bootloop_warn)
+                },
+                positive = ExpressiveDialog.Action(context.getString(R.string.understood)),
+                tone = if (hasBootlooped) ExpressiveDialog.Tone.ERROR else ExpressiveDialog.Tone.PRIMARY
+            )
+        }
     }
 }

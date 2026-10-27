@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.button.MaterialButtonToggleGroup xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/variant_group"
+    style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:selectionRequired="true"
+    app:singleSelection="true" />

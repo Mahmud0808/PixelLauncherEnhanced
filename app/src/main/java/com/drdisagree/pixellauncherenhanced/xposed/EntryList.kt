@@ -2,24 +2,43 @@ package com.drdisagree.pixellauncherenhanced.xposed
 
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
+import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerMode
+import com.drdisagree.pixellauncherenhanced.xposed.mods.AppDrawerTabs
+import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerFolders
+import com.drdisagree.pixellauncherenhanced.xposed.mods.AppSearchAlias
+import com.drdisagree.pixellauncherenhanced.xposed.mods.DisableDock
+import com.drdisagree.pixellauncherenhanced.xposed.mods.EndlessPages
+import com.drdisagree.pixellauncherenhanced.xposed.mods.IconPacks
+import com.drdisagree.pixellauncherenhanced.xposed.mods.IconShapes
+import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
+import com.drdisagree.pixellauncherenhanced.xposed.mods.BlurPanels
+import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsAppLock
+import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsMemInfo
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
+import com.drdisagree.pixellauncherenhanced.xposed.mods.WidgetResize
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
-import com.drdisagree.pixellauncherenhanced.xposed.mods.DarkPageIndicator
+import com.drdisagree.pixellauncherenhanced.xposed.mods.PageIndicator
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DarkStatusbar
+import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerScrollFade
+import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerHandle
+import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerScrollbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.DrawerSearchbar
 import com.drdisagree.pixellauncherenhanced.xposed.mods.FreeformMod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.GestureMod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.GridOptions
 import com.drdisagree.pixellauncherenhanced.xposed.mods.HideApps
 import com.drdisagree.pixellauncherenhanced.xposed.mods.HideStatusbar
+import com.drdisagree.pixellauncherenhanced.xposed.mods.HomePreviewAccess
 import com.drdisagree.pixellauncherenhanced.xposed.mods.HotseatMod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.IconGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconLabels
 import com.drdisagree.pixellauncherenhanced.xposed.mods.IconTextSize
-import com.drdisagree.pixellauncherenhanced.xposed.mods.IconUpdater
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherSettings
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LockLayout
+import com.drdisagree.pixellauncherenhanced.xposed.mods.NotificationDots
 import com.drdisagree.pixellauncherenhanced.xposed.mods.OpacityModifier
+import com.drdisagree.pixellauncherenhanced.xposed.mods.PageTransitions
 import com.drdisagree.pixellauncherenhanced.xposed.mods.QuickLaunch
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ShortcutBadge
 import com.drdisagree.pixellauncherenhanced.xposed.mods.SmartSpace
@@ -35,11 +54,13 @@ object EntryList {
     private val launcherModPacks: List<Class<out ModPack>> = listOf(
         BroadcastHook::class.java,
         LauncherUtils::class.java,
-        IconUpdater::class.java,
+        HomePreviewAccess::class.java,
         IconLabels::class.java,
+        IconGlass::class.java,
         ThemedIcons::class.java,
         ThemedIconsColor::class.java,
         OpacityModifier::class.java,
+        BlurPanels::class.java,
         GestureMod::class.java,
         HotseatMod::class.java,
         FreeformMod::class.java,
@@ -48,18 +69,35 @@ object EntryList {
         HideStatusbar::class.java,
         TopShadow::class.java,
         LauncherSettings::class.java,
+        AppSearchAlias::class.java,
         LockLayout::class.java,
+        EndlessPages::class.java,
+        PageTransitions::class.java,
+        WidgetResize::class.java,
         DrawerSearchbar::class.java,
+        DrawerScrollbar::class.java,
+        DrawerHandle::class.java,
+        DrawerScrollFade::class.java,
         ClearAllButton::class.java,
+        RecentsMemInfo::class.java,
+        RecentsAppLock::class.java,
         GridOptions::class.java,
         HideApps::class.java,
         ShortcutBadge::class.java,
+        NotificationDots::class.java,
         WallpaperZoom::class.java,
         QuickLaunch::class.java,
         TaskbarHandle::class.java,
         DarkStatusbar::class.java,
-        DarkPageIndicator::class.java,
+        PageIndicator::class.java,
         WallpaperDim::class.java,
+        AppShortcuts::class.java,
+        AppDrawerMode::class.java,
+        AppDrawerTabs::class.java,
+        DrawerFolders::class.java,
+        DisableDock::class.java,
+        IconPacks::class.java,
+        IconShapes::class.java,
     )
 
     fun getEntries(packageName: String): ArrayList<Class<out ModPack>> {

@@ -4,6 +4,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="textColor">@color/white</color>
     <color name="textColorInverse">@color/black</color>
+    <color name="warning">#FFA726</color>
 
     <color name="md_theme_primary">#AAC7FF</color>
     <color name="md_theme_onPrimary">#0A305F</color>

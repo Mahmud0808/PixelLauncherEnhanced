@@ -4,7 +4,7 @@
     <style name="Theme.PixelLauncherEnhanced.SplashScreen" parent="Theme.SplashScreen">
         <item name="android:windowSplashScreenBackground">?attr/colorSurface</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">?attr/colorPrimary</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">?attr/colorSurfaceContainerHigh</item>
         <item name="postSplashScreenTheme">@style/Theme.PixelLauncherEnhanced</item>
     </style>
 </resources>

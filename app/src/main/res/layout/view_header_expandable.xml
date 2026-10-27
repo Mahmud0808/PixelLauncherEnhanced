@@ -38,7 +38,6 @@
             app:layout_collapseMode="pin"
             app:maxLines="2"
             app:navigationIconTint="@null"
-            app:popupTheme="@style/Theme.PixelLauncherEnhanced"
             app:title="@string/app_name"
             app:titleTextAppearance="@style/Toolbar.TitleText"
             app:titleTextEllipsize="end"

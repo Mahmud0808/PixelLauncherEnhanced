@@ -5,8 +5,14 @@
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
+        android:enableOnBackInvokedCallback="true"
         android:name=".PLEnhanced"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -35,6 +41,20 @@
             android:exported="false"
             android:theme="@style/Theme.PixelLauncherEnhanced" />
 
+        <activity
+            android:name=".ui.activities.AppEditorActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/Theme.PixelLauncherEnhanced.Sheet"
+            android:windowSoftInputMode="adjustResize" />
+
+        <service
+            android:name=".services.UpdateCheckJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <service
             android:name=".services.RootProviderProxy"
             android:exported="true"
@@ -52,6 +72,16 @@
         <meta-data
             android:name="xposedscope"
             android:resource="@array/module_scope" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.debugreports"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/debug_report_paths" />
+        </provider>
 
         <provider
             android:name=".data.provider.RemotePrefProvider"

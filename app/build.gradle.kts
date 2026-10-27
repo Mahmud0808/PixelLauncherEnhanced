@@ -11,14 +11,14 @@ kotlin {
 
 android {
     namespace = "com.drdisagree.pixellauncherenhanced"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.drdisagree.pixellauncherenhanced"
-        minSdk = 26
+        minSdk = 31
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.1.0"
+        versionCode = 6
+        versionName = "2.0.0"
         base.archivesName = "PLEnhanced v${defaultConfig.versionName}"
     }
 
@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.recyclerview)
@@ -94,10 +95,11 @@ dependencies {
     implementation(libs.su.service)
     implementation(libs.su.nio)
     compileOnly(libs.xposedbridge)
-    implementation(libs.jaredrummler.colorpicker)
     implementation(libs.remotepreferences)
     implementation(libs.circleimageview)
     implementation(libs.konfetti.xml)
+    implementation(libs.commonmark)
+    implementation(libs.commonmark.ext.autolink)
 }
 
 tasks.register("printVersionName") {

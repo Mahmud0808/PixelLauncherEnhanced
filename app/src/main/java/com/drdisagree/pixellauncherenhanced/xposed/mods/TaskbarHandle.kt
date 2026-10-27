@@ -4,7 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Insets
-import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
@@ -14,11 +15,13 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 
 class TaskbarHandle(context: Context) : ModPack(context) {
 
@@ -26,6 +29,15 @@ class TaskbarHandle(context: Context) : ModPack(context) {
     private var mHideNavSpace = false
     private var stashedHandleViewObj: Any? = null
     private var mIsRegionDark: Boolean? = null
+    private var taskbarManagerRef: WeakReference<Any>? = null
+
+    private fun recreateTaskbar() {
+        val manager = taskbarManagerRef?.get()
+        val recreated = manager != null && listOf("recreateTaskbars", "recreateTaskbar").any { name ->
+            manager.hasMethod(name) && runCatching { manager.callMethod(name) }.isSuccess
+        }
+        if (!recreated) restartLauncher(mContext)
+    }
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -35,11 +47,32 @@ class TaskbarHandle(context: Context) : ModPack(context) {
 
         when (key.firstOrNull()) {
             HIDE_GESTURE_PILL -> updateHandleColor(true)
-            HIDE_NAVIGATION_SPACE -> restartLauncher(mContext)
+            HIDE_NAVIGATION_SPACE -> Handler(Looper.getMainLooper()).post { recreateTaskbar() }
         }
     }
 
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        listOf(
+            "com.android.launcher3.taskbar.TaskbarManagerImpl",
+            "com.android.launcher3.taskbar.TaskbarManager"
+        ).forEach { className ->
+            val managerClass = findClass(className, suppressError = true)?.takeUnless { it.isInterface }
+
+            managerClass
+                .hookConstructor()
+                .suppressError()
+                .capability("Taskbar manager")
+                .runAfter { param -> taskbarManagerRef = WeakReference(param.thisObject) }
+
+            managerClass
+                .hookMethod("createTaskbarActivityContext", "setUiController", "recreateTaskbars")
+                .suppressError()
+                .capability("Taskbar manager")
+                .runAfter { param ->
+                    if (taskbarManagerRef?.get() !== param.thisObject) taskbarManagerRef = WeakReference(param.thisObject)
+                }
+        }
+
         val stashedHandleViewClass = findClass("com.android.launcher3.taskbar.StashedHandleView")
 
         stashedHandleViewClass
@@ -125,15 +158,9 @@ class TaskbarHandle(context: Context) : ModPack(context) {
         for (i in 0..<providedInsetsLength) {
             val insetsFrame = java.lang.reflect.Array.get(providedInsets, i) ?: continue
 
-            // no constants, maximum compatibility with Android versions
             if (!insetsFrame.toString().contains("type=navigationBars", ignoreCase = true)) continue
 
-            val noneInsets = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Insets.NONE
-            } else {
-                Insets.of(0, 0, 0, 0)
-            }
-            insetsFrame.callMethod("setInsetsSize", noneInsets)
+            insetsFrame.callMethod("setInsetsSize", Insets.NONE)
         }
     }
 }

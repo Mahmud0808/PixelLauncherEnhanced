@@ -8,16 +8,20 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.utils.RowBackgrounds
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
 import com.drdisagree.pixellauncherenhanced.utils.MiscUtils.dpToPx
 import com.google.android.material.materialswitch.MaterialSwitch
 
-class AppListAdapter(private val appList: List<AppInfoModel>) :
-    RecyclerView.Adapter<AppListAdapter.ViewHolder>() {
+class AppListAdapter(
+    private var appList: List<AppInfoModel>,
+    private val onSelectionChanged: (AppInfoModel) -> Unit = ::updateBlockList
+) : RecyclerView.Adapter<AppListAdapter.ViewHolder>() {
 
     private var context: Context? = null
 
@@ -36,38 +40,23 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
 
         holder.appIcon.setImageDrawable(appInfo.appIcon)
         holder.appName.text = appInfo.appName
-        holder.packageName.text = appInfo.packageName
+        holder.packageName.text = appInfo.note ?: appInfo.packageName
         holder.switchView.isChecked = appInfo.isSelected
+        holder.recommended.visibility = if (appInfo.recommended) View.VISIBLE else View.GONE
 
         holder.switchView.setOnCheckedChangeListener { compoundButton, isChecked ->
             if (!compoundButton.isPressed) return@setOnCheckedChangeListener
 
             appInfo.isSelected = isChecked
-            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!.toMutableList()
-
-            if (isChecked) {
-                if (!appBlockList.contains(appInfo.packageName)) {
-                    appBlockList.add(appInfo.packageName)
-                }
-            } else {
-                appBlockList.remove(appInfo.packageName)
-            }
-            RPrefs.putStringSet(APP_BLOCK_LIST, appBlockList.toSet())
+            onSelectionChanged(appInfo)
+            holder.packageName.text = appInfo.note ?: appInfo.packageName
         }
 
         holder.container.setOnClickListener {
             appInfo.isSelected = !appInfo.isSelected
             holder.switchView.isChecked = appInfo.isSelected
-
-            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!.toMutableList()
-            if (appInfo.isSelected) {
-                if (!appBlockList.contains(appInfo.packageName)) {
-                    appBlockList.add(appInfo.packageName)
-                }
-            } else {
-                appBlockList.remove(appInfo.packageName)
-            }
-            RPrefs.putStringSet(APP_BLOCK_LIST, appBlockList.toSet())
+            onSelectionChanged(appInfo)
+            holder.packageName.text = appInfo.note ?: appInfo.packageName
         }
 
         setItemBackground(holder)
@@ -85,12 +74,27 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
         return appList.size
     }
 
+    fun submit(list: List<AppInfoModel>) {
+        val old = appList
+        appList = list
+        DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = old.size
+            override fun getNewListSize() = list.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) = old[oldPos].packageName == list[newPos].packageName
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+                (oldPos == 0) == (newPos == 0) &&
+                        (oldPos == old.size - 1) == (newPos == list.size - 1) &&
+                        old[oldPos].isSelected == list[newPos].isSelected
+        }).dispatchUpdatesTo(this)
+    }
+
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var container: RelativeLayout = view.findViewById(R.id.container)
         var appIcon: ImageView = view.findViewById(R.id.app_icon)
         var appName: TextView = view.findViewById(R.id.title)
         var packageName: TextView = view.findViewById(R.id.summary)
         var switchView: MaterialSwitch = view.findViewById(R.id.switchView)
+        var recommended: TextView = view.findViewById(R.id.recommended)
     }
 
     private fun setItemBackground(holder: ViewHolder) {
@@ -105,31 +109,41 @@ class AppListAdapter(private val appList: List<AppInfoModel>) :
 
         when {
             itemCount == 1 -> {
-                layoutParams.topMargin = 0
+                layoutParams.topMargin = baseTop
                 layoutParams.bottomMargin = baseBottom
-                container.setBackgroundResource(R.drawable.container_single)
             }
 
             position == 0 -> {
                 layoutParams.topMargin = baseTop
                 layoutParams.bottomMargin = midBottom
-                container.setBackgroundResource(R.drawable.container_top)
             }
 
             position == itemCount - 1 -> {
                 layoutParams.topMargin = 0
                 layoutParams.bottomMargin = 0
-                container.setBackgroundResource(R.drawable.container_bottom)
             }
 
             else -> {
                 layoutParams.topMargin = 0
                 layoutParams.bottomMargin = midBottom
-                container.setBackgroundResource(R.drawable.container_mid)
             }
         }
 
         holder.itemView.layoutParams = layoutParams
-        holder.container.clipToOutline = true
+        RowBackgrounds.apply(container, position, itemCount)
+    }
+
+    companion object {
+        private fun updateBlockList(appInfo: AppInfoModel) {
+            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!.toMutableSet()
+
+            if (appInfo.isSelected) {
+                appBlockList.add(appInfo.packageName)
+            } else {
+                appBlockList.remove(appInfo.packageName)
+            }
+
+            RPrefs.putStringSet(APP_BLOCK_LIST, appBlockList)
+        }
     }
 }

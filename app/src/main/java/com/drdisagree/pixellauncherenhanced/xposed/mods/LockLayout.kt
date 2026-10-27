@@ -17,10 +17,14 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.reflect.Constructor
+import java.lang.reflect.Proxy
+import java.util.Collections
 
 class LockLayout(context: Context) : ModPack(context) {
 
     private var lockLayout = false
+    private val hookedListenerClasses = Collections.synchronizedSet(mutableSetOf<String>())
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
@@ -28,16 +32,31 @@ class LockLayout(context: Context) : ModPack(context) {
         }
     }
 
+    private fun showLayoutLockedToast() {
+        Toast.makeText(
+            mContext,
+            modRes.getString(R.string.layout_is_locked),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
         val dragControllerClass = findClass("com.android.launcher3.dragndrop.DragController")
         val launcherAppWidgetHostViewClass =
             findClass("com.android.launcher3.widget.LauncherAppWidgetHostView")
-        val systemShortcutClass = findClass("com.android.launcher3.popup.SystemShortcut")
         val launcherPopupItemDragHandlerClass = findClass(
             $$"com.android.launcher3.popup.PopupContainerWithArrow$LauncherPopupItemDragHandler",
             "com.android.launcher3.popup.LauncherPopupItemDragHandler",
+            suppressError = true
         )
-        val optionsPopupViewClass = findClass("com.android.launcher3.views.OptionsPopupView")
+        val optionsPopupViewClass = findClass(
+            "com.android.launcher3.views.OptionsPopupView",
+            suppressError = true
+        )
+        val workspaceLongPressOptionsClass = findClass(
+            "com.android.launcher3.popup.WorkspaceLongPressOptions",
+            suppressError = true
+        )
         val taskbarDragControllerClass = findClass(
             "com.android.launcher3.taskbar.TaskbarDragController",
             suppressError = true
@@ -71,6 +90,7 @@ class LockLayout(context: Context) : ModPack(context) {
                 if (!lockLayout) return@runBefore
 
                 val taskbarReturnPropertiesListener = param.args[param.args.size - 1]
+                if (!hookedListenerClasses.add(taskbarReturnPropertiesListener::class.java.name)) return@runBefore
 
                 taskbarReturnPropertiesListener::class.java
                     .hookMethod("updateDragShadow")
@@ -89,13 +109,41 @@ class LockLayout(context: Context) : ModPack(context) {
                 param.result = true
             }
 
-        systemShortcutClass
-            .hookMethod("onClick")
-            .runBefore { param ->
-                if (!lockLayout) return@runBefore
+        listOf("Widgets", "AddToHomeScreen", "RemoveApp").forEach { name ->
+            findClass($$"com.android.launcher3.popup.SystemShortcut$$$name", suppressError = true)
+                .hookMethod("onClick")
+                .suppressError()
+                .runBefore { param ->
+                    if (!lockLayout) return@runBefore
 
-                param.result = null
-            }
+                    showLayoutLockedToast()
+                    param.result = null
+                }
+        }
+
+        listOf(
+            "com.android.launcher3.DropTargetHandler" to "onDeleteComplete",
+            "com.android.launcher3.dragndrop.ItemDeleteHandler" to "completeDelete"
+        ).forEach { (className, completeMethod) ->
+            val deleteHandlerClass = findClass(className, suppressError = true)
+
+            deleteHandlerClass
+                .hookMethod("prepareToUndoDelete")
+                .suppressError()
+                .runBefore { param ->
+                    if (lockLayout) param.result = null
+                }
+
+            deleteHandlerClass
+                .hookMethod(completeMethod)
+                .suppressError()
+                .runBefore { param ->
+                    if (!lockLayout) return@runBefore
+
+                    showLayoutLockedToast()
+                    param.result = null
+                }
+        }
 
         launcherPopupItemDragHandlerClass
             .hookMethod("onLongClick")
@@ -105,13 +153,24 @@ class LockLayout(context: Context) : ModPack(context) {
                 param.result = false
             }
 
-        fun showLayoutLockedToast() {
-            Toast.makeText(
-                mContext,
-                modRes.getString(R.string.layout_is_locked),
-                Toast.LENGTH_SHORT
-            ).show()
+        listOf(
+            "com.android.launcher3.popup.LauncherDeepShortcutDragHandler",
+            "com.android.launcher3.popup.DeepShortcutDragHandler"
+        ).forEach { className ->
+            findClass(className, suppressError = true)
+                .hookMethod("canStartDrag")
+                .suppressError()
+                .runBefore { param ->
+                    if (lockLayout) param.result = false
+                }
         }
+
+        findClass("com.android.launcher3.popup.LauncherDeepShortcutDragHandler", suppressError = true)
+            .hookMethod("startDrag")
+            .suppressError()
+            .runBefore { param ->
+                if (lockLayout) param.result = null
+            }
 
         if (optionsPopupViewClass.hasMethod("openWidgets")) {
             optionsPopupViewClass
@@ -132,8 +191,10 @@ class LockLayout(context: Context) : ModPack(context) {
                     param.result = false
                 }
         } else if (optionsPopupViewClass.hasMethod("getOptions")) {
-            val optionItemClass =
-                findClass($$"com.android.launcher3.views.OptionsPopupView$OptionItem")
+            val optionItemClass = findClass(
+                $$"com.android.launcher3.views.OptionsPopupView$OptionItem",
+                suppressError = true
+            )
 
             @SuppressLint("DiscouragedApi")
             val widgetButtonTextId = mContext.resources.getIdentifier(
@@ -161,8 +222,58 @@ class LockLayout(context: Context) : ModPack(context) {
                         }
                     }
                 }
+        } else if (workspaceLongPressOptionsClass != null) {
+            if (workspaceLongPressOptionsClass.hasMethod("openWidgetPicker")) {
+                workspaceLongPressOptionsClass
+                    .hookMethod("openWidgetPicker")
+                    .runBefore { param ->
+                        if (!lockLayout) return@runBefore
+
+                        showLayoutLockedToast()
+                        param.result = null
+                    }
+            } else {
+                val popupDataClass = findClass("com.android.launcher3.popup.PopupData")
+
+                @SuppressLint("DiscouragedApi")
+                val widgetButtonTextId = mContext.resources.getIdentifier(
+                    "widget_button_text",
+                    "string",
+                    mContext.packageName
+                )
+
+                popupDataClass
+                    .hookConstructor()
+                    .runBefore { param ->
+                        if (!lockLayout) return@runBefore
+
+                        val shouldReplace = param.args[1] as Int == widgetButtonTextId
+
+                        if (shouldReplace) {
+                            val popupActionType =
+                                (param.method as Constructor<*>).parameterTypes.last()
+
+                            param.args[param.args.size - 1] = Proxy.newProxyInstance(
+                                popupActionType.classLoader,
+                                arrayOf(popupActionType)
+                            ) { proxy, method, args ->
+                                when (method.name) {
+                                    "invoke" -> {
+                                        showLayoutLockedToast()
+                                        Unit
+                                    }
+
+                                    "equals" -> proxy === args?.getOrNull(0)
+                                    "hashCode" -> System.identityHashCode(proxy)
+                                    "toString" -> "LockLayoutPopupAction"
+                                    else -> null
+                                }
+                            }
+                        }
+                    }
+            }
         } else {
-            log("Suitable method not found in OptionsPopupView class.")
+            log(this@LockLayout, "Suitable method not found for blocking widget picker.")
         }
     }
 }

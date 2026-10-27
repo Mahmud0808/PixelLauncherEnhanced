@@ -2,50 +2,67 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="false"
-        android:key="xposed_hidegesturepill"
-        android:title="@string/hide_gesture_pill_title"
-        android:summary="@string/hide_gesture_pill_desc"
-        app:iconSpaceReserved="false" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_misc_general"
+        android:icon="@drawable/ic_section_general"
+        android:title="@string/section_general_title"
+        app:iconSpaceReserved="false">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="false"
-        android:key="xposed_hidenavigationspace"
-        android:summary="@string/hide_navigation_space_desc"
-        android:title="@string/hide_navigation_space_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_preventwallpaperdimmingrestart"
+            android:summary="@string/prevent_wallpaper_dimming_restart_summary"
+            android:title="@string/prevent_wallpaper_dimming_restart_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="false"
-        android:key="xposed_preventwallpaperdimmingrestart"
-        android:summary="@string/prevent_wallpaper_dimming_restart_summary"
-        android:title="@string/prevent_wallpaper_dimming_restart_title"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_glassperformancemode"
+            android:summary="@string/glass_performance_mode_summary"
+            android:title="@string/glass_performance_mode_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="true"
-        android:key="xposed_entryinlaunchersettings"
-        android:title="@string/entry_in_launcher_settings"
-        app:iconSpaceReserved="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:key="xposed_developeroptions"
+            android:summary="@string/developer_options_desc"
+            android:title="@string/developer_options_title"
+            app:iconSpaceReserved="false" />
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:defaultValue="false"
-        android:key="xposed_entryinoptionspopup"
-        android:title="@string/entry_in_homescreen_popup"
-        app:iconSpaceReserved="false" />
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
-        android:key="xposed_developeroptions"
-        android:summary="@string/developer_options_desc"
-        android:title="@string/developer_options_title"
-        app:iconSpaceReserved="false" />
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_misc_entry_points"
+        android:icon="@drawable/ic_section_entry_points"
+        android:title="@string/section_entry_points_title"
+        app:iconSpaceReserved="false">
 
-    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
-        android:key="xposed_restartlauncher"
-        android:summary="@string/restart_launcher_desc"
-        android:title="@string/restart_launcher_title"
-        app:iconSpaceReserved="false"
-        app:showArrow="false" />
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="true"
+            android:key="xposed_entryinlaunchersettings"
+            android:title="@string/entry_in_launcher_settings"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_entryinoptionspopup"
+            android:title="@string/entry_in_homescreen_popup"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_misc_troubleshooting"
+        android:icon="@drawable/ic_section_troubleshooting"
+        android:title="@string/section_troubleshooting_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_debug_report_page"
+            android:summary="@string/debug_report_summary"
+            android:title="@string/debug_report_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.DebugReportPage"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
 </PreferenceScreen>

@@ -2,10 +2,14 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.LinearLayout
 import androidx.appcompat.view.ContextThemeWrapper
@@ -14,22 +18,27 @@ import androidx.core.view.isVisible
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_BUTTONS_WIDTH
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_DISABLE_SELECTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_REMOVE_SCREENSHOT_BUTTON
 import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
 import de.robv.android.xposed.XposedHelpers.findMethodBestMatch
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
 class ClearAllButton(context: Context) : ModPack(context) {
@@ -37,21 +46,25 @@ class ClearAllButton(context: Context) : ModPack(context) {
     private var clearAllButton = false
     private var fixedButtonWidth = false
     private var removeScreenshotButton = false
+    private var disableSelection = false
+    private val hookedOverlayClasses = mutableSetOf<Class<*>>()
     private var recentsViewInstance: Any? = null
     private var actionClearAllButton: Button? = null
+    private var actionButtonsRef: WeakReference<ViewGroup>? = null
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
             clearAllButton = getBoolean(RECENTS_CLEAR_ALL_BUTTON, false)
             fixedButtonWidth = clearAllButton && getBoolean(FIXED_RECENTS_BUTTONS_WIDTH, false)
             removeScreenshotButton = getBoolean(RECENTS_REMOVE_SCREENSHOT_BUTTON, false)
+            disableSelection = getBoolean(RECENTS_DISABLE_SELECTION, false)
         }
 
         when (key.firstOrNull()) {
-            RECENTS_CLEAR_ALL_BUTTON -> updateVisibility()
-
+            RECENTS_CLEAR_ALL_BUTTON,
             FIXED_RECENTS_BUTTONS_WIDTH,
-            RECENTS_REMOVE_SCREENSHOT_BUTTON -> restartLauncher(mContext)
+            RECENTS_REMOVE_SCREENSHOT_BUTTON,
+            RECENTS_DISABLE_SELECTION -> Handler(Looper.getMainLooper()).post { updateVisibility() }
         }
     }
 
@@ -65,7 +78,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
             findClass("com.android.launcher3.uioverrides.states.BackgroundAppState")
         val overviewStateClass =
             findClass("com.android.launcher3.uioverrides.states.OverviewState")
-        val featureFlagsClass = findClass("com.android.launcher3.config.FeatureFlags")
+        val featureFlagsClass = findClass("com.android.launcher3.config.FeatureFlags", suppressError = true)
         val recentsStateClass = findClass("com.android.quickstep.fallback.RecentsState")
         val overviewActionsViewClass = findClass("com.android.quickstep.views.OverviewActionsView")
         val dismissAllTasksMethod: Method =
@@ -75,6 +88,31 @@ class ClearAllButton(context: Context) : ModPack(context) {
             .hookConstructor()
             .runAfter { param ->
                 recentsViewInstance = param.thisObject
+            }
+
+        val taskOverlayClass = findClass(
+            $$"com.android.quickstep.TaskOverlayFactory$TaskOverlay",
+            suppressError = true
+        )
+
+        taskOverlayClass
+            .hookConstructor()
+            .runAfter { param ->
+                val overlayClass = param.thisObject::class.java
+                if (overlayClass == taskOverlayClass || !hookedOverlayClasses.add(overlayClass)) {
+                    return@runAfter
+                }
+
+                overlayClass.declaredMethods
+                    .filter { it.name == "initOverlay" && it.parameterTypes.lastOrNull() == Boolean::class.javaPrimitiveType }
+                    .forEach { method ->
+                        MethodHookHelper(method)
+                            .runBefore { param2 ->
+                                if (!disableSelection) return@runBefore
+
+                                param2.args[param2.args.size - 1] = true
+                            }
+                    }
             }
 
         backgroundAppStateClass
@@ -105,38 +143,54 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     ?: launcher
                         .getField("deviceProfileRef")
                         .getField("value")
+                val deviceProperties = deviceProfile.getAnyFieldSilently(
+                    "mDeviceProperties",
+                    "deviceProperties"
+                )
                 val isPhone = deviceProfile.getFieldSilently("isPhone") as? Boolean
-                    ?: deviceProfile
-                        .getField("mDeviceProperties")
-                        .getField("isPhone") as Boolean
+                    ?: deviceProperties.getField("isPhone") as Boolean
                 val isLandscape = deviceProfile.getFieldSilently("isLandscape") as? Boolean
-                    ?: deviceProfile
-                        .getField("mDeviceProperties")
-                        .getField("isLandscape") as Boolean
+                    ?: deviceProperties.getField("isLandscape") as Boolean
 
                 val showFloatingSearch = if (isPhone) {
                     // Only show search in phone overview in portrait mode.
                     !isLandscape
                 } else {
                     // Only show search in tablet overview if taskbar is not visible.
-                    !(deviceProfile.getField("isTaskbarPresent") as Boolean) ||
-                            param.thisObject.callMethod("isTaskbarStashed", launcher) as Boolean
+                    val isTaskbarPresent = deviceProfile.getFieldSilently("isTaskbarPresent") as? Boolean
+                        ?: deviceProperties
+                            .getField("taskbarConfiguration")
+                            .getField("isTaskbarPresent") as Boolean
+                    val isTaskbarStashed = param.thisObject
+                        .callMethodSilently("isTaskbarStashed", launcher) as? Boolean
+                        ?: param.thisObject
+                            .callMethodSilently("isTaskbarStashed", deviceProfile) as? Boolean
+                        ?: false
+
+                    !isTaskbarPresent || isTaskbarStashed
                 }
 
                 if (showFloatingSearch) {
                     elements = elements or FLOATING_SEARCH_BAR
                 }
 
-                if (featureFlagsClass.callStaticMethodSilently("enableSplitContextual") as? Boolean == true &&
+                val splitContextual = featureFlagsClass?.callStaticMethodSilently("enableSplitContextual") as? Boolean ?: true
+                val splitSelecting = runCatching {
                     if (launcher.hasMethod("isSplitSelectionActive")) {
                         launcher.callMethod("isSplitSelectionActive") as Boolean
+                    } else if (launcher.getFieldSilently("splitScreenUiState") != null) {
+                        launcher
+                            .getField("splitScreenUiState")
+                            .getField("isSplitSelectActive") as Boolean
                     } else {
                         launcher
                             .getField("isSplitSelectActiveRef")
                             .getField("value")
                             .callMethod("booleanValue") as Boolean
                     }
-                ) {
+                }.getOrDefault(false)
+
+                if (splitContextual && splitSelecting) {
                     elements = elements and CLEAR_ALL_BUTTON.inv()
                 }
 
@@ -217,112 +271,211 @@ class ClearAllButton(context: Context) : ModPack(context) {
                 }
 
                 mActionButtons.addView(actionClearAllButton)
-
-                if (fixedButtonWidth) {
-                    mActionButtons.children.forEach { child ->
-                        if (child is Button) {
-                            child.maxLines = 1
-                            child.ellipsize = TextUtils.TruncateAt.END
-                        }
-                    }
-                }
+                actionButtonsRef = WeakReference(mActionButtons)
 
                 updateVisibility()
             }
     }
 
-    @SuppressLint("DiscouragedApi")
+    private var lastSkippedFrame = 0L
+
+    private val View.buttonContainer: ViewGroup?
+        get() = (parent as? ViewGroup)?.takeIf { it.tag == CONTAINER_TAG }
+
     private fun updateVisibility() {
-        var childCount: Int
+        val row = actionButtonsRef?.get() ?: return
+        val clearAllVisibility = if (clearAllButton) View.VISIBLE else View.GONE
+        actionClearAllButton?.visibility = clearAllVisibility
+        actionClearAllButton?.buttonContainer?.visibility = clearAllVisibility
 
-        if (clearAllButton) {
-            actionClearAllButton?.visibility = View.VISIBLE
-            childCount = 3
-        } else {
-            actionClearAllButton?.visibility = View.GONE
-            childCount = 2
+        var childCount = if (clearAllButton) 3 else 2
+        if (removeScreenshotButton) childCount--
+        if (disableSelection) childCount--
+        childCount = childCount.coerceAtLeast(2)
+
+        row.setHidden("action_screenshot", removeScreenshotButton)
+        row.setHidden("action_select", disableSelection)
+
+        if (fixedButtonWidth) wrapButtons(row) else unwrapButtons(row)
+
+        val maxWidth = mContext.resources.displayMetrics.widthPixels / childCount
+        row.children.forEach { child ->
+            val button = child as? Button
+                ?: (child as? ViewGroup)?.takeIf { it.tag == CONTAINER_TAG }?.getChildAt(0) as? Button
+            button?.maxWidth = maxWidth
         }
+    }
 
-        if (removeScreenshotButton) {
-            childCount = 2
-        }
+    private fun wrapButtons(row: ViewGroup) {
+        if (row.getExtraFieldSilently(WRAPPED) == true) return
+        row.setExtraField(WRAPPED, true)
 
-        val parentView = actionClearAllButton?.parent as? ViewGroup
-        val displayMetrics = mContext.resources.displayMetrics
+        row.setExtraField(ORIGINAL_WIDTH, row.layoutParams?.width)
+        row.layoutParams?.width = ViewGroup.LayoutParams.MATCH_PARENT
 
-        parentView?.children?.forEach { child ->
+        row.children.toList().forEach { child ->
             if (child is Button) {
-                child.maxWidth = displayMetrics.widthPixels / childCount
-            }
-        }
+                child.setExtraField(ORIGINAL_MARGIN, (child.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart)
+                child.setExtraField(ORIGINAL_MAX_LINES, child.maxLines)
+                child.setExtraField(ORIGINAL_ELLIPSIZE, child.ellipsize)
+                child.maxLines = 1
+                child.ellipsize = TextUtils.TruncateAt.END
 
-        if (removeScreenshotButton) {
-            val screenshotId = mContext.resources.getIdentifier(
-                "action_screenshot", "id", mContext.packageName
-            )
-
-            if (screenshotId != 0) {
-                val screenshotButton = parentView?.findViewById<View>(screenshotId)
-
-                screenshotButton?.let { view ->
-                    view.setOnVisibilityChangeListener { isVisible ->
-                        if (isVisible) {
-                            view.visibility = View.GONE
-                        }
-                    }
-                    view.visibility = View.GONE
+                val container = LinearLayout(mContext).apply {
+                    tag = CONTAINER_TAG
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
                 }
-            }
-        }
+                val index = row.indexOfChild(child)
+                row.removeView(child)
+                container.addView(child)
+                row.addView(container, index)
 
-        if (fixedButtonWidth) {
-            val parentView = (actionClearAllButton?.parent as? ViewGroup)?.apply {
-                layoutParams?.width = ViewGroup.LayoutParams.MATCH_PARENT
-            }
-            val containerTag = "action_button_container"
+                (child.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart = 0
 
-            parentView?.children?.forEach { child ->
-                if (child is Button) {
-                    val container = LinearLayout(mContext).apply {
-                        tag = containerTag
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = Gravity.CENTER
-                        layoutParams = LinearLayout.LayoutParams(
-                            0,
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            1f
-                        )
-                    }
-                    val index = parentView.indexOfChild(child)
-                    parentView.removeView(child)
-                    container.addView(child)
-                    parentView.addView(container, index)
-
-                    (child.layoutParams as ViewGroup.MarginLayoutParams).marginStart = 0
-
-                    fun updateVisibility(isVisible: Boolean) {
-                        container.visibility = if (isVisible) View.VISIBLE else View.GONE
-                    }
-
-                    child.setOnVisibilityChangeListener { isVisible -> updateVisibility(isVisible) }
-                    updateVisibility(child.isVisible)
-                } else if (child.tag != containerTag) {
-                    child.setOnVisibilityChangeListener { isVisible ->
-                        child.visibility = View.GONE
-                    }
+                val forceHidden = child.getExtraFieldSilently(FORCE_HIDDEN) == true
+                if (forceHidden) {
                     child.visibility = View.GONE
                 }
+                container.visibility = if (!forceHidden && child.isVisible) View.VISIBLE else View.GONE
+                container.setExtraField(
+                    LAYOUT_LISTENER,
+                    child.addPreDrawListener {
+                        var changed = false
+                        val hidden = child.getExtraFieldSilently(FORCE_HIDDEN) == true
+                        if (hidden && child.visibility != View.GONE) {
+                            child.visibility = View.GONE
+                            changed = true
+                        }
+                        val desiredVisibility = if (!hidden && child.isVisible) View.VISIBLE else View.GONE
+                        if (container.visibility != desiredVisibility) {
+                            container.visibility = desiredVisibility
+                            changed = true
+                        }
+                        !(changed && allowSkipFrame())
+                    }
+                )
+            } else if (child.tag != CONTAINER_TAG) {
+                child.setExtraField(ORIGINAL_VISIBILITY, child.visibility)
+                child.visibility = View.GONE
+                child.setExtraField(
+                    LAYOUT_LISTENER,
+                    child.addPreDrawListener {
+                        if (child.visibility != View.GONE) {
+                            child.visibility = View.GONE
+                            !allowSkipFrame()
+                        } else {
+                            true
+                        }
+                    }
+                )
             }
         }
     }
 
-    private fun View.setOnVisibilityChangeListener(onVisibilityChanged: (Boolean) -> Unit) {
-        viewTreeObserver.addOnGlobalLayoutListener {
-            onVisibilityChanged(isVisible)
+    private fun unwrapButtons(row: ViewGroup) {
+        if (row.getExtraFieldSilently(WRAPPED) != true) return
+        row.setExtraField(WRAPPED, false)
+
+        row.children.toList().forEach { child ->
+            if (child.tag == CONTAINER_TAG && child is ViewGroup) {
+                child.removeLayoutListener()
+                val button = child.getChildAt(0) as? Button ?: return@forEach
+                val index = row.indexOfChild(child)
+                child.removeView(button)
+                row.removeView(child)
+                row.addView(button, index)
+
+                (button.getExtraFieldSilently(ORIGINAL_MARGIN) as? Int)?.let {
+                    (button.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart = it
+                }
+                (button.getExtraFieldSilently(ORIGINAL_MAX_LINES) as? Int)?.let { button.maxLines = it }
+                button.ellipsize = button.getExtraFieldSilently(ORIGINAL_ELLIPSIZE) as? TextUtils.TruncateAt
+            } else {
+                child.removeLayoutListener()
+                (child.getExtraFieldSilently(ORIGINAL_VISIBILITY) as? Int)?.let { child.visibility = it }
+            }
         }
+
+        (row.getExtraFieldSilently(ORIGINAL_WIDTH) as? Int)?.let { row.layoutParams?.width = it }
+        row.requestLayout()
+    }
+
+    @SuppressLint("DiscouragedApi")
+    private fun ViewGroup.setHidden(idName: String, hidden: Boolean) {
+        val id = mContext.resources.getIdentifier(idName, "id", mContext.packageName)
+        if (id == 0) return
+        val view = findViewById<View>(id) ?: return
+
+        view.setExtraField(FORCE_HIDDEN, hidden)
+        val existingListener = view.getExtraFieldSilently(HIDE_LISTENER) as? ViewTreeObserver.OnPreDrawListener
+
+        if (hidden) {
+            if (existingListener == null) view.setExtraField(STOCK_VISIBILITY, view.visibility)
+            view.visibility = View.GONE
+            view.buttonContainer?.visibility = View.GONE
+            if (existingListener == null) {
+                val listener = ViewTreeObserver.OnPreDrawListener {
+                    var changed = false
+                    if (view.visibility != View.GONE) {
+                        view.setExtraField(STOCK_VISIBILITY, view.visibility)
+                        view.visibility = View.GONE
+                        changed = true
+                    }
+                    view.buttonContainer?.let { container ->
+                        if (container.visibility != View.GONE) {
+                            container.visibility = View.GONE
+                            changed = true
+                        }
+                    }
+                    !(changed && allowSkipFrame())
+                }
+                view.viewTreeObserver.addOnPreDrawListener(listener)
+                view.setExtraField(HIDE_LISTENER, listener)
+            }
+        } else if (existingListener != null) {
+            view.viewTreeObserver.removeOnPreDrawListener(existingListener)
+            view.setExtraField(HIDE_LISTENER, null)
+            val stockVisibility = view.getExtraFieldSilently(STOCK_VISIBILITY) as? Int ?: View.VISIBLE
+            view.visibility = stockVisibility
+            view.buttonContainer?.visibility = stockVisibility
+        }
+    }
+
+    private fun allowSkipFrame(): Boolean {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastSkippedFrame < SKIP_FRAME_COOLDOWN_MS) return false
+        lastSkippedFrame = now
+        return true
+    }
+
+    private fun View.addPreDrawListener(onPreDraw: () -> Boolean): ViewTreeObserver.OnPreDrawListener {
+        val listener = ViewTreeObserver.OnPreDrawListener { onPreDraw() }
+        viewTreeObserver.addOnPreDrawListener(listener)
+        return listener
+    }
+
+    private fun View.removeLayoutListener() {
+        (getExtraFieldSilently(LAYOUT_LISTENER) as? ViewTreeObserver.OnPreDrawListener)?.let {
+            viewTreeObserver.removeOnPreDrawListener(it)
+        }
+        setExtraField(LAYOUT_LISTENER, null)
     }
 
     companion object {
+        private const val CONTAINER_TAG = "action_button_container"
+        private const val WRAPPED = "pleButtonsWrapped"
+        private const val ORIGINAL_WIDTH = "pleOriginalWidth"
+        private const val ORIGINAL_MARGIN = "pleOriginalMargin"
+        private const val ORIGINAL_MAX_LINES = "pleOriginalMaxLines"
+        private const val ORIGINAL_ELLIPSIZE = "pleOriginalEllipsize"
+        private const val ORIGINAL_VISIBILITY = "pleOriginalVisibility"
+        private const val FORCE_HIDDEN = "pleForceHidden"
+        private const val STOCK_VISIBILITY = "pleStockVisibility"
+        private const val SKIP_FRAME_COOLDOWN_MS = 200L
+        private const val LAYOUT_LISTENER = "pleLayoutListener"
+        private const val HIDE_LISTENER = "pleHideListener"
         private const val OVERVIEW_ACTIONS = 1 shl 3
         private const val CLEAR_ALL_BUTTON = 1 shl 4
         private const val FLOATING_SEARCH_BAR = 1 shl 7

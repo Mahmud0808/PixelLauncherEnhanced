@@ -3,7 +3,6 @@ package com.drdisagree.pixellauncherenhanced.utils
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
@@ -18,11 +17,7 @@ import java.util.Calendar
 object LauncherUtils {
 
     fun Context.restartLauncher() {
-        Toast.makeText(
-            this,
-            getString(R.string.restarting_launcher),
-            Toast.LENGTH_SHORT
-        ).show()
+        Messages.show(this, getString(R.string.restarting_launcher))
 
         Handler(Looper.getMainLooper()).postDelayed({
             if (isPixelLauncher) {
@@ -35,7 +30,7 @@ object LauncherUtils {
         }, 300)
     }
 
-    private fun resetBootloopProtectorForPackage(packageName: String) {
+    fun resetBootloopProtectorForPackage(packageName: String) {
         val loadTimeKey = String.format("%s%s", LOAD_TIME_KEY_KEY, packageName)
         val strikeKey = String.format("%s%s", PACKAGE_STRIKE_KEY_KEY, packageName)
         val currentTime = Calendar.getInstance().time.time

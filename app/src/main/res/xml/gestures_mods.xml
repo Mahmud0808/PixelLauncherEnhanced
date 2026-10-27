@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PageHeaderPreference
+        android:key="page_header_gestures"
+        app:iconSpaceReserved="false" />
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_gestures_home"
+        android:icon="@drawable/ic_section_home_gestures"
+        android:title="@string/section_home_gestures_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_double_tap_title"
+            android:entries="@array/gesture_action_str"
+            android:entryValues="@array/gesture_action_value"
+            android:key="xposed_gesturedoubletap"
+            android:summary="@string/gesture_double_tap_desc"
+            android:title="@string/gesture_double_tap_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_pinch_in_title"
+            android:entries="@array/gesture_action_str"
+            android:entryValues="@array/gesture_action_value"
+            android:key="xposed_gesturepinchin"
+            android:summary="@string/gesture_pinch_in_desc"
+            android:title="@string/gesture_pinch_in_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_pinch_out_title"
+            android:entries="@array/gesture_action_str"
+            android:entryValues="@array/gesture_action_value"
+            android:key="xposed_gesturepinchout"
+            android:summary="@string/gesture_pinch_out_desc"
+            android:title="@string/gesture_pinch_out_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="xposed_icon_swipes_page"
+            android:summary="@string/icon_swipes_page_desc"
+            android:title="@string/fragment_icon_swipes_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.IconSwipes"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_gestures_navigation"
+        android:icon="@drawable/ic_section_navigation"
+        android:title="@string/section_navigation_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_hidegesturepill"
+            android:title="@string/hide_gesture_pill_title"
+            android:summary="@string/hide_gesture_pill_desc"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
+            android:defaultValue="false"
+            android:key="xposed_hidenavigationspace"
+            android:summary="@string/hide_navigation_space_desc"
+            android:title="@string/hide_navigation_space_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+</PreferenceScreen>

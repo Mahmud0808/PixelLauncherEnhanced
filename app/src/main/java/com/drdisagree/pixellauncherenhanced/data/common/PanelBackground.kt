@@ -1,0 +1,29 @@
+package com.drdisagree.pixellauncherenhanced.data.common
+
+import android.os.Build
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.FOLDER_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
+
+object PanelBackground {
+
+    const val OFF = "off"
+    const val FROSTED = "frosted"
+    const val LIQUID = "liquid"
+
+    val KEYS = setOf(DOCK_BACKGROUND, WIDGET_BACKGROUND, FOLDER_BACKGROUND, ICON_BACKGROUND, SEARCH_BAR_BACKGROUND)
+
+    val isLiquidSupported: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
+    fun supported(value: String?): String {
+        return when {
+            value == null -> OFF
+            value == LIQUID && !isLiquidSupported -> FROSTED
+            value == FROSTED || value == LIQUID -> value
+            else -> OFF
+        }
+    }
+}

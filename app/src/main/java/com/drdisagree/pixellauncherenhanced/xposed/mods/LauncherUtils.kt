@@ -1,8 +1,11 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
+import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.UserHandle
 import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
@@ -13,15 +16,20 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.clearExtraFields
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.resetCounter
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.ref.WeakReference
+import kotlin.time.Duration.Companion.milliseconds
 
 class LauncherUtils(context: Context) : ModPack(context) {
 
@@ -39,8 +47,12 @@ class LauncherUtils(context: Context) : ModPack(context) {
             suppressError = true
         )
 
+        DebugRecorder.registerHealth("Device profile captured") { invariantDeviceProfileInstance != null }
+        DebugRecorder.registerHealth("Icon cache captured") { iconCacheInstance != null }
+
         InvariantDeviceProfileClass
             .hookConstructor()
+            .capability("Device profile")
             .runAfter { param ->
                 invariantDeviceProfileInstance = param.thisObject
             }
@@ -48,12 +60,12 @@ class LauncherUtils(context: Context) : ModPack(context) {
         BaseIconCacheClass
             .hookConstructor()
             .runAfter { param ->
-                mIconDb = param.thisObject.getAnyField("mIconDb", "iconDb")
-                mCache = param.thisObject.getAnyField("mCache", "cache")
+                iconCacheInstance = param.thisObject
             }
 
         LauncherAppStateClass
             .hookConstructor()
+            .capability("Device profile")
             .runAfter { param ->
                 mModel = param.thisObject.getAnyField("mModel", "model")
                 if (invariantDeviceProfileInstance == null) {
@@ -62,6 +74,24 @@ class LauncherUtils(context: Context) : ModPack(context) {
                         "invariantDeviceProfile"
                     )
                 }
+            }
+
+        DebugRecorder.registerProbe("launcherActivities") { launcherActivitiesState() }
+
+        QuickstepLauncherClass
+            .hookMethod("onCreate")
+            .runAfter { param ->
+                synchronized(launcherActivities) {
+                    launcherActivities.removeAll { it.get() == null }
+                    launcherActivities.add(WeakReference(param.thisObject as Activity))
+                }
+            }
+
+        QuickstepLauncherClass
+            .hookMethod("onDestroy")
+            .runAfter { param ->
+                val activity = param.thisObject
+                Handler(Looper.getMainLooper()).post { activity.clearExtraFields() }
             }
 
         if (LauncherAppStateCompanionClass != null) {
@@ -86,12 +116,26 @@ class LauncherUtils(context: Context) : ModPack(context) {
         private var InvariantDeviceProfileClass: Class<*>? = null
         private var BaseIconCacheClass: Class<*>? = null
         private var QuickstepLauncherClass: Class<*>? = null
+        private val launcherActivities = ArrayList<WeakReference<Activity>>()
+
+        private fun launcherActivitiesState(): String {
+            repeat(2) {
+                Runtime.getRuntime().gc()
+                System.runFinalization()
+            }
+            val alive = synchronized(launcherActivities) {
+                launcherActivities.removeAll { it.get() == null }
+                launcherActivities.mapNotNull { it.get() }
+            }
+            return "alive=${alive.size}, destroyed=${alive.count { it.isDestroyed }}"
+        }
         private var LauncherAppStateClass: Class<*>? = null
         private var LauncherAppStateCompanionClass: Class<*>? = null
 
         private var invariantDeviceProfileInstance: Any? = null
-        private var mIconDb: Any? = null
-        private var mCache: Any? = null
+        private var iconCacheInstance: Any? = null
+
+        private const val TAG = "LauncherUtils"
         private var mModel: Any? = null
 
         private var lastRestartTime = 0L
@@ -144,7 +188,7 @@ class LauncherUtils(context: Context) : ModPack(context) {
                 }
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    delay(1000)
+                    delay(1000.milliseconds)
                     enqueueProxyCommand { proxy ->
                         proxy.runCommand("killall ${context.packageName}")
                     }
@@ -160,22 +204,48 @@ class LauncherUtils(context: Context) : ModPack(context) {
             }
         }
 
+        fun reloadModel() {
+            Handler(Looper.getMainLooper()).post {
+                runCatching { mModel.callMethod("forceReload") }
+                    .recoverCatching { mModel.callMethod("forceReload", "PLEnhanced") }
+                    .onFailure { log(TAG, it) }
+            }
+        }
+
+        fun removeCachedIcons(packageName: String, user: UserHandle) {
+            val iconCache = iconCacheInstance ?: return
+
+            if (iconCache.hasMethod("removeIconsForPkg", UserHandle::class.java, String::class.java)) {
+                iconCache.callMethodSilently("removeIconsForPkg", user, packageName)
+            } else {
+                iconCache.callMethodSilently("removeIconsForPkg", packageName, user)
+            }
+        }
+
         fun reloadIcons() {
             Handler(Looper.getMainLooper()).post {
-                mCache.callMethod("clear")
+                val iconCache = iconCacheInstance
 
-                if (mIconDb.hasMethod("clear")) {
-                    mIconDb.callMethod("clear")
-                } else {
-                    mIconDb.getField("mOpenHelper").also { mOpenHelper ->
-                        mOpenHelper.callMethod(
-                            "clearDB",
-                            mOpenHelper.callMethod("getWritableDatabase")
-                        )
+                runCatching {
+                    iconCache.getAnyField("mCache", "cache").callMethod("clear")
+                }.onFailure { log(TAG, it) }
+
+                runCatching {
+                    val iconDb = iconCache.getAnyField("mIconDb", "iconDb")
+
+                    if (iconDb.hasMethod("clear")) {
+                        iconDb.callMethod("clear")
+                    } else {
+                        iconDb.getField("mOpenHelper").also { openHelper ->
+                            openHelper.callMethod("clearDB", openHelper.callMethod("getWritableDatabase"))
+                        }
                     }
-                }
+                }.onFailure { log(TAG, it) }
 
-                mModel.callMethod("forceReload")
+                runCatching {
+                    runCatching { mModel.callMethod("forceReload") }
+                        .getOrElse { mModel.callMethod("forceReload", "reloadIcons") }
+                }.onFailure { log(TAG, it) }
             }
         }
     }

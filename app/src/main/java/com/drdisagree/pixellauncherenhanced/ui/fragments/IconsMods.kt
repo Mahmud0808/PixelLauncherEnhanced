@@ -1,10 +1,11 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import android.os.Bundle
 import com.drdisagree.pixellauncherenhanced.R
-import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_CUSTOM_COLOR
-import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
-import com.drdisagree.pixellauncherenhanced.utils.LauncherUtils.restartLauncher
+import com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
 
 class IconsMods : ControlledPreferenceFragmentCompat() {
 
@@ -23,15 +24,14 @@ class IconsMods : ControlledPreferenceFragmentCompat() {
     override val themeResource: Int
         get() = R.style.PrefsThemeCollapsingToolbar
 
-    override fun updateScreen(key: String?) {
-        super.updateScreen(key)
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        super.onCreatePreferences(savedInstanceState, rootKey)
 
-        when (key) {
-            THEMED_ICON_CUSTOM_COLOR -> {
-                if (!RPrefs.getBoolean(THEMED_ICON_CUSTOM_COLOR)) {
-                    context?.restartLauncher()
-                }
-            }
+        if (PanelBackground.isLiquidSupported) return
+
+        findPreference<ListPreference>(ICON_BACKGROUND)?.apply {
+            entries = entries.take(2).toTypedArray()
+            entryValues = entryValues.take(2).toTypedArray()
         }
     }
 }

@@ -10,9 +10,9 @@
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackgroundBorderless"
-    android:minHeight="?android:listPreferredItemHeight"
-    android:paddingHorizontal="@dimen/preference_padding_horizontal"
-    android:paddingVertical="@dimen/preference_padding_vertical">
+    android:minHeight="84dp"
+    android:paddingHorizontal="24dp"
+    android:paddingVertical="20dp">
 
     <ImageView
         android:id="@android:id/icon"

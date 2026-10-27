@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_dock_spacing_section"
+        android:icon="@drawable/ic_section_background"
+        android:title="@string/section_dock_background_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="floating"
+            android:dialogTitle="@string/dock_blur_style_title"
+            android:entries="@array/dock_blur_style_str"
+            android:entryValues="@array/dock_blur_style_value"
+            android:key="xposed_dockblurstyle"
+            android:title="@string/dock_blur_style_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurmargin"
+            android:title="@string/dock_blur_margin_title"
+            app:defaultValue="12"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="48"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurpaddingtop"
+            android:title="@string/dock_blur_padding_top_title"
+            app:defaultValue="12"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="48"
+            app:minVal="-48"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurpaddingbottom"
+            android:title="@string/dock_blur_padding_bottom_title"
+            app:defaultValue="12"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="48"
+            app:minVal="-48"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurcorner"
+            android:title="@string/dock_blur_corner_title"
+            app:defaultValue="28"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="60"
+            app:minVal="0"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="xposed_dock_position_section"
+        android:icon="@drawable/ic_section_position"
+        android:title="@string/section_dock_position_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_docktopspacing"
+            android:summary="@string/dock_top_spacing_desc"
+            android:title="@string/dock_top_spacing_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="96"
+            app:minVal="-96"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockbottomspacing"
+            android:summary="@string/dock_bottom_spacing_desc"
+            android:title="@string/dock_bottom_spacing_title"
+            app:defaultValue="0"
+            app:hideValueOnDefault="true"
+            app:iconSpaceReserved="false"
+            app:maxVal="96"
+            app:minVal="-48"
+            app:showDefaultIndicator="true"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+</PreferenceScreen>

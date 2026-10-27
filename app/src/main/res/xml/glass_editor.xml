@@ -1,0 +1,810 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_section_icon"
+        android:title="@string/glass_target_icons"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconbackgroundblur"
+            android:title="@string/glass_blur_title"
+            app:defaultValue="5"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconbackgroundtint"
+            android:title="@string/glass_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassoutlinewidth"
+            android:title="@string/glass_outline_title"
+            app:defaultValue="1"
+            app:iconSpaceReserved="false"
+            app:maxVal="4"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassoutlineopacity"
+            android:title="@string/glass_outline_opacity_title"
+            app:defaultValue="15"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:key="xposed_iconglassoutlinecolor"
+            android:title="@string/glass_outline_color_title"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_advanced_icon"
+        android:title="@string/glass_advanced_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassrefraction"
+            android:title="@string/glass_refraction_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassdepth"
+            android:title="@string/glass_depth_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassdispersion"
+            android:title="@string/glass_dispersion_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="500"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassvibrancy"
+            android:title="@string/glass_vibrancy_title"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-100"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassrim"
+            android:title="@string/glass_rim_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="200"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_iconglassshadow"
+            android:title="@string/glass_shadow_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_section_folder"
+        android:title="@string/glass_target_folders"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderbackgroundblur"
+            android:title="@string/glass_blur_title"
+            app:defaultValue="5"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderbackgroundopacity"
+            android:title="@string/glass_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassoutlinewidth"
+            android:title="@string/glass_outline_title"
+            app:defaultValue="1"
+            app:iconSpaceReserved="false"
+            app:maxVal="4"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassoutlineopacity"
+            android:title="@string/glass_outline_opacity_title"
+            app:defaultValue="15"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:key="xposed_folderglassoutlinecolor"
+            android:title="@string/glass_outline_color_title"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_advanced_folder"
+        android:title="@string/glass_advanced_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassrefraction"
+            android:title="@string/glass_refraction_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassdepth"
+            android:title="@string/glass_depth_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassdispersion"
+            android:title="@string/glass_dispersion_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="500"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassvibrancy"
+            android:title="@string/glass_vibrancy_title"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-100"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassrim"
+            android:title="@string/glass_rim_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="200"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_folderglassshadow"
+            android:title="@string/glass_shadow_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_section_dock"
+        android:title="@string/glass_target_dock"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurradius"
+            android:title="@string/glass_blur_title"
+            app:defaultValue="5"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockblurtint"
+            android:title="@string/glass_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassoutlinewidth"
+            android:title="@string/glass_outline_title"
+            app:defaultValue="1"
+            app:iconSpaceReserved="false"
+            app:maxVal="4"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassoutlineopacity"
+            android:title="@string/glass_outline_opacity_title"
+            app:defaultValue="15"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:key="xposed_dockglassoutlinecolor"
+            android:title="@string/glass_outline_color_title"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="false" />
+
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="folder"
+            android:dialogTitle="@string/glass_tint_color_title"
+            android:entries="@array/dock_blur_tint_color_str"
+            android:entryValues="@array/dock_blur_tint_color_value"
+            android:key="xposed_dockblurtintcolor"
+            android:title="@string/glass_tint_color_title"
+            app:iconSpaceReserved="false" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_advanced_dock"
+        android:title="@string/glass_advanced_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassrefraction"
+            android:title="@string/glass_refraction_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassdepth"
+            android:title="@string/glass_depth_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassdispersion"
+            android:title="@string/glass_dispersion_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="500"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassvibrancy"
+            android:title="@string/glass_vibrancy_title"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-100"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassrim"
+            android:title="@string/glass_rim_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="200"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_dockglassshadow"
+            android:title="@string/glass_shadow_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_section_searchbar"
+        android:title="@string/glass_target_search_bar"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarblurradius"
+            android:title="@string/glass_blur_title"
+            app:defaultValue="5"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarblurtint"
+            android:title="@string/glass_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassoutlinewidth"
+            android:title="@string/glass_outline_title"
+            app:defaultValue="1"
+            app:iconSpaceReserved="false"
+            app:maxVal="4"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassoutlineopacity"
+            android:title="@string/glass_outline_opacity_title"
+            app:defaultValue="15"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:key="xposed_searchbarglassoutlinecolor"
+            android:title="@string/glass_outline_color_title"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="false" />
+
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_advanced_searchbar"
+        android:title="@string/glass_advanced_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassrefraction"
+            android:title="@string/glass_refraction_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassdepth"
+            android:title="@string/glass_depth_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassdispersion"
+            android:title="@string/glass_dispersion_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="500"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassvibrancy"
+            android:title="@string/glass_vibrancy_title"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-100"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassrim"
+            android:title="@string/glass_rim_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="200"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_searchbarglassshadow"
+            android:title="@string/glass_shadow_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_section_widget"
+        android:title="@string/glass_target_widgets"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetblurradius"
+            android:title="@string/glass_blur_title"
+            app:defaultValue="5"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetblurtint"
+            android:title="@string/glass_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassoutlinewidth"
+            android:title="@string/glass_outline_title"
+            app:defaultValue="1"
+            app:iconSpaceReserved="false"
+            app:maxVal="4"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassoutlineopacity"
+            android:title="@string/glass_outline_opacity_title"
+            app:defaultValue="15"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:key="xposed_widgetglassoutlinecolor"
+            android:title="@string/glass_outline_color_title"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="false" />
+
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_advanced_widget"
+        android:title="@string/glass_advanced_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassrefraction"
+            android:title="@string/glass_refraction_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassdepth"
+            android:title="@string/glass_depth_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassdispersion"
+            android:title="@string/glass_dispersion_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="500"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassvibrancy"
+            android:title="@string/glass_vibrancy_title"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-100"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassrim"
+            android:title="@string/glass_rim_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="200"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_widgetglassshadow"
+            android:title="@string/glass_shadow_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_section_drawersearch"
+        android:title="@string/glass_target_drawer_search"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchblurradius"
+            android:title="@string/glass_blur_title"
+            app:defaultValue="5"
+            app:iconSpaceReserved="false"
+            app:maxVal="30"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchblurtint"
+            android:title="@string/glass_tint_title"
+            app:defaultValue="40"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassoutlinewidth"
+            android:title="@string/glass_outline_title"
+            app:defaultValue="1"
+            app:iconSpaceReserved="false"
+            app:maxVal="4"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="dp" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassoutlineopacity"
+            android:title="@string/glass_outline_opacity_title"
+            app:defaultValue="15"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ColorPreference
+            android:defaultValue="0xffffffff"
+            android:key="xposed_drawersearchglassoutlinecolor"
+            android:title="@string/glass_outline_color_title"
+            app:iconSpaceReserved="false"
+            app:showAlphaSlider="false" />
+
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+    <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
+        android:key="glass_editor_advanced_drawersearch"
+        android:title="@string/glass_advanced_title"
+        app:iconSpaceReserved="false">
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassrefraction"
+            android:title="@string/glass_refraction_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassdepth"
+            android:title="@string/glass_depth_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassdispersion"
+            android:title="@string/glass_dispersion_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="500"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassvibrancy"
+            android:title="@string/glass_vibrancy_title"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:maxVal="100"
+            app:minVal="-100"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassrim"
+            android:title="@string/glass_rim_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="200"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.SliderPreference
+            android:key="xposed_drawersearchglassshadow"
+            android:title="@string/glass_shadow_title"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:maxVal="300"
+            app:minVal="0"
+            app:showResetButton="true"
+            app:tickInterval="1"
+            app:valueFormat="%" />
+
+    </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
+
+</PreferenceScreen>

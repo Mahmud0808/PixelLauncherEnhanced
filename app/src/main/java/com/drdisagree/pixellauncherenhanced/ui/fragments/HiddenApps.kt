@@ -22,6 +22,7 @@ import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ACTION_APP_LIST_UPDATED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.NOTIFICATION_DOT_BLOCK_LIST
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.model.AppInfoModel
 import com.drdisagree.pixellauncherenhanced.databinding.FragmentHiddenAppsBinding
@@ -41,6 +42,7 @@ class HiddenApps : Fragment() {
     private lateinit var binding: FragmentHiddenAppsBinding
     private var appList: List<AppInfoModel>? = null
     private var adapter: AppListAdapter? = null
+    private val prefKey: String by lazy { arguments?.getString(ARG_PREF_KEY) ?: APP_BLOCK_LIST }
 
     private val packageUpdateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -76,7 +78,11 @@ class HiddenApps : Fragment() {
 
         setupToolbar(
             requireContext() as AppCompatActivity,
-            R.string.fragment_hidden_apps_title,
+            if (prefKey == NOTIFICATION_DOT_BLOCK_LIST) {
+                R.string.fragment_notification_dot_apps_title
+            } else {
+                R.string.fragment_hidden_apps_title
+            },
             true,
             binding.header.toolbar,
             binding.header.collapsingToolbar
@@ -116,8 +122,8 @@ class HiddenApps : Fragment() {
         binding.search.removeTextChangedListener(textWatcher)
 
         CoroutineScope(Dispatchers.IO).launch {
-            appList = getAllLaunchableApps()
-            adapter = AppListAdapter(appList!!)
+            appList = getAllLaunchableApps(RPrefs.getStringSet(prefKey, emptySet())!!)
+            adapter = newAdapter(appList!!)
             delay(300)
 
             withContext(Dispatchers.Main) {
@@ -182,8 +188,23 @@ class HiddenApps : Fragment() {
         filteredList.addAll(startsWithPackageNameList)
         filteredList.addAll(containsPackageNameList)
 
-        adapter = AppListAdapter(filteredList)
-        binding.recyclerView.adapter = adapter
+        val current = adapter
+        if (current != null && binding.recyclerView.adapter === current) {
+            current.submit(filteredList)
+        } else {
+            adapter = newAdapter(filteredList)
+            binding.recyclerView.adapter = adapter
+        }
+    }
+
+    private fun newAdapter(apps: List<AppInfoModel>): AppListAdapter {
+        if (prefKey == APP_BLOCK_LIST) return AppListAdapter(apps)
+
+        return AppListAdapter(apps) { app ->
+            val selected = RPrefs.getStringSet(prefKey, emptySet())!!.toMutableSet()
+            if (app.isSelected) selected.add(app.packageName) else selected.remove(app.packageName)
+            RPrefs.putStringSet(prefKey, selected)
+        }
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -228,8 +249,9 @@ class HiddenApps : Fragment() {
     }
 
     companion object {
-        private fun getAllLaunchableApps(): List<AppInfoModel> {
-            val appBlockList = RPrefs.getStringSet(APP_BLOCK_LIST, emptySet())!!
+        const val ARG_PREF_KEY = "pref_key"
+
+        fun getAllLaunchableApps(selectedPackages: Set<String>): List<AppInfoModel> {
             val appList: MutableList<AppInfoModel> = ArrayList()
             val packageManager = appContext.packageManager
             val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
@@ -246,7 +268,7 @@ class HiddenApps : Fragment() {
 
                 val appName = appInfo.loadLabel(packageManager).toString()
                 val appIcon = appInfo.loadIcon(packageManager)
-                val isSelected = appBlockList.contains(packageName)
+                val isSelected = selectedPackages.contains(packageName)
 
                 val app = AppInfoModel(appName, packageName, appIcon, isSelected)
 

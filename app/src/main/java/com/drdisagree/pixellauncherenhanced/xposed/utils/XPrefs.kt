@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import com.crossbowffs.remotepreferences.RemotePreferences
 import com.drdisagree.pixellauncherenhanced.BuildConfig
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEBUG_REPORT_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PREF_UPDATE_EXCLUSIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SHARED_PREFERENCES
 import com.drdisagree.pixellauncherenhanced.xposed.HookEntry
@@ -33,9 +34,15 @@ object XPrefs {
     }
 
     private fun loadEverything(vararg key: String?) {
-        if (key.isEmpty() ||
-            key[0].isNullOrEmpty() ||
-            PREF_UPDATE_EXCLUSIONS.any { exclusion -> key[0]?.equals(exclusion) == true }
+        if (key.firstOrNull() == DEBUG_REPORT_REQUEST) {
+            Xprefs.getString(DEBUG_REPORT_REQUEST, null)?.let { DebugRecorder.respond(it) }
+            return
+        }
+        val name = key.firstOrNull()
+        if (name.isNullOrEmpty() ||
+            PREF_UPDATE_EXCLUSIONS.any { exclusion -> name == exclusion } ||
+            name.startsWith(BootLoopProtector.LOAD_TIME_KEY_KEY) ||
+            name.startsWith(BootLoopProtector.PACKAGE_STRIKE_KEY_KEY)
         ) return
 
         HookEntry.runningMods.forEach { thisMod ->

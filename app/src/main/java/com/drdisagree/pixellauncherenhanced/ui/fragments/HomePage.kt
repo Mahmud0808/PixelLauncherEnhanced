@@ -3,10 +3,18 @@ package com.drdisagree.pixellauncherenhanced.ui.fragments
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import androidx.core.view.doOnPreDraw
 import com.drdisagree.pixellauncherenhanced.R
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.UPDATE_CACHE
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.UPDATE_SKIPPED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
+import com.drdisagree.pixellauncherenhanced.ui.activities.MainActivity
 import com.drdisagree.pixellauncherenhanced.ui.base.ControlledPreferenceFragmentCompat
+import com.drdisagree.pixellauncherenhanced.ui.preferences.DashboardHeroPreference
 import com.drdisagree.pixellauncherenhanced.ui.preferences.HookCheckPreference
+import com.drdisagree.pixellauncherenhanced.ui.preferences.UpdateBannerPreference
+import com.drdisagree.pixellauncherenhanced.utils.UpdateManager
 
 class HomePage : ControlledPreferenceFragmentCompat() {
 
@@ -50,6 +58,25 @@ class HomePage : ControlledPreferenceFragmentCompat() {
 
             initializeHookCheck()
         }
+
+        findPreference<UpdateBannerPreference>(UPDATE_BANNER)?.apply {
+            onOpen = { (activity as? MainActivity)?.openScreen(Updates::class.java) }
+            onSkip = { UpdateManager.pendingUpdate()?.let { UpdateManager.skip(requireContext(), it) } }
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        postponeEnterTransition()
+        view.doOnPreDraw { startPostponedEnterTransition() }
+    }
+
+    override fun updateScreen(key: String?) {
+        super.updateScreen(key)
+        findPreference<DashboardHeroPreference>(DASHBOARD_HERO)?.refresh()
+        val banner = findPreference<UpdateBannerPreference>(UPDATE_BANNER) ?: return
+        banner.isVisible = UpdateManager.pendingUpdate() != null
+        if (key == null || key == UPDATE_CACHE || key == UPDATE_SKIPPED) banner.refresh()
     }
 
     override fun onResume() {
@@ -57,5 +84,10 @@ class HomePage : ControlledPreferenceFragmentCompat() {
 
         HookCheckPreference.isHooked = false
         hookCheckPreference?.initializeHookCheck()
+    }
+
+    companion object {
+        private const val DASHBOARD_HERO = "dashboard_hero"
+        private const val UPDATE_BANNER = "update_banner"
     }
 }

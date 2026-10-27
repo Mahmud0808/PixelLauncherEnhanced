@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
 import android.view.View
 import android.view.ViewGroup
+import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.XposedHelpers.findClassIfExists
@@ -27,12 +28,14 @@ fun <T : Any> log(clazz: T, message: Any?) {
 }
 
 fun <T : Any> log(clazz: T, throwable: Throwable?) {
+    DebugRecorder.recordError(clazz.javaClass.simpleName.replace("\$Companion", ""), null, throwable)
     XposedBridge.log(
         "[PLEnhanced] ${clazz.javaClass.simpleName.replace("\$Companion", "")} => $throwable"
     )
 }
 
 fun <T : Any> log(clazz: T, exception: Exception?) {
+    DebugRecorder.recordError(clazz.javaClass.simpleName.replace("\$Companion", ""), null, exception)
     XposedBridge.log(
         "[PLEnhanced] ${clazz.javaClass.simpleName.replace("\$Companion", "")} => $exception"
     )
@@ -64,7 +67,7 @@ fun Class<*>?.dumpClass() {
     }
 
     XposedBridge.log("\n\nClass: $name")
-    XposedBridge.log("extends: ${superclass.name}")
+    XposedBridge.log("extends: ${superclass?.name}")
 
     XposedBridge.log("Subclasses:")
     val scs = classes
