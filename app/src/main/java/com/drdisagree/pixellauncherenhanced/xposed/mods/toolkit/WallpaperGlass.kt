@@ -439,13 +439,37 @@ object WallpaperGlass {
         val script = "rm -f $path; cp /data/system/users/$userId/wallpaper $path && chown $uid:$uid $path && " +
                 "chmod 600 $path && chcon \"\$(stat -c %C ${copy.parent})\" $path"
 
+        val info = "/data/system/users/$userId/wallpaper_info.xml"
+
         lastCopyPath = path
         enqueueProxyCommand { proxy ->
             lastCopyOutput = proxy.runCommand(
                 "sh -c '$script' 2>&1; [ -f $path ] || nsenter -t 1 -m -- sh -c '$script' 2>&1; ls -lZ $path 2>&1"
             ).joinToString(" / ")
-            decode(copy, context.applicationContext)
+            val crop = runCatching {
+                homeCrop(proxy.runCommand("abx2xml $info - 2>/dev/null || cat $info").joinToString(" "))
+            }.getOrNull()
+            decode(copy, context.applicationContext, crop)
         }
+    }
+
+    private fun homeCrop(info: String): RectF? {
+        fun value(name: String): Float? =
+            Regex("""\b$name="(-?[0-9.]+)"""").find(info)?.groupValues?.get(1)?.toFloatOrNull()
+
+        val left = value("cropLeftPortrait") ?: return null
+        val top = value("cropTopPortrait") ?: return null
+        val right = value("cropRightPortrait") ?: return null
+        val bottom = value("cropBottomPortrait") ?: return null
+        val originX = value("totalCropLeft") ?: 0f
+        val originY = value("totalCropTop") ?: 0f
+        val sample = value("sampleSize")?.takeIf { it > 0f } ?: 1f
+        return RectF(
+            (left - originX) / sample,
+            (top - originY) / sample,
+            (right - originX) / sample,
+            (bottom - originY) / sample
+        ).takeIf { it.width() > 0f && it.height() > 0f }
     }
 
     private fun builtInWallpaper(context: Context): Bitmap? {
@@ -462,10 +486,10 @@ object WallpaperGlass {
         }
     }
 
-    private fun decode(copy: File, context: Context) {
+    private fun decode(copy: File, context: Context, crop: RectF?) {
         executor.execute {
             val result = runCatching {
-                val bitmap = BitmapFactory.decodeFile(copy.absolutePath)
+                val bitmap = BitmapFactory.decodeFile(copy.absolutePath)?.cropTo(crop)
                     ?: builtInWallpaper(context)
                     ?: return@runCatching null
                 val aspect = bitmap.width.toFloat() / bitmap.height
@@ -488,6 +512,16 @@ object WallpaperGlass {
                 invalidateTracked()
             }
         }
+    }
+
+    private fun Bitmap.cropTo(crop: RectF?): Bitmap {
+        crop ?: return this
+        val left = crop.left.roundToInt().coerceIn(0, width - 1)
+        val top = crop.top.roundToInt().coerceIn(0, height - 1)
+        val right = crop.right.roundToInt().coerceIn(left + 1, width)
+        val bottom = crop.bottom.roundToInt().coerceIn(top + 1, height)
+        if (left == 0 && top == 0 && right == width && bottom == height) return this
+        return Bitmap.createBitmap(this, left, top, right - left, bottom - top)
     }
 
     private fun frostedBitmap(radius: Float, screenWidth: Int, screenHeight: Int): Bitmap? {

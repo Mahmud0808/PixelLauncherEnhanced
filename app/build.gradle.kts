@@ -17,8 +17,8 @@ android {
         applicationId = "com.drdisagree.pixellauncherenhanced"
         minSdk = 31
         targetSdk = 36
-        versionCode = 6
-        versionName = "2.0.0"
+        versionCode = 7
+        versionName = "2.0.1"
         base.archivesName = "PLEnhanced v${defaultConfig.versionName}"
     }
 
