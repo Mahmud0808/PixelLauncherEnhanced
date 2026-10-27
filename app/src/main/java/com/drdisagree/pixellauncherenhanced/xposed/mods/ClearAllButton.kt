@@ -276,24 +276,31 @@ class ClearAllButton(context: Context) : ModPack(context) {
             }
     }
 
+    private val View.buttonContainer: ViewGroup?
+        get() = (parent as? ViewGroup)?.takeIf { it.tag == CONTAINER_TAG }
+
     private fun updateVisibility() {
         val row = actionButtonsRef?.get() ?: return
-        actionClearAllButton?.visibility = if (clearAllButton) View.VISIBLE else View.GONE
+        val clearAllVisibility = if (clearAllButton) View.VISIBLE else View.GONE
+        actionClearAllButton?.visibility = clearAllVisibility
+        actionClearAllButton?.buttonContainer?.visibility = clearAllVisibility
 
         var childCount = if (clearAllButton) 3 else 2
         if (removeScreenshotButton) childCount--
         if (disableSelection) childCount--
         childCount = childCount.coerceAtLeast(2)
 
+        row.setHidden("action_screenshot", removeScreenshotButton)
+        row.setHidden("action_select", disableSelection)
+
         if (fixedButtonWidth) wrapButtons(row) else unwrapButtons(row)
 
         val maxWidth = mContext.resources.displayMetrics.widthPixels / childCount
         row.children.forEach { child ->
-            if (child is Button) child.maxWidth = maxWidth
+            val button = child as? Button
+                ?: (child as? ViewGroup)?.takeIf { it.tag == CONTAINER_TAG }?.getChildAt(0) as? Button
+            button?.maxWidth = maxWidth
         }
-
-        row.setHidden("action_screenshot", removeScreenshotButton)
-        row.setHidden("action_select", disableSelection)
     }
 
     private fun wrapButtons(row: ViewGroup) {
@@ -324,11 +331,26 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
                 (child.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart = 0
 
-                container.visibility = if (child.isVisible) View.VISIBLE else View.GONE
+                val forceHidden = child.getExtraFieldSilently(FORCE_HIDDEN) == true
+                if (forceHidden) {
+                    child.visibility = View.GONE
+                }
+                container.visibility = if (!forceHidden && child.isVisible) View.VISIBLE else View.GONE
                 container.setExtraField(
                     LAYOUT_LISTENER,
-                    child.addVisibilityListener { isVisible ->
-                        container.visibility = if (isVisible) View.VISIBLE else View.GONE
+                    child.addPreDrawListener {
+                        var changed = false
+                        val hidden = child.getExtraFieldSilently(FORCE_HIDDEN) == true
+                        if (hidden && child.visibility != View.GONE) {
+                            child.visibility = View.GONE
+                            changed = true
+                        }
+                        val desiredVisibility = if (!hidden && child.isVisible) View.VISIBLE else View.GONE
+                        if (container.visibility != desiredVisibility) {
+                            container.visibility = desiredVisibility
+                            changed = true
+                        }
+                        !changed
                     }
                 )
             } else if (child.tag != CONTAINER_TAG) {
@@ -336,7 +358,14 @@ class ClearAllButton(context: Context) : ModPack(context) {
                 child.visibility = View.GONE
                 child.setExtraField(
                     LAYOUT_LISTENER,
-                    child.addVisibilityListener { isVisible -> if (isVisible) child.visibility = View.GONE }
+                    child.addPreDrawListener {
+                        if (child.visibility != View.GONE) {
+                            child.visibility = View.GONE
+                            false
+                        } else {
+                            true
+                        }
+                    }
                 )
             }
         }
@@ -375,38 +404,50 @@ class ClearAllButton(context: Context) : ModPack(context) {
         val id = mContext.resources.getIdentifier(idName, "id", mContext.packageName)
         if (id == 0) return
         val view = findViewById<View>(id) ?: return
-        val listener = view.getExtraFieldSilently(HIDE_LISTENER)
+
+        view.setExtraField(FORCE_HIDDEN, hidden)
+        val existingListener = view.getExtraFieldSilently(HIDE_LISTENER) as? ViewTreeObserver.OnPreDrawListener
 
         if (hidden) {
-            if (listener == null) {
-                view.setExtraField(STOCK_VISIBILITY, view.visibility)
-                view.setExtraField(
-                    HIDE_LISTENER,
-                    view.addVisibilityListener { isVisible ->
-                        if (isVisible) {
-                            view.setExtraField(STOCK_VISIBILITY, View.VISIBLE)
-                            view.visibility = View.GONE
+            view.visibility = View.GONE
+            view.buttonContainer?.visibility = View.GONE
+            if (existingListener == null) {
+                val listener = ViewTreeObserver.OnPreDrawListener {
+                    var changed = false
+                    if (view.visibility != View.GONE) {
+                        view.visibility = View.GONE
+                        changed = true
+                    }
+                    view.buttonContainer?.let { container ->
+                        if (container.visibility != View.GONE) {
+                            container.visibility = View.GONE
+                            changed = true
                         }
                     }
-                )
+                    !changed
+                }
+                view.viewTreeObserver.addOnPreDrawListener(listener)
+                view.setExtraField(HIDE_LISTENER, listener)
             }
-            view.visibility = View.GONE
-        } else if (listener is ViewTreeObserver.OnGlobalLayoutListener) {
-            view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
-            view.setExtraField(HIDE_LISTENER, null)
-            view.visibility = view.getExtraFieldSilently(STOCK_VISIBILITY) as? Int ?: View.VISIBLE
+        } else {
+            existingListener?.let {
+                view.viewTreeObserver.removeOnPreDrawListener(it)
+                view.setExtraField(HIDE_LISTENER, null)
+            }
+            view.visibility = View.VISIBLE
+            view.buttonContainer?.visibility = View.VISIBLE
         }
     }
 
-    private fun View.addVisibilityListener(onVisibilityChanged: (Boolean) -> Unit): ViewTreeObserver.OnGlobalLayoutListener {
-        val listener = ViewTreeObserver.OnGlobalLayoutListener { onVisibilityChanged(isVisible) }
-        viewTreeObserver.addOnGlobalLayoutListener(listener)
+    private fun View.addPreDrawListener(onPreDraw: () -> Boolean): ViewTreeObserver.OnPreDrawListener {
+        val listener = ViewTreeObserver.OnPreDrawListener { onPreDraw() }
+        viewTreeObserver.addOnPreDrawListener(listener)
         return listener
     }
 
     private fun View.removeLayoutListener() {
-        (getExtraFieldSilently(LAYOUT_LISTENER) as? ViewTreeObserver.OnGlobalLayoutListener)?.let {
-            viewTreeObserver.removeOnGlobalLayoutListener(it)
+        (getExtraFieldSilently(LAYOUT_LISTENER) as? ViewTreeObserver.OnPreDrawListener)?.let {
+            viewTreeObserver.removeOnPreDrawListener(it)
         }
         setExtraField(LAYOUT_LISTENER, null)
     }
@@ -419,7 +460,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
         private const val ORIGINAL_MAX_LINES = "pleOriginalMaxLines"
         private const val ORIGINAL_ELLIPSIZE = "pleOriginalEllipsize"
         private const val ORIGINAL_VISIBILITY = "pleOriginalVisibility"
-        private const val STOCK_VISIBILITY = "pleStockVisibility"
+        private const val FORCE_HIDDEN = "pleForceHidden"
         private const val LAYOUT_LISTENER = "pleLayoutListener"
         private const val HIDE_LISTENER = "pleHideListener"
         private const val OVERVIEW_ACTIONS = 1 shl 3
