@@ -864,7 +864,8 @@ class BlurPanels(context: Context) : ModPack(context) {
         liquid: Boolean,
         shadows: MutableList<WidgetShadow>
     ) {
-        if (!targetBounds(target, rect)) return
+        val mask = target.shapeMask()
+        if (!targetBounds(target, rect, narrow = mask == null)) return
 
         val shape = target.panelShape()
         val ownRadius = shape?.cornerRadius?.takeIf { it > 0f }
@@ -873,7 +874,6 @@ class BlurPanels(context: Context) : ModPack(context) {
         val cornerRadii = shape?.perCornerRadii(rect)
             ?: if (ownRadius == null) frameRadii(rect, corner) else null
 
-        val mask = target.shapeMask()
         val layer = if (mask != null) canvas.saveLayer(rect, null) else -1
 
         val drawn = if (mask != null && liquid) {
@@ -1460,7 +1460,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         return best
     }
 
-    private fun ViewGroup.targetBounds(target: View, out: RectF): Boolean {
+    private fun ViewGroup.targetBounds(target: View, out: RectF, narrow: Boolean = true): Boolean {
         var left = 0f
         var top = 0f
         var current: View? = target
@@ -1472,7 +1472,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         if (current !== this) return false
 
         out.set(left, top, left + target.width, top + target.height)
-        target.narrowToImage(out)
+        if (narrow) target.narrowToImage(out)
         return !out.isEmpty
     }
 
