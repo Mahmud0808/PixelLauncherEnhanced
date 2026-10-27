@@ -1234,6 +1234,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     private fun ViewGroup.clearLargeBackgrounds(hostArea: Int, colors: MutableSet<Int>, sections: Set<View>) {
+        if (this is AdapterView<*>) return
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             val isLargeArea = child.width * child.height >= hostArea * LARGE_BACKGROUND_RATIO
@@ -1292,6 +1293,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     private fun ViewGroup.clearMatchingBackgrounds(colors: Set<Int>) {
+        if (this is AdapterView<*>) return
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             if (child is TextView || child is ViewGroup) {
