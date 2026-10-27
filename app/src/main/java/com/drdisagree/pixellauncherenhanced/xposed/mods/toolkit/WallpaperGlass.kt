@@ -45,7 +45,6 @@ import java.lang.reflect.Field
 import java.util.Collections
 import java.util.WeakHashMap
 import java.util.concurrent.Executors
-import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.hypot
 import kotlin.math.max
@@ -524,7 +523,22 @@ object WallpaperGlass {
             }
         }
         val target = GlassShader.sampleSigma(width, radius)
-        return blurCache.entries.minByOrNull { abs(GlassShader.sampleSigma(it.key.first, it.key.second) - target) }?.value ?: base
+        var softer: Bitmap? = null
+        var softerSigma = Float.MAX_VALUE
+        var softest: Bitmap? = null
+        var softestSigma = -1f
+        for ((key, bitmap) in blurCache) {
+            val sigma = GlassShader.sampleSigma(key.first, key.second)
+            if (sigma >= target && sigma < softerSigma) {
+                softer = bitmap
+                softerSigma = sigma
+            }
+            if (sigma > softestSigma) {
+                softest = bitmap
+                softestSigma = sigma
+            }
+        }
+        return softer ?: softest ?: base
     }
 
     fun draw(
