@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -39,25 +40,22 @@ class DrawerScrollFade(context: Context) : ModPack(context) {
         shader = LinearGradient(0f, 0f, 0f, 1f, Color.BLACK, Color.TRANSPARENT, Shader.TileMode.CLAMP)
     }
     private val saveUnclipped: Method? by lazy {
-        runCatching {
-            Canvas::class.java.getDeclaredMethod(
-                "saveUnclippedLayer",
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType
-            ).apply { isAccessible = true }
-        }.getOrNull()
+        canvasMethod(
+            "saveUnclippedLayer",
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType
+        )
     }
     private val restoreUnclipped: Method? by lazy {
-        runCatching {
-            Canvas::class.java.getDeclaredMethod(
-                "restoreUnclippedLayer",
-                Int::class.javaPrimitiveType,
-                Paint::class.java
-            ).apply { isAccessible = true }
-        }.getOrNull()
+        canvasMethod("restoreUnclippedLayer", Int::class.javaPrimitiveType, Paint::class.java)
     }
+
+    @SuppressLint("BlockedPrivateApi", "DiscouragedPrivateApi")
+    private fun canvasMethod(name: String, vararg parameterTypes: Class<*>?): Method? = runCatching {
+        Canvas::class.java.getDeclaredMethod(name, *parameterTypes).apply { isAccessible = true }
+    }.getOrNull()
 
     override fun updatePrefs(vararg key: String) {
         Xprefs.apply {
