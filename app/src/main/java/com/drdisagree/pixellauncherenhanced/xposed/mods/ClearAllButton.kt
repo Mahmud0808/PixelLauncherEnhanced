@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
@@ -276,6 +277,8 @@ class ClearAllButton(context: Context) : ModPack(context) {
             }
     }
 
+    private var lastSkippedFrame = 0L
+
     private val View.buttonContainer: ViewGroup?
         get() = (parent as? ViewGroup)?.takeIf { it.tag == CONTAINER_TAG }
 
@@ -350,7 +353,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
                             container.visibility = desiredVisibility
                             changed = true
                         }
-                        !changed
+                        !(changed && allowSkipFrame())
                     }
                 )
             } else if (child.tag != CONTAINER_TAG) {
@@ -361,7 +364,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
                     child.addPreDrawListener {
                         if (child.visibility != View.GONE) {
                             child.visibility = View.GONE
-                            false
+                            !allowSkipFrame()
                         } else {
                             true
                         }
@@ -409,12 +412,14 @@ class ClearAllButton(context: Context) : ModPack(context) {
         val existingListener = view.getExtraFieldSilently(HIDE_LISTENER) as? ViewTreeObserver.OnPreDrawListener
 
         if (hidden) {
+            if (existingListener == null) view.setExtraField(STOCK_VISIBILITY, view.visibility)
             view.visibility = View.GONE
             view.buttonContainer?.visibility = View.GONE
             if (existingListener == null) {
                 val listener = ViewTreeObserver.OnPreDrawListener {
                     var changed = false
                     if (view.visibility != View.GONE) {
+                        view.setExtraField(STOCK_VISIBILITY, view.visibility)
                         view.visibility = View.GONE
                         changed = true
                     }
@@ -424,19 +429,25 @@ class ClearAllButton(context: Context) : ModPack(context) {
                             changed = true
                         }
                     }
-                    !changed
+                    !(changed && allowSkipFrame())
                 }
                 view.viewTreeObserver.addOnPreDrawListener(listener)
                 view.setExtraField(HIDE_LISTENER, listener)
             }
-        } else {
-            existingListener?.let {
-                view.viewTreeObserver.removeOnPreDrawListener(it)
-                view.setExtraField(HIDE_LISTENER, null)
-            }
-            view.visibility = View.VISIBLE
-            view.buttonContainer?.visibility = View.VISIBLE
+        } else if (existingListener != null) {
+            view.viewTreeObserver.removeOnPreDrawListener(existingListener)
+            view.setExtraField(HIDE_LISTENER, null)
+            val stockVisibility = view.getExtraFieldSilently(STOCK_VISIBILITY) as? Int ?: View.VISIBLE
+            view.visibility = stockVisibility
+            view.buttonContainer?.visibility = stockVisibility
         }
+    }
+
+    private fun allowSkipFrame(): Boolean {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastSkippedFrame < SKIP_FRAME_COOLDOWN_MS) return false
+        lastSkippedFrame = now
+        return true
     }
 
     private fun View.addPreDrawListener(onPreDraw: () -> Boolean): ViewTreeObserver.OnPreDrawListener {
@@ -461,6 +472,8 @@ class ClearAllButton(context: Context) : ModPack(context) {
         private const val ORIGINAL_ELLIPSIZE = "pleOriginalEllipsize"
         private const val ORIGINAL_VISIBILITY = "pleOriginalVisibility"
         private const val FORCE_HIDDEN = "pleForceHidden"
+        private const val STOCK_VISIBILITY = "pleStockVisibility"
+        private const val SKIP_FRAME_COOLDOWN_MS = 200L
         private const val LAYOUT_LISTENER = "pleLayoutListener"
         private const val HIDE_LISTENER = "pleHideListener"
         private const val OVERVIEW_ACTIONS = 1 shl 3
