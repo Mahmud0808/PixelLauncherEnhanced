@@ -124,6 +124,10 @@ class BlurPanels(context: Context) : ModPack(context) {
     private val shadowRect = RectF()
     private val shadowRadii = FloatArray(8)
     private val shadowPath = Path()
+    private val panelFrame = RectF()
+    private val frameBounds = RectF()
+    private val sourceBounds = RectF()
+    private val imageRect = RectF()
     private var dockPanelOn = false
     private var wallpaperIsLight: Boolean? = null
     private var wallpaperListenerRegistered = false
@@ -803,6 +807,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             if ((getExtraFieldSilently(PANEL_TARGET) as? List<*>)?.isNotEmpty() == true) panel().waitForContent()
             return
         }
+        computePanelFrame(targets)
         targets.forEach { drawPanelTarget(canvas, it, blurRadius, blurTint, liquid, shadows) }
     }
 
@@ -861,11 +866,12 @@ class BlurPanels(context: Context) : ModPack(context) {
     ) {
         if (!targetBounds(target, rect)) return
 
-        val shape = target.background?.gradientShape()
+        val shape = target.panelShape()
         val ownRadius = shape?.cornerRadius?.takeIf { it > 0f }
         val cornerRadius = ownRadius ?: widgetCornerRadius()
         val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
-        val cornerRadii = shape?.perCornerRadii(rect) ?: if (ownRadius == null) frameRadii(rect) else null
+        val cornerRadii = shape?.perCornerRadii(rect)
+            ?: if (ownRadius == null) frameRadii(rect, corner) else null
 
         val mask = target.shapeMask()
         val layer = if (mask != null) canvas.saveLayer(rect, null) else -1
@@ -923,21 +929,23 @@ class BlurPanels(context: Context) : ModPack(context) {
         else -> null
     }
 
-    private fun ViewGroup.frameRadii(bounds: RectF): FloatArray? {
-        val frame = (getFieldSilently("enforcedRectangle") ?: getFieldSilently("mEnforcedRectangle")) as? Rect
-        if (frame == null || frame.isEmpty) return null
-        val enforced = (getFieldSilently("isCornerRadiusEnforced") ?: getFieldSilently("mIsCornerRadiusEnforced")) == true
-        val radius = ((getFieldSilently("enforcedCornerRadius") ?: getFieldSilently("mEnforcedCornerRadius")) as? Float)
-            ?.takeIf { enforced && it > 0f }
-            ?: widgetCornerRadius()
+    private fun View.panelShape(): GradientDrawable? =
+        (this as? ImageView)?.drawable?.gradientShape() ?: background?.gradientShape()
 
-        val left = bounds.left - frame.left <= FRAME_EDGE_SLACK
-        val top = bounds.top - frame.top <= FRAME_EDGE_SLACK
-        val right = frame.right - bounds.right <= FRAME_EDGE_SLACK
-        val bottom = frame.bottom - bounds.bottom <= FRAME_EDGE_SLACK
+    private fun ViewGroup.computePanelFrame(targets: List<View>) {
+        panelFrame.setEmpty()
+        targets.forEach { target -> if (targetBounds(target, frameBounds)) panelFrame.union(frameBounds) }
+    }
+
+    private fun frameRadii(bounds: RectF, corner: Float): FloatArray? {
+        if (panelFrame.isEmpty) return null
+
+        val left = bounds.left - panelFrame.left <= FRAME_EDGE_SLACK
+        val top = bounds.top - panelFrame.top <= FRAME_EDGE_SLACK
+        val right = panelFrame.right - bounds.right <= FRAME_EDGE_SLACK
+        val bottom = panelFrame.bottom - bounds.bottom <= FRAME_EDGE_SLACK
         if (left && top && right && bottom) return null
 
-        val corner = minOf(radius, minOf(bounds.width(), bounds.height()) / 2f)
         panelRadii.fill(if (left && top) corner else 0f, 0, 2)
         panelRadii.fill(if (top && right) corner else 0f, 2, 4)
         panelRadii.fill(if (right && bottom) corner else 0f, 4, 6)
@@ -952,6 +960,27 @@ class BlurPanels(context: Context) : ModPack(context) {
         return panelRadii
     }
 
+    private fun View.sourcePanel(out: RectF): Float? {
+        val host = getFieldSilently("mSourceView") as? ViewGroup ?: return null
+        if (host.width <= 0 || host.height <= 0) return null
+
+        val target = host.panelTargets().singleOrNull() ?: return null
+        if (!host.targetBounds(target, sourceBounds)) return null
+
+        val scaleX = width / host.width.toFloat()
+        val scaleY = height / host.height.toFloat()
+        val shape = target.panelShape()?.cornerRadius?.takeIf { it > 0f } ?: widgetCornerRadius()
+        val corner = minOf(shape, minOf(sourceBounds.width(), sourceBounds.height()) / 2f)
+
+        out.set(
+            sourceBounds.left * scaleX,
+            sourceBounds.top * scaleY,
+            sourceBounds.right * scaleX,
+            sourceBounds.bottom * scaleY
+        )
+        return minOf(corner * minOf(scaleX, scaleY), minOf(out.width(), out.height()) / 2f)
+    }
+
     private fun View.installFloatingWidgetPanel() {
         if (background is BlurPanelDrawable) return
         hosts.add(this)
@@ -961,7 +990,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             if (width <= 0 || height <= 0) return@BlurPanelDrawable
 
             rect.set(0f, 0f, width.toFloat(), height.toFloat())
-            val cornerRadius = (getFieldSilently("mOutlineRadius") as? Float)?.takeIf { it > 0f }
+            val cornerRadius = sourcePanel(rect)
+                ?: (getFieldSilently("mOutlineRadius") as? Float)?.takeIf { it > 0f }
                 ?: widgetCornerRadius()
             val corner = minOf(cornerRadius, minOf(rect.width(), rect.height()) / 2f)
 
@@ -1360,13 +1390,29 @@ class BlurPanels(context: Context) : ModPack(context) {
 
     private fun ViewGroup.findPanelTargets(): List<View> {
         val single = findPanelTarget()
-        val sections = sectionPanels()
+        val sections = withoutStacked(sectionPanels())
         if (sections.isEmpty() || single == null) return sections.ifEmpty { listOfNotNull(single) }
         if (single in sections) return sections
         return if (single.area() > sections.sumOf { it.area() }) listOf(single) else sections
     }
 
     private fun View.area(): Int = width * height
+
+    private fun ViewGroup.withoutStacked(sections: List<View>): List<View> {
+        if (sections.size < 2) return sections
+        val bounds = sections.map { target -> RectF().also { targetBounds(target, it) } }
+        return sections.filterIndexed { index, _ ->
+            bounds.indices.none { other ->
+                other != index && bounds[other].covers(bounds[index]) &&
+                        (other < index || !bounds[index].covers(bounds[other]))
+            }
+        }
+    }
+
+    private fun RectF.covers(other: RectF): Boolean {
+        return left - other.left <= FRAME_EDGE_SLACK && top - other.top <= FRAME_EDGE_SLACK &&
+                other.right - right <= FRAME_EDGE_SLACK && other.bottom - bottom <= FRAME_EDGE_SLACK
+    }
 
     private fun ViewGroup.sectionPanels(): List<View> {
         val hostArea = width * height
@@ -1426,7 +1472,18 @@ class BlurPanels(context: Context) : ModPack(context) {
         if (current !== this) return false
 
         out.set(left, top, left + target.width, top + target.height)
+        target.narrowToImage(out)
         return !out.isEmpty
+    }
+
+    private fun View.narrowToImage(out: RectF) {
+        val image = (this as? ImageView)?.drawable ?: return
+        if (image.intrinsicWidth <= 0 || image.intrinsicHeight <= 0) return
+
+        imageRect.set(image.bounds)
+        imageMatrix.mapRect(imageRect)
+        imageRect.offset(out.left + paddingLeft, out.top + paddingTop)
+        if (!imageRect.isEmpty) out.intersect(imageRect)
     }
 
     private fun Drawable.isPlainShape(): Boolean {
