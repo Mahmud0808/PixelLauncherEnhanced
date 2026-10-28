@@ -223,6 +223,7 @@ class UpdateCardPreference(context: Context, attrs: AttributeSet?) : Preference(
 
     private fun problemText(problem: UpdateManager.Problem): String = when (problem.reason) {
         UpdateManager.Reason.OFFLINE -> context.getString(R.string.update_problem_offline)
+        UpdateManager.Reason.BLOCKED -> context.getString(R.string.update_problem_blocked)
         UpdateManager.Reason.UNREACHABLE -> context.getString(R.string.update_problem_unreachable)
         UpdateManager.Reason.TIMEOUT -> context.getString(R.string.update_problem_timeout)
         UpdateManager.Reason.SECURE -> context.getString(R.string.update_problem_secure)

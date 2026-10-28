@@ -692,6 +692,7 @@
     <string name="update_status_signature_failed">Can\'t install this update</string>
     <string name="update_signature_failed_desc">It\'s signed differently from this build</string>
     <string name="update_problem_offline">No internet connection</string>
+    <string name="update_problem_blocked">Internet access is blocked for this app. Allow it in system or firewall settings</string>
     <string name="update_problem_unreachable">Can\'t reach GitHub</string>
     <string name="update_problem_timeout">GitHub took too long to respond</string>
     <string name="update_problem_secure">Secure connection to GitHub failed</string>
