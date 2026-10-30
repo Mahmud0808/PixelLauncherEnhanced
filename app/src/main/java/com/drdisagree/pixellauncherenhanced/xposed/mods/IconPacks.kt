@@ -24,6 +24,7 @@ import android.content.pm.LauncherActivityInfo
 import android.content.pm.ShortcutInfo
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.RectF
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -416,7 +417,8 @@ class IconPacks(context: Context) : ModPack(context) {
             .hookMethod("wrapToAdaptiveIcon")
             .suppressError()
             .runBefore { param ->
-                if (param.args.getOrNull(1) != null) return@runBefore
+                val options = param.args.getOrNull(1)
+                if (options != null && options !is RectF) return@runBefore
                 param.result = transparentAdaptiveIcon(param.args.getOrNull(0) as? Drawable) ?: return@runBefore
             }
 
