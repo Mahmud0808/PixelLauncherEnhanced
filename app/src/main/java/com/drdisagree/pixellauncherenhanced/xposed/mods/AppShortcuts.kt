@@ -365,6 +365,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
         if (!recentsViewClass.isInstance(recentsView)) return
 
         runCatching { recentsView.callMethod("dismissTaskView", taskView, true) }
+            .recoverCatching { recentsView.callMethod("dismissTaskView", taskView, true, true) }
             .recoverCatching { recentsView.callMethod("dismissTask", taskView, true, true) }
             .onFailure { log(this@AppShortcuts, it) }
     }
