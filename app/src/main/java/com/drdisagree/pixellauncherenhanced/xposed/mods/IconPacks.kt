@@ -99,6 +99,7 @@ class IconPacks(context: Context) : ModPack(context) {
     private var bgDataModelRef: WeakReference<Any>? = null
     private val skippedWrap = ThreadLocal<Any?>()
     private val fullDrawableBitmap = ThreadLocal<Bitmap?>()
+    private val badgingDepth = ThreadLocal<Int>()
 
     override fun updatePrefs(vararg key: String) {
         if (key.firstOrNull() == PINNED_SHORTCUTS_REQUEST) {
@@ -374,6 +375,8 @@ class IconPacks(context: Context) : ModPack(context) {
             .hookMethod("createBadgedIconBitmap")
             .suppressError()
             .runBefore { param ->
+                if (param.args.getOrNull(0).isPackIcon()) badgingDepth.set((badgingDepth.get() ?: 0) + 1)
+
                 val combined = param.args.getOrNull(0) as? ThemedPackIconDrawable
                 if (combined != null) {
                     val method = param.method as Method
@@ -396,7 +399,12 @@ class IconPacks(context: Context) : ModPack(context) {
                 fields.forEach { field -> options.setField(field, java.lang.Boolean.FALSE) }
                 skippedWrap.set(options to previous)
             }
-            .runAfter {
+            .runAfter { param ->
+                if (param.args.getOrNull(0).isPackIcon()) {
+                    val depth = (badgingDepth.get() ?: 1) - 1
+                    if (depth > 0) badgingDepth.set(depth) else badgingDepth.remove()
+                }
+
                 @Suppress("UNCHECKED_CAST")
                 (skippedWrap.get() as? Pair<Any, Map<String, Any?>>)?.let { (options, previous) ->
                     previous.forEach { (field, value) ->
@@ -908,7 +916,9 @@ class IconPacks(context: Context) : ModPack(context) {
 
         val background = ColorDrawable(Color.TRANSPARENT)
         val source = fullDrawableBitmap.get()?.let { BitmapDrawable(mContext.resources, it) } ?: regular
-        val foreground = InsetDrawable(source, AdaptiveIconDrawable.getExtraInsetFraction())
+        val extraInset = AdaptiveIconDrawable.getExtraInsetFraction()
+        val inset = if ((badgingDepth.get() ?: 0) > 0) extraInset / (1 + 2 * extraInset) else extraInset
+        val foreground = InsetDrawable(source, inset)
         val monochrome = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ((drawable as? ThemedPackIconDrawable)?.themed as? AdaptiveIconDrawable)?.monochrome
         } else {
@@ -921,6 +931,8 @@ class IconPacks(context: Context) : ModPack(context) {
             PackAdaptiveIconDrawable(background, foreground)
         }.apply { setBounds(0, 0, 1, 1) }
     }
+
+    private fun Any?.isPackIcon(): Boolean = this is PackIconDrawable || this is ThemedPackIconDrawable
 
     private fun AdaptiveIconDrawable.isPackAdaptiveIcon(): Boolean {
         return (background as? ColorDrawable)?.color == Color.TRANSPARENT && foreground is InsetDrawable

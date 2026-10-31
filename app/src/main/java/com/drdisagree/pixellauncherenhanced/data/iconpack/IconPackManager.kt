@@ -74,7 +74,7 @@ object IconPackManager {
     private const val THEMED_ICON_INSET = 0.28f
     private const val SHORTCUT_PREFIX = "shortcut:"
     private const val LEGACY_SHORTCUT_PREFIX = "legacy:"
-    private const val SIGNATURE_VERSION = 9
+    private const val SIGNATURE_VERSION = 10
     private const val CUSTOM_ICON_KEY_PREFIX = "xposed_customicon_"
 
     const val OVERRIDE_ORIGINAL = "original"
