@@ -24,6 +24,10 @@ import android.content.pm.LauncherActivityInfo
 import android.content.pm.ShortcutInfo
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.RectF
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -100,6 +104,9 @@ class IconPacks(context: Context) : ModPack(context) {
     private val skippedWrap = ThreadLocal<Any?>()
     private val fullDrawableBitmap = ThreadLocal<Bitmap?>()
     private val badgingDepth = ThreadLocal<Int>()
+    private val badgingFactory = ThreadLocal<Any?>()
+    private val badgingFill = ThreadLocal<Float>()
+    private val shadowMatrix = Matrix()
 
     override fun updatePrefs(vararg key: String) {
         if (key.firstOrNull() == PINNED_SHORTCUTS_REQUEST) {
@@ -375,7 +382,11 @@ class IconPacks(context: Context) : ModPack(context) {
             .hookMethod("createBadgedIconBitmap")
             .suppressError()
             .runBefore { param ->
-                if (param.args.getOrNull(0).isPackIcon()) badgingDepth.set((badgingDepth.get() ?: 0) + 1)
+                if (param.args.getOrNull(0).isPackIcon()) {
+                    badgingDepth.set((badgingDepth.get() ?: 0) + 1)
+                    badgingFactory.set(param.thisObject)
+                    badgingFill.remove()
+                }
 
                 val combined = param.args.getOrNull(0) as? ThemedPackIconDrawable
                 if (combined != null) {
@@ -402,7 +413,13 @@ class IconPacks(context: Context) : ModPack(context) {
             .runAfter { param ->
                 if (param.args.getOrNull(0).isPackIcon()) {
                     val depth = (badgingDepth.get() ?: 1) - 1
-                    if (depth > 0) badgingDepth.set(depth) else badgingDepth.remove()
+                    if (depth > 0) {
+                        badgingDepth.set(depth)
+                    } else {
+                        badgingDepth.remove()
+                        badgingFactory.remove()
+                        badgingFill.remove()
+                    }
                 }
 
                 @Suppress("UNCHECKED_CAST")
@@ -412,6 +429,17 @@ class IconPacks(context: Context) : ModPack(context) {
                     }
                 }
                 skippedWrap.remove()
+            }
+
+        findClass("com.android.launcher3.icons.ShadowGenerator", suppressError = true)
+            .hookMethod("addPathShadow")
+            .suppressError()
+            .runBefore { param ->
+                val fill = badgingFill.get()?.takeIf { it != 1f } ?: return@runBefore
+                val path = param.args.getOrNull(0) as? Path ?: return@runBefore
+                val bounds = RectF().also { path.computeBounds(it, true) }
+                shadowMatrix.setScale(fill, fill, bounds.centerX(), bounds.centerY())
+                param.args[0] = Path(path).apply { transform(shadowMatrix) }
             }
 
         findClass("com.android.launcher3.icons.BaseIconFactory", suppressError = true)
@@ -917,7 +945,14 @@ class IconPacks(context: Context) : ModPack(context) {
         val background = ColorDrawable(Color.TRANSPARENT)
         val source = fullDrawableBitmap.get()?.let { BitmapDrawable(mContext.resources, it) } ?: regular
         val extraInset = AdaptiveIconDrawable.getExtraInsetFraction()
-        val inset = if ((badgingDepth.get() ?: 0) > 0) extraInset / (1 + 2 * extraInset) else extraInset
+        val factory = badgingFactory.get()
+        val inset = if (factory != null) {
+            val fill = packFill(factory, source)
+            badgingFill.set(fill)
+            (1f - fill / (1f + 2 * extraInset)) / 2f
+        } else {
+            extraInset
+        }
         val foreground = InsetDrawable(source, inset)
         val monochrome = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ((drawable as? ThemedPackIconDrawable)?.themed as? AdaptiveIconDrawable)?.monochrome
@@ -930,6 +965,17 @@ class IconPacks(context: Context) : ModPack(context) {
         } else {
             PackAdaptiveIconDrawable(background, foreground)
         }.apply { setBounds(0, 0, 1, 1) }
+    }
+
+    private fun packFill(factory: Any, icon: Drawable): Float {
+        val normalizer = factory.callMethodSilently("getNormalizer") ?: return 1f
+        val shape = PackAdaptiveIconDrawable(ColorDrawable(Color.TRANSPARENT), ColorDrawable(Color.TRANSPARENT))
+        val bounds = Rect(icon.bounds)
+        val adaptive = normalizer.callMethodSilently("getScale", shape, null, null, null) as? Float
+        val legacy = normalizer.callMethodSilently("getScale", icon, null, null, null) as? Float
+        icon.bounds = bounds
+        if (adaptive == null || legacy == null || adaptive <= 0f || legacy <= 0f) return 1f
+        return (legacy / adaptive).coerceIn(MIN_PACK_FILL, MAX_PACK_FILL)
     }
 
     private fun Any?.isPackIcon(): Boolean = this is PackIconDrawable || this is ThemedPackIconDrawable
@@ -991,6 +1037,8 @@ class IconPacks(context: Context) : ModPack(context) {
 
     companion object {
         private const val ICON_CACHE_DB = "app_icons.db"
+        private const val MIN_PACK_FILL = 0.5f
+        private const val MAX_PACK_FILL = 1.25f
         private const val SCROLL_RESTORE_WINDOW_MS = 4_000L
         private const val FOLDER_REFRESH_DELAY_MS = 1_500L
         private const val SHORTCUT_PREVIEW_DP = 60
