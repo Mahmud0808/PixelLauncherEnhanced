@@ -74,7 +74,7 @@ object IconPackManager {
     private const val THEMED_ICON_INSET = 0.28f
     private const val SHORTCUT_PREFIX = "shortcut:"
     private const val LEGACY_SHORTCUT_PREFIX = "legacy:"
-    private const val SIGNATURE_VERSION = 8
+    private const val SIGNATURE_VERSION = 9
     private const val CUSTOM_ICON_KEY_PREFIX = "xposed_customicon_"
 
     const val OVERRIDE_ORIGINAL = "original"
@@ -207,20 +207,31 @@ object IconPackManager {
     fun withMonochrome(icon: Drawable, monochrome: Drawable): Drawable {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return icon
 
-        val base = icon as? AdaptiveIconDrawable ?: AdaptiveIconDrawable(
+        val base = icon as? AdaptiveIconDrawable ?: PackAdaptiveIconDrawable(
             ColorDrawable(Color.TRANSPARENT),
             InsetDrawable(icon, AdaptiveIconDrawable.getExtraInsetFraction() / (1 + 2 * AdaptiveIconDrawable.getExtraInsetFraction()))
         )
 
-        return AdaptiveIconDrawable(base.background, base.foreground, monochrome)
+        return if (base.isTransparent()) {
+            PackAdaptiveIconDrawable(base.background, base.foreground, monochrome)
+        } else {
+            AdaptiveIconDrawable(base.background, base.foreground, monochrome)
+        }
     }
 
     fun withoutMonochrome(icon: Drawable): Drawable {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return icon
         val adaptive = icon as? AdaptiveIconDrawable ?: return icon
         if (adaptive.monochrome == null) return icon
-        return AdaptiveIconDrawable(adaptive.background, adaptive.foreground)
+        return if (adaptive.isTransparent()) {
+            PackAdaptiveIconDrawable(adaptive.background, adaptive.foreground)
+        } else {
+            AdaptiveIconDrawable(adaptive.background, adaptive.foreground)
+        }
     }
+
+    private fun AdaptiveIconDrawable.isTransparent(): Boolean =
+        this is PackAdaptiveIconDrawable || (background as? ColorDrawable)?.color == Color.TRANSPARENT
 
     private fun packDrawable(value: String): Pair<String, String>? {
         if (!value.startsWith(OVERRIDE_PACK_PREFIX)) return null
@@ -259,7 +270,7 @@ object IconPackManager {
         val extraInset = AdaptiveIconDrawable.getExtraInsetFraction()
         val inset = extraInset / (1 + 2 * extraInset)
 
-        return AdaptiveIconDrawable(
+        return PackAdaptiveIconDrawable(
             ColorDrawable(Color.TRANSPARENT),
             InsetDrawable(BitmapDrawable(context.resources, bitmap), inset)
         )

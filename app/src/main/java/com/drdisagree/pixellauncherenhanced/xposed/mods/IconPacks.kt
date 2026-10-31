@@ -24,7 +24,6 @@ import android.content.pm.LauncherActivityInfo
 import android.content.pm.ShortcutInfo
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.RectF
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -49,6 +48,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
+import com.drdisagree.pixellauncherenhanced.data.iconpack.PackAdaptiveIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.ThemedPackIconDrawable
 import com.drdisagree.pixellauncherenhanced.xposed.ModPack
@@ -417,8 +417,7 @@ class IconPacks(context: Context) : ModPack(context) {
             .hookMethod("wrapToAdaptiveIcon")
             .suppressError()
             .runBefore { param ->
-                val options = param.args.getOrNull(1)
-                if (options != null && options !is RectF) return@runBefore
+                if (param.args.getOrNull(1) != null) return@runBefore
                 param.result = transparentAdaptiveIcon(param.args.getOrNull(0) as? Drawable) ?: return@runBefore
             }
 
@@ -446,7 +445,7 @@ class IconPacks(context: Context) : ModPack(context) {
                 if (!icon.isPackAdaptiveIcon()) return@runBefore
                 if (param.thisObject.getFieldSilently("mIsOpening") != false) return@runBefore
 
-                param.args[0] = AdaptiveIconDrawable(
+                param.args[0] = PackAdaptiveIconDrawable(
                     ColorDrawable(Color.TRANSPARENT),
                     ColorDrawable(Color.TRANSPARENT)
                 ).apply { setBounds(0, 0, 1, 1) }
@@ -917,9 +916,9 @@ class IconPacks(context: Context) : ModPack(context) {
         }
 
         return if (monochrome != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            AdaptiveIconDrawable(background, foreground, monochrome)
+            PackAdaptiveIconDrawable(background, foreground, monochrome)
         } else {
-            AdaptiveIconDrawable(background, foreground)
+            PackAdaptiveIconDrawable(background, foreground)
         }.apply { setBounds(0, 0, 1, 1) }
     }
 
