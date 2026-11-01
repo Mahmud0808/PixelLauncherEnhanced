@@ -141,6 +141,7 @@ object Constants {
     const val ICON_PACKS = "xposed_iconpacks"
     const val THEMED_ICON_PACKS = "xposed_themediconpacks"
     const val ICON_PACK_MASK = "xposed_iconpackmask"
+    const val ICON_REFRESH_ON_THEME = "xposed_iconrefreshontheme"
     const val ICON_OVERRIDES = "xposed_iconoverrides"
     const val ICON_OVERRIDES_HOME = "xposed_iconoverrideshome"
     const val ICON_THEMED_OVERRIDES = "xposed_iconthemedoverrides"

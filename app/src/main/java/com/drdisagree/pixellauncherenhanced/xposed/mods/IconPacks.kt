@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.LauncherApps
+import android.content.res.Configuration
+import android.app.Activity
 import android.os.Process
 import android.os.Handler
 import android.os.Looper
@@ -47,6 +49,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS_ENA
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLIED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_MASK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_REFRESH_ON_THEME
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
@@ -84,6 +87,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
     private var config = IconPackManager.Config()
     private var pendingApply = 0L
+    private var refreshOnTheme = false
     private var themedMode = false
     private var signature = ""
     private val customIcons = ConcurrentHashMap<String, Bitmap>()
@@ -120,6 +124,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
         Xprefs.apply {
             pendingApply = getLong(ICON_PACK_APPLY, 0L).takeIf { it != getLong(ICON_PACK_APPLIED, 0L) } ?: 0L
+            refreshOnTheme = getBoolean(ICON_REFRESH_ON_THEME, false)
             themedMode = getBoolean(HOME_THEMED_ICONS, false)
             val labels = IconPackManager.parseOverrides(getString(LABEL_OVERRIDES, null))
 
@@ -227,6 +232,11 @@ class IconPacks(context: Context) : ModPack(context) {
         DebugRecorder.registerCapture("modelCallbacksRef") { launcherModelRef?.get() == null }
 
         registerPackReceiver()
+
+        findClass("com.android.launcher3.Launcher")
+            .hookMethod("onCreate", "onConfigurationChanged")
+            .suppressError()
+            .runAfter { param -> (param.thisObject as? Activity)?.let { checkThemeChange(it) } }
 
         findClass("com.android.launcher3.LauncherModel", suppressError = true)
             .hookMethod("enqueueModelUpdateTask")
@@ -701,6 +711,26 @@ class IconPacks(context: Context) : ModPack(context) {
         return (config.iconPacks + config.themedIconPacks + overridePacks).toSet()
     }
 
+    private fun checkThemeChange(activity: Activity) {
+        val key = themeKey(activity)
+        val prefs = mContext.getSharedPreferences(THEME_PREFS, Context.MODE_PRIVATE)
+        val previous = prefs.getString(THEME_KEY, null)
+        if (previous == key) return
+
+        prefs.edit().putString(THEME_KEY, key).commit()
+        if (previous == null || !refreshOnTheme) return
+        mainHandler.post {
+            IconPackManager.clearCache()
+            refreshAllApps()
+        }
+    }
+
+    private fun themeKey(context: Context): String {
+        val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        val colors = THEME_COLORS.joinToString(",") { runCatching { context.getColor(it) }.getOrDefault(0).toString() }
+        return "$night|$colors"
+    }
+
     private fun applyIcons() {
         IconPackManager.clearCache()
         runCatching { mContext.deleteDatabase(ICON_CACHE_DB) }
@@ -1037,6 +1067,15 @@ class IconPacks(context: Context) : ModPack(context) {
 
     companion object {
         private const val ICON_CACHE_DB = "app_icons.db"
+        private const val THEME_PREFS = "ple_icon_theme"
+        private const val THEME_KEY = "theme"
+        private val THEME_COLORS = intArrayOf(
+            android.R.color.system_accent1_500,
+            android.R.color.system_accent2_500,
+            android.R.color.system_accent3_500,
+            android.R.color.system_neutral1_500,
+            android.R.color.system_neutral2_500
+        )
         private const val MIN_PACK_FILL = 0.5f
         private const val MAX_PACK_FILL = 1.25f
         private const val SCROLL_RESTORE_WINDOW_MS = 4_000L
