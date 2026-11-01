@@ -10,7 +10,7 @@
     <string name="btn_pick_image">Wybierz obraz</string>
     <string name="understood">Zrozumiałem/am</string>
     <string name="settings_title">Ustawienia</string>
-    <string name="search_hint">Wyszukaj…</string>
+    <string name="search_hint">Wyszukaj&#x2026;</string>
     <string name="root_connection_failed_title">Nie udało się połączyć z rootem</string>
     <string name="root_connection_failed_desc">Nie można się połączyć z usługą roota. Proszę, przyznaj dostęp do roota i spróbuj ponownie.</string>
     <string name="lsposed_warn">Włącz ten moduł z menedżera Vector oraz wymuś zamknięcie launchera.</string>
@@ -57,11 +57,13 @@
     <string name="section_home_layout_backup_title">Układ ekranu głównego</string>
     <string name="section_drawer_layout_backup_title">Układ szuflady aplikacji</string>
     <string name="section_module_settings_backup_title">Ustawienia</string>
+    <string name="section_full_backup_title">Wszystko</string>
     <string name="backup_action">Utwórz kopię</string>
     <string name="restore_action">Przywróć kopię</string>
     <string name="backup_card_home_desc">Ikony, foldery, widżety i dolny panel</string>
     <string name="backup_card_drawer_desc">Karty i ukryte aplikacje</string>
     <string name="backup_card_settings_desc">Każda opcja w tej aplikacji</string>
+    <string name="backup_card_full_desc">Opcje tej aplikacji, a także układy ekranu głównego i szuflady aplikacji</string>
     <string name="dashboard_search_hint">Przeszukaj ustawienia</string>
     <string name="dashboard_home_screen_desc">Siatka, strony, przejścia i wiele więcej</string>
     <string name="dashboard_app_drawer_desc">Karty, układ i ukryte aplikacje</string>
@@ -106,7 +108,7 @@
     <string name="shortcut_count">%1$d skrótów</string>
     <string name="shortcut_count_one">1 skrót</string>
     <string name="shortcuts_unavailable">Nie udało się wczytać skrótów. Upewnij się, że launcher działa z modułem.</string>
-    <string name="shortcut_target_label">%1$s › %2$s</string>
+    <string name="shortcut_target_label">%1$s &#x203A; %2$s</string>
     <string name="gesture_choose_app">Wybierz aplikację</string>
     <string name="gesture_opens_app">Otwiera %1$s</string>
     <string name="allow_wallpaper_zooming">Powiększanie tapety</string>
@@ -150,7 +152,7 @@
     <string name="recents_background_opacity_title">Krycie tła ostatnich aplikacji</string>
     <string name="restart_launcher_title">Zrestartuj</string>
     <string name="restart_launcher_desc">Zrestartuj launcher, aby zastosować ustawienia</string>
-    <string name="restarting_launcher">Restartowanie launchera…</string>
+    <string name="restarting_launcher">Restartowanie launchera&#x2026;</string>
     <string name="section_layout_backup_title">Kopia układu</string>
     <string name="section_settings_backup_title">Kopia ustawień</string>
     <string name="backup_home_layout_title">Kopia układu ekranu głównego</string>
@@ -170,6 +172,14 @@
     <string name="backup_wrong_type_settings">To jest kopia ustawień. Zamiast tego użyj opcji przywracania ustawień.</string>
     <string name="backup_wrong_type_home_layout">To jest kopia układu ekranu głównego. Zamiast tego użyj opcji przywracania układu ekranu głównego.</string>
     <string name="backup_wrong_type_drawer_layout">To jest kopia układu szuflady aplikacji. Zamiast tego użyj opcji przywracania układu szuflady aplikacji.</string>
+    <string name="backup_wrong_type_full">To jest pełna kopia. Zamiast tego użyj opcji Przywróć wszystko</string>
+    <string name="backup_full_title">Wykonaj kopię wszystkiego</string>
+    <string name="restore_full_title">Przywróć wszystko</string>
+    <string name="restore_full_confirm_desc">Ustawienia tej aplikacji, ekran główny i układy szuflady aplikacji zostaną zastąpione, a launcher zostanie zrestartowany.\nJeśli kopia zawiera ukryte aplikacje, lista ukrytych aplikacji również zostanie zastąpiona.</string>
+    <string name="full_backup_success">Wszystko zapisane</string>
+    <string name="full_restore_success">Wszystko przywrócone</string>
+    <string name="full_restore_home_skipped">Settings and app drawer restored. Home screen skipped: %1$s</string>
+    <string name="full_invalid_file">Nie jest to prawidłowa pełna kopia</string>
     <string name="backup_settings_title">Kopia ustawień</string>
     <string name="backup_settings_desc">Zapisz ustawienia tej aplikacji w pliku. Nie obejmuje układu ekranu głównego ani szuflady aplikacji</string>
     <string name="restore_settings_title">Przywróć ustawienia</string>
@@ -292,8 +302,7 @@
     <string name="fragment_drawer_tabs_title">Karty szuflady aplikacji</string>
     <string name="fragment_icon_shape_title">Kształt ikon</string>
     <string name="icon_shape_title">Kształt ikon</string>
-    <string name="icon_shape_desc">Zaokrąglony kwadrat, kwadrat o zaokrąglonych rogach
-lub narysuj własny kształt</string>
+    <string name="icon_shape_desc">Zaokrąglony kwadrat, kwadrat o zaokrąglonych rogach lub narysuj własny kształt</string>
     <string name="icon_shape_mode_default">Systemowy</string>
     <string name="icon_shape_mode_rounded">Zaokrąglony</string>
     <string name="icon_shape_mode_squircle">Obły</string>
@@ -421,6 +430,8 @@ lub narysuj własny kształt</string>
     <string name="color_variant_summary">Jasny: %1$s\nCiemny: %2$s</string>
     <string name="prevent_wallpaper_dimming_restart_title">Zapobiegaj przyciemnianiu tapety wywołanym ponownym uruchomieniem</string>
     <string name="prevent_wallpaper_dimming_restart_summary">Może być konieczny ręczny restart launchera w celu pobrania aktualizacji kolorów tapety na żywo</string>
+    <string name="glass_performance_mode_title">Priorytetyzacja wydajności</string>
+    <string name="glass_performance_mode_summary">Płynniejsze animacje. Szkło aktualizuje się po zatrzymaniu ruchu, a nie w jego trakcie.</string>
     <string name="hide_apps">Ukryj aplikacje</string>
     <string name="unhide_apps">Pokaż ukryte aplikacje</string>
     <string name="developer">Programista</string>
@@ -669,6 +680,8 @@ lub narysuj własny kształt</string>
     <string name="update_status_signature_failed">Nie można zainstalować tej aktualizacji</string>
     <string name="update_signature_failed_desc">Jest podpisany inaczej niż w tej wersji</string>
     <string name="update_problem_offline">Brak połączenia z internetem</string>
+    <string name="update_problem_blocked">Aplikacja ma zablokowany dostęp do internetu. 
+Zezwól na dostęp do sieci w ustawieniach systemu lub zapory</string>
     <string name="update_problem_unreachable">Nie można połączyć się z GitHub</string>
     <string name="update_problem_timeout">GitHub zbyt długo odpowiadał</string>
     <string name="update_problem_secure">Nawiązanie bezpiecznego połączenia z GitHub nieudane</string>
@@ -685,7 +698,7 @@ lub narysuj własny kształt</string>
     <string name="update_last_checked">Ostatnio sprawdzono %s</string>
     <string name="update_never_checked">Jeszcze niesprawdzone</string>
     <string name="update_progress">%1$s z %2$s</string>
-    <string name="update_connecting">Łączenie…</string>
+    <string name="update_connecting">Łączenie&#x2026;</string>
     <string name="update_action_check">Sprawdź aktualizacje</string>
     <string name="update_action_download">Pobierz</string>
     <string name="update_action_install">Zainstaluj</string>
@@ -695,7 +708,7 @@ lub narysuj własny kształt</string>
     <string name="update_action_skip">Pomiń tę wersję</string>
     <string name="update_action_build">Zobacz kompilację</string>
     <string name="update_whats_new">Zmiany</string>
-    <string name="update_settings">Preferencje</string>
+    <string name="update_settings">Ustawienia</string>
     <string name="update_more">Więcej</string>
     <string name="update_auto_check_title">Sprawdź automatycznie</string>
     <string name="update_auto_check_summary">Sprawdzaj dostępność nowych wersji przy uruchamianiu aplikacji</string>
