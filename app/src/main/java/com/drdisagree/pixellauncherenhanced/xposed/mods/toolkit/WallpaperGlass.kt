@@ -259,6 +259,7 @@ object WallpaperGlass {
 
     var offsetX = 0.5f
     var zoom = 0f
+    var zoomEnabled = true
 
     private var depthBlur = 0f
     private var homeBitmap: Bitmap? = null
@@ -281,7 +282,7 @@ object WallpaperGlass {
         val drawnHeight = bitmapHeight * scale
         val left = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
         val top = -(drawnHeight - screenHeight) / 2f
-        val zoomScale = maxZoomScale + (1f - maxZoomScale) * zoom.coerceIn(0f, 1f)
+        val zoomScale = if (zoomEnabled) maxZoomScale + (1f - maxZoomScale) * zoom.coerceIn(0f, 1f) else 1f
         val centerX = screenWidth / 2f
         val centerY = screenHeight / 2f
         out.set(

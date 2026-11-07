@@ -24,8 +24,8 @@ class WallpaperZoom(context: Context) : ModPack(context) {
             mWallpaperZooming = getBoolean(ALLOW_WALLPAPER_ZOOMING, true)
         }
 
-        if (!mWallpaperZooming) {
-            WallpaperGlass.zoom = 1f
+        if (WallpaperGlass.zoomEnabled != mWallpaperZooming) {
+            WallpaperGlass.zoomEnabled = mWallpaperZooming
             WallpaperGlass.onOffsetsChanged()
         }
     }
