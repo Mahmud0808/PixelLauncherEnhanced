@@ -262,6 +262,8 @@
     <string name="section_icon_packs_title">Icon packs</string>
     <string name="icon_packs_title">Icon packs</string>
     <string name="icon_packs_desc">Use third-party icon packs and pick icons for single apps</string>
+    <string name="icon_refresh_on_theme_title">Refresh icons on theme change</string>
+    <string name="icon_refresh_on_theme_desc">Reload icons when dark mode or wallpaper colors change</string>
     <string name="fragment_icon_packs_title">Icon packs</string>
     <string name="icon_packs_section_desc">The first enabled pack with an icon for an app is used. Drag to reorder</string>
     <string name="themed_icon_packs_title">Themed icon packs</string>

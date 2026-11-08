@@ -262,6 +262,8 @@
     <string name="section_icon_packs_title">Paket ikon</string>
     <string name="icon_packs_title">Paket ikon</string>
     <string name="icon_packs_desc">Gunakan paket ikon pihak ketiga dan pilih ikon untuk masing-masing aplikasi</string>
+    <string name="icon_refresh_on_theme_title">Refresh icons on theme change</string>
+    <string name="icon_refresh_on_theme_desc">Reload icons when dark mode or wallpaper colors change</string>
     <string name="fragment_icon_packs_title">Paket ikon</string>
     <string name="icon_packs_section_desc">Paket aktif pertama yang memiliki ikon untuk suatu aplikasi akan digunakan. Seret untuk mengatur urutan</string>
     <string name="themed_icon_packs_title">Paket ikon bertema</string>
