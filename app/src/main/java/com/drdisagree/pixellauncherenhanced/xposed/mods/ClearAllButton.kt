@@ -20,24 +20,24 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.FIXED_RECENTS_
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_CLEAR_ALL_BUTTON
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_DISABLE_SELECTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_REMOVE_SCREENSHOT_BUTTON
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime.modRes
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.MethodHookHelper
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getAnyFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers.findMethodBestMatch
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
@@ -70,7 +70,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
 
     @Suppress("DEPRECATION")
     @SuppressLint("DiscouragedApi", "UseCompatLoadingForDrawables")
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val recentsViewClass = findClass("com.android.quickstep.views.RecentsView")
         val overviewModalTaskStateClass =
             findClass("com.android.launcher3.uioverrides.states.OverviewModalTaskState")
@@ -82,7 +82,7 @@ class ClearAllButton(context: Context) : ModPack(context) {
         val recentsStateClass = findClass("com.android.quickstep.fallback.RecentsState")
         val overviewActionsViewClass = findClass("com.android.quickstep.views.OverviewActionsView")
         val dismissAllTasksMethod: Method =
-            findMethodBestMatch(recentsViewClass, "dismissAllTasks", View::class.java)
+            Reflection.findMethodBestMatch(recentsViewClass!!, "dismissAllTasks", View::class.java)
 
         recentsViewClass
             .hookConstructor()

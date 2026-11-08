@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import com.google.android.material.R as MaterialR
 import android.content.pm.LauncherApps
 import android.graphics.PointF
 import android.graphics.RectF
@@ -166,7 +167,7 @@ class IconShapeEditor : Fragment() {
             binding.controls.addView(
                 MaterialSwitch(requireContext()).apply {
                     setText(R.string.icon_shape_link_corners)
-                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
+                    setTextAppearance(MaterialR.style.TextAppearance_Material3_TitleMedium)
                     isChecked = params[IconShapeFactory.CORNERS_LINKED] == 1
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,

@@ -14,6 +14,7 @@
     <application
         android:enableOnBackInvokedCallback="true"
         android:name=".PLEnhanced"
+        android:description="@string/app_motto"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -60,19 +61,6 @@
             android:exported="true"
             tools:ignore="ExportedService" />
 
-        <meta-data
-            android:name="xposedmodule"
-            android:value="true" />
-        <meta-data
-            android:name="xposeddescription"
-            android:value="@string/app_motto" />
-        <meta-data
-            android:name="xposedminversion"
-            android:value="82" />
-        <meta-data
-            android:name="xposedscope"
-            android:resource="@array/module_scope" />
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.debugreports"
@@ -83,9 +71,17 @@
                 android:resource="@xml/debug_report_paths" />
         </provider>
 
+        <receiver
+            android:name=".receivers.ModuleUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <provider
-            android:name=".data.provider.RemotePrefProvider"
-            android:authorities="${applicationId}"
+            android:name=".data.provider.ModulePrefsProvider"
+            android:authorities="${applicationId}.prefs"
             android:directBootAware="true"
             android:exported="true"
             tools:ignore="ExportedContentProvider" />

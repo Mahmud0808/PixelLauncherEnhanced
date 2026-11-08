@@ -8,22 +8,22 @@ import android.os.Looper
 import android.os.UserHandle
 import android.widget.Toast
 import com.drdisagree.pixellauncherenhanced.R
-import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.clearExtraFields
+import com.drdisagree.pixellauncherenhanced.xposed.core.RootProxyClient.enqueueProxyCommand
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime.modRes
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.clearExtraFields
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.resetCounter
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -35,7 +35,7 @@ class LauncherUtils(context: Context) : ModPack(context) {
 
     override fun updatePrefs(vararg key: String) {}
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         ThemesClass = findClass("com.android.launcher3.util.Themes")
         GraphicsUtilsClass = findClass("com.android.launcher3.icons.GraphicsUtils")
         InvariantDeviceProfileClass = findClass("com.android.launcher3.InvariantDeviceProfile")

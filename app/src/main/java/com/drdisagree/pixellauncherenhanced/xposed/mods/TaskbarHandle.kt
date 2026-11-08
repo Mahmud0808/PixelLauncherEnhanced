@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import java.lang.reflect.Array as ReflectArray
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
@@ -10,17 +11,17 @@ import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_GESTURE_PILL
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_NAVIGATION_SPACE
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 
 class TaskbarHandle(context: Context) : ModPack(context) {
@@ -51,7 +52,7 @@ class TaskbarHandle(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         listOf(
             "com.android.launcher3.taskbar.TaskbarManagerImpl",
             "com.android.launcher3.taskbar.TaskbarManager"
@@ -153,10 +154,10 @@ class TaskbarHandle(context: Context) : ModPack(context) {
 
         val providedInsets = getFieldSilently("providedInsets") ?: return
 
-        val providedInsetsLength = java.lang.reflect.Array.getLength(providedInsets)
+        val providedInsetsLength = ReflectArray.getLength(providedInsets)
 
         for (i in 0..<providedInsetsLength) {
-            val insetsFrame = java.lang.reflect.Array.get(providedInsets, i) ?: continue
+            val insetsFrame = ReflectArray.get(providedInsets, i) ?: continue
 
             if (!insetsFrame.toString().contains("type=navigationBars", ignoreCase = true)) continue
 

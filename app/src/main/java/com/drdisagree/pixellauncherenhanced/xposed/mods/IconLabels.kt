@@ -8,24 +8,24 @@ import android.widget.TextView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_LONG_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_ICON_LABELS
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getStaticFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.hook.HookParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import kotlin.math.ceil
 
 class IconLabels(context: Context) : ModPack(context) {
@@ -54,13 +54,13 @@ class IconLabels(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val bubbleTextViewClass = findClass("com.android.launcher3.BubbleTextView")
 
         nativeLabelHiddenItem = findClass("com.android.launcher3.LauncherPrefs", suppressError = true)
             .getStaticFieldSilently("WORKSPACE_ITEMS_LABEL_HIDDEN")
 
-        fun XC_MethodHook.MethodHookParam.beforeHookedLabel() {
+        fun HookParam.beforeHookedLabel() {
             val mDisplay = thisObject.getField("mDisplay") as Int
             val itemInfo = args[0]
 
@@ -75,7 +75,7 @@ class IconLabels(context: Context) : ModPack(context) {
             if (itemInfo.hidesLabel(mDisplay)) removeLabel()
         }
 
-        fun XC_MethodHook.MethodHookParam.afterHookedLabel() {
+        fun HookParam.afterHookedLabel() {
             val mDisplay = thisObject.getField("mDisplay") as Int
             val itemInfo = args[0]
 
@@ -144,7 +144,7 @@ class IconLabels(context: Context) : ModPack(context) {
         }
     }
 
-    private fun XC_MethodHook.MethodHookParam.beforeLongLabelMeasure() {
+    private fun HookParam.beforeLongLabelMeasure() {
         val view = thisObject as TextView
         if (!view.usesLongLabel()) return
 

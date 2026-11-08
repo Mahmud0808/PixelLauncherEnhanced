@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import java.util.function.Predicate
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.app.ActivityManager
 import android.content.BroadcastReceiver
@@ -24,7 +25,6 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.ShortcutInfo
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Path
@@ -58,25 +58,24 @@ import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackAdaptiveIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.ThemedPackIconDrawable
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.newInstance
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.MethodHookHelper
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.createInstance
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -228,7 +227,7 @@ class IconPacks(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         DebugRecorder.registerCapture("modelCallbacksRef") { launcherModelRef?.get() == null }
 
         registerPackReceiver()
@@ -417,7 +416,7 @@ class IconPacks(context: Context) : ModPack(context) {
                 val options = param.args.getOrNull(1) ?: return@runBefore
                 val fields = OPTION_FIELDS.filter { options.javaClass.hasField(it) }
                 val previous = fields.associateWith { options.getFieldSilently(it) }
-                fields.forEach { field -> options.setField(field, java.lang.Boolean.FALSE) }
+                fields.forEach { field -> options.setField(field, false) }
                 skippedWrap.set(options to previous)
             }
             .runAfter { param ->
@@ -647,7 +646,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
             if (view.javaClass.name.endsWith(".folder.FolderIcon")) {
                 runCatching { view.callMethod("updatePreviewItems", false) }
-                    .recoverCatching { view.callMethod("updatePreviewItems", java.util.function.Predicate<Any?> { true }) }
+                    .recoverCatching { view.callMethod("updatePreviewItems", Predicate<Any?> { true }) }
                 view.invalidate()
                 continue
             }
@@ -949,7 +948,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
         return try {
             val options = findClass($$"com.android.launcher3.icons.BaseIconFactory$IconOptions", suppressError = true)
-                ?.newInstance()
+                .createInstance()
             runCatching {
                 if (options != null) {
                     factory.callMethod("createBadgedIconBitmap", drawable, options)
@@ -1017,7 +1016,7 @@ class IconPacks(context: Context) : ModPack(context) {
     private fun hasStockMonochrome(icon: Drawable): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || icon !is AdaptiveIconDrawable) return false
         val monochrome = icon.monochrome ?: return false
-        return XposedHelpers.getAdditionalInstanceField(icon, "mMonochromeIcon") !== monochrome
+        return icon.getExtraFieldSilently("mMonochromeIcon") !== monochrome
     }
 
     private fun themedPackIcon(component: ComponentName, original: Drawable, density: Int): Drawable? {

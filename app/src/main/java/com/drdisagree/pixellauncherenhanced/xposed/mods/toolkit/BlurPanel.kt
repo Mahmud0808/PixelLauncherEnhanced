@@ -1,15 +1,13 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
 import android.animation.ValueAnimator
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.graphics.drawable.DrawableWrapper
 import android.os.SystemClock
 import android.view.View
 import android.view.animation.DecelerateInterpolator
@@ -245,22 +243,5 @@ class BlurPanel(private val host: View) {
             current = current.parent
         }
         return result
-    }
-}
-
-class BlurPanelDrawable(
-    original: Drawable?,
-    private val onShown: () -> Unit = {},
-    private val onDrawPanel: (Canvas) -> Unit
-) : DrawableWrapper(original ?: ColorDrawable(Color.TRANSPARENT)) {
-    override fun draw(canvas: Canvas) {
-        onDrawPanel(canvas)
-        super.draw(canvas)
-    }
-
-    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
-        val changed = super.setVisible(visible, restart)
-        if (visible) onShown()
-        return changed
     }
 }

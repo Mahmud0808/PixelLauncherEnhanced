@@ -1,5 +1,8 @@
 package com.drdisagree.pixellauncherenhanced.data.iconpack
 
+import android.graphics.Canvas
+import android.graphics.Paint
+import java.io.ByteArrayOutputStream
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -353,13 +356,13 @@ object IconPackManager {
 
     fun renderShortcutIcon(drawable: Drawable, size: Int): Bitmap {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(bitmap)
+        val canvas = Canvas(bitmap)
         if (drawable is AdaptiveIconDrawable) {
             drawable.setBounds(0, 0, size, size)
             drawable.draw(canvas)
             return bitmap
         }
-        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
         canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
         val inset = (size * LEGACY_SHORTCUT_INSET).toInt()
         drawable.setBounds(inset, inset, size - inset, size - inset)
@@ -368,7 +371,7 @@ object IconPackManager {
     }
 
     fun encodeBitmap(bitmap: Bitmap): String {
-        val output = java.io.ByteArrayOutputStream()
+        val output = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
         return Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
     }

@@ -1,11 +1,15 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import android.content.ComponentName
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getStaticFieldSilently
 import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
 import android.os.UserHandle
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
 
 object FreeformUtils {
 
@@ -120,7 +124,7 @@ object FreeformUtils {
             val topComponent = task.callMethod("getTopComponent")
             val className = topComponent?.callMethod("getClassName") as? String
             if (className != null) {
-                intent.component = android.content.ComponentName(packageName, className)
+                intent.component = ComponentName(packageName, className)
             }
             // Always ensure package is set (BubbleData.getOrCreateBubble needs it)
             intent.setPackage(packageName)

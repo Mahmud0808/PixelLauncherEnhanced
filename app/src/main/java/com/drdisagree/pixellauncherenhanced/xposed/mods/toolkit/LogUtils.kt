@@ -3,116 +3,112 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 import android.view.View
 import android.view.ViewGroup
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers.findClass
-import de.robv.android.xposed.XposedHelpers.findClassIfExists
+import android.util.Log
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
 
 fun log(message: String?) {
-    XposedBridge.log(message)
+    writeLog(message)
 }
 
 fun log(message: Any?) {
-    XposedBridge.log(message.toString())
+    writeLog(message.toString())
 }
 
 fun log(tag: String, message: Any?) {
-    XposedBridge.log(
+    writeLog(
         "[PLEnhanced] $tag => $message"
     )
 }
 
 fun <T : Any> log(clazz: T, message: Any?) {
-    XposedBridge.log(
+    writeLog(
         "[PLEnhanced] ${clazz.javaClass.simpleName.replace("\$Companion", "")} => $message"
     )
 }
 
 fun <T : Any> log(clazz: T, throwable: Throwable?) {
     DebugRecorder.recordError(clazz.javaClass.simpleName.replace("\$Companion", ""), null, throwable)
-    XposedBridge.log(
+    writeLog(
         "[PLEnhanced] ${clazz.javaClass.simpleName.replace("\$Companion", "")} => $throwable"
     )
 }
 
 fun <T : Any> log(clazz: T, exception: Exception?) {
     DebugRecorder.recordError(clazz.javaClass.simpleName.replace("\$Companion", ""), null, exception)
-    XposedBridge.log(
+    writeLog(
         "[PLEnhanced] ${clazz.javaClass.simpleName.replace("\$Companion", "")} => $exception"
     )
 }
 
-fun findAndDumpClass(className: String, classLoader: ClassLoader?): Class<*> {
-    dumpClass(className, classLoader)
-    return findClass(className, classLoader)
-}
+private const val TAG = "PLEnhanced"
 
-fun findAndDumpClassIfExists(className: String, classLoader: ClassLoader?): Class<*> {
-    dumpClass(className, classLoader)
-    return findClassIfExists(className, classLoader)
-}
-
-private fun dumpClass(className: String, classLoader: ClassLoader?) {
-    val ourClass = findClassIfExists(className, classLoader)
-    if (ourClass == null) {
-        XposedBridge.log("DumpClass: Class is null")
-        return
+private fun writeLog(message: String?) {
+    if (ModuleRuntime.isAttached) {
+        ModuleRuntime.module.log(Log.INFO, TAG, message.toString())
+    } else {
+        Log.i(TAG, message.toString())
     }
-    ourClass.dumpClass()
+}
+
+fun dumpClass(className: String, classLoader: ClassLoader?) {
+    Reflection.findClassIfExists(className, classLoader).dumpClass()
 }
 
 fun Class<*>?.dumpClass() {
     if (this == null) {
-        XposedBridge.log("DumpClass: Class is null")
+        writeLog("DumpClass: Class is null")
         return
     }
 
-    XposedBridge.log("\n\nClass: $name")
-    XposedBridge.log("extends: ${superclass?.name}")
+    writeLog("\n\nClass: $name")
+    writeLog("extends: ${superclass?.name}")
 
-    XposedBridge.log("Subclasses:")
+    writeLog("Subclasses:")
     val scs = classes
     for (c in scs) {
-        XposedBridge.log("\t" + c.name)
+        writeLog("\t" + c.name)
     }
     if (scs.isEmpty()) {
-        XposedBridge.log("\tNone")
+        writeLog("\tNone")
     }
 
-    XposedBridge.log("Constructors:")
+    writeLog("Constructors:")
     val cons = declaredConstructors
     for (m in cons) {
-        XposedBridge.log("\t" + m.name + " - " + this::class.java.simpleName + " - " + m.parameterCount)
+        writeLog("\t" + m.name + " - " + this::class.java.simpleName + " - " + m.parameterCount)
         val cs = m.parameterTypes
         for (c in cs) {
-            XposedBridge.log("\t\t" + c.typeName)
+            writeLog("\t\t" + c.typeName)
         }
     }
     if (cons.isEmpty()) {
-        XposedBridge.log("\tNone")
+        writeLog("\tNone")
     }
 
-    XposedBridge.log("Methods:")
+    writeLog("Methods:")
     val ms = declaredMethods.toList().union(methods.toList())
     for (m in ms) {
-        XposedBridge.log("\t" + m.name + " - " + m.returnType + " - " + m.parameterCount)
+        writeLog("\t" + m.name + " - " + m.returnType + " - " + m.parameterCount)
         val cs = m.parameterTypes
         for (c in cs) {
-            XposedBridge.log("\t\t" + c.typeName)
+            writeLog("\t\t" + c.typeName)
         }
     }
     if (ms.isEmpty()) {
-        XposedBridge.log("\tNone")
+        writeLog("\tNone")
     }
 
-    XposedBridge.log("Fields:")
+    writeLog("Fields:")
     val fs = declaredFields
     for (f in fs) {
-        XposedBridge.log("\t" + f.name + " - " + f.type.name)
+        writeLog("\t" + f.name + " - " + f.type.name)
     }
     if (fs.isEmpty()) {
-        XposedBridge.log("\tNone")
+        writeLog("\tNone")
     }
-    XposedBridge.log("End dump\n\n")
+    writeLog("End dump\n\n")
 }
 
 fun View.dumpChildViews() {
@@ -156,7 +152,7 @@ private fun logViewInfo(view: View, indentationLevel: Int) {
     if (backgroundDrawable != null) {
         logMessage += " - Background: ${backgroundDrawable.javaClass.simpleName}"
     }
-    XposedBridge.log(logMessage)
+    writeLog(logMessage)
 }
 
 @Suppress("SameParameterValue")

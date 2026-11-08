@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import android.content.res.TypedArray
 import android.content.Context
 import android.util.AttributeSet
 import android.content.res.ColorStateList
@@ -61,7 +62,7 @@ class ListPreference : ListPreference {
     private var binding = false
     private var defaultEntryValue: String? = null
 
-    override fun onGetDefaultValue(a: android.content.res.TypedArray, index: Int): Any? {
+    override fun onGetDefaultValue(a: TypedArray, index: Int): Any? {
         return super.onGetDefaultValue(a, index).also { defaultEntryValue = it as? String }
     }
 

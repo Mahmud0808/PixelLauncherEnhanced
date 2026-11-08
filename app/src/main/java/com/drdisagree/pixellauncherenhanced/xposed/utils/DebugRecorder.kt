@@ -1,5 +1,12 @@
 package com.drdisagree.pixellauncherenhanced.xposed.utils
 
+import android.app.Application
+import android.view.View
+import java.lang.ref.Reference
+import java.lang.reflect.Constructor
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Process
@@ -7,8 +14,7 @@ import android.os.SystemClock
 import android.util.Base64
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEBUG_REPORT_RESPONSE
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedBridge
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -212,7 +218,7 @@ object DebugRecorder {
             put("pid", Process.myPid())
             put("uid", Process.myUid())
             put("startedAt", processStart)
-            put("processName", runCatching { android.app.Application.getProcessName() }.getOrNull())
+            put("processName", runCatching { Application.getProcessName() }.getOrNull())
         })
         root.put("module", JSONObject().apply {
             put("versionName", BuildConfig.VERSION_NAME)
@@ -220,11 +226,10 @@ object DebugRecorder {
             put("buildType", BuildConfig.BUILD_TYPE)
         })
         root.put("xposed", JSONObject().apply {
-            put("apiVersion", runCatching { XposedBridge.getXposedVersion() }.getOrNull())
-            put("bridgeClassLoader", runCatching { XposedBridge::class.java.classLoader?.toString() }.getOrNull())
-            put("bridgeSource", runCatching {
-                XposedBridge::class.java.protectionDomain?.codeSource?.location?.toString()
-            }.getOrNull())
+            put("apiVersion", ModuleRuntime.apiVersion)
+            put("framework", runCatching { ModuleRuntime.module.frameworkName }.getOrNull())
+            put("frameworkVersion", runCatching { ModuleRuntime.module.frameworkVersion }.getOrNull())
+            put("frameworkVersionCode", runCatching { ModuleRuntime.module.frameworkVersionCode }.getOrNull())
         })
         root.put("launcher", JSONObject().apply {
             val info = runCatching { context?.packageManager?.getPackageInfo(context.packageName, 0) }.getOrNull()
@@ -312,9 +317,9 @@ object DebugRecorder {
         while (type != null && type != Any::class.java && !type.name.startsWith("android.")) {
             type.declaredFields.forEach { field ->
                 val modifiers = field.modifiers
-                val static = java.lang.reflect.Modifier.isStatic(modifiers)
+                val static = Modifier.isStatic(modifiers)
                 if (field.isSynthetic || fields.has(field.name) || field.name in IGNORED_FIELDS) return@forEach
-                if (static && java.lang.reflect.Modifier.isFinal(modifiers) &&
+                if (static && Modifier.isFinal(modifiers) &&
                     (field.type.isPrimitive || field.type == String::class.java)
                 ) return@forEach
                 field.isAccessible = true
@@ -337,8 +342,8 @@ object DebugRecorder {
         is Array<*> -> "Array(size=${value.size})"
         is IntArray -> value.take(MAX_ITEMS).joinToString(prefix = "[", postfix = "]")
         is FloatArray -> value.take(MAX_ITEMS).joinToString(prefix = "[", postfix = "]")
-        is java.lang.ref.Reference<*> -> "ref(${value.get().shortDescription()})"
-        is android.view.View -> "${value.javaClass.name}(attached=${value.isAttachedToWindow}, shown=${value.isShown}, ${value.width}x${value.height})"
+        is Reference<*> -> "ref(${value.get().shortDescription()})"
+        is View -> "${value.javaClass.name}(attached=${value.isAttachedToWindow}, shown=${value.isShown}, ${value.width}x${value.height})"
         is Class<*> -> "class ${value.name}"
         is Context -> value.javaClass.name
         else -> value.shortDescription()
@@ -382,8 +387,8 @@ object DebugRecorder {
     private fun Throwable.describe(): String = "${javaClass.name}: $message"
 
     private fun Member.signature(): String = when (this) {
-        is java.lang.reflect.Method -> "$name(${parameterTypes.joinToString { it.simpleName }}): ${returnType.simpleName}"
-        is java.lang.reflect.Constructor<*> -> "<init>(${parameterTypes.joinToString { it.simpleName }})"
+        is Method -> "$name(${parameterTypes.joinToString { it.simpleName }}): ${returnType.simpleName}"
+        is Constructor<*> -> "<init>(${parameterTypes.joinToString { it.simpleName }})"
         else -> name
     }
 }

@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import androidx.appcompat.R as AppCompatR
+import android.view.WindowInsets
 import android.annotation.SuppressLint
 import android.graphics.Typeface
 import android.os.Bundle
@@ -74,8 +76,7 @@ class SettingsSearch : Fragment() {
         binding.searchInput.postDelayed({
             if (!isAdded) return@postDelayed
             binding.searchInput.requestFocus()
-            requireContext().getSystemService<InputMethodManager>()
-                ?.showSoftInput(binding.searchInput, InputMethodManager.SHOW_IMPLICIT)
+            binding.searchInput.windowInsetsController?.show(WindowInsets.Type.ime())
         }, KEYBOARD_DELAY_MS)
     }
 
@@ -104,7 +105,7 @@ class SettingsSearch : Fragment() {
         return SpannableString(text).apply {
             val end = start + query.length
             setSpan(
-                ForegroundColorSpan(MaterialColors.getColor(binding.root, androidx.appcompat.R.attr.colorPrimary)),
+                ForegroundColorSpan(MaterialColors.getColor(binding.root, AppCompatR.attr.colorPrimary)),
                 start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
             setSpan(StyleSpan(Typeface.BOLD), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)

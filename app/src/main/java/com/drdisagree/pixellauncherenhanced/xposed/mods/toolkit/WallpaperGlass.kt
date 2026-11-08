@@ -38,7 +38,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.graphics.ColorUtils
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
-import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
+import com.drdisagree.pixellauncherenhanced.xposed.core.RootProxyClient.enqueueProxyCommand
 import java.io.File
 import java.lang.ref.WeakReference
 import java.lang.reflect.Field

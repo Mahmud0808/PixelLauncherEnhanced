@@ -68,6 +68,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     
+    packaging {
+        resources {
+            merges += "META-INF/xposed/*"
+        }
+    }
+
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -94,8 +100,8 @@ dependencies {
     implementation(libs.su.core)
     implementation(libs.su.service)
     implementation(libs.su.nio)
-    compileOnly(libs.xposedbridge)
-    implementation(libs.remotepreferences)
+    compileOnly(libs.libxposed.api)
+    implementation(libs.libxposed.service)
     implementation(libs.circleimageview)
     implementation(libs.konfetti.xml)
     implementation(libs.commonmark)

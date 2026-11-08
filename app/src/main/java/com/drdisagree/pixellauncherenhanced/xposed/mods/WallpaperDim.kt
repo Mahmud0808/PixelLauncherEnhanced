@@ -2,11 +2,11 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PREVENT_WALLPAPER_DIMMING_RESTART
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 
 class WallpaperDim(context: Context) : ModPack(context) {
 
@@ -18,7 +18,7 @@ class WallpaperDim(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val wallpaperColorChangedListener = findClass(
             $$"com.android.launcher3.util.WallpaperColorHints$onColorsChangedListener$1",
             suppressError = true

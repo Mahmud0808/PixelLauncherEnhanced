@@ -1,4 +1,4 @@
-package com.drdisagree.pixellauncherenhanced.xposed
+package com.drdisagree.pixellauncherenhanced.xposed.core
 
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
@@ -47,7 +47,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIcons
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIconsColor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.TopShadow
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperZoom
-import com.drdisagree.pixellauncherenhanced.xposed.utils.BroadcastHook
+import com.drdisagree.pixellauncherenhanced.xposed.mods.BroadcastHook
 
 object EntryList {
 

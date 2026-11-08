@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -22,24 +24,22 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_KILL_A
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_LOCK_APP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_UNINSTALL_APP
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
-import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.RootProxyClient.enqueueProxyCommand
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime.modRes
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.InjectedResources
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.LockedApps
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers.getAdditionalInstanceField
-import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.reflect.Constructor
 import java.lang.reflect.Proxy
 import java.util.stream.Stream
@@ -77,7 +77,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         itemInfoClass = findClass("com.android.launcher3.model.data.ItemInfo", suppressError = true)
         appInfoShortcutClass = findClass(
             $$"com.android.launcher3.popup.SystemShortcut$AppInfo",
@@ -92,7 +92,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
         appInfoShortcutClass
             .hookMethod("onClick")
             .runBefore { param ->
-                val action = getAdditionalInstanceField(param.thisObject, ACTION_KEY) as? Action
+                val action = param.thisObject.getExtraFieldSilently(ACTION_KEY) as? Action
                     ?: return@runBefore
                 val view = param.args[0] as? View ?: return@runBefore
 
@@ -115,7 +115,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
         findClass("com.android.launcher3.popup.SystemShortcut", suppressError = true)
             .hookMethod("setIconAndLabelFor", "setIconAndContentDescriptionFor")
             .runBefore { param ->
-                val action = getAdditionalInstanceField(param.thisObject, ACTION_KEY) as? Action
+                val action = param.thisObject.getExtraFieldSilently(ACTION_KEY) as? Action
                     ?: return@runBefore
                 val icon = runCatching { modRes.getDrawable(action.iconRes, null) }.getOrNull()
                     ?: return@runBefore
@@ -138,7 +138,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 .hookMethod("createAccessibilityAction")
                 .suppressError()
                 .runBefore { param ->
-                    val action = getAdditionalInstanceField(param.thisObject, ACTION_KEY) as? Action
+                    val action = param.thisObject.getExtraFieldSilently(ACTION_KEY) as? Action
                         ?: return@runBefore
                     val id = param.thisObject.getFieldSilently("mAccessibilityActionId") as? Int ?: return@runBefore
                     param.result = AccessibilityNodeInfo.AccessibilityAction(id, modRes.getString(action.labelRes))
@@ -206,7 +206,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 val original = param.result as? List<*> ?: return@runAfter
                 val template = original.firstOrNull {
                     appInfoShortcutClass!!.isInstance(it) &&
-                            getAdditionalInstanceField(it, ACTION_KEY) == null
+                            it.getExtraFieldSilently(ACTION_KEY) == null
                 } ?: return@runAfter
                 val args = arrayOf(
                     template.getFieldSilently("mTarget"),
@@ -266,7 +266,7 @@ class AppShortcuts(context: Context) : ModPack(context) {
                 }
                 setFieldSilently("mAccessibilityActionId", labelId)
                 setFieldSilently("mIsCollapsible", true)
-                setAdditionalInstanceField(this, ACTION_KEY, action)
+                this.setExtraField(ACTION_KEY, action)
             }
         }.onFailure {
             log(this@AppShortcuts, it)

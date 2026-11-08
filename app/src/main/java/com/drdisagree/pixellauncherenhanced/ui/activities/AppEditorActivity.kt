@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.activities
 
+import android.content.Context
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.drawable.Drawable
@@ -264,7 +265,7 @@ class AppEditorActivity : AppCompatActivity() {
     }
 
     companion object {
-        fun intent(context: android.content.Context, component: ComponentName, label: String): Intent =
+        fun intent(context: Context, component: ComponentName, label: String): Intent =
             Intent(context, AppEditorActivity::class.java)
                 .putExtra(EXTRA_COMPONENT, component.flattenToString())
                 .putExtra(EXTRA_LABEL, label)

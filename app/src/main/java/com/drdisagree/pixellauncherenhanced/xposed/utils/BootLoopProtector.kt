@@ -1,8 +1,8 @@
 package com.drdisagree.pixellauncherenhanced.xposed.utils
 
 import android.annotation.SuppressLint
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.XprefsIsInitialized
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs
 import java.util.Calendar
 
 object BootLoopProtector {
@@ -12,7 +12,7 @@ object BootLoopProtector {
 
     @SuppressLint("ApplySharedPref")
     fun isBootLooped(packageName: String): Boolean {
-        if (!XprefsIsInitialized) return false
+        if (!XPrefs.isInitialized) return false
 
         val loadTimeKey = "$LOAD_TIME_KEY_KEY$packageName"
         val strikeKey = "$PACKAGE_STRIKE_KEY_KEY$packageName"
@@ -38,7 +38,7 @@ object BootLoopProtector {
 
     @SuppressLint("ApplySharedPref")
     fun resetCounter(packageName: String) {
-        if (!XprefsIsInitialized) return
+        if (!XPrefs.isInitialized) return
 
         try {
             val loadTimeKey = "$LOAD_TIME_KEY_KEY$packageName"

@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import com.google.android.material.R as MaterialR
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.Editable
@@ -77,7 +78,7 @@ class DrawerFolderEditor : Fragment() {
                 MenuItemCompat.setIconTintList(
                     item,
                     ColorStateList.valueOf(
-                        MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface)
+                        MaterialColors.getColor(binding.root, MaterialR.attr.colorOnSurface)
                     )
                 )
 

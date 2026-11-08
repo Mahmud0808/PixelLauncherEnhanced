@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.view.WindowInsets
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.ActivityNotFoundException
@@ -25,16 +26,16 @@ import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_MEMINFO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_MEMINFO_CHIP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.RECENTS_MEMINFO_ZRAM
-import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.connectRootProxy
-import com.drdisagree.pixellauncherenhanced.xposed.HookEntry.Companion.enqueueProxyCommand
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.RootProxyClient.connectRootProxy
+import com.drdisagree.pixellauncherenhanced.xposed.core.RootProxyClient.enqueueProxyCommand
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime.modRes
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.Locale
@@ -62,7 +63,7 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
         if (showMemInfo) connectRootProxy()
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val overviewActionsViewClass = findClass("com.android.quickstep.views.OverviewActionsView")
 
         overviewActionsViewClass
@@ -121,7 +122,7 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
             val params = layoutParams as? FrameLayout.LayoutParams ?: return
             val deviceProfile = container.getFieldSilently("mDp")
             val claimedSpace = deviceProfile?.callMethodSilently("getOverviewActionsClaimedSpaceBelow") as? Int
-                ?: container.rootWindowInsets?.stableInsetBottom
+                ?: container.rootWindowInsets?.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())?.bottom
                 ?: 0
 
             params.bottomMargin = claimedSpace + dp(BOTTOM_GAP_DP)
@@ -225,7 +226,7 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
             }.getOrNull() ?: return 0L
 
             return processes.indices.sumOf { index ->
-                if (processes[index].importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_BACKGROUND) {
+                if (processes[index].importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED) {
                     (memoryInfos.getOrNull(index)?.totalPss ?: 0) * 1024L
                 } else 0L
             }

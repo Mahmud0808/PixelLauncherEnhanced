@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import android.content.Context
 import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -209,7 +210,7 @@ class IconPackSettings : Fragment() {
         }
     }
 
-    private fun computeStats(context: android.content.Context, packs: List<IconPackManager.IconPackInfo>) {
+    private fun computeStats(context: Context, packs: List<IconPackManager.IconPackInfo>) {
         packs.forEach { info ->
             val pack = IconPackManager.pack(context, info.packageName) ?: return@forEach
             val covered = launcherApps.filter { pack.covers(it.component) }
@@ -586,8 +587,4 @@ class IconPackSettings : Fragment() {
             "com.android.settings"
         )
     }
-}
-
-object IconFlow {
-    var navigating = false
 }

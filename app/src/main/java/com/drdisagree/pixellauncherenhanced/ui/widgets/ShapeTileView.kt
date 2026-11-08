@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.widgets
 
+import androidx.appcompat.R
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
@@ -76,7 +77,7 @@ class ShapeTileView @JvmOverloads constructor(
         val offsetX = (width - shapeSize) / 2
         val offsetY = (height - shapeSize) / 2
 
-        val primary = MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary)
+        val primary = MaterialColors.getColor(this, R.attr.colorPrimary)
         val idle = MaterialColors.getColor(this, MaterialR.attr.colorSurfaceContainerHighest)
         val onIdle = MaterialColors.getColor(this, MaterialR.attr.colorOnSurfaceVariant)
 

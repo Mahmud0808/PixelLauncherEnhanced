@@ -13,16 +13,16 @@ import android.graphics.Shader
 import android.view.View
 import android.view.ViewGroup
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SCROLL_FADE
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.reflect.Method
 import java.util.Collections
 import java.util.WeakHashMap
@@ -67,14 +67,14 @@ class DrawerScrollFade(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val listClass = findClass(
             "com.android.launcher3.allapps.AllAppsRecyclerView",
             suppressError = true
         ) ?: return
         searchListClass = findClass("com.android.launcher3.allapps.SearchRecyclerView", suppressError = true)
 
-        val drawClass = generateSequence(listClass.superclass) { it.superclass }
+        val drawClass = generateSequence<Class<*>>(listClass.superclass) { it.superclass }
             .takeWhile { it != View::class.java }
             .firstOrNull { owner ->
                 owner.declaredMethods.any { it.name == "draw" && it.parameterTypes.contentEquals(arrayOf(Canvas::class.java)) }

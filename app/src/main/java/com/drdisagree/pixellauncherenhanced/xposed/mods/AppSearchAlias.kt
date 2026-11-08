@@ -1,15 +1,17 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethod
 import android.content.ComponentName
 import android.content.Context
 import android.os.Bundle
 import android.os.Process
 import com.drdisagree.pixellauncherenhanced.BuildConfig
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.util.function.Consumer
 
 class AppSearchAlias(context: Context) : ModPack(context) {
@@ -24,7 +26,7 @@ class AppSearchAlias(context: Context) : ModPack(context) {
 
     override fun updatePrefs(vararg key: String) {}
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         matcherUtilityClass = findClass(
             "com.android.launcher3.search.StringMatcherUtility",
             suppressError = true
@@ -48,7 +50,7 @@ class AppSearchAlias(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 val query = param.args.getOrNull(0)?.let {
-                    runCatching { XposedHelpers.callMethod(it, "getInput") as? String }.getOrNull()
+                    runCatching { Reflection.callMethod(it, "getInput") as? String }.getOrNull()
                 } ?: return@runBefore
                 @Suppress("UNCHECKED_CAST")
                 val callback = param.args.getOrNull(2) as? Consumer<List<Any>> ?: return@runBefore
@@ -63,7 +65,7 @@ class AppSearchAlias(context: Context) : ModPack(context) {
     private fun withAppResult(results: List<Any>): List<Any> {
         if (results.isEmpty()) return results
         val hasApp = results.any {
-            runCatching { XposedHelpers.callMethod(it, "getPackageName") }.getOrNull() == BuildConfig.APPLICATION_ID
+            runCatching { Reflection.callMethod(it, "getPackageName") }.getOrNull() == BuildConfig.APPLICATION_ID
         }
         if (hasApp) return results
         val target = appTarget() ?: return results
@@ -77,20 +79,20 @@ class AppSearchAlias(context: Context) : ModPack(context) {
         val component = appComponent ?: return null
         val user = Process.myUserHandle()
         return runCatching {
-            val builder = XposedHelpers.newInstance(
-                XposedHelpers.findClass($$"android.app.search.SearchTarget$Builder", null),
+            val builder = Reflection.newInstance(
+                Reflection.findClass($$"android.app.search.SearchTarget$Builder", null),
                 RESULT_TYPE_APPLICATION,
                 LAYOUT_ICON,
                 "APPLICATION:${user.hashCode()}:${component.packageName}/${component.className}"
             )
-            XposedHelpers.callMethod(builder, "setPackageName", component.packageName)
-            XposedHelpers.callMethod(builder, "setUserHandle", user)
-            XposedHelpers.callMethod(
+            Reflection.callMethod(builder, "setPackageName", component.packageName)
+            Reflection.callMethod(builder, "setUserHandle", user)
+            Reflection.callMethod(
                 builder,
                 "setExtras",
                 Bundle().apply { putString(EXTRA_CLASS, component.className) }
             )
-            XposedHelpers.callMethod(builder, "build")
+            Reflection.callMethod(builder, "build")
         }.getOrNull()
     }
 
@@ -104,13 +106,13 @@ class AppSearchAlias(context: Context) : ModPack(context) {
                     alias.contains(query.trim(), ignoreCase = true)
                 } else {
                     runCatching {
-                        val stringMatcher = matcher ?: XposedHelpers.newInstance(
-                            XposedHelpers.findClass(
+                        val stringMatcher = matcher ?: Reflection.newInstance(
+                            Reflection.findClass(
                                 $$"com.android.launcher3.search.StringMatcherUtility$StringMatcher",
                                 utility.classLoader
                             )
                         )
-                        XposedHelpers.callStaticMethod(
+                        Reflection.callStaticMethod(
                             utility,
                             "matches",
                             query.lowercase(),

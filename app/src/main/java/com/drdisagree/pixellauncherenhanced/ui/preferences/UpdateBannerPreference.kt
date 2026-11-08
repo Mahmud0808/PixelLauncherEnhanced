@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import androidx.appcompat.R as AppCompatR
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.ImageButton
@@ -35,7 +36,7 @@ class UpdateBannerPreference(context: Context, attrs: AttributeSet?) : Preferenc
         root.findViewById<ShapeIconView>(R.id.banner_emblem).apply {
             val content = MaterialColors.getColor(this, MaterialR.attr.colorOnPrimary)
             setShapes(MaterialShapes.COOKIE_12, MaterialShapes.SUNNY)
-            setColors(MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary), content)
+            setColors(MaterialColors.getColor(this, AppCompatR.attr.colorPrimary), content)
             setIcon(AppCompatResources.getDrawable(context, R.drawable.ic_update), content)
         }
         root.findViewById<TextView>(R.id.banner_summary).text =

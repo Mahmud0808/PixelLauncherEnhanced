@@ -24,24 +24,23 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LOCK_LAYOUT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_HIDE_APPS_IN_OPTIONS_POPUP
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.TOGGLE_LOCK_LAYOUT_IN_OPTIONS_POPUP
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime.modRes
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.InjectedResources
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.hook.HookParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -87,7 +86,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
 
     @Suppress("DEPRECATION")
     @SuppressLint("DiscouragedApi", "UseCompatLoadingForDrawables")
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val launcherSettingsFragmentClass = findClass(
             $$"com.android.launcher3.SettingsActivity$LauncherSettingsFragment",
             $$"com.android.launcher3.settings.SettingsActivity$LauncherSettingsFragment"
@@ -610,11 +609,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 launcherDrawableIds[modDrawableId]?.let { return it }
 
                 val resources = mContext.resources
-                val injected = runCatching {
-                    HookRes.resParams[loadPackageParam.packageName]
-                        ?.res
-                        ?.addResource(modRes, modDrawableId)
-                }.getOrNull() ?: 0
+                val injected = injectedResId(modDrawableId)
                 val injectedUsable = injected != 0 && runCatching {
                     resources.getValue(injected, TypedValue(), true)
                     resources.getDrawable(injected, null) != null
@@ -628,7 +623,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                             resources.getIdentifier(
                                 it,
                                 "drawable",
-                                loadPackageParam.packageName
+                                loadedPackage.packageName
                             )
                         }
                         .firstOrNull { it != 0 } ?: 0
@@ -699,7 +694,7 @@ class LauncherSettings(context: Context) : ModPack(context) {
                 Iterable::class.java
             )
 
-            fun XC_MethodHook.MethodHookParam.setListResult(
+            fun HookParam.setListResult(
                 original: List<*>,
                 additions: List<Any?>
             ) {

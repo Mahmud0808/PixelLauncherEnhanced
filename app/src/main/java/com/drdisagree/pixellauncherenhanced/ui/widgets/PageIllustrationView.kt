@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.widgets
 
+import androidx.appcompat.R
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.SharedPreferences
@@ -75,11 +76,11 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
     private val screen = RectF()
     private val path = Path()
     private val camera = Camera()
-    private val matrix = Matrix()
+    private val cubeMatrix = Matrix()
     private val emphasized = PathInterpolator(0.2f, 0f, 0f, 1f)
     private val standard = PathInterpolator(0.4f, 0f, 0.2f, 1f)
 
-    private val primary = color(androidx.appcompat.R.attr.colorPrimary)
+    private val primary = color(R.attr.colorPrimary)
     private val primaryContainer = color(MaterialR.attr.colorPrimaryContainer)
     private val onPrimaryContainer = color(MaterialR.attr.colorOnPrimaryContainer)
     private val secondary = color(MaterialR.attr.colorSecondary)
@@ -377,12 +378,12 @@ class PageIllustrationView(context: Context, private val scene: Scene) : View(co
                     camera.save()
                     camera.setLocation(0f, 0f, -10f * density)
                     camera.rotateY(-offset * 90f)
-                    camera.getMatrix(matrix)
+                    camera.getMatrix(cubeMatrix)
                     camera.restore()
                     val pivotX = if (offset > 0f) screen.left else screen.right
-                    matrix.preTranslate(-pivotX, -screen.centerY())
-                    matrix.postTranslate(pivotX, screen.centerY())
-                    concat(matrix)
+                    cubeMatrix.preTranslate(-pivotX, -screen.centerY())
+                    cubeMatrix.postTranslate(pivotX, screen.centerY())
+                    concat(cubeMatrix)
                 }
 
                 "stack" -> if (offset < 0f) {

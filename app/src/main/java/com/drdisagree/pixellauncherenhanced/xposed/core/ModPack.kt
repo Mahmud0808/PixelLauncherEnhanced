@@ -1,9 +1,8 @@
-package com.drdisagree.pixellauncherenhanced.xposed
+package com.drdisagree.pixellauncherenhanced.xposed.core
 
 import android.content.Context
 import android.content.pm.PackageManager
 import com.drdisagree.pixellauncherenhanced.BuildConfig
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 
 abstract class ModPack(private val context: Context) {
 
@@ -21,5 +20,5 @@ abstract class ModPack(private val context: Context) {
 
     abstract fun updatePrefs(vararg key: String)
 
-    abstract fun handleLoadPackage(loadPackageParam: LoadPackageParam)
+    abstract fun handleLoadPackage(loadedPackage: LoadedPackage)
 }

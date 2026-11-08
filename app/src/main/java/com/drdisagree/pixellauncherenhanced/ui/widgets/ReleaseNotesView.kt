@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.widgets
 
+import androidx.appcompat.R
 import android.content.Context
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -119,7 +120,7 @@ class ReleaseNotesView @JvmOverloads constructor(
             this.text = emoji
             layoutParams = LayoutParams(dpToPx(LEAD_WIDTH), LayoutParams.WRAP_CONTENT)
         })
-        row.addView(textView(style, androidx.appcompat.R.attr.colorPrimary).apply {
+        row.addView(textView(style, R.attr.colorPrimary).apply {
             this.text = title
             setTypeface(typeface, Typeface.BOLD)
             layoutParams = LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
@@ -144,7 +145,7 @@ class ReleaseNotesView @JvmOverloads constructor(
         when (lead) {
             null -> {}
             BULLET -> row.addView(bulletDot(body, depth))
-            else -> row.addView(textView(MaterialR.attr.textAppearanceBodyMedium, androidx.appcompat.R.attr.colorPrimary).apply {
+            else -> row.addView(textView(MaterialR.attr.textAppearanceBodyMedium, R.attr.colorPrimary).apply {
                 this.text = lead
                 setTypeface(typeface, Typeface.BOLD)
                 layoutParams = LayoutParams(dpToPx(LEAD_WIDTH), LayoutParams.WRAP_CONTENT)
@@ -162,7 +163,7 @@ class ReleaseNotesView @JvmOverloads constructor(
             background = GradientDrawable().apply {
                 shape = if (depth > 0) GradientDrawable.RECTANGLE else GradientDrawable.OVAL
                 cornerRadius = size / 3f
-                setColor(color(androidx.appcompat.R.attr.colorPrimary))
+                setColor(color(R.attr.colorPrimary))
             }
             layoutParams = LayoutParams(size, size).apply {
                 topMargin = (lineHeight - size) / 2

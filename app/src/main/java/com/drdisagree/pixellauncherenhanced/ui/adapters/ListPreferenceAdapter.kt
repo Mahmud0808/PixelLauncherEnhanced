@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.adapters
 
+import com.google.android.material.R
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.util.TypedValue
@@ -102,7 +103,7 @@ class ListPreferenceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 prevPos = holder.bindingAdapterPosition
                 val typedValue = TypedValue()
                 val a = appContext.obtainStyledAttributes(
-                    typedValue.data, intArrayOf(com.google.android.material.R.attr.colorPrimaryVariant)
+                    typedValue.data, intArrayOf(R.attr.colorPrimaryVariant)
                 )
                 val color = a.getColor(0, 0)
                 a.recycle()
@@ -135,7 +136,7 @@ class ListPreferenceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 prevPos = holder.bindingAdapterPosition
                 val typedValue = TypedValue()
                 val a = appContext.obtainStyledAttributes(
-                    typedValue.data, intArrayOf(com.google.android.material.R.attr.colorPrimaryVariant)
+                    typedValue.data, intArrayOf(R.attr.colorPrimaryVariant)
                 )
                 val color = a.getColor(0, 0)
                 a.recycle()

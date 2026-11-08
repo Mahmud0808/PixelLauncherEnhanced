@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import androidx.appcompat.R as AppCompatR
 import android.content.Context
 import android.graphics.drawable.GradientDrawable
 import android.text.format.DateUtils
@@ -65,7 +66,7 @@ class ReleaseNotesPreference(context: Context, attrs: AttributeSet?) : Preferenc
             setTextColor(
                 MaterialColors.getColor(
                     this,
-                    if (headline) androidx.appcompat.R.attr.colorPrimary else MaterialR.attr.colorOnSurface
+                    if (headline) AppCompatR.attr.colorPrimary else MaterialR.attr.colorOnSurface
                 )
             )
         }

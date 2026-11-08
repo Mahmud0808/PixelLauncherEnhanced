@@ -1,5 +1,11 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import androidx.appcompat.R as AppCompatR
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
+import android.util.TypedValue
+import android.view.animation.LinearInterpolator
+import android.widget.FrameLayout
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
@@ -139,16 +145,16 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
         val context = parent.context
         val card = surfaceCard(parent, MaterialColors.getColor(parent, MaterialR.attr.colorPrimaryContainer), FEATURE_RADIUS_DP)
         card.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(FEATURE_HEIGHT_DP))
-        val frame = android.widget.FrameLayout(context)
+        val frame = FrameLayout(context)
         val shapeSize = dpToPx(FEATURE_SHAPE_DP)
         val shape = ShapeIconView(context).apply {
-            layoutParams = android.widget.FrameLayout.LayoutParams(shapeSize, shapeSize, Gravity.END or Gravity.CENTER_VERTICAL)
+            layoutParams = FrameLayout.LayoutParams(shapeSize, shapeSize, Gravity.END or Gravity.CENTER_VERTICAL)
             translationX = shapeSize * 0.55f
             rotation = -12f
             spinSlowly(this)
         }
         val backdrop = ColorUtils.setAlphaComponent(
-            MaterialColors.getColor(shape, androidx.appcompat.R.attr.colorPrimary),
+            MaterialColors.getColor(shape, AppCompatR.attr.colorPrimary),
             FEATURE_BACKDROP_ALPHA
         )
         shape.setShapes(MaterialShapes.COOKIE_12, MaterialShapes.COOKIE_12)
@@ -158,7 +164,7 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
 
         val iconSize = dpToPx(TALL_SHAPE_DP)
         val icon = ShapeIconView(context).apply {
-            layoutParams = android.widget.FrameLayout.LayoutParams(iconSize, iconSize, Gravity.START or Gravity.TOP).apply {
+            layoutParams = FrameLayout.LayoutParams(iconSize, iconSize, Gravity.START or Gravity.TOP).apply {
                 marginStart = dpToPx(TILE_PADDING_DP)
                 topMargin = dpToPx(TILE_PADDING_DP)
             }
@@ -166,7 +172,7 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
         bindShape(icon, tile)
         frame.addView(icon)
         frame.addView(textBlock(context, tile, titleAppearance = MaterialR.attr.textAppearanceHeadlineSmall, tone = Tone.PRIMARY).apply {
-            layoutParams = android.widget.FrameLayout.LayoutParams(
+            layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.START or Gravity.BOTTOM
@@ -182,11 +188,11 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
     }
 
     private fun spinSlowly(view: View) {
-        if (!android.animation.ValueAnimator.areAnimatorsEnabled()) return
-        val spin = android.animation.ObjectAnimator.ofFloat(view, View.ROTATION, view.rotation, view.rotation + 360f).apply {
+        if (!ValueAnimator.areAnimatorsEnabled()) return
+        val spin = ObjectAnimator.ofFloat(view, View.ROTATION, view.rotation, view.rotation + 360f).apply {
             duration = BACKDROP_SPIN_MS
-            repeatCount = android.animation.ValueAnimator.INFINITE
-            interpolator = android.view.animation.LinearInterpolator()
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
         }
         view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {
@@ -202,11 +208,11 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
     private enum class Tone(val container: Int, val onContainer: Int, val onContainerVariant: Int, val accent: Int, val onAccent: Int) {
         SURFACE(
             MaterialR.attr.colorSurfaceContainerHigh, MaterialR.attr.colorOnSurface, MaterialR.attr.colorOnSurfaceVariant,
-            androidx.appcompat.R.attr.colorPrimary, MaterialR.attr.colorOnPrimary
+            AppCompatR.attr.colorPrimary, MaterialR.attr.colorOnPrimary
         ),
         PRIMARY(
             MaterialR.attr.colorPrimaryContainer, MaterialR.attr.colorOnPrimaryContainer, MaterialR.attr.colorOnPrimaryContainer,
-            androidx.appcompat.R.attr.colorPrimary, MaterialR.attr.colorOnPrimary
+            AppCompatR.attr.colorPrimary, MaterialR.attr.colorOnPrimary
         ),
         SECONDARY(
             MaterialR.attr.colorSecondaryContainer, MaterialR.attr.colorOnSecondaryContainer, MaterialR.attr.colorOnSecondaryContainer,
@@ -275,7 +281,7 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
         return card
     }
 
-    private fun textBlock(context: android.content.Context, tile: DashboardTile, titleAppearance: Int, tone: Tone): LinearLayout {
+    private fun textBlock(context: Context, tile: DashboardTile, titleAppearance: Int, tone: Tone): LinearLayout {
         val titleColor = MaterialColors.getColor(context, tone.onContainer, 0)
         val summaryColor = MaterialColors.getColor(context, tone.onContainerVariant, 0)
         return LinearLayout(context).apply {
@@ -294,8 +300,8 @@ class DashboardGridPreference(context: Context, attrs: AttributeSet?) : Preferen
         }
     }
 
-    private fun resolveAppearance(context: android.content.Context, attr: Int): Int {
-        val value = android.util.TypedValue()
+    private fun resolveAppearance(context: Context, attr: Int): Int {
+        val value = TypedValue()
         context.theme.resolveAttribute(attr, value, true)
         return value.resourceId
     }

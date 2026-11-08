@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import androidx.preference.R as PreferenceR
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.AttributeSet
@@ -105,7 +106,7 @@ class SliderPreference(
                 getBoolean(R.styleable.SliderPreference_showDefaultIndicator, false)
             hideValueOnDefault =
                 getBoolean(R.styleable.SliderPreference_hideValueOnDefault, false)
-            val defaultValStr = getString(androidx.preference.R.styleable.Preference_defaultValue)
+            val defaultValStr = getString(PreferenceR.styleable.Preference_defaultValue)
 
             if (valueFormat == null) valueFormat = ""
 
@@ -187,7 +188,7 @@ class SliderPreference(
             mPlusButton!!.visibility = View.GONE
         }
 
-        sliderValue = holder.itemView.findViewById(androidx.preference.R.id.seekbar_value)
+        sliderValue = holder.itemView.findViewById(PreferenceR.id.seekbar_value)
 
         mSlider!!.valueFrom = valueFrom
         mSlider!!.valueTo = valueTo
