@@ -262,6 +262,8 @@
     <string name="section_icon_packs_title">Simge paketleri</string>
     <string name="icon_packs_title">Simge paketleri</string>
     <string name="icon_packs_desc">Harici simge paketlerini kullanın ve uygulamalar için özel simgeler seçin</string>
+    <string name="icon_refresh_on_theme_title">Refresh icons on theme change</string>
+    <string name="icon_refresh_on_theme_desc">Reload icons when dark mode or wallpaper colors change</string>
     <string name="fragment_icon_packs_title">Simge paketleri</string>
     <string name="icon_packs_section_desc">Uygulama simgesi, listede ilk eşleşen etkin paketten alınır. Önceliği değiştirmek için sürükleyin</string>
     <string name="themed_icon_packs_title">Temalı simge paketleri</string>

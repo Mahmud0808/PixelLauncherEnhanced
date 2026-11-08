@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_motto">Uwolnij pełen potencjał swojego launchera</string>
+    <string name="app_motto">Uwolnij pełen potencjał launchera</string>
     <string name="icon">Ikona</string>
     <string name="more">Więcej</string>
     <string name="exit">Wyjdź</string>
@@ -262,6 +262,8 @@
     <string name="section_icon_packs_title">Pakiety ikon</string>
     <string name="icon_packs_title">Pakiety ikon</string>
     <string name="icon_packs_desc">Użyj zewnętrznych pakietów ikon i wybieraj ikony dla poszczególnych aplikacji</string>
+    <string name="icon_refresh_on_theme_title">Odśwież ikony po zmianie motywu</string>
+    <string name="icon_refresh_on_theme_desc">Odśwież ikony, gdy zmieni się tryb ciemny lub kolory tapety</string>
     <string name="fragment_icon_packs_title">Pakiety ikon</string>
     <string name="icon_packs_section_desc">Używany jest pierwszy aktywny pakiet zawierający ikonę aplikacji. Przeciągnij, aby zmienić kolejność</string>
     <string name="themed_icon_packs_title">Pakiety ikon tematycznych</string>
