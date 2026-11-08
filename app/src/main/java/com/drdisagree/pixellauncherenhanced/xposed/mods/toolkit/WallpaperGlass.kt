@@ -1,5 +1,10 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.wallpaper.WallpaperDisplayInfo
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.wallpaper.WallpaperCropper
+import android.content.res.Configuration
+import android.view.WindowManager
+import android.graphics.Point
 import android.annotation.SuppressLint
 import android.app.WallpaperManager
 import android.content.Context
@@ -56,6 +61,8 @@ object WallpaperGlass {
 
     private const val SAMPLE_WIDTH = 160
     private const val DEFAULT_MAX_ZOOM_SCALE = 1.1f
+    private const val DEFAULT_MIN_ZOOM_SCALE = 1f
+    private const val UNSET_CONFIG = Long.MIN_VALUE
     private const val HOME_SCALE = 0.25f
     private const val HOME_NODE = "pleHomeBackdrop"
     private const val WALLPAPER_COPY = "ple_wallpaper"
@@ -258,8 +265,28 @@ object WallpaperGlass {
     }
 
     var offsetX = 0.5f
+        set(value) {
+            field = value
+            offsetUpdates++
+        }
+
     var zoom = 0f
+        set(value) {
+            field = value
+            zoomUpdates++
+        }
+
     var zoomEnabled = true
+
+    private var offsetUpdates = 0L
+    private var zoomUpdates = 0L
+    private var lastCropInfo: String? = null
+    private var lastCrop: Rect? = null
+    private var decodedConfig = UNSET_CONFIG
+    private var lastSource: String? = null
+    private val lastBoundsInput = IntArray(4)
+    private var lastZoomScale = 1f
+    private val lastBounds = RectF()
 
     private var depthBlur = 0f
     private var homeBitmap: Bitmap? = null
@@ -267,13 +294,15 @@ object WallpaperGlass {
     private var homeHeight = 0f
     private var homeToken = 0
 
-    @get:SuppressLint("DiscouragedApi")
-    private val maxZoomScale by lazy {
+    private val maxZoomScale by lazy { systemFloat("config_wallpaperMaxScale") ?: DEFAULT_MAX_ZOOM_SCALE }
+
+    private val minZoomScale by lazy { systemFloat("config_wallpaperMinScale") ?: DEFAULT_MIN_ZOOM_SCALE }
+
+    @SuppressLint("DiscouragedApi")
+    private fun systemFloat(name: String): Float? {
         val system = Resources.getSystem()
-        system.getIdentifier("config_wallpaperMaxScale", "dimen", "android").takeIf { it != 0 }
-            ?.let { runCatching { system.getFloat(it) }.getOrNull() }
-            ?.takeIf { it >= 1f }
-            ?: DEFAULT_MAX_ZOOM_SCALE
+        val id = system.getIdentifier(name, "dimen", "android").takeIf { it != 0 } ?: return null
+        return runCatching { system.getFloat(id) }.getOrNull()?.takeIf { it > 0f }
     }
 
     private fun wallpaperBounds(bitmapWidth: Int, bitmapHeight: Int, screenWidth: Int, screenHeight: Int, out: RectF) {
@@ -282,7 +311,8 @@ object WallpaperGlass {
         val drawnHeight = bitmapHeight * scale
         val left = -(drawnWidth - screenWidth) * offsetX.coerceIn(0f, 1f)
         val top = -(drawnHeight - screenHeight) / 2f
-        val zoomScale = if (zoomEnabled) maxZoomScale + (1f - maxZoomScale) * zoom.coerceIn(0f, 1f) else 1f
+        val zoomOut = if (zoomEnabled) zoom.coerceIn(0f, 1f) else 1f
+        val zoomScale = minZoomScale + (maxZoomScale - minZoomScale) * (1f - zoomOut)
         val centerX = screenWidth / 2f
         val centerY = screenHeight / 2f
         out.set(
@@ -291,6 +321,12 @@ object WallpaperGlass {
             centerX + (left + drawnWidth - centerX) * zoomScale,
             centerY + (top + drawnHeight - centerY) * zoomScale
         )
+        lastBoundsInput[0] = bitmapWidth
+        lastBoundsInput[1] = bitmapHeight
+        lastBoundsInput[2] = screenWidth
+        lastBoundsInput[3] = screenHeight
+        lastZoomScale = zoomScale
+        lastBounds.set(out)
     }
 
     fun captureHome(targets: List<View>, blurRadius: Float) {
@@ -400,7 +436,17 @@ object WallpaperGlass {
         "blurSamples=${blurCache.keys.joinToString { "${it.first}/${it.second}" }}",
         "trackedViews=${listeners.size}",
         "offsetX=$offsetX",
+        "offsetUpdates=$offsetUpdates",
         "zoom=$zoom",
+        "zoomUpdates=$zoomUpdates",
+        "zoomEnabled=$zoomEnabled",
+        "zoomScaleRange=$minZoomScale..$maxZoomScale",
+        "depthBlur=$depthBlur",
+        "source=$lastSource",
+        "crop=${lastCrop?.toShortString()}",
+        "cropInfo=$lastCropInfo",
+        "bounds=bitmap ${lastBoundsInput[0]}x${lastBoundsInput[1]} screen ${lastBoundsInput[2]}x${lastBoundsInput[3]} " +
+                "scale $lastZoomScale rect ${lastBounds.toShortString()}",
         "copyOutput=$lastCopyOutput"
     ).joinToString("; ")
 
@@ -447,30 +493,19 @@ object WallpaperGlass {
             lastCopyOutput = proxy.runCommand(
                 "sh -c '$script' 2>&1; [ -f $path ] || nsenter -t 1 -m -- sh -c '$script' 2>&1; ls -lZ $path 2>&1"
             ).joinToString(" / ")
-            val crop = runCatching {
-                homeCrop(proxy.runCommand("abx2xml $info - 2>/dev/null || cat $info").joinToString(" "))
-            }.getOrNull()
-            decode(copy, context.applicationContext, crop)
+            val hints = runCatching {
+                cropHints(proxy.runCommand("abx2xml $info - 2>/dev/null || cat $info").joinToString(" "))
+            }.getOrNull().orEmpty()
+            decode(copy, context.applicationContext, hints)
         }
     }
 
-    private fun homeCrop(info: String): RectF? {
-        fun value(name: String): Float? =
-            Regex("""\b$name="(-?[0-9.]+)"""").find(info)?.groupValues?.get(1)?.toFloatOrNull()
-
-        val left = value("cropLeftPortrait") ?: return null
-        val top = value("cropTopPortrait") ?: return null
-        val right = value("cropRightPortrait") ?: return null
-        val bottom = value("cropBottomPortrait") ?: return null
-        val originX = value("totalCropLeft") ?: 0f
-        val originY = value("totalCropTop") ?: 0f
-        val sample = value("sampleSize")?.takeIf { it > 0f } ?: 1f
-        return RectF(
-            (left - originX) / sample,
-            (top - originY) / sample,
-            (right - originX) / sample,
-            (bottom - originY) / sample
-        ).takeIf { it.width() > 0f && it.height() > 0f }
+    private fun cropHints(info: String): Map<Int, Rect> {
+        lastCropInfo = Regex("""\b(\w*(?:[Cc]rop|[Ss]ample)\w*)="([^"]*)"""")
+            .findAll(info)
+            .joinToString(" ") { "${it.groupValues[1]}=${it.groupValues[2]}" }
+            .ifEmpty { "none (${info.length} chars)" }
+        return WallpaperCropper.relativeHints(info)
     }
 
     private fun builtInWallpaper(context: Context): Bitmap? {
@@ -487,12 +522,18 @@ object WallpaperGlass {
         }
     }
 
-    private fun decode(copy: File, context: Context, crop: RectF?) {
+    private fun decode(copy: File, context: Context, hints: Map<Int, Rect>) {
         executor.execute {
+            decodedConfig = configKey(context.resources.configuration)
             val result = runCatching {
-                val bitmap = BitmapFactory.decodeFile(copy.absolutePath)?.cropTo(crop)
+                val decoded = BitmapFactory.decodeFile(copy.absolutePath)
+                val crop = decoded?.takeIf { hints.isNotEmpty() }?.let { displayCrop(context, it, hints) }
+                lastCrop = crop
+                lastSource = decoded?.let { "file=${it.width}x${it.height} hints=${hints.size}" } ?: "builtIn"
+                val bitmap = decoded?.cropTo(crop)
                     ?: builtInWallpaper(context)
                     ?: return@runCatching null
+                lastSource += " used=${bitmap.width}x${bitmap.height}"
                 val aspect = bitmap.width.toFloat() / bitmap.height
                 val small = Bitmap.createScaledBitmap(
                     bitmap, SAMPLE_WIDTH, max(1, (SAMPLE_WIDTH / aspect).roundToInt()), true
@@ -515,12 +556,35 @@ object WallpaperGlass {
         }
     }
 
-    private fun Bitmap.cropTo(crop: RectF?): Bitmap {
+    private fun displayCrop(context: Context, bitmap: Bitmap, hints: Map<Int, Rect>): Rect? = runCatching {
+        val bounds = context.getSystemService(WindowManager::class.java).maximumWindowMetrics.bounds
+        val rtl = context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        WallpaperCropper.getCrop(
+            Point(bounds.width(), bounds.height()),
+            WallpaperDisplayInfo.from(context),
+            Point(bitmap.width, bitmap.height),
+            hints,
+            rtl
+        ).takeUnless { it.isEmpty }
+    }.onFailure { log(this, it) }.getOrNull()
+
+    private fun configKey(configuration: Configuration): Long =
+        (configuration.orientation.toLong() shl 32) or configuration.screenWidthDp.toLong()
+
+    fun ensureDisplay(host: View) {
+        val key = configKey(host.resources.configuration)
+        if (decodedConfig == key || decodedConfig == UNSET_CONFIG || loading || liveWallpaper) return
+        decodedConfig = UNSET_CONFIG
+        invalidateWallpaper(host.context)
+        checkWallpaper(host.context)
+    }
+
+    private fun Bitmap.cropTo(crop: Rect?): Bitmap {
         crop ?: return this
-        val left = crop.left.roundToInt().coerceIn(0, width - 1)
-        val top = crop.top.roundToInt().coerceIn(0, height - 1)
-        val right = crop.right.roundToInt().coerceIn(left + 1, width)
-        val bottom = crop.bottom.roundToInt().coerceIn(top + 1, height)
+        val left = crop.left.coerceIn(0, width - 1)
+        val top = crop.top.coerceIn(0, height - 1)
+        val right = crop.right.coerceIn(left + 1, width)
+        val bottom = crop.bottom.coerceIn(top + 1, height)
         if (left == 0 && top == 0 && right == width && bottom == height) return this
         return Bitmap.createBitmap(this, left, top, right - left, bottom - top)
     }
@@ -596,6 +660,7 @@ object WallpaperGlass {
     ): Boolean {
         track(host)
         checkWallpaper(host.context)
+        ensureDisplay(host)
         if (!isAvailable()) return false
 
         val screenWidth = host.resources.displayMetrics.widthPixels
@@ -716,6 +781,7 @@ object WallpaperGlass {
     ): Paint? {
         track(host)
         checkWallpaper(host.context)
+        ensureDisplay(host)
         if (!isAvailable()) return null
 
         val screenWidth = host.resources.displayMetrics.widthPixels
