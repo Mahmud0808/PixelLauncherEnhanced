@@ -84,7 +84,7 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
             }
 
         overviewActionsViewClass
-            .hookMethod("updateVerticalMargin")
+            .hookMethod("updateVerticalMargin", "setInsets", "updateDimension")
             .suppressError()
             .runAfter { memInfoViewRef?.get()?.updateVerticalMargin() }
     }
@@ -123,11 +123,19 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
             val deviceProfile = container.getFieldSilently("mDp")
             val claimedSpace = deviceProfile?.callMethodSilently("getOverviewActionsClaimedSpaceBelow") as? Int
                 ?: container.rootWindowInsets?.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())?.bottom
-                ?: 0
+                ?: return
 
-            params.bottomMargin = claimedSpace + dp(BOTTOM_GAP_DP)
-            params.gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+            val bottomMargin = claimedSpace + dp(BOTTOM_GAP_DP)
+            val gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+            if (params.bottomMargin == bottomMargin && params.gravity == gravity) return
+            params.bottomMargin = bottomMargin
+            params.gravity = gravity
             layoutParams = params
+        }
+
+        override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
+            updateVerticalMargin()
+            return super.onApplyWindowInsets(insets)
         }
 
         private var isAggregatedVisible = false
@@ -163,6 +171,7 @@ class RecentsMemInfo(context: Context) : ModPack(context) {
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
             viewTreeObserver.addOnPreDrawListener(preDrawListener)
+            updateVerticalMargin()
         }
 
         override fun onDetachedFromWindow() {
