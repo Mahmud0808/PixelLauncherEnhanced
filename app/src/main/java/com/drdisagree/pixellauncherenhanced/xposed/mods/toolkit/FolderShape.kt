@@ -53,6 +53,12 @@ object FolderShape {
     }
 
     fun measure(folderIcon: View, preview: Any, shapeKey: Any?, out: RectF): Float? {
+        val drawnCorner = preview.callMethodSilently("getDrawnCornerRadius") as? Float
+        if (drawnCorner != null && drawnCorner > 0f) {
+            out.setEmpty()
+            preview.callMethodSilently("getScaledBounds", out)
+            if (!out.isEmpty) return drawnCorner
+        }
         val width = folderIcon.width
         val height = folderIcon.height
         if (width <= 0 || height <= 0) return null
