@@ -37,6 +37,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.DragPreviewGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FolderFrost
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FolderShape
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceIds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
 import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
@@ -378,6 +379,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
             .hookMethod("drawBackground")
             .suppressError()
             .runAround(before = { param ->
+                if (FolderShape.isDrawing) return@runAround
                 val glass = folderGlass()
                 if (folderBackgroundOpacity < 0 && !glass) return@runAround
 
@@ -389,6 +391,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 val alpha = if (folderBackgroundOpacity >= 0) folderBackgroundOpacity else Color.alpha(base)
                 param.thisObject.setFieldSilently("mBgColor", ColorUtils.setAlphaComponent(base, alpha))
             }, after = { param ->
+                if (FolderShape.isDrawing) return@runAround
                 (param.getObjectExtra(PREVIEW_ORIGINAL_COLOR) as? Int)?.let {
                     param.thisObject.setFieldSilently("mBgColor", it)
                 }
@@ -507,8 +510,14 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 val inDrawer = folderIcon.tag.getFieldSilently("container") == CONTAINER_ALL_APPS
                 val blurRadius = folderIcon.folderIconBlur()
                 val drawerTint = if (inDrawer) IconGlass.drawerGlassTint(folderIcon) ?: 0 else 0
-                val shape = folderIcon.folderShape()
-                val shapeCorner = shape?.cornerRadius(scaledRadius.toFloat()) ?: scaledRadius.toFloat()
+                val enlarged = FolderShape.isEnlarged(folderIcon)
+                val iconShape = folderIcon.folderShape()
+                val shape = iconShape.takeUnless { enlarged }
+                val shapeCorner = if (enlarged) {
+                    FolderShape.measure(folderIcon, preview, iconShape, previewRect) ?: return@runBefore
+                } else {
+                    shape?.cornerRadius(scaledRadius.toFloat()) ?: scaledRadius.toFloat()
+                }
                 if (DragPreviewGlass.isCapturing(canvas)) {
                     DragPreviewGlass.capture(
                         canvas,
@@ -553,7 +562,9 @@ class OpacityModifier(context: Context) : ModPack(context) {
                         style = folderPanelStyle,
                         dimColor = drawerTint,
                         home = inDrawer,
-                        shapeDrawer = shape?.let { shape ->
+                        shapeDrawer = if (enlarged) {
+                            { paint: Paint -> FolderShape.draw(preview, canvas, paint) }
+                        } else shape?.let { shape ->
                             { paint: Paint ->
                                 shape.callMethodSilently(
                                     "drawShape",
@@ -578,7 +589,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
                 panel.draw(
                     canvas = canvas,
                     rect = previewRect,
-                    cornerRadius = scaledRadius.toFloat(),
+                    cornerRadius = if (enlarged) shapeCorner else scaledRadius.toFloat(),
                     blurRadius = blurRadius,
                     tintColor = Color.TRANSPARENT
                 )
