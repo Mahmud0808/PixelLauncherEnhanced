@@ -121,6 +121,7 @@ object Constants {
     const val RECENTS_REMOVE_SCREENSHOT_BUTTON = "xposed_recentsremovescreenshotbutton"
     const val RECENTS_DISABLE_SELECTION = "xposed_recentsdisableselection"
     const val RECENTS_MEMINFO = "xposed_recentsmeminfo"
+    const val RECENTS_STYLE = "xposed_recentsstyle"
     const val RECENTS_MEMINFO_ZRAM = "xposed_recentsmeminfozram"
     const val RECENTS_MEMINFO_CHIP = "xposed_recentsmeminfochip"
     const val RECENTS_KILL_APP = "xposed_recentskillapp"

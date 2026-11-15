@@ -243,6 +243,12 @@
     <string name="recents_disable_selection_title">Disable selection</string>
     <string name="recents_disable_selection_summary">Hides the select button and turns off image and text selection on app previews</string>
     <string name="recents_meminfo_title">Memory info</string>
+    <string name="recents_style_title">Recents style</string>
+    <string name="recents_style_default">Default</string>
+    <string name="recents_style_scale">Scale</string>
+    <string name="recents_style_staple">Kami</string>
+    <string name="recents_style_ios">iOS</string>
+    <string name="recents_style_oxygen">OxygenOS</string>
     <string name="recents_meminfo_summary">Show available and total memory below the recent apps</string>
     <string name="recents_meminfo_zram_title">Include ZRAM</string>
     <string name="recents_meminfo_zram_summary">Add the ZRAM swap size to the total memory</string>
