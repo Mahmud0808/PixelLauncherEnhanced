@@ -1,6 +1,8 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -42,7 +44,10 @@ class RecentsStyles(context: Context) : ModPack(context) {
     private var finishTakesPip = true
     private var cornerRadius: Float? = null
     private val framedViews: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
-    private val hiddenCards: MutableSet<View> = Collections.newSetFromMap(WeakHashMap())
+    private val leavingCards = WeakHashMap<View, Float>()
+    private var leaveProgress = 0f
+    private var leaveAnimator: ValueAnimator? = null
+    private val visibleRect = RectF()
     private var taskViewClass: Class<*>? = null
     private var recentsViewRef: WeakReference<ViewGroup>? = null
     private var recentsMembers: RecentsMembers? = null
@@ -142,6 +147,18 @@ class RecentsStyles(context: Context) : ModPack(context) {
             }
 
         recentsViewClass
+            .hookMethod("isTaskViewVisible")
+            .suppressError()
+            .runAfter { param ->
+                if (param.result != false || !RecentsCardStyle.isStack(style)) return@runAfter
+                val recentsView = param.thisObject as ViewGroup
+                val child = param.args.getOrNull(0) as? View ?: return@runAfter
+                if (states[child] != null && isActive(recentsView) && isStackVisible(recentsView, child)) {
+                    param.result = true
+                }
+            }
+
+        recentsViewClass
             .hookMethod("updatePageOffsets", "setFullscreenProgress", "resetTaskVisuals")
             .suppressError()
             .runAfter { param -> refresh(param.thisObject as ViewGroup) }
@@ -217,17 +234,44 @@ class RecentsStyles(context: Context) : ModPack(context) {
     }
 
     private fun hideStack(recentsView: ViewGroup, launching: View) {
+        val horizontal = isHorizontal(recentsView)
+        val center = (if (horizontal) recentsView.width else recentsView.height) / 2f
+        val scroll = primaryScroll(recentsView, horizontal)
         for (index in 0 until recentsView.childCount) {
             val child = recentsView.getChildAt(index)
             if (child === launching || states[child]?.translation?.let { it != 0f } != true) continue
-            child.alpha = 0f
-            hiddenCards.add(child)
+            val start = (if (horizontal) child.left else child.top) - scroll
+            val size = if (horizontal) child.width else child.height
+            leavingCards[child] = if (start + size / 2f < center) -1f else 1f
+        }
+        if (leavingCards.isEmpty()) return
+        leaveAnimator?.cancel()
+        leaveAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = LEAVE_DURATION
+            interpolator = overlapInterpolator
+            addUpdateListener {
+                leaveProgress = it.animatedValue as Float
+                leavingCards.keys.forEach { card -> card.alpha = 1f - leaveProgress }
+                refresh(recentsView)
+            }
+            start()
         }
     }
 
     private fun expandStack() {
-        hiddenCards.forEach { it.alpha = 1f }
-        hiddenCards.clear()
+        leaveAnimator?.cancel()
+        leaveAnimator = null
+        leavingCards.keys.forEach { it.alpha = 1f }
+        leavingCards.clear()
+        leaveProgress = 0f
+    }
+
+    private fun isStackVisible(recentsView: ViewGroup, child: View): Boolean {
+        visibleRect.set(0f, 0f, child.width.toFloat(), child.height.toFloat())
+        child.matrix.mapRect(visibleRect)
+        visibleRect.offset((child.left - recentsView.scrollX).toFloat(), (child.top - recentsView.scrollY).toFloat())
+        return visibleRect.right > 0f && visibleRect.left < recentsView.width &&
+                visibleRect.bottom > 0f && visibleRect.top < recentsView.height
     }
 
     private fun overlapFactor(recentsView: ViewGroup): Float {
@@ -287,7 +331,8 @@ class RecentsStyles(context: Context) : ModPack(context) {
                 if (state.distanceResidual != 0f || shift != 0f) settling = true
             }
             cardStyle.update(style, distance, size, spacing, if (hasScroll) progress else 0f, rtl)
-            apply(child as ViewGroup, index, active, horizontal, corner, shift)
+            val leave = leavingCards[child]?.let { it * size * LEAVE_DISTANCE * leaveProgress } ?: 0f
+            apply(child as ViewGroup, index, active, horizontal, corner, shift + leave)
         }
         if (settling) recentsView.postInvalidateOnAnimation()
     }
@@ -421,6 +466,11 @@ class RecentsStyles(context: Context) : ModPack(context) {
                         CALLER_PATTERN.matches(method.name)
             }
             .forEach { runCatching { ModuleRuntime.module.deoptimize(it) } }
+        VISIBILITY_CALLERS.forEach { (className, methodName) ->
+            findClass(className, suppressError = true)?.declaredMethods
+                ?.filter { it.name == methodName && !Modifier.isAbstract(it.modifiers) }
+                ?.forEach { runCatching { ModuleRuntime.module.deoptimize(it) } }
+        }
     }
 
     companion object {
@@ -437,6 +487,18 @@ class RecentsStyles(context: Context) : ModPack(context) {
         }
 
         private const val FULLSCREEN_THRESHOLD = 0.35f
+        private const val LEAVE_DURATION = 300L
+        private const val LEAVE_DISTANCE = 1.2f
+        private val VISIBILITY_CALLERS = listOf(
+            "com.android.quickstep.views.RecentsDismissUtils" to "dismissAllTasks",
+            "com.android.quickstep.views.RecentsDismissUtils" to "buildDismissReflowSpringAnimationChain",
+            "com.android.quickstep.views.RecentsView" to "onTouchEvent",
+            "com.android.quickstep.views.RecentsView" to "getHighestVisibleTaskView",
+            "com.android.quickstep.TaskViewUtils" to "findTaskViewToLaunch",
+            "com.android.launcher3.uioverrides.touchcontrollers.TaskViewDismissTouchController" to "onControllerInterceptTouchEvent",
+            "com.android.launcher3.uioverrides.touchcontrollers.TaskViewLaunchTouchController" to "onControllerInterceptTouchEvent",
+            "com.android.launcher3.uioverrides.touchcontrollers.TaskViewTouchController" to "onControllerInterceptTouchEvent"
+        )
         private const val SETTLE_TIME_CONSTANT = 80f
         private const val SETTLE_MIN = 0.5f
         private const val SETTLE_HOLD_MS = 80L
