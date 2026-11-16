@@ -9,12 +9,16 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Rect
+import android.graphics.drawable.ColorDrawable
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.util.TypedValue
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -65,6 +69,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
     private var openDrawerFolder: WeakReference<Any>? = null
     private var closeAfterLaunch = false
     private var parkedRipple: Pair<View, Drawable?>? = null
+    private var folderDim: FolderDim? = null
     private var listPath: String? = null
     private var shownFolders = 0
     private var createdHolders = 0
@@ -459,7 +464,10 @@ class DrawerFolders(context: Context) : ModPack(context) {
         folderClass
             .hookMethod("closeComplete")
             .runAfter { param ->
-                if (param.thisObject.getFieldSilently("mInfo").isDrawerFolder()) drawerFolderActive = false
+                if (param.thisObject.getFieldSilently("mInfo").isDrawerFolder()) {
+                    drawerFolderActive = false
+                    hideFolderDimWhenFaded()
+                }
                 parkedRipple?.let { (ripple, background) -> ripple.background = background }
                 parkedRipple = null
             }
@@ -472,16 +480,6 @@ class DrawerFolders(context: Context) : ModPack(context) {
                 if (param.args.drawerFolderItem() != null) closeAfterLaunch = true
             }
 
-        launcherClass
-            .hookMethod("onStop", "onResume")
-            .runAfter {
-                if (!closeAfterLaunch) return@runAfter
-                closeAfterLaunch = false
-                val folder = openDrawerFolder?.get()?.takeIf { drawerFolderActive } ?: return@runAfter
-                openDrawerFolder = null
-                folder.closeNow()
-            }
-
         findClass("com.android.launcher3.views.ScrimView", suppressError = true)
             .hookMethod("setBackgroundColor")
             .runBefore { param ->
@@ -492,7 +490,21 @@ class DrawerFolders(context: Context) : ModPack(context) {
             .hookMethod("playSpringAnimation")
             .suppressError()
             .runBefore { param ->
-                if (drawerFolderActive && param.args.lastOrNull().isScrimView()) param.result = null
+                if (!drawerFolderActive) return@runBefore
+                val scrim = param.args.lastOrNull() as? View ?: return@runBefore
+                if (!scrim.isScrimView()) return@runBefore
+                val target = (folderDim ?: showFolderDim(scrim))?.target
+                if (target == null) param.result = null else param.args[param.args.size - 1] = target
+            }
+
+        launcherClass
+            .hookMethod("onStop", "onResume")
+            .runAfter {
+                if (!closeAfterLaunch) return@runAfter
+                closeAfterLaunch = false
+                val folder = openDrawerFolder?.get()?.takeIf { drawerFolderActive } ?: return@runAfter
+                openDrawerFolder = null
+                folder.closeNow()
             }
 
         folderClass
@@ -609,6 +621,66 @@ class DrawerFolders(context: Context) : ModPack(context) {
                 saveTitle(folderId, title)
             }
     }
+
+    private fun showFolderDim(scrim: View): FolderDim? {
+        hideFolderDim()
+        val appsView = (scrim.parent as? ViewGroup)?.findViewByName("apps_view") ?: return null
+        val root = appsView.rootView
+        val target = View(appsView.context).apply { alpha = 0f }
+        val drawable = ColorDrawable(Color.BLACK).apply { alpha = 0 }
+        val previous = appsView.foreground
+        val sync = ViewTreeObserver.OnPreDrawListener {
+            val alpha = (target.alpha.coerceIn(0f, 1f) * 255).roundToInt()
+            if (drawable.alpha != alpha) drawable.alpha = alpha
+            true
+        }
+        appsView.foreground = drawable
+        root.viewTreeObserver.addOnPreDrawListener(sync)
+        return FolderDim(root, appsView, previous, drawable, target, sync).also { folderDim = it }
+    }
+
+    private fun hideFolderDimWhenFaded() {
+        val dim = folderDim ?: return
+        if (dim.target.alpha <= 0f) {
+            hideFolderDim()
+            return
+        }
+        val deadline = SystemClock.uptimeMillis() + DIM_FADE_TIMEOUT_MS
+        val observer = dim.root.viewTreeObserver
+        val listener = object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                if (folderDim !== dim || dim.target.alpha <= 0f || SystemClock.uptimeMillis() > deadline) {
+                    if (observer.isAlive) observer.removeOnPreDrawListener(this)
+                    if (folderDim === dim) dim.root.post { if (folderDim === dim) hideFolderDim() }
+                }
+                return true
+            }
+        }
+        observer.addOnPreDrawListener(listener)
+        dim.root.invalidate()
+    }
+
+    private fun hideFolderDim() {
+        val dim = folderDim ?: return
+        folderDim = null
+        dim.root.viewTreeObserver.removeOnPreDrawListener(dim.sync)
+        if (dim.appsView.foreground === dim.drawable) dim.appsView.foreground = dim.previous
+    }
+
+    @SuppressLint("DiscouragedApi")
+    private fun View.findViewByName(name: String): View? {
+        val id = resources.getIdentifier(name, "id", context.packageName)
+        return if (id == 0) null else findViewById(id)
+    }
+
+    private class FolderDim(
+        val root: View,
+        val appsView: View,
+        val previous: Drawable?,
+        val drawable: ColorDrawable,
+        val target: View,
+        val sync: ViewTreeObserver.OnPreDrawListener
+    )
 
     private fun startDrawerDrag(view: View, folderInfo: Any?): Boolean {
         val entry = folderInfo.getExtraFieldSilently(FOLDER_ENTRY) as? FolderEntry ?: return false
@@ -756,6 +828,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
         private const val FOLDER_VIEW_TYPE = 1 shl 24
         private const val CONTAINER_ALL_APPS = -104
         private const val MODE_CLOSING = 1
+        private const val DIM_FADE_TIMEOUT_MS = 1000L
         private const val FOLDER_ID_BASE = Int.MAX_VALUE - 1000
         private const val MIN_FOLDER_APPS = 2
         private const val MAX_ALIGN_ATTEMPTS = 5
