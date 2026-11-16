@@ -6,12 +6,15 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Binder
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import android.os.Process
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
+import com.drdisagree.pixellauncherenhanced.data.iconpack.CustomIconStore
 import com.drdisagree.pixellauncherenhanced.data.prefs.PreferenceValues
 import com.drdisagree.pixellauncherenhanced.data.prefs.PrefsBridge
 import com.drdisagree.pixellauncherenhanced.data.prefs.RemotePrefsSync
+import java.io.FileNotFoundException
 
 class ModulePrefsProvider : ContentProvider() {
 
@@ -40,6 +43,18 @@ class ModulePrefsProvider : ContentProvider() {
         if (uid == Process.myUid()) return true
         val scope = context.resources.getStringArray(R.array.module_scope)
         return context.packageManager.getPackagesForUid(uid).orEmpty().any { it in scope }
+    }
+
+    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+        if (!isTrustedCaller()) throw SecurityException("Caller is not in module scope")
+        val context = context ?: return null
+        val segments = uri.pathSegments
+        if (segments.size != 2 || segments[0] != PrefsBridge.CUSTOM_ICON_PATH) throw FileNotFoundException(uri.toString())
+        val key = segments[1]
+        if (!CustomIconStore.isValidKey(key)) throw FileNotFoundException(uri.toString())
+        val file = CustomIconStore.file(context, key)
+        if (!file.isFile) throw FileNotFoundException(uri.toString())
+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
     }
 
     override fun query(

@@ -55,6 +55,10 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
+import android.graphics.BitmapFactory
+import com.drdisagree.pixellauncherenhanced.data.prefs.PrefsBridge
+import com.drdisagree.pixellauncherenhanced.data.iconpack.CustomIconStore
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackAdaptiveIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.ThemedPackIconDrawable
@@ -90,6 +94,7 @@ class IconPacks(context: Context) : ModPack(context) {
     private var themedMode = false
     private var signature = ""
     private val customIcons = ConcurrentHashMap<String, Bitmap>()
+    private val storedIcons = ConcurrentHashMap<String, Pair<String, Bitmap>>()
     private val customHashes = ConcurrentHashMap<String, Int>()
     private var packageStamps: Map<String, String> = emptyMap()
     private var itemStamps: Map<String, String> = emptyMap()
@@ -110,6 +115,16 @@ class IconPacks(context: Context) : ModPack(context) {
     private val badgingFactory = ThreadLocal<Any?>()
     private val badgingFill = ThreadLocal<Float>()
     private val shadowMatrix = Matrix()
+
+    private fun loadCustomIcon(prefKey: String, value: String): Bitmap? {
+        if (!CustomIconStore.isStamp(value)) return IconPackManager.decodeBitmap(value)
+        storedIcons[prefKey]?.takeIf { it.first == value }?.let { return it.second }
+        val bitmap = runCatching {
+            mContext.contentResolver.openInputStream(PrefsBridge.customIconUri(prefKey))?.use { BitmapFactory.decodeStream(it) }
+        }.onFailure { log(this, it) }.getOrNull() ?: return null
+        storedIcons[prefKey] = value to bitmap
+        return bitmap
+    }
 
     override fun updatePrefs(vararg key: String) {
         if (key.firstOrNull() == PINNED_SHORTCUTS_REQUEST) {
@@ -158,8 +173,9 @@ class IconPacks(context: Context) : ModPack(context) {
                     .keys
                     .forEach { component ->
                         val customKey = slot.customKey(component)
-                        val encoded = getString(IconPackManager.customIconKey(customKey), null) ?: return@forEach
-                        IconPackManager.decodeBitmap(encoded)?.let {
+                        val prefKey = IconPackManager.customIconKey(customKey)
+                        val encoded = getString(prefKey, null) ?: return@forEach
+                        loadCustomIcon(prefKey, encoded)?.let {
                             customIcons[customKey] = it
                             customHashes[customKey] = encoded.hashCode()
                         }

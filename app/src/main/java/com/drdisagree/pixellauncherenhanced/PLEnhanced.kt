@@ -2,6 +2,7 @@ package com.drdisagree.pixellauncherenhanced
 
 import android.app.Application
 import android.content.Context
+import com.drdisagree.pixellauncherenhanced.data.iconpack.CustomIconStore
 import com.drdisagree.pixellauncherenhanced.data.module.ModuleServiceManager
 import com.drdisagree.pixellauncherenhanced.utils.UpdateManager
 import com.google.android.material.color.DynamicColors
@@ -35,6 +36,7 @@ class PLEnhanced : Application() {
         super.onCreate()
         instance = this
         contextReference = WeakReference(applicationContext)
+        Thread { CustomIconStore.migrate(this) }.start()
         ModuleServiceManager.start()
         DynamicColors.applyToActivitiesIfAvailable(this)
         UpdateManager.schedule(this)

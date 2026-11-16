@@ -9,11 +9,14 @@ object PrefsBridge {
     const val AUTHORITY = "${BuildConfig.APPLICATION_ID}.prefs"
     const val METHOD_WRITE = "write"
     const val METHOD_SYNC = "sync"
+    const val CUSTOM_ICON_PATH = "customicon"
 
     private const val KEY_VALUES = "values"
     private const val KEY_REMOVED = "removed"
 
     val uri: Uri = Uri.parse("content://$AUTHORITY")
+
+    fun customIconUri(key: String): Uri = uri.buildUpon().appendPath(CUSTOM_ICON_PATH).appendPath(key).build()
 
     fun encode(values: Map<String, Any?>, removed: Collection<String>): Bundle {
         val bundle = Bundle()
