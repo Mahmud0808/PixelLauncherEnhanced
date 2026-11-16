@@ -338,11 +338,14 @@ class IconPacks(context: Context) : ModPack(context) {
                 if (exportingShortcuts.get() == true || !config.isActive) return@runAfter
                 val shortcut = param.args.getOrNull(0) as? ShortcutInfo ?: return@runAfter
                 val component = IconPackManager.shortcutComponent(shortcut.`package`, shortcut.id)
-                if (component.flattenToString() !in config.overrides) return@runAfter
+                val key = component.flattenToString()
+                val home = config.hasHomeOverride(key)
+                if (!home && key !in config.overrides) return@runAfter
 
                 val density = param.args.getOrNull(1) as? Int ?: mContext.resources.configuration.densityDpi
                 val original = param.result as? Drawable
-                param.result = replaceIcon(component, original, density) ?: return@runAfter
+                param.result = (if (home) homeIcon(component, original, density) else replaceIcon(component, original, density))
+                    ?: return@runAfter
             }
 
         val iconProviderClass = findClass("com.android.launcher3.icons.IconProvider", suppressError = true) ?: return
@@ -830,14 +833,22 @@ class IconPacks(context: Context) : ModPack(context) {
     }
 
     private fun buildHomeBitmap(component: ComponentName): Any? {
-        val key = component.flattenToString()
         val density = mContext.resources.configuration.densityDpi
         val original = runCatching { mContext.packageManager.getActivityIcon(component) }.getOrNull()
+        val drawable = homeIcon(component, original, density) ?: return null
+        return createBitmapInfo(drawable)
+    }
+
+    private fun homeIcon(component: ComponentName, original: Drawable?, density: Int): Drawable? {
+        val key = component.flattenToString()
         val homeValue = config.homeOverrides[key]
 
         val regular = runCatching {
             when (homeValue) {
-                null -> IconPackManager.resolve(mContext, component, config, density, { customIcons[it] }, { original })?.drawable
+                null -> IconPackManager.resolve(mContext, component, config, density, { customIcons[it] }) {
+                    original?.constantState?.newDrawable()?.mutate() ?: original
+                }?.drawable
+
                 IconPackManager.OVERRIDE_ORIGINAL -> null
                 else -> IconPackManager.resolveValue(mContext, homeValue, density, customIcons[IconSlot.HOME.customKey(key)])?.drawable
             }
@@ -845,7 +856,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
         val homeThemed = config.homeThemedOverrides[key]
         val themedSlot = if (homeThemed != null) IconSlot.THEMED_HOME else IconSlot.THEMED
-        val drawable = composeIcon(
+        return composeIcon(
             component = component,
             regular = regular,
             hasIconOverride = (homeValue ?: config.overrides[key]) != null,
@@ -853,9 +864,7 @@ class IconPacks(context: Context) : ModPack(context) {
             themedCustom = customIcons[themedSlot.customKey(key)],
             original = original,
             density = density
-        ) ?: regular ?: original ?: return null
-
-        return createBitmapInfo(drawable)
+        ) ?: regular ?: original
     }
 
     private fun applyLabelOverride(info: Any?, component: ComponentName?) {
