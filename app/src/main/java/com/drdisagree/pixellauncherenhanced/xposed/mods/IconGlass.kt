@@ -333,7 +333,11 @@ class IconGlass(context: Context) : ModPack(context) {
                 param.thisObject.setFieldSilently("mBackground", glass.inner)
             }
 
-        findClass("com.android.launcher3.icons.ThemedIconDrawable", suppressError = true)
+        findClass(
+            "com.android.launcher3.icons.ThemedIconDrawable",
+            "com.android.launcher3.icons.mono.ThemedIconDrawable",
+            suppressError = true
+        )
             .hookMethod("drawInternal")
             .suppressError()
             .runBefore { param ->
@@ -343,10 +347,10 @@ class IconGlass(context: Context) : ModPack(context) {
                 val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
                 val bounds = param.args.getOrNull(1) as? Rect ?: return@runBefore
 
-                val bgBitmap = drawable.getFieldSilently("mBgBitmap") as? Bitmap ?: return@runBefore
-                val bgPaint = drawable.getFieldSilently("mBgPaint") as? Paint ?: return@runBefore
-                val monoIcon = drawable.getFieldSilently("mMonoIcon") as? Bitmap ?: return@runBefore
-                val monoPaint = drawable.getFieldSilently("mMonoPaint") as? Paint ?: return@runBefore
+                val bgBitmap = drawable.firstField("mBgBitmap", "bgBitmap") as? Bitmap ?: return@runBefore
+                val bgPaint = drawable.firstField("mBgPaint", "bgPaint") as? Paint ?: return@runBefore
+                val monoIcon = drawable.firstField("mMonoIcon", "monoIcon") as? Bitmap ?: return@runBefore
+                val monoPaint = drawable.firstField("mMonoPaint", "monoPaint") as? Paint ?: return@runBefore
                 if (bounds.isEmpty) return@runBefore
 
                 localRect.set(bounds)
@@ -393,6 +397,9 @@ class IconGlass(context: Context) : ModPack(context) {
         val radius = maxOf(blurRadius * root.resources.displayMetrics.density, first.drawerBlurRadius())
         WallpaperGlass.captureHome(targets, radius)
     }
+
+    private fun Any.firstField(vararg names: String): Any? =
+        names.firstNotNullOfOrNull { getFieldSilently(it) }
 
     private fun Any?.isGlassIcon(): Boolean {
         if (this !is Drawable) return false
