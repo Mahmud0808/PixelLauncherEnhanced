@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.util.AttributeSet
+import android.view.Surface
 import android.content.Context
 import android.graphics.Rect
 import android.os.Build
@@ -8,7 +10,7 @@ import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_GESTURE_PROGRESS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.FREEFORM_MODE
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformHintView
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformHintViewController
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils
@@ -16,17 +18,17 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.cu
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.startAppBubble
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.startFreeformByIntent
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.FreeformUtils.startFreeformFromRecents
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.newInstance
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.hook.createInstance
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getStaticField
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.hook.HookParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 
 class FreeformMod(context: Context) : ModPack(context) {
@@ -45,7 +47,7 @@ class FreeformMod(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val absSwipeClass = findClass("com.android.quickstep.AbsSwipeUpHandler")
         val gestureStateClass = findClass("com.android.quickstep.GestureState")
         val gestureEndTargetClass = findClass("com.android.quickstep.GestureState.GestureEndTarget")
@@ -55,7 +57,7 @@ class FreeformMod(context: Context) : ModPack(context) {
 
         // ── DragLayer lifecycle: init FreeformHintView ──
         dragLayerClass?.hookConstructor()
-            ?.parameters(Context::class.java, android.util.AttributeSet::class.java)
+            ?.parameters(Context::class.java, AttributeSet::class.java)
             ?.runAfter { param ->
                 val layer = param.thisObject as ViewGroup
                 dragLayer = WeakReference(layer)
@@ -152,7 +154,7 @@ class FreeformMod(context: Context) : ModPack(context) {
                                     FreeformUtils.Variant.AOSP.id -> {
                                         startFreeformFromRecents(
                                             mTask,
-                                            activityManagerWrapperClass.newInstance(),
+                                            activityManagerWrapperClass.createInstance(),
                                             mBound
                                         )
                                     }
@@ -206,7 +208,7 @@ class FreeformMod(context: Context) : ModPack(context) {
             val oriState = rv.callMethod("getPagedViewOrientedState")
             oriState.callMethod("getDisplayRotation") as Int
         } catch (e: Exception) {
-            android.view.Surface.ROTATION_0
+            Surface.ROTATION_0
         }
     }
 
@@ -239,7 +241,7 @@ class FreeformMod(context: Context) : ModPack(context) {
         } catch (e: Exception) { null }
     }
 
-    private fun updateHintView(handler: Any, shift: Float, param:  XC_MethodHook.MethodHookParam) {
+    private fun updateHintView(handler: Any, shift: Float, param:  HookParam) {
         if (!freeformEnabled) return
         if (inactiveHandler?.get() === handler) return
 

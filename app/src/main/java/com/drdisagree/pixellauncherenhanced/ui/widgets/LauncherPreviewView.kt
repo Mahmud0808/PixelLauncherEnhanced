@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.widgets
 
+import androidx.appcompat.R
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
@@ -61,7 +62,7 @@ class LauncherPreviewView @JvmOverloads constructor(
 
     private val iconColors by lazy {
         listOf(
-            androidx.appcompat.R.attr.colorPrimary,
+            R.attr.colorPrimary,
             MaterialR.attr.colorTertiary,
             MaterialR.attr.colorSecondary,
             MaterialR.attr.colorPrimaryFixedDim
@@ -197,6 +198,7 @@ class LauncherPreviewView @JvmOverloads constructor(
         addView(view, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         view.doOnLayout {
+            @Suppress("DEPRECATION")
             val token = view.hostToken ?: return@doOnLayout
             HomePreviewLoader.requestSurface(context, result.authority, token, width, height) { surface, callback ->
                 if (surfaceView !== view || !isAttachedToWindow) {

@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.activities
 
+import com.google.android.material.R as MaterialR
 import android.Manifest
 import android.content.ComponentName
 import android.content.Intent
@@ -140,7 +141,7 @@ class MainActivity : BaseActivity(), PreferenceFragmentCompat.OnPreferenceStartF
 
     private val sharedElementBinder = object : FragmentManager.FragmentLifecycleCallbacks() {
         override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: Bundle?) {
-            v.setBackgroundColor(MaterialColors.getColor(v, com.google.android.material.R.attr.colorSurface))
+            v.setBackgroundColor(MaterialColors.getColor(v, MaterialR.attr.colorSurface))
             (v as? ViewGroup)?.isTransitionGroup = true
 
             val name = f.arguments?.getString(ARG_SHARED_ELEMENT) ?: return
@@ -155,7 +156,7 @@ class MainActivity : BaseActivity(), PreferenceFragmentCompat.OnPreferenceStartF
 
         val fragment = fragmentManager.fragmentFactory.instantiate(classLoader, fragmentClass.name)
         val current = fragmentManager.findFragmentById(R.id.fragmentContainerView)
-        val surface = MaterialColors.getColor(sharedView, com.google.android.material.R.attr.colorSurface)
+        val surface = MaterialColors.getColor(sharedView, MaterialR.attr.colorSurface)
 
         fragment.arguments = (fragment.arguments ?: Bundle()).apply {
             putString(ARG_SHARED_ELEMENT, sharedView.transitionName)

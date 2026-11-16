@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.ui.widgets
 
+import android.util.TypedValue
+import androidx.appcompat.R
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
@@ -24,7 +26,7 @@ class IconPackPreviewView(context: Context) : FrameLayout(context) {
 
     private val density = resources.displayMetrics.density
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val primary = MaterialColors.getColor(context, androidx.appcompat.R.attr.colorPrimary, Color.GRAY)
+    private val primary = MaterialColors.getColor(context, R.attr.colorPrimary, Color.GRAY)
     private val grid = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
     private val icons = ArrayList<ImageView>()
     private val labels = ArrayList<TextView>()
@@ -108,7 +110,7 @@ class IconPackPreviewView(context: Context) : FrameLayout(context) {
     }
 
     private fun resolveAppearance(attr: Int): Int {
-        val value = android.util.TypedValue()
+        val value = TypedValue()
         context.theme.resolveAttribute(attr, value, true)
         return value.resourceId
     }

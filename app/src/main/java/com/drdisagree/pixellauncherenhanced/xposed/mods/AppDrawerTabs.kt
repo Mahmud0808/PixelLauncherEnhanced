@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.removeExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.ComponentName
@@ -34,18 +36,18 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_AT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_TABS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.model.DrawerTab
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime.modRes
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Predicate
@@ -94,7 +96,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         DebugRecorder.registerCapture("appsSourceRef") { tabsEnabled }
 
         val containerClass = findClass(
@@ -229,12 +231,12 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                 val original = list.getFieldSilently("mItemFilter") as? Predicate<Any?>
                 val tabFilter = Predicate<Any?> { info -> info.matchesTab(tab) }
 
-                list.setExtraField(original ?: NO_FILTER)
+                list.stashOriginalFilter(original ?: NO_FILTER)
                 list.setField("mItemFilter", original?.and(tabFilter) ?: tabFilter)
             }
             .runAfter { param ->
                 val list = param.thisObject
-                val original = list.takeExtraField() ?: return@runAfter
+                val original = list.takeOriginalFilter() ?: return@runAfter
                 list.setField("mItemFilter", original.takeIf { it !== NO_FILTER })
             }
     }
@@ -536,13 +538,11 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
         detector.onTouchEvent(event)
     }
 
-    private fun Any.setExtraField(value: Any) {
-        de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField(this, ORIGINAL_FILTER_KEY, value)
+    private fun Any.stashOriginalFilter(value: Any) {
+        setExtraField(ORIGINAL_FILTER_KEY, value)
     }
 
-    private fun Any.takeExtraField(): Any? {
-        return de.robv.android.xposed.XposedHelpers.removeAdditionalInstanceField(this, ORIGINAL_FILTER_KEY)
-    }
+    private fun Any.takeOriginalFilter(): Any? = removeExtraField(ORIGINAL_FILTER_KEY)
 
     private fun barHeight(container: ViewGroup): Int {
         val nativeStrip = container.getFieldSilently("mHeader").getFieldSilently("mTabLayout") as? View

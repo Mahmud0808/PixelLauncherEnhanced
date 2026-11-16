@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.data.enums
 
+import androidx.appcompat.R
 import android.view.View
 import androidx.annotation.AttrRes
 import androidx.core.graphics.ColorUtils
@@ -16,7 +17,7 @@ enum class TilePalette(
 ) {
     PRIMARY(
         MaterialR.attr.colorPrimaryContainer,
-        androidx.appcompat.R.attr.colorPrimary,
+        R.attr.colorPrimary,
         MaterialR.attr.colorOnPrimary,
         MaterialR.attr.colorOnPrimaryContainer
     ),
@@ -34,7 +35,7 @@ enum class TilePalette(
     ),
     NEUTRAL(
         MaterialR.attr.colorSurfaceContainerHigh,
-        androidx.appcompat.R.attr.colorPrimary,
+        R.attr.colorPrimary,
         MaterialR.attr.colorOnPrimary,
         MaterialR.attr.colorOnSurface,
         MaterialR.attr.colorTertiary,

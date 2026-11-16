@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import androidx.appcompat.R as AppCompatR
+import android.text.format.Formatter
 import android.animation.LayoutTransition
 import androidx.core.view.ViewCompat
 import androidx.core.animation.doOnEnd
@@ -224,10 +226,10 @@ class DebugReportPage : Fragment() {
         val progress = row.findViewById<CircularProgressIndicator>(R.id.status_progress)
         val (drawable, color) = when (status) {
             DebugReport.Status.PENDING -> R.drawable.ic_debug_radio_button_unchecked to MaterialR.attr.colorOutline
-            DebugReport.Status.RUNNING -> 0 to androidx.appcompat.R.attr.colorPrimary
-            DebugReport.Status.DONE -> R.drawable.ic_debug_check_circle to androidx.appcompat.R.attr.colorPrimary
+            DebugReport.Status.RUNNING -> 0 to AppCompatR.attr.colorPrimary
+            DebugReport.Status.DONE -> R.drawable.ic_debug_check_circle to AppCompatR.attr.colorPrimary
             DebugReport.Status.SKIPPED -> R.drawable.ic_debug_do_not_disturb_on to MaterialR.attr.colorOnSurfaceVariant
-            DebugReport.Status.FAILED -> R.drawable.ic_debug_error to androidx.appcompat.R.attr.colorError
+            DebugReport.Status.FAILED -> R.drawable.ic_debug_error to AppCompatR.attr.colorError
         }
         progress.visibility = if (status == DebugReport.Status.RUNNING) View.VISIBLE else View.GONE
         icon.visibility = if (status == DebugReport.Status.RUNNING) View.INVISIBLE else View.VISIBLE
@@ -313,7 +315,7 @@ class DebugReportPage : Fragment() {
     private fun showResult(result: DebugReport.Result) {
         reportFile = result.file
         binding.resultName.text = result.file.name
-        binding.resultSize.text = android.text.format.Formatter.formatShortFileSize(requireContext(), result.file.length())
+        binding.resultSize.text = Formatter.formatShortFileSize(requireContext(), result.file.length())
         renderFindings(result.findings)
         binding.resultCard.visibility = View.VISIBLE
     }
@@ -327,8 +329,8 @@ class DebugReportPage : Fragment() {
             row.findViewById<TextView>(R.id.title).text = finding.title
             val icon = row.findViewById<ImageView>(R.id.status_icon)
             val (drawable, color) = when {
-                findings.isEmpty() -> R.drawable.ic_debug_check_circle to androidx.appcompat.R.attr.colorPrimary
-                finding.severity == DebugReport.Severity.ERROR -> R.drawable.ic_debug_error to androidx.appcompat.R.attr.colorError
+                findings.isEmpty() -> R.drawable.ic_debug_check_circle to AppCompatR.attr.colorPrimary
+                finding.severity == DebugReport.Severity.ERROR -> R.drawable.ic_debug_error to AppCompatR.attr.colorError
                 finding.severity == DebugReport.Severity.WARNING -> R.drawable.ic_debug_warning to MaterialR.attr.colorTertiary
                 else -> R.drawable.ic_info to MaterialR.attr.colorOnSurfaceVariant
             }

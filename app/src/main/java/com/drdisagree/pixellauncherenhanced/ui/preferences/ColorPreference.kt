@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import androidx.appcompat.R as AppCompatR
+import com.drdisagree.pixellauncherenhanced.R
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -71,7 +73,7 @@ class ColorPreference : Preference {
     }
 
     private fun initResource() {
-        layoutResource = com.drdisagree.pixellauncherenhanced.R.layout.custom_preference_color
+        layoutResource = R.layout.custom_preference_color
     }
 
     override fun onClick() {
@@ -168,7 +170,7 @@ class ColorPreference : Preference {
             content.addView(MaterialTextView(context).apply {
                 setText(group.label)
                 setTextAppearance(MaterialR.style.TextAppearance_Material3_TitleSmall)
-                setTextColor(MaterialColors.getColor(context, androidx.appcompat.R.attr.colorPrimary, 0))
+                setTextColor(MaterialColors.getColor(context, AppCompatR.attr.colorPrimary, 0))
                 setPadding(dp(4), dp(14), 0, dp(8))
             })
             MaterialPalette.Role.entries.filter { it.group == group }.chunked(2).forEach { pair ->

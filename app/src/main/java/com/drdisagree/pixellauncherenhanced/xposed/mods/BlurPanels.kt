@@ -59,22 +59,22 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_CLEAR_B
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanel
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.BlurPanelDrawable
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.ResourceIds
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.WeakHashMap
@@ -217,7 +217,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         findClass("com.android.launcher3.CellLayout", suppressError = true)
             .hookMethod("onDraw")
             .suppressError()
@@ -778,7 +778,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             is ColorDrawable -> true
             is GradientDrawable -> shape == GradientDrawable.RECTANGLE
             is DrawableWrapper -> drawable?.isRoundedRect() != false
-            is DrawableContainer -> current?.isRoundedRect() != false
+            is DrawableContainer -> currentOrNull?.isRoundedRect() != false
             is LayerDrawable -> (0 until numberOfLayers).all { getDrawable(it)?.isRoundedRect() != false }
             else -> false
         }
@@ -924,7 +924,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     private fun Drawable.gradientShape(): GradientDrawable? = when (this) {
         is GradientDrawable -> this
         is DrawableWrapper -> drawable?.gradientShape()
-        is DrawableContainer -> current?.gradientShape()
+        is DrawableContainer -> currentOrNull?.gradientShape()
         is LayerDrawable -> (0 until numberOfLayers).firstNotNullOfOrNull { getDrawable(it)?.gradientShape() }
         else -> null
     }
@@ -1321,7 +1321,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             is GradientDrawable -> color?.defaultColor ?: colors?.firstOrNull()
             is ShapeDrawable -> paint.color
             is DrawableWrapper -> drawable?.fillColor()
-            is DrawableContainer -> current?.fillColor()
+            is DrawableContainer -> currentOrNull?.fillColor()
             is LayerDrawable -> (numberOfLayers - 1 downTo 0).firstNotNullOfOrNull { layer(it)?.fillColor() }
             else -> null
         }
@@ -1336,7 +1336,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                 ?: false
             is ShapeDrawable -> Color.alpha(paint.color) != 0 || paint.shader != null
             is DrawableWrapper -> drawable?.isFilled() == true
-            is DrawableContainer -> current?.isFilled() == true
+            is DrawableContainer -> currentOrNull?.isFilled() == true
             is LayerDrawable -> (0 until numberOfLayers).any { layer(it)?.isFilled() == true }
             else -> true
         }
@@ -1368,7 +1368,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         return when (this) {
             is ClipDrawable, is ScaleDrawable -> true
             is DrawableWrapper -> drawable?.isLevelBased() == true
-            is DrawableContainer -> current?.isLevelBased() == true
+            is DrawableContainer -> currentOrNull?.isLevelBased() == true
             is LayerDrawable -> (0 until numberOfLayers).any { getDrawable(it)?.isLevelBased() == true }
             else -> false
         }
@@ -1493,7 +1493,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             is ColorDrawable, is GradientDrawable, is ShapeDrawable -> true
             is LayerDrawable -> (0 until numberOfLayers).all { getDrawable(it)?.isPlainShape() != false }
             is DrawableWrapper -> drawable?.isPlainShape() != false
-            is DrawableContainer -> current?.isPlainShape() != false
+            is DrawableContainer -> currentOrNull?.isPlainShape() != false
             else -> false
         }
     }
@@ -1511,6 +1511,9 @@ class BlurPanels(context: Context) : ModPack(context) {
     init {
         instance = WeakReference(this)
     }
+
+    private val DrawableContainer.currentOrNull: Drawable?
+        get() = current
 
     companion object {
         private var instance: WeakReference<BlurPanels>? = null

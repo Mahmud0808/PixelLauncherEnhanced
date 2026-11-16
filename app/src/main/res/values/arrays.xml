@@ -91,6 +91,22 @@
         <item>1</item>
     </string-array>
 
+    <string-array name="recents_style_str" translatable="false">
+        <item>@string/recents_style_default</item>
+        <item>@string/recents_style_scale</item>
+        <item>@string/recents_style_staple</item>
+        <item>@string/recents_style_ios</item>
+        <item>@string/recents_style_oxygen</item>
+    </string-array>
+
+    <string-array name="recents_style_value" translatable="false">
+        <item>default</item>
+        <item>stock</item>
+        <item>staple</item>
+        <item>ios</item>
+        <item>oxygen</item>
+    </string-array>
+
     <string-array name="freeform_mode_str">
         <item>AOSP Origin</item>
         <item>Sunshine MiFreeform</item>

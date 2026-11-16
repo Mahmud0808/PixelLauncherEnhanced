@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import java.util.function.Predicate
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.app.ActivityManager
 import android.content.BroadcastReceiver
@@ -8,6 +9,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.LauncherApps
+import android.content.res.Configuration
+import android.app.Activity
 import android.os.Process
 import android.os.Handler
 import android.os.Looper
@@ -22,8 +25,11 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.ShortcutInfo
-import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.RectF
 import android.content.pm.PackageItemInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -43,32 +49,37 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACKS_ENA
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLIED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_APPLY
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_PACK_MASK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_REFRESH_ON_THEME
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCUTS_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
+import android.graphics.BitmapFactory
+import com.drdisagree.pixellauncherenhanced.data.prefs.PrefsBridge
+import com.drdisagree.pixellauncherenhanced.data.iconpack.CustomIconStore
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
+import com.drdisagree.pixellauncherenhanced.data.iconpack.PackAdaptiveIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.PackIconDrawable
 import com.drdisagree.pixellauncherenhanced.data.iconpack.ThemedPackIconDrawable
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.newInstance
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.MethodHookHelper
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.createInstance
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -79,9 +90,11 @@ class IconPacks(context: Context) : ModPack(context) {
 
     private var config = IconPackManager.Config()
     private var pendingApply = 0L
+    private var refreshOnTheme = false
     private var themedMode = false
     private var signature = ""
     private val customIcons = ConcurrentHashMap<String, Bitmap>()
+    private val storedIcons = ConcurrentHashMap<String, Pair<String, Bitmap>>()
     private val customHashes = ConcurrentHashMap<String, Int>()
     private var packageStamps: Map<String, String> = emptyMap()
     private var itemStamps: Map<String, String> = emptyMap()
@@ -98,6 +111,20 @@ class IconPacks(context: Context) : ModPack(context) {
     private var bgDataModelRef: WeakReference<Any>? = null
     private val skippedWrap = ThreadLocal<Any?>()
     private val fullDrawableBitmap = ThreadLocal<Bitmap?>()
+    private val badgingDepth = ThreadLocal<Int>()
+    private val badgingFactory = ThreadLocal<Any?>()
+    private val badgingFill = ThreadLocal<Float>()
+    private val shadowMatrix = Matrix()
+
+    private fun loadCustomIcon(prefKey: String, value: String): Bitmap? {
+        if (!CustomIconStore.isStamp(value)) return IconPackManager.decodeBitmap(value)
+        storedIcons[prefKey]?.takeIf { it.first == value }?.let { return it.second }
+        val bitmap = runCatching {
+            mContext.contentResolver.openInputStream(PrefsBridge.customIconUri(prefKey))?.use { BitmapFactory.decodeStream(it) }
+        }.onFailure { log(this, it) }.getOrNull() ?: return null
+        storedIcons[prefKey] = value to bitmap
+        return bitmap
+    }
 
     override fun updatePrefs(vararg key: String) {
         if (key.firstOrNull() == PINNED_SHORTCUTS_REQUEST) {
@@ -111,6 +138,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
         Xprefs.apply {
             pendingApply = getLong(ICON_PACK_APPLY, 0L).takeIf { it != getLong(ICON_PACK_APPLIED, 0L) } ?: 0L
+            refreshOnTheme = getBoolean(ICON_REFRESH_ON_THEME, false)
             themedMode = getBoolean(HOME_THEMED_ICONS, false)
             val labels = IconPackManager.parseOverrides(getString(LABEL_OVERRIDES, null))
 
@@ -145,8 +173,9 @@ class IconPacks(context: Context) : ModPack(context) {
                     .keys
                     .forEach { component ->
                         val customKey = slot.customKey(component)
-                        val encoded = getString(IconPackManager.customIconKey(customKey), null) ?: return@forEach
-                        IconPackManager.decodeBitmap(encoded)?.let {
+                        val prefKey = IconPackManager.customIconKey(customKey)
+                        val encoded = getString(prefKey, null) ?: return@forEach
+                        loadCustomIcon(prefKey, encoded)?.let {
                             customIcons[customKey] = it
                             customHashes[customKey] = encoded.hashCode()
                         }
@@ -214,10 +243,15 @@ class IconPacks(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         DebugRecorder.registerCapture("modelCallbacksRef") { launcherModelRef?.get() == null }
 
         registerPackReceiver()
+
+        findClass("com.android.launcher3.Launcher")
+            .hookMethod("onCreate", "onConfigurationChanged")
+            .suppressError()
+            .runAfter { param -> (param.thisObject as? Activity)?.let { checkThemeChange(it) } }
 
         findClass("com.android.launcher3.LauncherModel", suppressError = true)
             .hookMethod("enqueueModelUpdateTask")
@@ -373,6 +407,12 @@ class IconPacks(context: Context) : ModPack(context) {
             .hookMethod("createBadgedIconBitmap")
             .suppressError()
             .runBefore { param ->
+                if (param.args.getOrNull(0).isPackIcon()) {
+                    badgingDepth.set((badgingDepth.get() ?: 0) + 1)
+                    badgingFactory.set(param.thisObject)
+                    badgingFill.remove()
+                }
+
                 val combined = param.args.getOrNull(0) as? ThemedPackIconDrawable
                 if (combined != null) {
                     val method = param.method as Method
@@ -392,10 +432,21 @@ class IconPacks(context: Context) : ModPack(context) {
                 val options = param.args.getOrNull(1) ?: return@runBefore
                 val fields = OPTION_FIELDS.filter { options.javaClass.hasField(it) }
                 val previous = fields.associateWith { options.getFieldSilently(it) }
-                fields.forEach { field -> options.setField(field, java.lang.Boolean.FALSE) }
+                fields.forEach { field -> options.setField(field, false) }
                 skippedWrap.set(options to previous)
             }
-            .runAfter {
+            .runAfter { param ->
+                if (param.args.getOrNull(0).isPackIcon()) {
+                    val depth = (badgingDepth.get() ?: 1) - 1
+                    if (depth > 0) {
+                        badgingDepth.set(depth)
+                    } else {
+                        badgingDepth.remove()
+                        badgingFactory.remove()
+                        badgingFill.remove()
+                    }
+                }
+
                 @Suppress("UNCHECKED_CAST")
                 (skippedWrap.get() as? Pair<Any, Map<String, Any?>>)?.let { (options, previous) ->
                     previous.forEach { (field, value) ->
@@ -403,6 +454,17 @@ class IconPacks(context: Context) : ModPack(context) {
                     }
                 }
                 skippedWrap.remove()
+            }
+
+        findClass("com.android.launcher3.icons.ShadowGenerator", suppressError = true)
+            .hookMethod("addPathShadow")
+            .suppressError()
+            .runBefore { param ->
+                val fill = badgingFill.get()?.takeIf { it != 1f } ?: return@runBefore
+                val path = param.args.getOrNull(0) as? Path ?: return@runBefore
+                val bounds = RectF().also { path.computeBounds(it, true) }
+                shadowMatrix.setScale(fill, fill, bounds.centerX(), bounds.centerY())
+                param.args[0] = Path(path).apply { transform(shadowMatrix) }
             }
 
         findClass("com.android.launcher3.icons.BaseIconFactory", suppressError = true)
@@ -444,7 +506,7 @@ class IconPacks(context: Context) : ModPack(context) {
                 if (!icon.isPackAdaptiveIcon()) return@runBefore
                 if (param.thisObject.getFieldSilently("mIsOpening") != false) return@runBefore
 
-                param.args[0] = AdaptiveIconDrawable(
+                param.args[0] = PackAdaptiveIconDrawable(
                     ColorDrawable(Color.TRANSPARENT),
                     ColorDrawable(Color.TRANSPARENT)
                 ).apply { setBounds(0, 0, 1, 1) }
@@ -600,7 +662,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
             if (view.javaClass.name.endsWith(".folder.FolderIcon")) {
                 runCatching { view.callMethod("updatePreviewItems", false) }
-                    .recoverCatching { view.callMethod("updatePreviewItems", java.util.function.Predicate<Any?> { true }) }
+                    .recoverCatching { view.callMethod("updatePreviewItems", Predicate<Any?> { true }) }
                 view.invalidate()
                 continue
             }
@@ -662,6 +724,26 @@ class IconPacks(context: Context) : ModPack(context) {
         }
 
         return (config.iconPacks + config.themedIconPacks + overridePacks).toSet()
+    }
+
+    private fun checkThemeChange(activity: Activity) {
+        val key = themeKey(activity)
+        val prefs = mContext.getSharedPreferences(THEME_PREFS, Context.MODE_PRIVATE)
+        val previous = prefs.getString(THEME_KEY, null)
+        if (previous == key) return
+
+        prefs.edit().putString(THEME_KEY, key).commit()
+        if (previous == null || !refreshOnTheme) return
+        mainHandler.post {
+            IconPackManager.clearCache()
+            refreshAllApps()
+        }
+    }
+
+    private fun themeKey(context: Context): String {
+        val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        val colors = THEME_COLORS.joinToString(",") { runCatching { context.getColor(it) }.getOrDefault(0).toString() }
+        return "$night|$colors"
     }
 
     private fun applyIcons() {
@@ -882,7 +964,7 @@ class IconPacks(context: Context) : ModPack(context) {
 
         return try {
             val options = findClass($$"com.android.launcher3.icons.BaseIconFactory$IconOptions", suppressError = true)
-                ?.newInstance()
+                .createInstance()
             runCatching {
                 if (options != null) {
                     factory.callMethod("createBadgedIconBitmap", drawable, options)
@@ -907,7 +989,16 @@ class IconPacks(context: Context) : ModPack(context) {
 
         val background = ColorDrawable(Color.TRANSPARENT)
         val source = fullDrawableBitmap.get()?.let { BitmapDrawable(mContext.resources, it) } ?: regular
-        val foreground = InsetDrawable(source, AdaptiveIconDrawable.getExtraInsetFraction())
+        val extraInset = AdaptiveIconDrawable.getExtraInsetFraction()
+        val factory = badgingFactory.get()
+        val inset = if (factory != null) {
+            val fill = packFill(factory, source)
+            badgingFill.set(fill)
+            (1f - fill / (1f + 2 * extraInset)) / 2f
+        } else {
+            extraInset
+        }
+        val foreground = InsetDrawable(source, inset)
         val monochrome = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ((drawable as? ThemedPackIconDrawable)?.themed as? AdaptiveIconDrawable)?.monochrome
         } else {
@@ -915,11 +1006,24 @@ class IconPacks(context: Context) : ModPack(context) {
         }
 
         return if (monochrome != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            AdaptiveIconDrawable(background, foreground, monochrome)
+            PackAdaptiveIconDrawable(background, foreground, monochrome)
         } else {
-            AdaptiveIconDrawable(background, foreground)
+            PackAdaptiveIconDrawable(background, foreground)
         }.apply { setBounds(0, 0, 1, 1) }
     }
+
+    private fun packFill(factory: Any, icon: Drawable): Float {
+        val normalizer = factory.callMethodSilently("getNormalizer") ?: return 1f
+        val shape = PackAdaptiveIconDrawable(ColorDrawable(Color.TRANSPARENT), ColorDrawable(Color.TRANSPARENT))
+        val bounds = Rect(icon.bounds)
+        val adaptive = normalizer.callMethodSilently("getScale", shape, null, null, null) as? Float
+        val legacy = normalizer.callMethodSilently("getScale", icon, null, null, null) as? Float
+        icon.bounds = bounds
+        if (adaptive == null || legacy == null || adaptive <= 0f || legacy <= 0f) return 1f
+        return (legacy / adaptive).coerceIn(MIN_PACK_FILL, MAX_PACK_FILL)
+    }
+
+    private fun Any?.isPackIcon(): Boolean = this is PackIconDrawable || this is ThemedPackIconDrawable
 
     private fun AdaptiveIconDrawable.isPackAdaptiveIcon(): Boolean {
         return (background as? ColorDrawable)?.color == Color.TRANSPARENT && foreground is InsetDrawable
@@ -928,7 +1032,7 @@ class IconPacks(context: Context) : ModPack(context) {
     private fun hasStockMonochrome(icon: Drawable): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || icon !is AdaptiveIconDrawable) return false
         val monochrome = icon.monochrome ?: return false
-        return XposedHelpers.getAdditionalInstanceField(icon, "mMonochromeIcon") !== monochrome
+        return icon.getExtraFieldSilently("mMonochromeIcon") !== monochrome
     }
 
     private fun themedPackIcon(component: ComponentName, original: Drawable, density: Int): Drawable? {
@@ -978,6 +1082,17 @@ class IconPacks(context: Context) : ModPack(context) {
 
     companion object {
         private const val ICON_CACHE_DB = "app_icons.db"
+        private const val THEME_PREFS = "ple_icon_theme"
+        private const val THEME_KEY = "theme"
+        private val THEME_COLORS = intArrayOf(
+            android.R.color.system_accent1_500,
+            android.R.color.system_accent2_500,
+            android.R.color.system_accent3_500,
+            android.R.color.system_neutral1_500,
+            android.R.color.system_neutral2_500
+        )
+        private const val MIN_PACK_FILL = 0.5f
+        private const val MAX_PACK_FILL = 1.25f
         private const val SCROLL_RESTORE_WINDOW_MS = 4_000L
         private const val FOLDER_REFRESH_DELAY_MS = 1_500L
         private const val SHORTCUT_PREVIEW_DP = 60

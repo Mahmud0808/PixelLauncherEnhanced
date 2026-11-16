@@ -1,30 +1,31 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
+import android.text.TextPaint
 import android.text.TextUtils
 import android.view.View
 import android.widget.TextView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_ICON_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_DRAWER_LONG_LABELS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_ICON_LABELS
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getStaticFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.hook.HookParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import kotlin.math.ceil
 
 class IconLabels(context: Context) : ModPack(context) {
@@ -53,13 +54,13 @@ class IconLabels(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val bubbleTextViewClass = findClass("com.android.launcher3.BubbleTextView")
 
         nativeLabelHiddenItem = findClass("com.android.launcher3.LauncherPrefs", suppressError = true)
             .getStaticFieldSilently("WORKSPACE_ITEMS_LABEL_HIDDEN")
 
-        fun XC_MethodHook.MethodHookParam.beforeHookedLabel() {
+        fun HookParam.beforeHookedLabel() {
             val mDisplay = thisObject.getField("mDisplay") as Int
             val itemInfo = args[0]
 
@@ -74,7 +75,7 @@ class IconLabels(context: Context) : ModPack(context) {
             if (itemInfo.hidesLabel(mDisplay)) removeLabel()
         }
 
-        fun XC_MethodHook.MethodHookParam.afterHookedLabel() {
+        fun HookParam.afterHookedLabel() {
             val mDisplay = thisObject.getField("mDisplay") as Int
             val itemInfo = args[0]
 
@@ -143,13 +144,15 @@ class IconLabels(context: Context) : ModPack(context) {
         }
     }
 
-    private fun XC_MethodHook.MethodHookParam.beforeLongLabelMeasure() {
+    private fun HookParam.beforeLongLabelMeasure() {
         val view = thisObject as TextView
         if (!view.usesLongLabel()) return
 
-        if (view.maxLines != LONG_LABEL_LINES) {
+        val labelWidth = View.MeasureSpec.getSize(args[0] as Int) - view.totalPaddingLeft - view.totalPaddingRight
+        val lines = if (labelWidth > 0) view.fitLongLabel(labelWidth) else LONG_LABEL_LINES
+        if (view.maxLines != lines) {
             view.setSingleLine(false)
-            view.maxLines = LONG_LABEL_LINES
+            view.maxLines = lines
             view.ellipsize = TextUtils.TruncateAt.END
         }
 
@@ -169,6 +172,46 @@ class IconLabels(context: Context) : ModPack(context) {
         if (view.paddingTop != paddingTop) {
             view.setPadding(view.paddingLeft, paddingTop, view.paddingRight, view.paddingBottom)
         }
+    }
+
+    private fun TextView.fitLongLabel(width: Int): Int {
+        val current = text?.toString() ?: return LONG_LABEL_LINES
+        val original = (getExtraFieldSilently(LONG_LABEL_ORIGINAL) as? String)
+            ?.takeIf { current == getExtraFieldSilently(LONG_LABEL_TEXT) }
+            ?: current
+        val words = original.trim().split(WHITESPACE).filter { it.isNotEmpty() }
+        val formatted = if (words.size < 2) original else wrapWords(words, original, paint, width.toFloat())
+
+        setExtraField(LONG_LABEL_ORIGINAL, original)
+        setExtraField(LONG_LABEL_TEXT, formatted)
+        if (current != formatted) text = formatted
+
+        return when {
+            words.size >= 2 -> LONG_LABEL_LINES
+            original.any { Character.isIdeographic(it.code) } -> LONG_LABEL_LINES
+            else -> 1
+        }
+    }
+
+    private fun wrapWords(words: List<String>, original: String, paint: TextPaint, width: Float): String {
+        if (paint.measureText(original) <= width) return original
+
+        var first = ""
+        var used = 0
+        for (word in words) {
+            val candidate = if (first.isEmpty()) word else "$first $word"
+            if (paint.measureText(candidate) > width) break
+            first = candidate
+            used++
+        }
+        if (used == 0) {
+            first = TextUtils.ellipsize(words[0], paint, width, TextUtils.TruncateAt.END).toString()
+            used = 1
+        }
+
+        val rest = words.drop(used).joinToString(" ")
+        if (rest.isEmpty()) return first
+        return first + "\n" + TextUtils.ellipsize(rest, paint, width, TextUtils.TruncateAt.END)
     }
 
     private fun View.usesLongLabel(): Boolean {
@@ -250,6 +293,9 @@ class IconLabels(context: Context) : ModPack(context) {
         private const val CENTER_VERTICALLY = "pleCenterVertically"
         private const val LONG_LABEL_CENTER = "pleLongLabelCenter"
         private const val LONG_LABEL_LINES = 2
+        private const val LONG_LABEL_ORIGINAL = "pleLongLabelOriginal"
+        private const val LONG_LABEL_TEXT = "pleLongLabelText"
+        private val WHITESPACE = Regex("\\s+")
         const val DISPLAY_WORKSPACE: Int = 0
         const val DISPLAY_ALL_APPS: Int = 1
         const val DISPLAY_FOLDER: Int = 2

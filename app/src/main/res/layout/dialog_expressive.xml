@@ -95,7 +95,9 @@
             android:id="@+id/dialog_positive"
             style="@style/Widget.Material3Expressive.Button"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:scrollbars="none"
             android:maxLines="1"
             android:visibility="gone" />
 
@@ -103,7 +105,9 @@
             android:id="@+id/dialog_negative"
             style="@style/Widget.Material3Expressive.Button.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:scrollbars="none"
             android:layout_marginTop="6dp"
             android:maxLines="1"
             android:visibility="gone" />

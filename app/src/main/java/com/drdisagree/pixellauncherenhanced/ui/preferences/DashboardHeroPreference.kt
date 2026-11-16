@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import androidx.appcompat.R as AppCompatR
 import android.content.Context
 import android.content.res.ColorStateList
 import android.util.AttributeSet
@@ -62,7 +63,7 @@ class DashboardHeroPreference(context: Context, attrs: AttributeSet?) : Preferen
             setTextColor(
                 MaterialColors.getColor(
                     root,
-                    if (active) androidx.appcompat.R.attr.colorPrimary else androidx.appcompat.R.attr.colorError
+                    if (active) AppCompatR.attr.colorPrimary else AppCompatR.attr.colorError
                 )
             )
         }
@@ -110,7 +111,7 @@ class DashboardHeroPreference(context: Context, attrs: AttributeSet?) : Preferen
                 iconTint = defaults[2]
             } else {
                 val onError = ColorStateList.valueOf(MaterialColors.getColor(root, MaterialR.attr.colorOnError))
-                backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(root, androidx.appcompat.R.attr.colorError))
+                backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(root, AppCompatR.attr.colorError))
                 setTextColor(onError)
                 iconTint = onError
             }

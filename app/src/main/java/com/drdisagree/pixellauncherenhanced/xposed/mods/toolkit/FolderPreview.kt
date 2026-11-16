@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
 import android.graphics.Rect
 
 fun Any?.folderPreviewBounds(out: Rect): Boolean {

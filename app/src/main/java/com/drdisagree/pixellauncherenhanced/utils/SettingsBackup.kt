@@ -3,6 +3,8 @@ package com.drdisagree.pixellauncherenhanced.utils
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.util.Base64
+import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.BuildConfig
 import com.drdisagree.pixellauncherenhanced.R
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.APP_BLOCK_LIST
@@ -15,6 +17,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_FIRS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_HIDDEN_APPS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
+import com.drdisagree.pixellauncherenhanced.data.iconpack.CustomIconStore
+import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.LOAD_TIME_KEY_KEY
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector.PACKAGE_STRIKE_KEY_KEY
 import java.text.SimpleDateFormat
@@ -50,6 +54,7 @@ object SettingsBackup {
             .put(KEY_FORMAT_VERSION, FORMAT_VERSION)
             .put(KEY_APP_VERSION, BuildConfig.VERSION_NAME)
             .put(KEY_PREFS, PrefsSnapshot.capture { !isExcluded(it) })
+            .put(KEY_CUSTOM_ICONS, captureCustomIcons())
 
         return BackupCrypto.encrypt(BackupCrypto.SETTINGS_MAGIC, root.toString().toByteArray())
     }
@@ -72,6 +77,28 @@ object SettingsBackup {
         PrefsSnapshot.apply(editor, prefs) { !isExcluded(it) }
 
         if (!editor.commit()) throw BackupException(R.string.backup_failed)
+        restoreCustomIcons(root.optJSONObject(KEY_CUSTOM_ICONS))
+        CustomIconStore.migrate(appContext)
+    }
+
+    private fun captureCustomIcons(): JSONObject {
+        val icons = JSONObject()
+        RPrefs.getPrefs.all.forEach { (key, value) ->
+            if (key == null || !IconPackManager.isCustomIconKey(key) || !CustomIconStore.isStamp(value as? String)) return@forEach
+            CustomIconStore.read(appContext, key)?.let { icons.put(key, Base64.encodeToString(it, Base64.NO_WRAP)) }
+        }
+        return icons
+    }
+
+    private fun restoreCustomIcons(icons: JSONObject?) {
+        icons ?: return
+        val editor = RPrefs.getPrefs.edit()
+        icons.keys().forEach { key ->
+            if (!CustomIconStore.isValidKey(key)) return@forEach
+            val bytes = runCatching { Base64.decode(icons.getString(key), Base64.NO_WRAP) }.getOrNull() ?: return@forEach
+            editor.putString(key, CustomIconStore.write(appContext, key, bytes))
+        }
+        editor.commit()
     }
 
     private fun parseBackup(bytes: ByteArray): JSONObject? {
@@ -97,6 +124,7 @@ object SettingsBackup {
     private const val KEY_FORMAT_VERSION = "formatVersion"
     private const val KEY_APP_VERSION = "appVersion"
     private const val KEY_PREFS = "prefs"
+    private const val KEY_CUSTOM_ICONS = "customIcons"
 
     private val EXCLUDED_KEYS = setOf(
         APP_BLOCK_LIST,

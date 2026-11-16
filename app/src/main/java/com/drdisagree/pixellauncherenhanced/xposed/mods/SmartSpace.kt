@@ -7,26 +7,26 @@ import android.graphics.Point
 import android.net.Uri
 import android.os.Build
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_AT_A_GLANCE
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.restartLauncher
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callStaticMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.MethodHookHelper
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getAnyField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethodMatchPattern
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethodMatchPattern
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.reflect.Modifier
 
 class SmartSpace(context: Context) : ModPack(context) {
@@ -44,7 +44,7 @@ class SmartSpace(context: Context) : ModPack(context) {
     }
 
     @SuppressLint("DiscouragedApi")
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val nexusLauncherActivityClass = findClass(
             "com.google.android.apps.nexuslauncher.NexusLauncherActivity",
             suppressError = true
@@ -235,7 +235,7 @@ class SmartSpace(context: Context) : ModPack(context) {
             mContext.resources.getIdentifier(
                 "search_container_workspace",
                 "id",
-                loadPackageParam.packageName
+                loadedPackage.packageName
             )
         }.getOrDefault(0)
 
@@ -261,7 +261,7 @@ class SmartSpace(context: Context) : ModPack(context) {
             if (clazz.name.startsWith("com.android.launcher3.")) return false
 
             val searchContainerColumns = invariantDeviceProfileClass
-                ?.let { runCatching { XposedHelpers.getStaticObjectField(it, "INSTANCE") }.getOrNull() }
+                ?.let { runCatching { Reflection.getStaticObjectField(it, "INSTANCE") }.getOrNull() }
                 ?.callMethodSilently("get", mContext)
                 ?.getFieldSilently("numSearchContainerColumns") as? Int
 

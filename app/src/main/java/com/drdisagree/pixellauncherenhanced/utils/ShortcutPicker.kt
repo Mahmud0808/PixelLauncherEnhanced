@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.utils
 
+import androidx.activity.result.ActivityResultLauncher
+import androidx.appcompat.app.AlertDialog
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
@@ -67,7 +69,7 @@ object ShortcutPicker {
         list.layoutManager = LinearLayoutManager(context)
 
         val handler = Handler(Looper.getMainLooper())
-        lateinit var dialog: androidx.appcompat.app.AlertDialog
+        lateinit var dialog: AlertDialog
 
         fun finish(target: String, label: String) {
             val labels = ShortcutCatalog.parseLabels(RPrefs.getString(SHORTCUT_LABELS)).toMutableMap()
@@ -149,7 +151,7 @@ object ShortcutPicker {
     private fun createLegacyShortcut(context: Context, creator: ActivityInfo, onCreated: (String, String) -> Unit) {
         val activity = context as? ComponentActivity ?: return
         val key = "shortcut_creator_${System.nanoTime()}"
-        var launcher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
+        var launcher: ActivityResultLauncher<Intent>? = null
         launcher = activity.activityResultRegistry.register(key, ActivityResultContracts.StartActivityForResult()) { result ->
             launcher?.unregister()
             val data = result.data

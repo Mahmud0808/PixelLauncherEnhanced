@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Path
@@ -9,7 +10,7 @@ import android.view.View
 import java.util.Collections
 import java.util.WeakHashMap
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
 
 object DragPreviewGlass {
 
@@ -44,7 +45,9 @@ object DragPreviewGlass {
         liquid: Boolean,
         style: GlassStyle = GlassStyle.DEFAULT
     ) {
-        capturing.get()?.add(Spec(Matrix(canvas.matrix), Path(path), RectF(rect), corner, blurRadius, alpha, liquid, style))
+        @Suppress("DEPRECATION")
+        val matrix = Matrix(canvas.matrix)
+        capturing.get()?.add(Spec(matrix, Path(path), RectF(rect), corner, blurRadius, alpha, liquid, style))
     }
 
     fun install() {
@@ -107,8 +110,8 @@ object DragPreviewGlass {
         var callback: Any? = callback
         repeat(MAX_CALLBACK_DEPTH) {
             when (callback) {
-                is View -> return callback as View
-                is Drawable -> callback = (callback as Drawable).callback
+                is View -> return callback
+                is Drawable -> callback = callback.callback
                 else -> return null
             }
         }

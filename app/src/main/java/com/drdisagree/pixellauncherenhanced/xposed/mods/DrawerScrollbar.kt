@@ -3,14 +3,14 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.Context
 import android.view.View
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_DRAWER_SCROLLBAR
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 
 class DrawerScrollbar(context: Context) : ModPack(context) {
@@ -32,7 +32,7 @@ class DrawerScrollbar(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         DebugRecorder.registerCapture("scrollerRef") { hideScrollbar }
 
         drawerClass = findClass(

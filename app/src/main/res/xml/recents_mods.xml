@@ -12,6 +12,15 @@
         android:title="@string/section_interface_title"
         app:iconSpaceReserved="false">
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="default"
+            android:dialogTitle="@string/recents_style_title"
+            android:entries="@array/recents_style_str"
+            android:entryValues="@array/recents_style_value"
+            android:key="xposed_recentsstyle"
+            android:title="@string/recents_style_title"
+            app:iconSpaceReserved="false" />
+
         <com.drdisagree.pixellauncherenhanced.ui.preferences.SwitchPreference
             android:key="xposed_recentsclearallbutton"
             android:title="@string/clear_all_button_title"

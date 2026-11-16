@@ -3,10 +3,10 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 import android.content.Context
 import android.graphics.Point
 import android.graphics.Rect
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getAnyFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getAnyFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
 import kotlin.math.roundToInt
 
 object IconFit {

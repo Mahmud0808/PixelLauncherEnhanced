@@ -7,13 +7,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import com.drdisagree.pixellauncherenhanced.BuildConfig
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookConstructor
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.MethodHookHelper
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookConstructor
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 
 class HomePreviewAccess(context: Context) : ModPack(context) {
 
@@ -26,13 +26,13 @@ class HomePreviewAccess(context: Context) : ModPack(context) {
 
     override fun updatePrefs(vararg key: String) {}
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         listOf(
             "com.android.launcher3.util.ContentProviderProxy",
             "com.android.launcher3.graphics.GridCustomizationsProvider"
         ).forEach { className ->
             val clazz = findClass(className, suppressError = true) ?: return@forEach
-            val method = XposedHelpers.findMethodExactIfExists(
+            val method = Reflection.findMethodExactIfExists(
                 clazz,
                 "call",
                 String::class.java,
@@ -68,9 +68,8 @@ class HomePreviewAccess(context: Context) : ModPack(context) {
         if (scopeHooked) return
         scopeHooked = true
 
-        XposedHelpers.findMethodExactIfExists(
-            "android.app.ContextImpl",
-            null,
+        Reflection.findMethodExactIfExists(
+            Reflection.findClass("android.app.ContextImpl", null),
             "checkPermission",
             String::class.java,
             Int::class.javaPrimitiveType,

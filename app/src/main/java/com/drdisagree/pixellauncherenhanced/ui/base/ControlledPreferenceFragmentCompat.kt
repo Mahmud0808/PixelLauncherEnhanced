@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.ui.base
 
+import androidx.preference.R as PreferenceR
+import androidx.appcompat.R as AppCompatR
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.SharedPreferences
@@ -135,7 +137,7 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
             }, viewLifecycleOwner, Lifecycle.State.RESUMED)
         }
 
-        val recyclerView = view.findViewById<RecyclerView>(androidx.preference.R.id.recycler_view)
+        val recyclerView = view.findViewById<RecyclerView>(PreferenceR.id.recycler_view)
             ?: return
 
         recyclerView.clipToPadding = false
@@ -206,7 +208,7 @@ abstract class ControlledPreferenceFragmentCompat : PreferenceFragmentCompat() {
 
         val overlay = GradientDrawable().apply {
             cornerRadius = card?.radius ?: 0f
-            setColor(MaterialColors.getColor(target, androidx.appcompat.R.attr.colorPrimary))
+            setColor(MaterialColors.getColor(target, AppCompatR.attr.colorPrimary))
             setBounds(0, 0, target.width, target.height)
             alpha = 0
         }

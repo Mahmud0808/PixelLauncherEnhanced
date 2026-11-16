@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.removeExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
@@ -18,21 +20,19 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_AUTO
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_FIRST_SCREEN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_MODE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.NO_DRAWER_SWIPE_ACTION
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.MethodHookHelper
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getStaticFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hasMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setField
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers.removeAdditionalInstanceField
-import de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setField
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 import java.lang.reflect.Modifier
 import java.lang.reflect.Method
@@ -84,7 +84,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         val launcherModelClass = findClass("com.android.launcher3.LauncherModel") ?: return
         itemInfoClass = findClass("com.android.launcher3.model.data.ItemInfo", suppressError = true)
         modelUpdateTaskClass = findClass(
@@ -259,9 +259,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
                     return@runBefore
                 }
 
-                setAdditionalInstanceField(
-                    param.thisObject,
-                    ORIGINAL_FILTER_KEY,
+                param.thisObject.setExtraField(ORIGINAL_FILTER_KEY,
                     param.thisObject.getFieldSilently("mItemFilter") ?: NO_FILTER
                 )
                 param.thisObject.setField(
@@ -270,7 +268,7 @@ class AppDrawerMode(context: Context) : ModPack(context) {
                 )
             }
             .runAfter { param ->
-                val original = removeAdditionalInstanceField(param.thisObject, ORIGINAL_FILTER_KEY)
+                val original = param.thisObject.removeExtraField(ORIGINAL_FILTER_KEY)
                     ?: return@runAfter
                 param.thisObject.setField("mItemFilter", original.takeIf { it !== NO_FILTER })
             }

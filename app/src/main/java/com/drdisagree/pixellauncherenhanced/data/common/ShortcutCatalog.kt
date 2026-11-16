@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.data.common
 
+import android.content.Intent
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,12 +24,12 @@ object ShortcutCatalog {
     private const val SEPARATOR = "/"
     private const val INTENT_PREFIX = "intent:"
 
-    fun encodeIntent(intent: android.content.Intent): String = INTENT_PREFIX + intent.toUri(android.content.Intent.URI_INTENT_SCHEME)
+    fun encodeIntent(intent: Intent): String = INTENT_PREFIX + intent.toUri(Intent.URI_INTENT_SCHEME)
 
-    fun decodeIntent(value: String?): android.content.Intent? {
+    fun decodeIntent(value: String?): Intent? {
         if (value == null || !value.startsWith(INTENT_PREFIX)) return null
         return runCatching {
-            android.content.Intent.parseUri(value.removePrefix(INTENT_PREFIX), android.content.Intent.URI_INTENT_SCHEME)
+            Intent.parseUri(value.removePrefix(INTENT_PREFIX), Intent.URI_INTENT_SCHEME)
         }.getOrNull()
     }
 

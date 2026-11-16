@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import com.google.android.material.R as MaterialR
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -213,7 +214,7 @@ class DrawerTabs : Fragment() {
                 setSelection(initialName.length)
                 isSingleLine = true
             }
-            val inputLayout = TextInputLayout(context, null, com.google.android.material.R.attr.textInputOutlinedStyle).apply {
+            val inputLayout = TextInputLayout(context, null, MaterialR.attr.textInputOutlinedStyle).apply {
                 this.hint = context.getString(hint)
                 val radius = dpToPx(16).toFloat()
                 setBoxCornerRadii(radius, radius, radius, radius)

@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.utils
 
+import androidx.appcompat.R as AppCompatR
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Context
@@ -213,7 +214,7 @@ object ExpressiveDialog {
             cornerRadii = floatArrayOf(top, top, top, top, bottom, bottom, bottom, bottom)
             setColor(MaterialColors.getColor(view, surface))
         }
-        val ripple = ColorStateList.valueOf(MaterialColors.getColor(view, androidx.appcompat.R.attr.colorControlHighlight))
+        val ripple = ColorStateList.valueOf(MaterialColors.getColor(view, AppCompatR.attr.colorControlHighlight))
         return RippleDrawable(ripple, shape, null)
     }
 

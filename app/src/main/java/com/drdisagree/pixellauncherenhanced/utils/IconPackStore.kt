@@ -14,6 +14,7 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
+import com.drdisagree.pixellauncherenhanced.PLEnhanced.Companion.appContext
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.HOME_THEMED_ICONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
@@ -35,6 +36,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.PINNED_SHORTCU
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.THEMED_ICON_PACKS
 import com.drdisagree.pixellauncherenhanced.data.config.RPrefs
 import com.drdisagree.pixellauncherenhanced.data.enums.IconSlot
+import com.drdisagree.pixellauncherenhanced.data.iconpack.CustomIconStore
 import com.drdisagree.pixellauncherenhanced.data.iconpack.IconPackManager
 
 object IconPackStore {
@@ -99,7 +101,11 @@ object IconPackStore {
         if (overrides[key] == value && value != IconPackManager.OVERRIDE_CUSTOM) return
 
         if (value == null) overrides.remove(key) else overrides[key] = value
-        if (value != IconPackManager.OVERRIDE_CUSTOM) RPrefs.clearPref(IconPackManager.customIconKey(slot.customKey(key)))
+        if (value != IconPackManager.OVERRIDE_CUSTOM) {
+            val customKey = IconPackManager.customIconKey(slot.customKey(key))
+            RPrefs.clearPref(customKey)
+            CustomIconStore.delete(appContext, customKey)
+        }
 
         RPrefs.putString(slot.prefKey, IconPackManager.serializeOverrides(overrides))
     }
@@ -108,14 +114,16 @@ object IconPackStore {
 
     fun setCustomIcon(slot: IconSlot, component: ComponentName, bitmap: Bitmap) {
         val key = component.flattenToString()
-        RPrefs.putString(IconPackManager.customIconKey(slot.customKey(key)), IconPackManager.encodeBitmap(bitmap))
+        val customKey = IconPackManager.customIconKey(slot.customKey(key))
+        RPrefs.putString(customKey, CustomIconStore.save(appContext, customKey, bitmap))
         setOverride(slot, component, IconPackManager.OVERRIDE_CUSTOM)
     }
 
     fun customIcon(component: String): Bitmap? = customIcon(IconSlot.DRAWER, component)
 
     fun customIcon(slot: IconSlot, component: String): Bitmap? {
-        return IconPackManager.decodeBitmap(RPrefs.getString(IconPackManager.customIconKey(slot.customKey(component)), null))
+        val customKey = IconPackManager.customIconKey(slot.customKey(component))
+        return CustomIconStore.load(appContext, customKey, RPrefs.getString(customKey, null))
     }
 
     fun label(component: ComponentName): String? = config().labels[component.flattenToString()]

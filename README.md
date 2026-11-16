@@ -1,4 +1,4 @@
-![HEAD](https://socialify.git.ci/Mahmud0808/PixelLauncherEnhanced/image?description=1&font=Jost&forks=1&issues=1&logo=https%3A%2F%2Fi.postimg.cc%2FmgfNTCbc%2Fpixel-launcher-enhanced.png&name=1&owner=1&pattern=Formal+Invitation&pulls=1&stargazers=1&theme=Auto)
+![HEAD](https://socialify.git.ci/Mahmud0808/PixelLauncherEnhanced/image?description=1&font=Jost&forks=1&issues=1&logo=https%3A%2F%2Fi.postimg.cc%2FL4c2ZS1x%2FPLEnhanced.png&name=1&owner=1&pattern=Transparent&pulls=1&stargazers=1&theme=Auto)
 
 <p align="center">
 Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exciting features for your launcher. Even though the name suggests it's for Pixel Launcher, it also fully supports Launcher3. From customizing the look to adding more functionality, this module enhances your launcher experience with minimal effort.

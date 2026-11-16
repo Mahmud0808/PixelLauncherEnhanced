@@ -7,14 +7,14 @@ import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_DARK_STATUSBAR
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.MethodHookHelper
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.MethodHookHelper
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -33,10 +33,10 @@ class DarkStatusbar(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         findClass("com.android.launcher3.util.SystemUiController", suppressError = true)
             ?.let {
-                XposedHelpers.findMethodExactIfExists(
+                Reflection.findMethodExactIfExists(
                     it,
                     "updateUiState",
                     Int::class.javaPrimitiveType,

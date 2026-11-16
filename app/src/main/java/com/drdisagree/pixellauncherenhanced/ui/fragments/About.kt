@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import androidx.appcompat.R as AppCompatR
 import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -110,7 +111,7 @@ class About : Fragment() {
         binding.updatesSummary.setTextColor(
             MaterialColors.getColor(
                 binding.updatesSummary,
-                if (release != null) androidx.appcompat.R.attr.colorPrimary else MaterialR.attr.colorOnSurfaceVariant
+                if (release != null) AppCompatR.attr.colorPrimary else MaterialR.attr.colorOnSurfaceVariant
             )
         )
         binding.updatesEmblem.setPressedState(release != null)

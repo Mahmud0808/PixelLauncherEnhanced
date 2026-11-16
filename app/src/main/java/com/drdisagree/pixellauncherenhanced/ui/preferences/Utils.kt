@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.preferences
 
+import androidx.appcompat.R
 import android.content.res.ColorStateList
 import android.view.ViewGroup.MarginLayoutParams
 import androidx.core.graphics.ColorUtils
@@ -83,7 +84,7 @@ object Utils {
     fun applyChoiceColors(button: MaterialButton) {
         val checked = intArrayOf(android.R.attr.state_checked)
         val disabled = intArrayOf(-android.R.attr.state_enabled)
-        val selectedFill = MaterialColors.getColor(button, androidx.appcompat.R.attr.colorPrimary)
+        val selectedFill = MaterialColors.getColor(button, R.attr.colorPrimary)
         val selectedText = MaterialColors.getColor(button, MaterialR.attr.colorOnPrimary)
         val idleFill = MaterialColors.getColor(button, MaterialR.attr.colorSecondaryContainer)
         val idleText = MaterialColors.getColor(button, MaterialR.attr.colorOnSecondaryContainer)

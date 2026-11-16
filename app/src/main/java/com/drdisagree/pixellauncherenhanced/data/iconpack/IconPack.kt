@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.data.iconpack
 
+import java.util.Calendar
+import java.util.concurrent.ConcurrentHashMap
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
@@ -22,7 +24,7 @@ class IconPack(context: Context, val packageName: String) {
     private val packContext: Context = context.createPackageContext(packageName, 0)
 
     private val componentIcons = HashMap<String, String>()
-    private val resourceIds = java.util.concurrent.ConcurrentHashMap<String, Int>()
+    private val resourceIds = ConcurrentHashMap<String, Int>()
     private val packageIcons = HashMap<String, String>()
     private val calendarPrefixes = HashMap<String, String>()
     private val backImages = ArrayList<String>()
@@ -43,7 +45,7 @@ class IconPack(context: Context, val packageName: String) {
     fun drawableNameFor(component: ComponentName): String? {
         val key = component.flattenToString()
         calendarPrefixes[key]?.let { prefix ->
-            val day = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_MONTH)
+            val day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
             return prefix + day
         }
         return listOfNotNull(componentIcons[key], packageIcons[component.packageName])

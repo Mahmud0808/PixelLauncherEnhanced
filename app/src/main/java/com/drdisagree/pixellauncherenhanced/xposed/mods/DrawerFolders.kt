@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.graphics.drawable.Drawable
+import android.os.Process
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.content.ComponentName
@@ -19,21 +21,20 @@ import android.widget.TextView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_FOLDERS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_FOLDERS_ENABLED
 import com.drdisagree.pixellauncherenhanced.data.model.DrawerFolder
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.folderPreviewBounds
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getExtraFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getExtraFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getStaticFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setExtraField
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setExtraField
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.reflect.Modifier
 import java.lang.ref.WeakReference
 import java.text.Collator
@@ -63,7 +64,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
     private var drawerFolderActive = false
     private var openDrawerFolder: WeakReference<Any>? = null
     private var closeAfterLaunch = false
-    private var parkedRipple: Pair<View, android.graphics.drawable.Drawable?>? = null
+    private var parkedRipple: Pair<View, Drawable?>? = null
     private var listPath: String? = null
     private var shownFolders = 0
     private var createdHolders = 0
@@ -81,7 +82,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         DebugRecorder.registerProbe("drawerFolders") {
             "enabled=$foldersEnabled, configured=${folders.size}, eligible=${folders.count { it.apps.size >= MIN_FOLDER_APPS }}, " +
                     "tabScoped=${folders.count { it.tabId != null }}, shown=$shownFolders, path=$listPath, " +
@@ -276,7 +277,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
                     layoutParams = parent.recyclerLayoutParams()
                 }
                 val holder = runCatching {
-                    XposedBridge.invokeOriginalMethod(param.method, param.thisObject, arrayOf(parent, iconViewType))
+                    param.invokeOriginal(param.thisObject, parent, iconViewType)
                         ?.takeIf { it.replaceItemView(container) }
                 }.onFailure { log(this, it) }.getOrNull()
                 if (holder == null) {
@@ -732,7 +733,7 @@ class DrawerFolders(context: Context) : ModPack(context) {
         val store = getFieldSilently("mAllAppsStore") ?: return emptyList()
         val apps = (store.getFieldSilently("mApps") ?: store.callMethodSilently("getApps")) as? Array<*>
             ?: return emptyList()
-        val owner = user ?: android.os.Process.myUserHandle()
+        val owner = user ?: Process.myUserHandle()
         return apps.filterNotNull().filter { (it.getFieldSilently("user") ?: owner) == owner }
     }
 

@@ -19,8 +19,8 @@ navigationUiKtx = "2.10.2"
 preferenceKtx = "1.2.1"
 recyclerview = "1.4.0"
 recyclerviewSelection = "1.2.0"
-remotepreferences = "0.8"
-xposedbridge = "main-SNAPSHOT"
+libxposedApi = "102.0.0"
+libxposedService = "102.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,11 +41,11 @@ konfetti-xml = { module = "nl.dionsegijn:konfetti-xml", version.ref = "konfettiX
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-graphics-shapes = { group = "androidx.graphics", name = "graphics-shapes", version.ref = "graphicsShapes" }
-remotepreferences = { module = "com.crossbowffs.remotepreferences:remotepreferences", version.ref = "remotepreferences" }
 su-core = { module = "com.github.topjohnwu.libsu:core", version.ref = "libsuVersion" }
 su-nio = { module = "com.github.topjohnwu.libsu:nio", version.ref = "libsuVersion" }
 su-service = { module = "com.github.topjohnwu.libsu:service", version.ref = "libsuVersion" }
-xposedbridge = { module = "com.github.Mahmud0808:XposedBridge", version.ref = "xposedbridge" }
+libxposed-api = { module = "io.github.libxposed:api", version.ref = "libxposedApi" }
+libxposed-service = { module = "io.github.libxposed:service", version.ref = "libxposedService" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

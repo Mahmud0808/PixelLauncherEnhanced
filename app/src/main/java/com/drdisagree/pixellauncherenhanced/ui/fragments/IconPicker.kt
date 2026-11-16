@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.fragments
 
+import com.google.android.material.R as MaterialR
 import android.content.ComponentName
 import android.content.Context
 import android.graphics.Bitmap
@@ -240,7 +241,7 @@ class IconPicker : Fragment() {
                 row.context,
                 if (chevron) R.drawable.ic_settings_icon_pack else R.drawable.ic_add
             )?.mutate()?.apply {
-                setTint(MaterialColors.getColor(row, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                setTint(MaterialColors.getColor(row, MaterialR.attr.colorOnSurfaceVariant))
             }
         )
         row.setOnClickListener { onClick() }

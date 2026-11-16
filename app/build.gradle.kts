@@ -17,8 +17,8 @@ android {
         applicationId = "com.drdisagree.pixellauncherenhanced"
         minSdk = 31
         targetSdk = 36
-        versionCode = 7
-        versionName = "2.0.1"
+        versionCode = 8
+        versionName = "2.1.0"
         base.archivesName = "PLEnhanced v${defaultConfig.versionName}"
     }
 
@@ -68,6 +68,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     
+    packaging {
+        resources {
+            merges += "META-INF/xposed/*"
+        }
+    }
+
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -94,8 +100,8 @@ dependencies {
     implementation(libs.su.core)
     implementation(libs.su.service)
     implementation(libs.su.nio)
-    compileOnly(libs.xposedbridge)
-    implementation(libs.remotepreferences)
+    compileOnly(libs.libxposed.api)
+    implementation(libs.libxposed.service)
     implementation(libs.circleimageview)
     implementation(libs.konfetti.xml)
     implementation(libs.commonmark)

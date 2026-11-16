@@ -71,7 +71,7 @@ object UpdateManager {
 
     enum class Error { CHECK, DOWNLOAD, SIGNATURE }
 
-    enum class Reason { OFFLINE, UNREACHABLE, TIMEOUT, SECURE, RATE_LIMIT, SERVER, HTTP, NO_APK, UNKNOWN }
+    enum class Reason { OFFLINE, BLOCKED, UNREACHABLE, TIMEOUT, SECURE, RATE_LIMIT, SERVER, HTTP, NO_APK, UNKNOWN }
 
     data class Problem(val reason: Reason, val code: Int = 0, val retryAt: Long = 0L)
 
@@ -200,7 +200,9 @@ object UpdateManager {
     }
 
     private fun problemOf(context: Context, error: Throwable?): Problem {
-        if (!context.isOnline()) return Problem(Reason.OFFLINE)
+        if (error !is HttpError && error !is NoApkError) {
+            context.connectionProblem()?.let { return Problem(it) }
+        }
         return when (error) {
             is HttpError -> when {
                 error.retryAt > 0L || error.code == 429 -> Problem(Reason.RATE_LIMIT, error.code, error.retryAt)
@@ -216,11 +218,16 @@ object UpdateManager {
         }
     }
 
-    private fun Context.isOnline(): Boolean = runCatching {
-        val manager = getSystemService(ConnectivityManager::class.java) ?: return true
-        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
-        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }.getOrDefault(true)
+    @Suppress("DEPRECATION")
+    private fun Context.connectionProblem(): Reason? = runCatching {
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return null
+        val active = manager.getNetworkCapabilities(manager.activeNetwork)
+        if (active?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true) return null
+        val deviceOnline = manager.allNetworks.any {
+            manager.getNetworkCapabilities(it)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        }
+        if (deviceOnline) Reason.BLOCKED else Reason.OFFLINE
+    }.getOrNull()
 
     private fun fetchLatest(): ReleaseInfo {
         val json = try {

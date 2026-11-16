@@ -1,5 +1,7 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color

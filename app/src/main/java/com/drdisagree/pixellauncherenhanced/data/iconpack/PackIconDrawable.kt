@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.data.iconpack
 
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -10,7 +11,7 @@ class PackIconDrawable(context: Context, bitmap: Bitmap) : BitmapDrawable(contex
 
     companion object {
         fun wrap(context: Context, drawable: Drawable): Drawable {
-            if (drawable is PackIconDrawable || drawable is android.graphics.drawable.AdaptiveIconDrawable) return drawable
+            if (drawable is PackIconDrawable || drawable is AdaptiveIconDrawable) return drawable
 
             val bitmap = (drawable as? BitmapDrawable)?.bitmap ?: run {
                 val size = drawable.intrinsicWidth.takeIf { it > 0 }

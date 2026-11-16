@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.ui.widgets
 
+import androidx.appcompat.R
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
@@ -274,9 +275,9 @@ class ShapeDrawView @JvmOverloads constructor(
         val corner = box * 0.08f
         val unit = box / IconShapePaths.SIZE
         val onSurface = MaterialColors.getColor(this, MaterialR.attr.colorOnSurfaceVariant)
-        val primary = MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary)
+        val primary = MaterialColors.getColor(this, R.attr.colorPrimary)
         val onPrimary = MaterialColors.getColor(this, MaterialR.attr.colorOnPrimary)
-        val error = MaterialColors.getColor(this, androidx.appcompat.R.attr.colorError)
+        val error = MaterialColors.getColor(this, R.attr.colorError)
         val onError = MaterialColors.getColor(this, MaterialR.attr.colorOnError)
 
         viewMatrix.setScale(unit, unit)

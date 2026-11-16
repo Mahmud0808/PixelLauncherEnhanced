@@ -37,19 +37,19 @@ import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassShader
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassStyle
 import com.drdisagree.pixellauncherenhanced.data.glass.GlassTarget
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.DragPreviewGlass
 import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.WallpaperGlass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethodSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getStaticFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.setFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs.Xprefs
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getStaticFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.setFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationHandler
 import java.lang.ref.WeakReference
@@ -98,8 +98,8 @@ class IconGlass(context: Context) : ModPack(context) {
     private val delegateCache = WeakHashMap<Any, DelegateParts>()
     private val ancestry = WeakHashMap<View, Ancestry>()
     private val fullBounds = Rect()
-    private val canvasNodeField: Field? by lazy { XposedHelpers.findFieldIfExists(RecordingCanvas::class.java, "mNode") }
-    private val viewNodeField: Field? by lazy { XposedHelpers.findFieldIfExists(View::class.java, "mRenderNode") }
+    private val canvasNodeField: Field? by lazy { Reflection.findFieldIfExists(RecordingCanvas::class.java, "mNode") }
+    private val viewNodeField: Field? by lazy { Reflection.findFieldIfExists(View::class.java, "mRenderNode") }
     private val cornerCache = WeakHashMap<Path, Float>()
     private val boundsCache = WeakHashMap<Path, RectF>()
     private val visibleAreaFactor: Float by lazy {
@@ -132,7 +132,7 @@ class IconGlass(context: Context) : ModPack(context) {
         }
     }
 
-    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+    override fun handleLoadPackage(loadedPackage: LoadedPackage) {
         DragPreviewGlass.install()
 
         val allAppsState = findClass("com.android.launcher3.LauncherState", suppressError = true)
@@ -248,6 +248,7 @@ class IconGlass(context: Context) : ModPack(context) {
                 val drawable = currentDrawable.get()
                 if (drawable != null && canvas.recordsFor(host)) {
                     val node = glassNode(drawable, host)
+                    @Suppress("DEPRECATION")
                     canvas.getMatrix(node.matrix)
                     node.rect.set(localRect)
                     node.corner = shapeCorner(path, shapeBounds)
@@ -332,7 +333,11 @@ class IconGlass(context: Context) : ModPack(context) {
                 param.thisObject.setFieldSilently("mBackground", glass.inner)
             }
 
-        findClass("com.android.launcher3.icons.ThemedIconDrawable", suppressError = true)
+        findClass(
+            "com.android.launcher3.icons.ThemedIconDrawable",
+            "com.android.launcher3.icons.mono.ThemedIconDrawable",
+            suppressError = true
+        )
             .hookMethod("drawInternal")
             .suppressError()
             .runBefore { param ->
@@ -342,10 +347,10 @@ class IconGlass(context: Context) : ModPack(context) {
                 val canvas = param.args.getOrNull(0) as? Canvas ?: return@runBefore
                 val bounds = param.args.getOrNull(1) as? Rect ?: return@runBefore
 
-                val bgBitmap = drawable.getFieldSilently("mBgBitmap") as? Bitmap ?: return@runBefore
-                val bgPaint = drawable.getFieldSilently("mBgPaint") as? Paint ?: return@runBefore
-                val monoIcon = drawable.getFieldSilently("mMonoIcon") as? Bitmap ?: return@runBefore
-                val monoPaint = drawable.getFieldSilently("mMonoPaint") as? Paint ?: return@runBefore
+                val bgBitmap = drawable.firstField("mBgBitmap", "bgBitmap") as? Bitmap ?: return@runBefore
+                val bgPaint = drawable.firstField("mBgPaint", "bgPaint") as? Paint ?: return@runBefore
+                val monoIcon = drawable.firstField("mMonoIcon", "monoIcon") as? Bitmap ?: return@runBefore
+                val monoPaint = drawable.firstField("mMonoPaint", "monoPaint") as? Paint ?: return@runBefore
                 if (bounds.isEmpty) return@runBefore
 
                 localRect.set(bounds)
@@ -392,6 +397,9 @@ class IconGlass(context: Context) : ModPack(context) {
         val radius = maxOf(blurRadius * root.resources.displayMetrics.density, first.drawerBlurRadius())
         WallpaperGlass.captureHome(targets, radius)
     }
+
+    private fun Any.firstField(vararg names: String): Any? =
+        names.firstNotNullOfOrNull { getFieldSilently(it) }
 
     private fun Any?.isGlassIcon(): Boolean {
         if (this !is Drawable) return false
@@ -778,8 +786,8 @@ class IconGlass(context: Context) : ModPack(context) {
         var callback: Any? = callback
         repeat(MAX_CALLBACK_DEPTH) {
             when (callback) {
-                is View -> return callback as View
-                is Drawable -> callback = (callback as Drawable).callback
+                is View -> return callback
+                is Drawable -> callback = callback.callback
                 else -> return null
             }
         }

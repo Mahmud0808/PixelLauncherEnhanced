@@ -1,4 +1,4 @@
-package com.drdisagree.pixellauncherenhanced.xposed
+package com.drdisagree.pixellauncherenhanced.xposed.core
 
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PIXEL_LAUNCHER_PACKAGE
@@ -14,6 +14,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.AppShortcuts
 import com.drdisagree.pixellauncherenhanced.xposed.mods.BlurPanels
 import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsAppLock
 import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsMemInfo
+import com.drdisagree.pixellauncherenhanced.xposed.mods.RecentsStyles
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperDim
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WidgetResize
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ClearAllButton
@@ -47,7 +48,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIcons
 import com.drdisagree.pixellauncherenhanced.xposed.mods.ThemedIconsColor
 import com.drdisagree.pixellauncherenhanced.xposed.mods.TopShadow
 import com.drdisagree.pixellauncherenhanced.xposed.mods.WallpaperZoom
-import com.drdisagree.pixellauncherenhanced.xposed.utils.BroadcastHook
+import com.drdisagree.pixellauncherenhanced.xposed.mods.BroadcastHook
 
 object EntryList {
 
@@ -80,6 +81,7 @@ object EntryList {
         DrawerScrollFade::class.java,
         ClearAllButton::class.java,
         RecentsMemInfo::class.java,
+        RecentsStyles::class.java,
         RecentsAppLock::class.java,
         GridOptions::class.java,
         HideApps::class.java,

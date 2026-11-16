@@ -1,11 +1,12 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit
 
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
 import android.annotation.SuppressLint
 import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.util.TypedValue
-import com.drdisagree.pixellauncherenhanced.xposed.HookRes.Companion.modRes
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime.modRes
 import java.util.concurrent.ConcurrentHashMap
 
 object InjectedResources {

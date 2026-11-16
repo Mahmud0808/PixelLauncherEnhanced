@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.xposed.mods
 
+import android.os.Bundle
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
 import android.annotation.SuppressLint
 import android.content.ComponentName
@@ -15,13 +16,13 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.QUICK_LAUNCH
-import com.drdisagree.pixellauncherenhanced.xposed.ModPack
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.XposedHook.Companion.findClass
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.callMethod
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.getFieldSilently
-import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.hookMethod
-import com.drdisagree.pixellauncherenhanced.xposed.utils.XPrefs
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
+import com.drdisagree.pixellauncherenhanced.xposed.hook.findClass
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethod
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
+import com.drdisagree.pixellauncherenhanced.xposed.hook.hookMethod
+import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs
+import com.drdisagree.pixellauncherenhanced.xposed.core.LoadedPackage
 import java.lang.ref.WeakReference
 
 /**
@@ -51,7 +52,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 		XPrefs.Xprefs.apply { quickLaunch = getBoolean(QUICK_LAUNCH, false) }
 	}
 
-	override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
+	override fun handleLoadPackage(loadedPackage: LoadedPackage) {
 		DebugRecorder.registerCapture("recyclerRef") { quickLaunch && containerRef?.get() == null }
 
 		// Core: hook container inflation & keep lightweight references to list / recycler / search box
@@ -227,7 +228,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 					var foundUser: UserHandle? = null
 					var resultType: Int? = null
 					var pkg: String? = null
-					var extras: android.os.Bundle? = null
+					var extras: Bundle? = null
 
 					// Preferred: use public API methods if present (invoke each once)
 					for (m in stClass.declaredMethods) {
@@ -238,7 +239,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 							when (m.name) {
 								"getResultType" -> resultType = (r as? Int) ?: resultType
 								"getPackageName" -> pkg = (r as? String) ?: pkg
-								"getExtras" -> extras = (r as? android.os.Bundle) ?: extras
+								"getExtras" -> extras = (r as? Bundle) ?: extras
 								"getUserHandle" -> foundUser = (r as? UserHandle) ?: foundUser
 							}
 							when (r) {
@@ -259,7 +260,7 @@ class QuickLaunch(context: Context) : ModPack(context) {
 									is UserHandle -> if (foundUser == null) foundUser = v
 									is String -> if (pkg == null && f.name.contains("Package", true)) pkg = v
 									is Int -> if (resultType == null && f.name.contains("ResultType", true)) resultType = v
-									is android.os.Bundle -> if (extras == null) extras = v
+									is Bundle -> if (extras == null) extras = v
 								}
 							} catch (_: Throwable) {}
 						}
