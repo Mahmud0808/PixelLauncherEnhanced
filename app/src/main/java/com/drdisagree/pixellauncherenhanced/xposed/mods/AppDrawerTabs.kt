@@ -183,6 +183,15 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             }
 
         containerClass
+            .hookMethod("reset")
+            .suppressError()
+            .runAfter {
+                if (!tabsEnabled) return@runAfter
+                val first = visibleTabs().firstOrNull() ?: return@runAfter
+                if (first.id != selectedTab()?.id) selectTab(first)
+            }
+
+        containerClass
             .hookMethod("onActivePageChanged")
             .suppressError()
             .runAfter { param ->
