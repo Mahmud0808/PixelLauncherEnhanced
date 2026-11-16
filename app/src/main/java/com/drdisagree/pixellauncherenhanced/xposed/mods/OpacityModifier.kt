@@ -625,6 +625,7 @@ class OpacityModifier(context: Context) : ModPack(context) {
             .hookMethod("onGestureAnimationEnd")
             .runAfter { param ->
                 if (!disableRecentsLiveTile) return@runAfter
+                if (param.thisObject.getFieldSilently("mEnableDrawingLiveTile") != true) return@runAfter
 
                 param.thisObject.callMethod(
                     "switchToScreenshot",

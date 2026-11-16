@@ -26,6 +26,7 @@ import com.drdisagree.pixellauncherenhanced.xposed.prefs.XPrefs.Xprefs
 import com.drdisagree.pixellauncherenhanced.xposed.reflection.Reflection
 import com.drdisagree.pixellauncherenhanced.xposed.reflection.callMethodSilently
 import com.drdisagree.pixellauncherenhanced.xposed.reflection.callStaticMethodSilently
+import com.drdisagree.pixellauncherenhanced.xposed.reflection.getFieldSilently
 import java.lang.ref.WeakReference
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -188,6 +189,7 @@ class RecentsStyles(context: Context) : ModPack(context) {
             .runAfter { param ->
                 val recentsView = param.thisObject as ViewGroup
                 if (liveTileDisabled || !isActive(recentsView)) return@runAfter
+                if (recentsView.getFieldSilently("mEnableDrawingLiveTile") != true) return@runAfter
                 recentsView.callMethodSilently("switchToScreenshot", Runnable {
                     if (finishTakesPip) {
                         recentsView.callMethodSilently("finishRecentsAnimation", true, false, null)
