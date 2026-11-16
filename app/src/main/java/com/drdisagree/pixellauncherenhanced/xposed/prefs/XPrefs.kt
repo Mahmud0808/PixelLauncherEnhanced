@@ -2,14 +2,19 @@ package com.drdisagree.pixellauncherenhanced.xposed.prefs
 
 import android.content.Context
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
+import android.database.ContentObserver
+import android.net.Uri
 import android.os.SystemClock
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEBUG_REPORT_REQUEST
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.PREF_UPDATE_EXCLUSIONS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SHARED_PREFERENCES
+import com.drdisagree.pixellauncherenhanced.data.prefs.PrefsBridge
 import com.drdisagree.pixellauncherenhanced.xposed.core.ModLoader
 import com.drdisagree.pixellauncherenhanced.xposed.core.ModuleRuntime
+import com.drdisagree.pixellauncherenhanced.xposed.mods.toolkit.log
 import com.drdisagree.pixellauncherenhanced.xposed.utils.BootLoopProtector
 import com.drdisagree.pixellauncherenhanced.xposed.utils.DebugRecorder
+import java.util.concurrent.Executors
 
 object XPrefs {
 
@@ -20,6 +25,14 @@ object XPrefs {
 
     private val listener = OnSharedPreferenceChangeListener { _, key -> onChanged(key) }
 
+    private val refreshExecutor = Executors.newSingleThreadExecutor()
+
+    private val changeObserver = object : ContentObserver(null) {
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            refreshExecutor.execute { refresh(uri) }
+        }
+    }
+
     val isInitialized: Boolean
         get() = ::Xprefs.isInitialized
 
@@ -29,6 +42,23 @@ object XPrefs {
         Xprefs = ModulePreferences(ModuleRuntime.module.getRemotePreferences(SHARED_PREFERENCES), writer)
         Xprefs.registerOnSharedPreferenceChangeListener(listener)
         ModuleRuntime.onDispose { Xprefs.unregisterOnSharedPreferenceChangeListener(listener) }
+        observeChanges(context)
+    }
+
+    private fun observeChanges(context: Context) {
+        val resolver = context.contentResolver
+        runCatching {
+            resolver.registerContentObserver(PrefsBridge.changesUri, true, changeObserver)
+            ModuleRuntime.onDispose { runCatching { resolver.unregisterContentObserver(changeObserver) } }
+        }.onFailure { log(this, it) }
+    }
+
+    private fun refresh(uri: Uri?) {
+        val key = PrefsBridge.changedKey(uri)
+        val result = writer.read(key) ?: return
+        val values = PrefsBridge.decodeValues(result)
+        val removed = if (key == null) Xprefs.all.keys - values.keys else PrefsBridge.decodeRemoved(result)
+        Xprefs.applyExternal(values, removed)
     }
 
     fun awaitSeed() {

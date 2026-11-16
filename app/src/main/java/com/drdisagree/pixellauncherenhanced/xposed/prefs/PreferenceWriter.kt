@@ -22,6 +22,13 @@ class PreferenceWriter(private val context: Context) {
 
     fun requestSync(): Boolean = call(PrefsBridge.METHOD_SYNC, null)
 
+    fun read(key: String?): Bundle? = try {
+        context.contentResolver.call(PrefsBridge.uri, PrefsBridge.METHOD_READ, key, null)
+    } catch (throwable: Throwable) {
+        log(this, throwable)
+        null
+    }
+
     private fun call(method: String, extras: Bundle?): Boolean = try {
         context.contentResolver.call(PrefsBridge.uri, method, null, extras)
         true
