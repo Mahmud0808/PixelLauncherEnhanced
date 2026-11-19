@@ -272,6 +272,11 @@ class GlassPreviewView @JvmOverloads constructor(
                 val height = dp(56f)
                 listOf(Element(RectF(dp(24f), centerY - height / 2f, width - dp(24f), centerY + height / 2f), height / 2f))
             }
+
+            GlassTarget.SMARTSPACE -> {
+                val height = dp(72f)
+                listOf(Element(RectF(dp(16f), centerY - height / 2f, width - dp(16f), centerY + height / 2f), dp(24f)))
+            }
         }
     }
 
@@ -415,6 +420,15 @@ class GlassPreviewView @JvmOverloads constructor(
                     left + size + dp(16f), rect.centerY() - dp(5f),
                     left + size + dp(140f), rect.centerY() + dp(5f),
                     dp(5f), dp(5f), linePaint
+                )
+            }
+
+            GlassTarget.SMARTSPACE -> {
+                linePaint.color = ColorUtils.setAlphaComponent(content, LINE_ALPHA)
+                canvas.drawRoundRect(
+                    rect.left + dp(24f), rect.centerY() - dp(6f),
+                    rect.left + dp(144f), rect.centerY() + dp(6f),
+                    dp(6f), dp(6f), linePaint
                 )
             }
         }

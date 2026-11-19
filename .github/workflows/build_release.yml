@@ -1,0 +1,97 @@
+name: Build Release APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or commit to build'
+        required: true
+        default: 'stable'
+      attach_to_release:
+        description: 'Attach the APK to a draft release for this version'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Release APK
+    if: github.repository_owner == 'Mahmud0808'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ${{ inputs.ref }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Show Git info
+        run: |
+          echo "Ref: ${{ inputs.ref }}"
+          echo "Commit: $(git rev-parse HEAD)"
+          git log -1 --oneline
+
+      - name: Read version
+        id: version
+        run: |
+          name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          code=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "tag=v${name#v}" >> "$GITHUB_OUTPUT"
+          echo "title=PLEnhanced v${name#v}" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Version: $name ($code)"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Write sign info
+        id: sign
+        if: github.repository == 'Mahmud0808/PixelLauncherEnhanced'
+        run: |
+          if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
+            echo storePassword='${{ secrets.KEYSTORE_PASSWORD }}' >> keystore.properties
+            echo keyAlias='${{ secrets.KEY_ALIAS }}' >> keystore.properties
+            echo keyPassword='${{ secrets.KEY_PASSWORD }}' >> keystore.properties
+            echo storeFile='${{ github.workspace }}/key.jks' >> keystore.properties
+            echo ${{ secrets.KEYSTORE }} | base64 --decode > ${{ github.workspace }}/key.jks
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.retries=6 -Dorg.gradle.internal.repository.initial.backoff=2000
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: "PLEnhanced ${{ steps.version.outputs.tag }} Release APK"
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Prepare release asset
+        if: inputs.attach_to_release && steps.sign.outputs.signed == 'true'
+        run: |
+          cp app/build/outputs/apk/release/*.apk "PLEnhanced.${{ steps.version.outputs.tag }}.apk"
+
+      - name: Attach APK to draft release
+        if: inputs.attach_to_release && steps.sign.outputs.signed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.title }}
+          target_commitish: ${{ inputs.ref }}
+          draft: true
+          files: PLEnhanced.${{ steps.version.outputs.tag }}.apk
+          fail_on_unmatched_files: true

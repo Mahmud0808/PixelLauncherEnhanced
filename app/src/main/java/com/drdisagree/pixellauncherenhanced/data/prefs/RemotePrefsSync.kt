@@ -1,5 +1,6 @@
 package com.drdisagree.pixellauncherenhanced.data.prefs
 
+import android.content.Context
 import android.content.SharedPreferences
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DEBUG_REPORT_RESPONSE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SHARED_PREFERENCES
@@ -38,8 +39,28 @@ object RemotePrefsSync {
 
     private val confirmed = HashMap<String, Any?>()
 
+    @Volatile
+    private var appContext: Context? = null
+
+    private val changeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key -> notifyChanged(key) }
+
     private val localListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == null) syncAll() else if (key !in localOnlyKeys) executor.execute { push(listOf(key)) }
+    }
+
+    fun isLocalOnly(key: String): Boolean = key in localOnlyKeys
+
+    fun startNotifying(context: Context) {
+        if (appContext != null) return
+        appContext = context.applicationContext
+        RPrefs.getPrefs.registerOnSharedPreferenceChangeListener(changeListener)
+    }
+
+    private fun notifyChanged(key: String?) {
+        if (key != null && key in localOnlyKeys) return
+        val context = appContext ?: return
+        val uri = if (key == null) PrefsBridge.changesUri else PrefsBridge.changeUri(key)
+        runCatching { context.contentResolver.notifyChange(uri, null) }
     }
 
     fun attach(service: XposedService) {

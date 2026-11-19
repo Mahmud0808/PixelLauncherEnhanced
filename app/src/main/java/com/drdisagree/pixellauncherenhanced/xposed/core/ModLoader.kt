@@ -207,5 +207,5 @@ object ModLoader {
         }
     }
 
-    private const val HOT_RELOAD_GRACE_MS = 15000L
+    private const val HOT_RELOAD_GRACE_MS = 2000L
 }

@@ -9,12 +9,20 @@ object PrefsBridge {
     const val AUTHORITY = "${BuildConfig.APPLICATION_ID}.prefs"
     const val METHOD_WRITE = "write"
     const val METHOD_SYNC = "sync"
+    const val METHOD_READ = "read"
     const val CUSTOM_ICON_PATH = "customicon"
+    const val CHANGES_PATH = "changed"
 
     private const val KEY_VALUES = "values"
     private const val KEY_REMOVED = "removed"
 
     val uri: Uri = Uri.parse("content://$AUTHORITY")
+
+    val changesUri: Uri = uri.buildUpon().appendPath(CHANGES_PATH).build()
+
+    fun changeUri(key: String): Uri = changesUri.buildUpon().appendPath(key).build()
+
+    fun changedKey(uri: Uri?): String? = uri?.pathSegments?.takeIf { it.firstOrNull() == CHANGES_PATH }?.getOrNull(1)
 
     fun customIconUri(key: String): Uri = uri.buildUpon().appendPath(CUSTOM_ICON_PATH).appendPath(key).build()
 

@@ -28,6 +28,7 @@ Pixel Launcher Enhanced is an Xposed module designed to unlock a variety of exci
 | Page transitions            |       ✅        |         ✅          |
 | Endless page scrolling      |       ✅        |         ✅          |
 | Hide At A Glance            |       ✅        |         ✅          |
+| At A Glance frosted and liquid glass |       ✅        |         🚫          |
 | Lock layout                 |       ✅        |         ✅          |
 | Wallpaper zooming           |       ✅        |         ✅          |
 | Hide statusbar              |       ✅        |         ✅          |

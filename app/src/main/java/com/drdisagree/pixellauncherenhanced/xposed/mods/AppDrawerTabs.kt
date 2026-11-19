@@ -133,6 +133,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             .suppressError()
             .runBefore { param ->
                 val view = param.args.getOrNull(0) as? View ?: return@runBefore
+                if (view.tag == DrawerSearchbar.PROBE_TAG) return@runBefore
                 val container = param.thisObject
 
                 if (param.args.getOrNull(1) == true &&
@@ -148,6 +149,7 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
                 if (!barActive) return@runAfter
 
                 val view = param.args.getOrNull(0) as? View ?: return@runAfter
+                if (view.tag == DrawerSearchbar.PROBE_TAG) return@runAfter
                 val container = param.thisObject as ViewGroup
                 val layoutParams = view.layoutParams as? RelativeLayout.LayoutParams ?: return@runAfter
 
@@ -180,6 +182,15 @@ class AppDrawerTabs(context: Context) : ModPack(context) {
             .suppressError()
             .runAfter { param ->
                 if (barActive && tabsAtBottom) updateBottomMargin(param.thisObject as ViewGroup)
+            }
+
+        containerClass
+            .hookMethod("reset")
+            .suppressError()
+            .runAfter {
+                if (!tabsEnabled) return@runAfter
+                val first = visibleTabs().firstOrNull() ?: return@runAfter
+                if (first.id != selectedTab()?.id) selectTab(first)
             }
 
         containerClass

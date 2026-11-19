@@ -13,10 +13,17 @@ class ModulePreferences(
 
     private val pending = ConcurrentHashMap<String, Optional<Any>>()
     private val listeners = CopyOnWriteArraySet<SharedPreferences.OnSharedPreferenceChangeListener>()
+    private val published = ConcurrentHashMap<String, Optional<Any>>()
 
     private val remoteListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null) pending.clear() else pending.remove(key)
-        listeners.forEach { it.onSharedPreferenceChanged(this, key) }
+        if (key == null) {
+            pending.clear()
+            published.clear()
+            listeners.forEach { it.onSharedPreferenceChanged(this, null) }
+        } else {
+            pending.remove(key)
+            publish(key)
+        }
     }
 
     init {
@@ -28,6 +35,20 @@ class ModulePreferences(
         if (key == null) return fallback
         val override = pending[key] ?: return reader(remote)
         return (override.orElse(null) as? T) ?: fallback
+    }
+
+    fun applyExternal(values: Map<String, Any?>, removed: Collection<String>) {
+        values.forEach { (key, value) -> pending[key] = Optional.ofNullable(value) }
+        removed.forEach { pending[it] = Optional.empty() }
+        (values.keys + removed).forEach { publish(it) }
+    }
+
+    private fun current(key: String): Optional<Any> = pending[key] ?: Optional.ofNullable(remote.all[key])
+
+    private fun publish(key: String) {
+        val value = current(key)
+        if (published.put(key, value) == value) return
+        listeners.forEach { it.onSharedPreferenceChanged(this, key) }
     }
 
     override fun getAll(): Map<String, *> {

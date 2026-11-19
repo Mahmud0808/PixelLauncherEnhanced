@@ -19,7 +19,17 @@ object CustomIconStore {
     fun isValidKey(key: String): Boolean =
         IconPackManager.isCustomIconKey(key) && key.all { it.isLetterOrDigit() || it == '_' }
 
-    fun file(context: Context, key: String): File = File(File(context.filesDir, DIRECTORY), "$key.png")
+    private fun directory(context: Context): File =
+        File(context.createDeviceProtectedStorageContext().filesDir, DIRECTORY)
+
+    private fun legacyDirectory(context: Context): File = File(context.filesDir, DIRECTORY)
+
+    fun file(context: Context, key: String): File {
+        val current = File(directory(context), "$key.png")
+        if (current.isFile) return current
+        val legacy = File(legacyDirectory(context), "$key.png")
+        return if (legacy.isFile) legacy else current
+    }
 
     fun save(context: Context, key: String, bitmap: Bitmap): String {
         val output = ByteArrayOutputStream()
@@ -28,7 +38,7 @@ object CustomIconStore {
     }
 
     fun write(context: Context, key: String, bytes: ByteArray): String {
-        val target = file(context, key)
+        val target = File(directory(context), "$key.png")
         target.parentFile?.mkdirs()
         val temp = File(target.parentFile, "$key.tmp")
         temp.writeBytes(bytes)
@@ -36,6 +46,7 @@ object CustomIconStore {
             target.writeBytes(bytes)
             temp.delete()
         }
+        File(legacyDirectory(context), "$key.png").delete()
         return STAMP_PREFIX + CRC32().apply { update(bytes) }.value.toString(16)
     }
 
@@ -49,10 +60,27 @@ object CustomIconStore {
     }
 
     fun delete(context: Context, key: String) {
-        file(context, key).delete()
+        File(directory(context), "$key.png").delete()
+        File(legacyDirectory(context), "$key.png").delete()
+    }
+
+    private fun moveLegacyFiles(context: Context) {
+        val legacy = legacyDirectory(context)
+        val files = legacy.listFiles() ?: return
+        val target = directory(context).apply { mkdirs() }
+        files.forEach { source ->
+            val destination = File(target, source.name)
+            if (destination.exists() || source.renameTo(destination)) {
+                source.delete()
+            } else if (runCatching { source.copyTo(destination, overwrite = true) }.isSuccess) {
+                source.delete()
+            }
+        }
+        if (legacy.listFiles().isNullOrEmpty()) legacy.delete()
     }
 
     fun migrate(context: Context) {
+        moveLegacyFiles(context)
         val legacy = RPrefs.getPrefs.all.filter { (key, value) ->
             key != null && IconPackManager.isCustomIconKey(key) && value is String && !isStamp(value)
         }

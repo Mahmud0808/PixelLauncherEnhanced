@@ -23,11 +23,33 @@ class ModulePrefsProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (!isTrustedCaller()) throw SecurityException("Caller is not in module scope")
 
-        when (method) {
-            PrefsBridge.METHOD_WRITE -> extras?.let { write(it) }
-            PrefsBridge.METHOD_SYNC -> RemotePrefsSync.syncAll()
+        return when (method) {
+            PrefsBridge.METHOD_WRITE -> {
+                extras?.let { write(it) }
+                null
+            }
+
+            PrefsBridge.METHOD_SYNC -> {
+                RemotePrefsSync.syncAll()
+                null
+            }
+
+            PrefsBridge.METHOD_READ -> read(arg)
+            else -> null
         }
-        return null
+    }
+
+    private fun read(key: String?): Bundle {
+        val all = RPrefs.getPrefs.all
+        if (key == null) {
+            return PrefsBridge.encode(all.filterKeys { !RemotePrefsSync.isLocalOnly(it) }, emptyList())
+        }
+        val value = all[key]?.takeUnless { RemotePrefsSync.isLocalOnly(key) }
+        return if (value == null) {
+            PrefsBridge.encode(emptyMap(), listOf(key))
+        } else {
+            PrefsBridge.encode(mapOf(key to value), emptyList())
+        }
     }
 
     private fun write(extras: Bundle) {

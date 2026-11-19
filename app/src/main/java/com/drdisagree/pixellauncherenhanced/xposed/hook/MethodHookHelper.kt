@@ -22,6 +22,12 @@ class MethodHookHelper internal constructor(
     private var printError = true
     private var throwError = false
     private var capability: String? = null
+    private var priority: Int? = null
+
+    fun priority(value: Int): MethodHookHelper {
+        priority = value
+        return this
+    }
 
     fun capability(name: String): MethodHookHelper {
         capability = name
@@ -57,7 +63,9 @@ class MethodHookHelper internal constructor(
         after: ((HookParam) -> Unit)? = null
     ): MethodHookHelper {
         targets(kind).forEach { (target, record) ->
-            ModuleRuntime.module.hook(target).intercept(HookCallback(record, before, after))
+            val builder = ModuleRuntime.module.hook(target)
+            priority?.let { builder.setPriority(it) }
+            builder.intercept(HookCallback(record, before, after))
         }
         return this
     }

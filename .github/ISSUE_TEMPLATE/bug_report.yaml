@@ -52,32 +52,10 @@ body:
       required: false
 
   - type: textarea
-    id: device-info
+    id: debug-report
     attributes:
-      label: Device information
-      description: Provide details about your device, OS, app version, etc.
-      value: |
-        - Device: [e.g. Google Pixel 6]
-        - OS: [e.g. Pixel Android 13.0 QPR3]
-        - App version: [e.g. v1.0.3]
-        - LSPosed Version: [e.g. v1.10.1 by LSPosed Team]
-    validations:
-      required: true
-
-  - type: textarea
-    id: files-attached
-    attributes:
-      label: Files attached
-      description: Add launcher APK that are attached to the issue here.
-      placeholder: Provide your launcher APK here, if you can't upload it to GitHub directly, provide the link.
-    validations:
-      required: true
-
-  - type: textarea
-    id: xposed-log
-    attributes:
-      label: Xposed log
-      description: Add xposed logs of the problem here.
-      placeholder: Export logs from LSPosed app and attach the file here.
+      label: Debug report
+      description: In the app, go to Advanced → Debug report, tap Create report and attach the zip here.
+      placeholder: Drop the debug report zip here. If GitHub won't take it, upload it somewhere and paste the link.
     validations:
       required: true
