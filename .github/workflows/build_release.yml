@@ -6,7 +6,7 @@ on:
       ref:
         description: 'Branch, tag or commit to build'
         required: true
-        default: 'stable'
+        default: 'master'
       attach_to_release:
         description: 'Attach the APK to a draft release for this version'
         type: boolean
