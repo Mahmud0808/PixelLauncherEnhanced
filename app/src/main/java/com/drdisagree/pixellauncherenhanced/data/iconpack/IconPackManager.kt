@@ -77,7 +77,7 @@ object IconPackManager {
     private const val THEMED_ICON_INSET = 0.28f
     private const val SHORTCUT_PREFIX = "shortcut:"
     private const val LEGACY_SHORTCUT_PREFIX = "legacy:"
-    private const val SIGNATURE_VERSION = 11
+    private const val SIGNATURE_VERSION = 12
     private const val CUSTOM_ICON_KEY_PREFIX = "xposed_customicon_"
 
     const val OVERRIDE_ORIGINAL = "original"
@@ -234,7 +234,8 @@ object IconPackManager {
     }
 
     private fun AdaptiveIconDrawable.isTransparent(): Boolean =
-        this is PackAdaptiveIconDrawable || (background as? ColorDrawable)?.color == Color.TRANSPARENT
+        this is PackAdaptiveIconDrawable ||
+                (background !is ShapedImageBackground && (background as? ColorDrawable)?.color == Color.TRANSPARENT)
 
     private fun packDrawable(value: String): Pair<String, String>? {
         if (!value.startsWith(OVERRIDE_PACK_PREFIX)) return null
@@ -272,12 +273,29 @@ object IconPackManager {
     fun adaptiveFromImage(context: Context, bitmap: Bitmap): Drawable {
         val extraInset = AdaptiveIconDrawable.getExtraInsetFraction()
         val inset = extraInset / (1 + 2 * extraInset)
+        val foreground = InsetDrawable(BitmapDrawable(context.resources, bitmap), inset)
 
-        return PackAdaptiveIconDrawable(
-            ColorDrawable(Color.TRANSPARENT),
-            InsetDrawable(BitmapDrawable(context.resources, bitmap), inset)
-        )
+        return if (bitmap.fillsEdges()) {
+            AdaptiveIconDrawable(ShapedImageBackground(), foreground)
+        } else {
+            PackAdaptiveIconDrawable(ColorDrawable(Color.TRANSPARENT), foreground)
+        }
     }
+
+    private fun Bitmap.fillsEdges(): Boolean {
+        if (!hasAlpha()) return true
+        val right = width - 1
+        val bottom = height - 1
+        if (right < 0 || bottom < 0) return false
+        val points = listOf(
+            0 to 0, right / 2 to 0, right to 0,
+            0 to bottom / 2, right to bottom / 2,
+            0 to bottom, right / 2 to bottom, right to bottom
+        )
+        return runCatching { points.all { (x, y) -> Color.alpha(getPixel(x, y)) == 255 } }.getOrDefault(true)
+    }
+
+    private class ShapedImageBackground : ColorDrawable(Color.TRANSPARENT)
 
     fun signature(config: Config, themedMode: Boolean): String {
         val raw = buildString {
