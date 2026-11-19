@@ -576,7 +576,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         if (installingSearchPanel) return
         val original = background ?: return
         if (original.hasBlurPanel()) return
-        val color = original.fillColor()
+        val color = original.blendedFill()
         hosts.add(this)
 
         val shown = object : DrawableWrapper(original) {
@@ -674,6 +674,19 @@ class BlurPanels(context: Context) : ModPack(context) {
             view = parent
         }
         return scale
+    }
+
+    private fun Drawable.blendedFill(): Int? {
+        val layers = this as? LayerDrawable ?: return fillColor()
+        var blended: Int? = null
+        for (index in 0 until layers.numberOfLayers) {
+            val layer = layers.getDrawable(index) ?: continue
+            if (!layer.isVisible || layer.alpha == 0) continue
+            val fill = layer.blendedFill() ?: continue
+            val color = ColorUtils.setAlphaComponent(fill, Color.alpha(fill) * layer.alpha / 255)
+            blended = blended?.let { ColorUtils.compositeColors(color, it) } ?: color
+        }
+        return blended
     }
 
     private fun Drawable.outlineRadius(): Float? {
