@@ -15,6 +15,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.ICON_BACKGROUN
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SMARTSPACE_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SMARTSPACE_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SMARTSPACE_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_TINT
@@ -30,7 +33,8 @@ enum class GlassTarget(
     DOCK("dock", DOCK_BACKGROUND, DOCK_BLUR_RADIUS, DOCK_BLUR_TINT),
     SEARCH_BAR("searchbar", SEARCH_BAR_BACKGROUND, SEARCH_BAR_BLUR_RADIUS, SEARCH_BAR_BLUR_TINT),
     WIDGETS("widget", WIDGET_BACKGROUND, WIDGET_BLUR_RADIUS, WIDGET_BLUR_TINT),
-    DRAWER_SEARCH("drawersearch", DRAWER_SEARCH_BACKGROUND, DRAWER_SEARCH_BLUR_RADIUS, DRAWER_SEARCH_BLUR_TINT);
+    DRAWER_SEARCH("drawersearch", DRAWER_SEARCH_BACKGROUND, DRAWER_SEARCH_BLUR_RADIUS, DRAWER_SEARCH_BLUR_TINT),
+    SMARTSPACE("smartspace", SMARTSPACE_BACKGROUND, SMARTSPACE_BLUR_RADIUS, SMARTSPACE_BLUR_TINT);
 
     val refractionKey = "xposed_${id}glassrefraction"
     val depthKey = "xposed_${id}glassdepth"

@@ -9,6 +9,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PorterDuff
@@ -52,6 +53,9 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SMARTSPACE_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SMARTSPACE_BLUR_RADIUS
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SMARTSPACE_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_BLUR_TINT
@@ -111,6 +115,17 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var drawerSearchLiquid = false
     private var drawerSearchBlurRadius = 0
     private var drawerSearchBlurTint = 0
+    private var smartspaceGlass = false
+    private var smartspaceLiquid = false
+    private var smartspaceBlurRadius = 0
+    private var smartspaceBlurTint = 0
+    private var smartspaceStyle = GlassStyle.DEFAULT
+    private val smartspaceCardClasses: List<Class<*>> by lazy {
+        listOfNotNull(
+            findClass("com.google.android.systemui.smartspace.BcSmartspaceCard", suppressError = true),
+            findClass("com.google.android.systemui.smartspace.uitemplate.BaseTemplateCard", suppressError = true)
+        )
+    }
     private var installingSearchPanel = false
     private var widgetGlass = false
     private var widgetHostClass: Class<*>? = null
@@ -169,6 +184,12 @@ class BlurPanels(context: Context) : ModPack(context) {
             drawerSearchStyle = GlassTarget.DRAWER_SEARCH.readStyle(this::getSliderInt, this::getInt)
             drawerSearchBlurRadius = getSliderInt(DRAWER_SEARCH_BLUR_RADIUS, DEFAULT_BLUR)
             drawerSearchBlurTint = getSliderInt(DRAWER_SEARCH_BLUR_TINT, DEFAULT_TINT)
+            val smartspaceBackground = PanelBackground.supported(getString(SMARTSPACE_BACKGROUND, BACKGROUND_OFF))
+            smartspaceGlass = smartspaceBackground != BACKGROUND_OFF
+            smartspaceLiquid = smartspaceBackground == BACKGROUND_LIQUID
+            smartspaceStyle = GlassTarget.SMARTSPACE.readStyle(this::getSliderInt, this::getInt)
+            smartspaceBlurRadius = getSliderInt(SMARTSPACE_BLUR_RADIUS, DEFAULT_BLUR)
+            smartspaceBlurTint = getSliderInt(SMARTSPACE_BLUR_TINT, DEFAULT_TINT)
         }
 
         when (key.firstOrNull()) {
@@ -188,6 +209,9 @@ class BlurPanels(context: Context) : ModPack(context) {
             DRAWER_SEARCH_BACKGROUND,
             DRAWER_SEARCH_BLUR_RADIUS,
             DRAWER_SEARCH_BLUR_TINT,
+            SMARTSPACE_BACKGROUND,
+            SMARTSPACE_BLUR_RADIUS,
+            SMARTSPACE_BLUR_TINT,
             in PANEL_STYLE_KEYS -> hosts.toList().forEach {
                 it.post {
                     it.background?.invalidateSelf()
@@ -320,6 +344,16 @@ class BlurPanels(context: Context) : ModPack(context) {
                 .runAfter { param ->
                     if (!drawerSearchClass.isInstance(param.thisObject)) return@runAfter
                     (param.thisObject as View).installDrawerSearchPanel()
+                }
+        }
+
+        if (smartspaceCardClasses.isNotEmpty()) {
+            findClass("android.view.View")
+                .hookMethod("setBackgroundDrawable")
+                .suppressError()
+                .runAfter { param ->
+                    val view = param.thisObject as View
+                    if (view.isSmartspaceBackground()) view.installSmartspacePanel()
                 }
         }
 
@@ -526,6 +560,127 @@ class BlurPanels(context: Context) : ModPack(context) {
         } finally {
             installingSearchPanel = false
         }
+    }
+
+    private fun View.isSmartspaceBackground(): Boolean {
+        if (javaClass !== View::class.java || background == null) return false
+        val parent = parent as? ViewGroup ?: return false
+        if (parent.getChildAt(0) !== this) return false
+        return (1 until parent.childCount).any { index ->
+            val sibling = parent.getChildAt(index)
+            smartspaceCardClasses.any { it.isInstance(sibling) }
+        }
+    }
+
+    private fun View.installSmartspacePanel() {
+        if (installingSearchPanel) return
+        val original = background ?: return
+        if (original.hasBlurPanel()) return
+        val color = original.fillColor()
+        hosts.add(this)
+
+        val shown = object : DrawableWrapper(original) {
+            override fun draw(canvas: Canvas) {
+                if (!smartspaceGlass) super.draw(canvas)
+            }
+        }
+        val glass = BlurPanelDrawable(shown, onShown = { panel().refreshSoon() }) { canvas ->
+            if (!smartspaceGlass || !smartspaceLiquid) updateSmartspaceShadow(null, null)
+            if (!smartspaceGlass || width <= 0 || height <= 0) return@BlurPanelDrawable
+            val alpha = original.alpha / 255f
+            if (alpha <= 0f) return@BlurPanelDrawable
+
+            rect.set(0f, 0f, width.toFloat(), height.toFloat())
+            val corner = original.outlineRadius()?.let { minOf(it, rect.height() / 2f) } ?: (rect.height() / 2f)
+            val tintColor = color?.let {
+                ColorUtils.setAlphaComponent(it, smartspaceBlurTint.coerceIn(0, 100) * 255 / 100)
+            } ?: tint(smartspaceBlurTint)
+            val blurRadius = smartspaceBlurRadius.dp(this)
+
+            if (WallpaperGlass.draw(
+                    host = this,
+                    canvas = canvas,
+                    rect = rect,
+                    corner = corner,
+                    bottomCorner = corner,
+                    blurRadius = blurRadius,
+                    tintColor = tintColor,
+                    alpha = alpha,
+                    liquid = smartspaceLiquid,
+                    style = smartspaceStyle,
+                    deferShadow = { bounds, radii -> updateSmartspaceShadow(bounds, radii) }
+                )
+            ) return@BlurPanelDrawable
+
+            panel().draw(
+                canvas = canvas,
+                rect = rect,
+                cornerRadius = corner,
+                blurRadius = blurRadius,
+                tintColor = tintColor,
+                outline = smartspaceStyle.takeUnless { smartspaceLiquid }
+            )
+        }
+
+        installingSearchPanel = true
+        try {
+            background = glass
+        } finally {
+            installingSearchPanel = false
+        }
+    }
+
+    private fun View.updateSmartspaceShadow(bounds: RectF?, radii: FloatArray?) {
+        val host = smartspaceHost() ?: return
+        @Suppress("UNCHECKED_CAST")
+        val shadows = host.getExtraFieldSilently(SMARTSPACE_SHADOWS) as? WeakHashMap<View, WidgetShadow>
+            ?: WeakHashMap<View, WidgetShadow>().also { host.setExtraField(SMARTSPACE_SHADOWS, it) }
+
+        val mapped = if (bounds != null && radii != null && isShown) RectF(bounds) else null
+        val scale = mapped?.let { mapInto(host, it) }
+        if (mapped == null || scale == null || radii == null) {
+            shadows.remove(this)
+        } else {
+            shadows[this] = WidgetShadow(
+                mapped.left,
+                mapped.top,
+                mapped.right,
+                mapped.bottom,
+                radii.map { it * scale },
+                smartspaceStyle.shadow
+            )
+        }
+        shadows.keys.removeAll { !it.isAttachedToWindow || !it.isShown }
+        host.updateWidgetShadows(shadows.values.toList())
+    }
+
+    private fun View.smartspaceHost(): ViewGroup? {
+        var view: View = this
+        while (true) {
+            val parent = view.parent as? ViewGroup ?: return null
+            if (parent.javaClass.name.endsWith(SHORTCUT_CONTAINER)) return view as? ViewGroup
+            view = parent
+        }
+    }
+
+    private fun View.mapInto(ancestor: View, rect: RectF): Float? {
+        var scale = 1f
+        var view: View = this
+        while (view !== ancestor) {
+            val parent = view.parent as? View ?: return null
+            if (!view.matrix.isIdentity) view.matrix.mapRect(rect)
+            rect.offset((view.left - parent.scrollX).toFloat(), (view.top - parent.scrollY).toFloat())
+            scale *= view.scaleX
+            view = parent
+        }
+        return scale
+    }
+
+    private fun Drawable.outlineRadius(): Float? {
+        if (bounds.isEmpty) return null
+        val outline = Outline()
+        getOutline(outline)
+        return outline.radius.takeIf { it > 0f }
     }
 
     private inner class GlassHidden(inner: Drawable, host: View) : DrawableWrapper(inner) {
@@ -1525,6 +1680,8 @@ class BlurPanels(context: Context) : ModPack(context) {
         private const val BLUR_PANEL = "pleBlurPanel"
         private const val PANEL_TARGET = "plePanelTarget"
         private const val WIDGET_SHADOWS = "pleWidgetShadows"
+        private const val SMARTSPACE_SHADOWS = "pleSmartspaceShadows"
+        private const val SHORTCUT_CONTAINER = ".ShortcutAndWidgetContainer"
         private const val DEFAULT_BLUR = 5
         private const val DEFAULT_TINT = 40
         private const val HOTSEAT_SEARCH_ID = "search_container_hotseat"
@@ -1560,7 +1717,8 @@ class BlurPanels(context: Context) : ModPack(context) {
             GlassTarget.DOCK,
             GlassTarget.WIDGETS,
             GlassTarget.SEARCH_BAR,
-            GlassTarget.DRAWER_SEARCH
+            GlassTarget.DRAWER_SEARCH,
+            GlassTarget.SMARTSPACE
         ).flatMap { it.styleKeys }
     }
 }

@@ -78,6 +78,8 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.WIDGET_CLEAR_B
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.XPOSED_HOOK_CHECK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_ADVANCED
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_LINK
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.SMARTSPACE_BACKGROUND
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.HIDE_AT_A_GLANCE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_SECTION
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.GLASS_EDITOR_TARGET
 import com.drdisagree.pixellauncherenhanced.data.common.PanelBackground
@@ -116,7 +118,8 @@ object PrefsHelper {
                 true to WIDGET_BACKGROUND,
                 !getBoolean(DISABLE_DOCK) to DOCK_BACKGROUND,
                 true to SEARCH_BAR_BACKGROUND,
-                true to DRAWER_SEARCH_BACKGROUND
+                true to DRAWER_SEARCH_BACKGROUND,
+                (isPixelLauncher && !getBoolean(HIDE_AT_A_GLANCE)) to SMARTSPACE_BACKGROUND
             ).any { (shown, pref) -> shown && PanelBackground.supported(getString(pref)) != PanelBackground.OFF }
 
             FOLDER_BACKGROUND_OPACITY,
@@ -160,6 +163,8 @@ object PrefsHelper {
             FOLDER_CUSTOM_COLOR_DARK -> getBoolean(HOME_THEMED_ICONS) && getBoolean(THEMED_ICON_CUSTOM_COLOR)
 
             DOCK_SEARCH_BAR_ABOVE -> !getBoolean(DESKTOP_SEARCH_BAR) && !getBoolean(DISABLE_DOCK)
+
+            SMARTSPACE_BACKGROUND -> isPixelLauncher && !getBoolean(HIDE_AT_A_GLANCE)
 
             SEARCH_BAR_BACKGROUND -> !getBoolean(DESKTOP_SEARCH_BAR) &&
                     !getBoolean(DISABLE_DOCK)

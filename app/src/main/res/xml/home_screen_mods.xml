@@ -81,6 +81,27 @@
             app:showUnstableBadge="true"
             app:iconSpaceReserved="false" />
 
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.ListPreference
+            android:defaultValue="off"
+            android:dialogTitle="@string/smartspace_background_title"
+            android:entries="@array/panel_background_str"
+            android:entryValues="@array/panel_background_value"
+            android:key="xposed_smartspacebackground"
+            android:summary="@string/smartspace_background_desc"
+            android:title="@string/smartspace_background_title"
+            app:iconSpaceReserved="false" />
+
+        <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu
+            android:key="glass_editor_link_smartspace"
+            android:summary="@string/glass_editor_link_desc"
+            android:title="@string/glass_editor_link_title"
+            app:fragment="com.drdisagree.pixellauncherenhanced.ui.fragments.GlassEditor"
+            app:iconSpaceReserved="false">
+            <extra
+                android:name="glass_target"
+                android:value="smartspace" />
+        </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceMenu>
+
     </com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory>
 
     <com.drdisagree.pixellauncherenhanced.ui.preferences.PreferenceCategory
