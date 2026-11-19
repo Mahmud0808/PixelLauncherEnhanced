@@ -43,6 +43,12 @@ class ModulePreferences(
         (values.keys + removed).forEach { publish(it) }
     }
 
+    fun seed(values: Map<String, Any?>, removed: Collection<String>) {
+        values.forEach { (key, value) -> pending[key] = Optional.ofNullable(value) }
+        removed.forEach { pending[it] = Optional.empty() }
+        (values.keys + removed).forEach { published[it] = current(it) }
+    }
+
     private fun current(key: String): Optional<Any> = pending[key] ?: Optional.ofNullable(remote.all[key])
 
     private fun publish(key: String) {

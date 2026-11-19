@@ -22,10 +22,14 @@ object XPrefs {
         private set
 
     private lateinit var writer: PreferenceWriter
+    private lateinit var snapshot: PrefsSnapshot
 
     private val listener = OnSharedPreferenceChangeListener { _, key -> onChanged(key) }
 
     private val refreshExecutor = Executors.newSingleThreadExecutor()
+
+    @Volatile
+    private var bulkRefreshing = false
 
     private val changeObserver = object : ContentObserver(null) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
@@ -39,6 +43,7 @@ object XPrefs {
     fun init(context: Context) {
         if (isInitialized) return
         writer = PreferenceWriter(context)
+        snapshot = PrefsSnapshot(context)
         Xprefs = ModulePreferences(ModuleRuntime.module.getRemotePreferences(SHARED_PREFERENCES), writer)
         Xprefs.registerOnSharedPreferenceChangeListener(listener)
         ModuleRuntime.onDispose { Xprefs.unregisterOnSharedPreferenceChangeListener(listener) }
@@ -57,12 +62,21 @@ object XPrefs {
         val key = PrefsBridge.changedKey(uri)
         val result = writer.read(key) ?: return
         val values = PrefsBridge.decodeValues(result)
+        if (key == null && values.isEmpty()) return
         val removed = if (key == null) Xprefs.all.keys - values.keys else PrefsBridge.decodeRemoved(result)
-        Xprefs.applyExternal(values, removed)
+        bulkRefreshing = key == null
+        try {
+            Xprefs.applyExternal(values, removed)
+        } finally {
+            bulkRefreshing = false
+        }
+        if (key == null) snapshot.replace(values) else snapshot.update(values, removed)
     }
 
     fun awaitSeed() {
-        if (Xprefs.all.isNotEmpty()) return
+        val seeded = seedFromSnapshot()
+        refreshExecutor.execute { refresh(null) }
+        if (seeded || Xprefs.all.isNotEmpty()) return
         writer.requestSync()
         val deadline = SystemClock.elapsedRealtime() + SEED_TIMEOUT_MS
         while (Xprefs.all.isEmpty() && SystemClock.elapsedRealtime() < deadline) {
@@ -70,8 +84,16 @@ object XPrefs {
         }
     }
 
+    private fun seedFromSnapshot(): Boolean {
+        val values = snapshot.load()
+        if (values.isEmpty()) return false
+        Xprefs.seed(values, Xprefs.all.keys - values.keys)
+        return true
+    }
+
     private fun onChanged(key: String?) {
         if (key == DEBUG_REPORT_REQUEST) {
+            if (bulkRefreshing) return
             Xprefs.getString(DEBUG_REPORT_REQUEST, null)?.let { DebugRecorder.respond(it) }
             return
         }
