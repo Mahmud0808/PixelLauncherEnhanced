@@ -136,6 +136,8 @@
     <string name="disable_recents_live_tile_title">Vô hiệu hoá live tile trong phần đa nhiệm</string>
     <string name="disable_recents_live_tile_desc">Vô hiệu hoá live tile trong phần đa nhiệm nếu nó gây ra lỗi</string>
     <string name="hide_at_a_glance_title">Ẩn At A Glance</string>
+    <string name="smartspace_background_title">At A Glance background</string>
+    <string name="smartspace_background_desc">Turn on high contrast background in At A Glance settings</string>
     <string name="hide_at_a_glance_desc">Ẩn At A Glance trong màn hình chính</string>
     <string name="hide_desktop_search_bar_title">Ẩn thanh tìm kiếm ở màn hình chính</string>
     <string name="hide_desktop_search_bar_desc">Ẩn thanh tìm kiếm ở thanh dock màn hình chính</string>
@@ -232,6 +234,12 @@
     <string name="recents_disable_selection_title">Disable selection</string>
     <string name="recents_disable_selection_summary">Hides the select button and turns off image and text selection on app previews</string>
     <string name="recents_meminfo_title">Memory info</string>
+    <string name="recents_style_title">Recents style</string>
+    <string name="recents_style_default">Default</string>
+    <string name="recents_style_scale">Scale</string>
+    <string name="recents_style_staple">Kami</string>
+    <string name="recents_style_ios">iOS</string>
+    <string name="recents_style_oxygen">OxygenOS</string>
     <string name="recents_meminfo_summary">Show available and total memory below the recent apps</string>
     <string name="recents_meminfo_zram_title">Include ZRAM</string>
     <string name="recents_meminfo_zram_summary">Add the ZRAM swap size to the total memory</string>
@@ -576,6 +584,7 @@
     <string name="glass_target_search_bar">Search bar</string>
     <string name="glass_target_widgets">Widgets</string>
     <string name="glass_target_drawer_search">App search bar</string>
+    <string name="glass_target_smartspace">At A Glance</string>
     <string name="icon_background_desc">Works with static wallpapers only</string>
     <string name="panel_background_off">Off</string>
     <string name="panel_background_frosted">Frosted glass</string>

@@ -136,6 +136,8 @@
     <string name="disable_recents_live_tile_title">Nonaktifkan ubin langsung aplikasi terkini</string>
     <string name="disable_recents_live_tile_desc">Nonaktifkan ubin langsung jika layar aplikasi terkini mengalami bug</string>
     <string name="hide_at_a_glance_title">Sembunyikan Sekilas Info (At A Glance)</string>
+    <string name="smartspace_background_title">At A Glance background</string>
+    <string name="smartspace_background_desc">Turn on high contrast background in At A Glance settings</string>
     <string name="hide_at_a_glance_desc">Sembunyikan Sekilas Info dari layar utama</string>
     <string name="hide_desktop_search_bar_title">Sembunyikan bilah pencarian layar utama</string>
     <string name="hide_desktop_search_bar_desc">Sembunyikan bilah pencarian dari dok layar utama</string>
@@ -232,6 +234,12 @@
     <string name="recents_disable_selection_title">Nonaktifkan seleksi</string>
     <string name="recents_disable_selection_summary">Sembunyikan tombol pilih serta matikan seleksi teks dan gambar pada pratinjau aplikasi</string>
     <string name="recents_meminfo_title">Info memori</string>
+    <string name="recents_style_title">Recents style</string>
+    <string name="recents_style_default">Default</string>
+    <string name="recents_style_scale">Scale</string>
+    <string name="recents_style_staple">Kami</string>
+    <string name="recents_style_ios">iOS</string>
+    <string name="recents_style_oxygen">OxygenOS</string>
     <string name="recents_meminfo_summary">Tampilkan memori yang tersedia dan total di bawah aplikasi terkini</string>
     <string name="recents_meminfo_zram_title">Sertakan ZRAM</string>
     <string name="recents_meminfo_zram_summary">Tambahkan ukuran swap ZRAM ke total memori</string>
@@ -576,6 +584,7 @@
     <string name="glass_target_search_bar">Search bar</string>
     <string name="glass_target_widgets">Widgets</string>
     <string name="glass_target_drawer_search">App search bar</string>
+    <string name="glass_target_smartspace">At A Glance</string>
     <string name="icon_background_desc">Hanya berfungsi dengan wallpaper statis</string>
     <string name="panel_background_off">Nonaktif</string>
     <string name="panel_background_frosted">Kaca buram (Frosted glass)</string>
