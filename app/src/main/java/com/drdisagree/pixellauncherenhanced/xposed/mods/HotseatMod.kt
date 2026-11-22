@@ -2,13 +2,17 @@ package com.drdisagree.pixellauncherenhanced.xposed.mods
 
 import android.content.Context
 import android.graphics.Rect
+import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DESKTOP_SEARCH_BAR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DISABLE_DOCK
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BOTTOM_SPACING
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_SEARCH_BAR_ABOVE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_TOP_SPACING
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER3_PACKAGE
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.xposed.core.ModPack
 import com.drdisagree.pixellauncherenhanced.xposed.mods.LauncherUtils.Companion.reloadLauncher
@@ -88,6 +92,9 @@ class HotseatMod(context: Context) : ModPack(context) {
             .runAfter { param ->
                 mQuickSearchBar = param.thisObject.getField("mQsb") as View
                 triggerSearchBarVisibility()
+                if (loadedPackage.packageName == LAUNCHER3_PACKAGE && !dockDisabled) {
+                    (param.thisObject as View).reserveDockDrawingSpace()
+                }
             }
 
         hotseatClass
@@ -101,7 +108,15 @@ class HotseatMod(context: Context) : ModPack(context) {
 
         hotseatClass
             .hookMethod("onInterceptTouchEvent")
-            .runBefore { param -> if (dockDisabled) param.result = true }
+            .runBefore { param ->
+                val event = param.args.firstOrNull() as? MotionEvent ?: return@runBefore
+                val drawingSpace = param.thisObject.getExtraFieldSilently(DOCK_DRAWING_SPACE) as? Int ?: 0
+                if (event.actionMasked == MotionEvent.ACTION_DOWN && event.y < drawingSpace) {
+                    param.result = false
+                } else if (dockDisabled) {
+                    param.result = true
+                }
+            }
 
         hotseatClass
             .hookMethod("onTouchEvent")
@@ -169,6 +184,26 @@ class HotseatMod(context: Context) : ModPack(context) {
             .forPackageName(loadedPackage.packageName)
             .addResource("qsb_widget_height") { 0 }
             .apply()
+    }
+
+    private fun View.reserveDockDrawingSpace() {
+        // setInsets has just restored the stock bounds and padding.
+        setExtraField(DOCK_DRAWING_SPACE, null)
+        val params = layoutParams as? FrameLayout.LayoutParams ?: return
+        if (params.height <= 0 || (params.gravity and Gravity.VERTICAL_GRAVITY_MASK) != Gravity.BOTTOM) return
+        val activity = getFieldSilently("mActivity") ?: return
+        val depthController = activity.callMethodSilently("getDepthController") ?: return
+        val blurRadius = depthController.getFieldSilently("mMaxBlurRadius") as? Int ?: return
+        val minimumSpace = maxOf(mContext.toPx(8), 3 * blurRadius)
+        val drawingSpace = (minimumSpace - paddingTop).coerceAtLeast(0)
+        if (drawingSpace == 0) return
+
+        // RenderEffect and animation layers clip at the hotseat bounds. Move the top
+        // edge up and keep the bottom-anchored icon and search rows at the same positions.
+        params.height += drawingSpace
+        setPadding(paddingLeft, paddingTop + drawingSpace, paddingRight, paddingBottom)
+        layoutParams = params
+        setExtraField(DOCK_DRAWING_SPACE, drawingSpace)
     }
 
     private fun Any.adjustHotseatSize(fields: HotseatFields) {
@@ -272,6 +307,7 @@ class HotseatMod(context: Context) : ModPack(context) {
         private const val ORIGINAL_BOTTOM_SPACE = "pleOriginalHotseatBottomSpace"
         private const val ORIGINAL_PADDING = "pleOriginalHotseatPadding"
         private const val APPLIED_PADDING = "pleAppliedHotseatPadding"
+        private const val DOCK_DRAWING_SPACE = "pleDockDrawingSpace"
 
         private val PROFILE_FIELDS = HotseatFields(
             barSize = "barSizePx",
