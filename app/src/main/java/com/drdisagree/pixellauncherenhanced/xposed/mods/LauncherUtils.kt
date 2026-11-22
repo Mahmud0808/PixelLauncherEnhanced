@@ -197,6 +197,10 @@ class LauncherUtils(context: Context) : ModPack(context) {
         }
 
         fun reloadLauncher(context: Context) {
+            if (Looper.myLooper() != Looper.getMainLooper()) {
+                Handler(Looper.getMainLooper()).post { reloadLauncher(context) }
+                return
+            }
             if (invariantDeviceProfileInstance.hasMethod("onConfigChanged", Context::class.java)) {
                 invariantDeviceProfileInstance.callMethod("onConfigChanged", context)
             } else {
