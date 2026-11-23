@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.WallpaperColors
 import android.app.WallpaperManager
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Canvas
@@ -319,7 +318,6 @@ class BlurPanels(context: Context) : ModPack(context) {
             .suppressError()
             .runAfter { param ->
                 val hotseat = param.thisObject as ViewGroup
-                hotseat.installDockPanel()
                 (hotseat.getFieldSilently("mQsb") as? View)?.installSearchPanel()
                 hotseat.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
                     override fun onViewAttachedToWindow(view: View) {
@@ -738,28 +736,6 @@ class BlurPanels(context: Context) : ModPack(context) {
         else -> this
     }
 
-    private fun ViewGroup.installDockPanel() {
-        if (background is BlurPanelDrawable) return
-        hosts.add(this)
-
-        background = BlurPanelDrawable(background, onShown = { panel().refreshSoon() }) { canvas ->
-            if (dockBlurRadius <= 0 && dockBlurTint <= 0) return@BlurPanelDrawable
-            if (!dockBounds(rect)) return@BlurPanelDrawable
-
-            if (dockUsesGlass() && WallpaperGlass.isAvailable()) return@BlurPanelDrawable
-
-            panel().draw(
-                canvas = canvas,
-                rect = rect,
-                cornerRadius = dockBlurCorner.dp(this),
-                blurRadius = dockBlurRadius.dp(this),
-                tintColor = dockTint(dockBlurTint),
-                roundBottom = !dockAttached,
-                outline = dockStyle.takeUnless { dockLiquid }
-            )
-        }
-    }
-
     private fun dockUsesGlass(): Boolean = dockBlurRadius > 0 || dockLiquid
 
     private fun widgetUsesGlass(): Boolean = widgetGlass
@@ -784,7 +760,8 @@ class BlurPanels(context: Context) : ModPack(context) {
                 setWillNotDraw(false)
                 viewTreeObserver.addOnPreDrawListener {
                     val state = listOf(
-                        hotseat.left, hotseat.top, hotseat.translationX, hotseat.translationY,
+                        hotseat.left, hotseat.top, hotseat.width, hotseat.height,
+                        hotseat.translationX, hotseat.translationY,
                         hotseat.scaleX, hotseat.scaleY, hotseat.visibleAlpha(), hotseat.isShown,
                         WallpaperGlass.offsetX, WallpaperGlass.zoom, WallpaperGlass.isAvailable(),
                         drawerCover(dragLayer)
@@ -805,7 +782,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                     else -> maxOf(glassAlpha, (hotseatAlpha * GLASS_APPEAR_SPEED).coerceAtMost(1f))
                 }
                 lastHotseatAlpha = hotseatAlpha
-                if (!dockUsesGlass() || !hotseat.isShown || hotseatAlpha <= 0f) return
+                if (!dockPanelOn || !hotseat.isShown || hotseatAlpha <= 0f) return
                 if (!hotseat.dockBounds(dockRect)) return
 
                 points[0] = dockRect.left
@@ -826,18 +803,35 @@ class BlurPanels(context: Context) : ModPack(context) {
                     dockBlurCorner.dp(hotseat) * hotseat.scaleX,
                     minOf(dockRect.width(), dockRect.height()) / 2f
                 )
-                WallpaperGlass.draw(
-                    host = this,
-                    canvas = canvas,
-                    rect = dockRect,
-                    corner = corner,
-                    bottomCorner = if (dockAttached) 0f else corner,
-                    blurRadius = dockBlurRadius.dp(hotseat),
-                    tintColor = hotseat.dockTint(dockBlurTint),
-                    alpha = glassAlpha,
-                    liquid = dockLiquid,
-                    style = dockStyle
-                )
+                val blur = dockBlurRadius.dp(hotseat)
+                val tint = hotseat.dockTint(dockBlurTint)
+                if (dockUsesGlass() && WallpaperGlass.draw(
+                        host = this,
+                        canvas = canvas,
+                        rect = dockRect,
+                        corner = corner,
+                        bottomCorner = if (dockAttached) 0f else corner,
+                        blurRadius = blur,
+                        tintColor = tint,
+                        alpha = glassAlpha,
+                        liquid = dockLiquid,
+                        style = dockStyle
+                    )
+                ) return
+
+                // The fallback for live wallpapers and tint also needs the full-size canvas.
+                if (dockBlurRadius > 0 || dockBlurTint > 0) {
+                    panel().draw(
+                        canvas = canvas,
+                        rect = dockRect,
+                        cornerRadius = corner,
+                        blurRadius = blur,
+                        tintColor = tint,
+                        roundBottom = !dockAttached,
+                        outline = dockStyle.takeUnless { dockLiquid },
+                        opacity = glassAlpha
+                    )
+                }
             }
         }
 
@@ -1204,7 +1198,7 @@ class BlurPanels(context: Context) : ModPack(context) {
 
         val margin = dockBlurMargin.dp(this)
         val paddingTop = dockPaddingTop.dp(this)
-        val panelTop = maxOf(top - paddingTop, pageIndicatorBottom() + PAGE_INDICATOR_GAP.dp(this))
+        val panelTop = top - paddingTop
         val panelBottom = if (dockAttached) {
             height.toFloat() + windowGapBelow()
         } else {
@@ -1222,37 +1216,6 @@ class BlurPanels(context: Context) : ModPack(context) {
             if (getChildAt(i).hasVisibleContent()) return true
         }
         return false
-    }
-
-    private fun View.pageIndicatorBottom(): Float {
-        val workspace = context.launcherActivity()
-            ?.let { it.getFieldSilently("mWorkspace") ?: it.callMethodSilently("getWorkspace") } as? View
-            ?: return -Float.MAX_VALUE
-        val indicator = workspace.getFieldSilently("mPageIndicator") as? View
-            ?: return -Float.MAX_VALUE
-        if (indicator.visibility != View.VISIBLE || indicator.height == 0) return -Float.MAX_VALUE
-
-        val indicatorCenter = indicator.layoutTopInRoot() + indicator.height / 2
-        return (indicatorCenter - layoutTopInRoot()).toFloat()
-    }
-
-    private fun Context.launcherActivity(): Activity? {
-        var current: Context? = this
-        while (current != null) {
-            if (current is Activity) return current
-            current = (current as? ContextWrapper)?.baseContext
-        }
-        return null
-    }
-
-    private fun View.layoutTopInRoot(): Int {
-        var top = 0
-        var current: View? = this
-        while (current != null) {
-            top += current.top
-            current = current.parent as? View
-        }
-        return top
     }
 
     private fun View.windowGapBelow(): Float {
@@ -1723,7 +1686,6 @@ class BlurPanels(context: Context) : ModPack(context) {
         private const val STYLE_FLOATING = "floating"
         private const val STYLE_ATTACHED = "attached"
         private const val DOCK_PADDING = 12
-        private const val PAGE_INDICATOR_GAP = 8
         private const val LARGE_BACKGROUND_RATIO = 0.5f
         private const val SECTION_SPAN = 0.9f
         private val PANEL_STYLE_KEYS = listOf(

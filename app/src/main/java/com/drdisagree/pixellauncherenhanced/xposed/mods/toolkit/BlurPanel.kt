@@ -96,7 +96,8 @@ class BlurPanel(private val host: View) {
         tintColor: Int,
         roundBottom: Boolean = true,
         outline: GlassStyle? = null,
-        cornerRadii: FloatArray? = null
+        cornerRadii: FloatArray? = null,
+        opacity: Float = 1f
     ) {
         if (rect.isEmpty) return
 
@@ -106,8 +107,8 @@ class BlurPanel(private val host: View) {
         val density = host.resources.displayMetrics.density
 
         if (blurRadius < 0.5f) {
-            drawTint(canvas, rect, tintColor, 1f)
-            GlassShader.drawOutline(canvas, rect, radii, outline, 1f, density)
+            drawTint(canvas, rect, tintColor, opacity)
+            GlassShader.drawOutline(canvas, rect, radii, outline, opacity, density)
             return
         }
 
@@ -133,7 +134,7 @@ class BlurPanel(private val host: View) {
             refreshSoon()
         }
 
-        val visibleAlpha = alpha * fade
+        val visibleAlpha = alpha * fade * opacity
         val visibleBlurRadius = blurRadius * fade
 
         val regionAlpha = visibleAlpha * (1f - launcherBlur)
@@ -173,8 +174,9 @@ class BlurPanel(private val host: View) {
             }
         }
 
-        drawTint(canvas, rect, tintColor, fade)
-        GlassShader.drawOutline(canvas, rect, radii, outline, fade, density)
+        val tintOpacity = fade * opacity
+        drawTint(canvas, rect, tintColor, tintOpacity)
+        GlassShader.drawOutline(canvas, rect, radii, outline, tintOpacity, density)
     }
 
     private fun drawTint(
