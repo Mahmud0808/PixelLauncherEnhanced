@@ -50,6 +50,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_TINT
@@ -100,6 +101,9 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var dockBlurMargin = DEFAULT_DOCK_MARGIN
     private var dockPaddingTop = DOCK_PADDING
     private var dockPaddingBottom = DOCK_PADDING
+    private var customPaddingTop = false
+    private var customPaddingBottom = false
+    private var hidePageIndicator = false
     private val windowLocation = IntArray(2)
     private val maskBounds = Rect()
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -163,6 +167,9 @@ class BlurPanels(context: Context) : ModPack(context) {
             dockBlurMargin = getSliderInt(DOCK_BLUR_MARGIN, DEFAULT_DOCK_MARGIN)
             dockPaddingTop = getSliderInt(DOCK_BLUR_PADDING_TOP, DOCK_PADDING)
             dockPaddingBottom = getSliderInt(DOCK_BLUR_PADDING_BOTTOM, DOCK_PADDING)
+            customPaddingTop = dockPaddingTop != DOCK_PADDING
+            customPaddingBottom = dockPaddingBottom != DOCK_PADDING
+            hidePageIndicator = getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR, false)
             val widgetBackground = PanelBackground.supported(getString(WIDGET_BACKGROUND, BACKGROUND_OFF))
             val widgetEnabled = widgetBackground != BACKGROUND_OFF
             widgetBlurRadius = if (widgetEnabled) getSliderInt(WIDGET_BLUR_RADIUS, DEFAULT_BLUR) else 0
@@ -202,6 +209,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             DOCK_BLUR_MARGIN,
             DOCK_BLUR_PADDING_TOP,
             DOCK_BLUR_PADDING_BOTTOM,
+            LAUNCHER_HIDE_PAGE_INDICATOR,
             WIDGET_BLUR_RADIUS,
             WIDGET_BLUR_TINT,
             SEARCH_BAR_BLUR_RADIUS,
@@ -319,7 +327,6 @@ class BlurPanels(context: Context) : ModPack(context) {
             .suppressError()
             .runAfter { param ->
                 val hotseat = param.thisObject as ViewGroup
-                hotseat.installDockPanel()
                 (hotseat.getFieldSilently("mQsb") as? View)?.installSearchPanel()
                 hotseat.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
                     override fun onViewAttachedToWindow(view: View) {
@@ -738,28 +745,6 @@ class BlurPanels(context: Context) : ModPack(context) {
         else -> this
     }
 
-    private fun ViewGroup.installDockPanel() {
-        if (background is BlurPanelDrawable) return
-        hosts.add(this)
-
-        background = BlurPanelDrawable(background, onShown = { panel().refreshSoon() }) { canvas ->
-            if (dockBlurRadius <= 0 && dockBlurTint <= 0) return@BlurPanelDrawable
-            if (!dockBounds(rect)) return@BlurPanelDrawable
-
-            if (dockUsesGlass() && WallpaperGlass.isAvailable()) return@BlurPanelDrawable
-
-            panel().draw(
-                canvas = canvas,
-                rect = rect,
-                cornerRadius = dockBlurCorner.dp(this),
-                blurRadius = dockBlurRadius.dp(this),
-                tintColor = dockTint(dockBlurTint),
-                roundBottom = !dockAttached,
-                outline = dockStyle.takeUnless { dockLiquid }
-            )
-        }
-    }
-
     private fun dockUsesGlass(): Boolean = dockBlurRadius > 0 || dockLiquid
 
     private fun widgetUsesGlass(): Boolean = widgetGlass
@@ -784,7 +769,8 @@ class BlurPanels(context: Context) : ModPack(context) {
                 setWillNotDraw(false)
                 viewTreeObserver.addOnPreDrawListener {
                     val state = listOf(
-                        hotseat.left, hotseat.top, hotseat.translationX, hotseat.translationY,
+                        hotseat.left, hotseat.top, hotseat.width, hotseat.height,
+                        hotseat.translationX, hotseat.translationY,
                         hotseat.scaleX, hotseat.scaleY, hotseat.visibleAlpha(), hotseat.isShown,
                         WallpaperGlass.offsetX, WallpaperGlass.zoom, WallpaperGlass.isAvailable(),
                         drawerCover(dragLayer)
@@ -805,7 +791,7 @@ class BlurPanels(context: Context) : ModPack(context) {
                     else -> maxOf(glassAlpha, (hotseatAlpha * GLASS_APPEAR_SPEED).coerceAtMost(1f))
                 }
                 lastHotseatAlpha = hotseatAlpha
-                if (!dockUsesGlass() || !hotseat.isShown || hotseatAlpha <= 0f) return
+                if (!dockPanelOn || !hotseat.isShown || hotseatAlpha <= 0f) return
                 if (!hotseat.dockBounds(dockRect)) return
 
                 points[0] = dockRect.left
@@ -826,18 +812,35 @@ class BlurPanels(context: Context) : ModPack(context) {
                     dockBlurCorner.dp(hotseat) * hotseat.scaleX,
                     minOf(dockRect.width(), dockRect.height()) / 2f
                 )
-                WallpaperGlass.draw(
-                    host = this,
-                    canvas = canvas,
-                    rect = dockRect,
-                    corner = corner,
-                    bottomCorner = if (dockAttached) 0f else corner,
-                    blurRadius = dockBlurRadius.dp(hotseat),
-                    tintColor = hotseat.dockTint(dockBlurTint),
-                    alpha = glassAlpha,
-                    liquid = dockLiquid,
-                    style = dockStyle
-                )
+                val blur = dockBlurRadius.dp(hotseat)
+                val tint = hotseat.dockTint(dockBlurTint)
+                if (dockUsesGlass() && WallpaperGlass.draw(
+                        host = this,
+                        canvas = canvas,
+                        rect = dockRect,
+                        corner = corner,
+                        bottomCorner = if (dockAttached) 0f else corner,
+                        blurRadius = blur,
+                        tintColor = tint,
+                        alpha = glassAlpha,
+                        liquid = dockLiquid,
+                        style = dockStyle
+                    )
+                ) return
+
+                // The fallback for live wallpapers and tint also needs the full-size canvas.
+                if (dockBlurRadius > 0 || dockBlurTint > 0) {
+                    panel().draw(
+                        canvas = canvas,
+                        rect = dockRect,
+                        cornerRadius = corner,
+                        blurRadius = blur,
+                        tintColor = tint,
+                        roundBottom = !dockAttached,
+                        outline = dockStyle.takeUnless { dockLiquid },
+                        opacity = glassAlpha
+                    )
+                }
             }
         }
 
@@ -1203,12 +1206,15 @@ class BlurPanels(context: Context) : ModPack(context) {
         if (top == Float.MAX_VALUE) return false
 
         val margin = dockBlurMargin.dp(this)
-        val paddingTop = dockPaddingTop.dp(this)
-        val panelTop = maxOf(top - paddingTop, pageIndicatorBottom() + PAGE_INDICATOR_GAP.dp(this))
+        val autoPadding = (top - pageIndicatorBottom() - PAGE_INDICATOR_GAP.dp(this))
+            .coerceIn(0f, DOCK_PADDING.dp(this))
+        val paddingTop = if (customPaddingTop) dockPaddingTop.dp(this) else autoPadding
+        val paddingBottom = if (customPaddingBottom) dockPaddingBottom.dp(this) else autoPadding
+        val panelTop = top - paddingTop
         val panelBottom = if (dockAttached) {
             height.toFloat() + windowGapBelow()
         } else {
-            maxOf(bottom + dockPaddingBottom.dp(this), panelTop)
+            maxOf(bottom + paddingBottom, panelTop)
         }
         out.set(margin, panelTop, width - margin, panelBottom)
         return !out.isEmpty
@@ -1225,6 +1231,7 @@ class BlurPanels(context: Context) : ModPack(context) {
     }
 
     private fun View.pageIndicatorBottom(): Float {
+        if (hidePageIndicator) return -Float.MAX_VALUE
         val workspace = context.launcherActivity()
             ?.let { it.getFieldSilently("mWorkspace") ?: it.callMethodSilently("getWorkspace") } as? View
             ?: return -Float.MAX_VALUE
