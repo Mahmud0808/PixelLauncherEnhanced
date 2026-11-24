@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.WallpaperColors
 import android.app.WallpaperManager
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Canvas
@@ -49,6 +50,7 @@ import com.drdisagree.pixellauncherenhanced.data.common.Constants.DOCK_BLUR_TINT
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.DRAWER_SEARCH_BLUR_TINT
+import com.drdisagree.pixellauncherenhanced.data.common.Constants.LAUNCHER_HIDE_PAGE_INDICATOR
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BACKGROUND
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_RADIUS
 import com.drdisagree.pixellauncherenhanced.data.common.Constants.SEARCH_BAR_BLUR_TINT
@@ -99,6 +101,9 @@ class BlurPanels(context: Context) : ModPack(context) {
     private var dockBlurMargin = DEFAULT_DOCK_MARGIN
     private var dockPaddingTop = DOCK_PADDING
     private var dockPaddingBottom = DOCK_PADDING
+    private var customPaddingTop = false
+    private var customPaddingBottom = false
+    private var hidePageIndicator = false
     private val windowLocation = IntArray(2)
     private val maskBounds = Rect()
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -162,6 +167,9 @@ class BlurPanels(context: Context) : ModPack(context) {
             dockBlurMargin = getSliderInt(DOCK_BLUR_MARGIN, DEFAULT_DOCK_MARGIN)
             dockPaddingTop = getSliderInt(DOCK_BLUR_PADDING_TOP, DOCK_PADDING)
             dockPaddingBottom = getSliderInt(DOCK_BLUR_PADDING_BOTTOM, DOCK_PADDING)
+            customPaddingTop = dockPaddingTop != DOCK_PADDING
+            customPaddingBottom = dockPaddingBottom != DOCK_PADDING
+            hidePageIndicator = getBoolean(LAUNCHER_HIDE_PAGE_INDICATOR, false)
             val widgetBackground = PanelBackground.supported(getString(WIDGET_BACKGROUND, BACKGROUND_OFF))
             val widgetEnabled = widgetBackground != BACKGROUND_OFF
             widgetBlurRadius = if (widgetEnabled) getSliderInt(WIDGET_BLUR_RADIUS, DEFAULT_BLUR) else 0
@@ -201,6 +209,7 @@ class BlurPanels(context: Context) : ModPack(context) {
             DOCK_BLUR_MARGIN,
             DOCK_BLUR_PADDING_TOP,
             DOCK_BLUR_PADDING_BOTTOM,
+            LAUNCHER_HIDE_PAGE_INDICATOR,
             WIDGET_BLUR_RADIUS,
             WIDGET_BLUR_TINT,
             SEARCH_BAR_BLUR_RADIUS,
@@ -1197,12 +1206,15 @@ class BlurPanels(context: Context) : ModPack(context) {
         if (top == Float.MAX_VALUE) return false
 
         val margin = dockBlurMargin.dp(this)
-        val paddingTop = dockPaddingTop.dp(this)
+        val autoPadding = (top - pageIndicatorBottom() - PAGE_INDICATOR_GAP.dp(this))
+            .coerceIn(0f, DOCK_PADDING.dp(this))
+        val paddingTop = if (customPaddingTop) dockPaddingTop.dp(this) else autoPadding
+        val paddingBottom = if (customPaddingBottom) dockPaddingBottom.dp(this) else autoPadding
         val panelTop = top - paddingTop
         val panelBottom = if (dockAttached) {
             height.toFloat() + windowGapBelow()
         } else {
-            maxOf(bottom + dockPaddingBottom.dp(this), panelTop)
+            maxOf(bottom + paddingBottom, panelTop)
         }
         out.set(margin, panelTop, width - margin, panelBottom)
         return !out.isEmpty
@@ -1216,6 +1228,38 @@ class BlurPanels(context: Context) : ModPack(context) {
             if (getChildAt(i).hasVisibleContent()) return true
         }
         return false
+    }
+
+    private fun View.pageIndicatorBottom(): Float {
+        if (hidePageIndicator) return -Float.MAX_VALUE
+        val workspace = context.launcherActivity()
+            ?.let { it.getFieldSilently("mWorkspace") ?: it.callMethodSilently("getWorkspace") } as? View
+            ?: return -Float.MAX_VALUE
+        val indicator = workspace.getFieldSilently("mPageIndicator") as? View
+            ?: return -Float.MAX_VALUE
+        if (indicator.visibility != View.VISIBLE || indicator.height == 0) return -Float.MAX_VALUE
+
+        val indicatorCenter = indicator.layoutTopInRoot() + indicator.height / 2
+        return (indicatorCenter - layoutTopInRoot()).toFloat()
+    }
+
+    private fun Context.launcherActivity(): Activity? {
+        var current: Context? = this
+        while (current != null) {
+            if (current is Activity) return current
+            current = (current as? ContextWrapper)?.baseContext
+        }
+        return null
+    }
+
+    private fun View.layoutTopInRoot(): Int {
+        var top = 0
+        var current: View? = this
+        while (current != null) {
+            top += current.top
+            current = current.parent as? View
+        }
+        return top
     }
 
     private fun View.windowGapBelow(): Float {
@@ -1686,6 +1730,7 @@ class BlurPanels(context: Context) : ModPack(context) {
         private const val STYLE_FLOATING = "floating"
         private const val STYLE_ATTACHED = "attached"
         private const val DOCK_PADDING = 12
+        private const val PAGE_INDICATOR_GAP = 8
         private const val LARGE_BACKGROUND_RATIO = 0.5f
         private const val SECTION_SPAN = 0.9f
         private val PANEL_STYLE_KEYS = listOf(
